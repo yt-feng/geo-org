@@ -1,20 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 116" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" role="img" aria-labelledby="title desc">
   <title id="title">Eco GEO logo</title>
-  <desc id="desc">A stylized green leaf with connected circuit nodes.</desc>
-  <g fill="none" stroke="#22967B" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M56 100V62c0-19 14-34 34-34h38v35c0 21-18 37-41 37H56Z"/>
-    <path d="M56 100 128 28"/>
-    <path d="M74 82h27"/>
-    <path d="M74 82V57"/>
-    <path d="M92 64V28"/>
-    <path d="M92 64h30"/>
-    <path d="M92 64 74 82"/>
+  <desc id="desc">A stylized green leaf with circuit paths and nodes.</desc>
+  <g fill="none" stroke="#22967B" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M55 101V63c0-20.5 15.5-36 36-36h37v35c0 23-19 39-43 39H55Z"/>
+    <path d="M55 101 128 27"/>
+    <path d="M74 82h28"/>
+    <path d="M74 82V58"/>
+    <path d="M91 65V27"/>
+    <path d="M91 65h34"/>
+    <path d="M91 65 74 82"/>
   </g>
   <g fill="#22967B">
-    <circle cx="92" cy="28" r="6"/>
-    <circle cx="74" cy="57" r="6"/>
-    <circle cx="92" cy="44" r="6"/>
-    <circle cx="101" cy="82" r="6"/>
-    <circle cx="122" cy="64" r="6"/>
+    <circle cx="91" cy="27" r="6"/>
+    <circle cx="74" cy="58" r="6"/>
+    <circle cx="91" cy="44" r="6"/>
+    <circle cx="102" cy="82" r="6"/>
+    <circle cx="125" cy="65" r="6"/>
   </g>
 </svg>
