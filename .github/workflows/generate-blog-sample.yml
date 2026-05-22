@@ -1,0 +1,110 @@
+name: Generate Blog Sample
+
+on:
+  workflow_dispatch:
+    inputs:
+      per_category_limit:
+        description: "Generate up to this many articles per category"
+        required: true
+        default: "10"
+      overwrite:
+        description: "Overwrite existing generated article pages. true or false"
+        required: true
+        default: "true"
+      site_url:
+        description: "Canonical site URL for generated links"
+        required: true
+        default: "https://yt-feng.github.io/geo-org"
+      request_delay:
+        description: "Delay in seconds between DeepSeek requests"
+        required: true
+        default: "0.5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-blog-sample
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate sample blog pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Verify inputs and estimate scope
+        run: |
+          set -euo pipefail
+          test -f assets/blog_articles.xlsx
+          test -f scripts/generate_blog.py
+          test -f scripts/generate_blog_sample.py
+          echo "Excel file found: assets/blog_articles.xlsx"
+          echo "Per-category limit: ${{ inputs.per_category_limit }}"
+          echo "Overwrite: ${{ inputs.overwrite }}"
+          echo "Site URL: ${{ inputs.site_url }}"
+
+      - name: Generate sample blog from Excel with DeepSeek
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          SITE_URL: ${{ inputs.site_url }}
+          DEEPSEEK_MODEL: deepseek-chat
+          DEEPSEEK_MAX_TOKENS: "2200"
+          DEEPSEEK_TEMPERATURE: "0.72"
+          DEEPSEEK_REQUEST_DELAY: ${{ inputs.request_delay }}
+          DEEPSEEK_RETRIES: "3"
+          EST_INPUT_TOKENS_PER_ARTICLE: "1800"
+          EST_OUTPUT_TOKENS_PER_ARTICLE: "2200"
+          DEEPSEEK_PRICE_INPUT_PER_M: "2"
+          DEEPSEEK_PRICE_OUTPUT_PER_M: "8"
+          DEEPSEEK_PRICE_CURRENCY: "CNY"
+        run: |
+          set -euo pipefail
+          ARGS="--excel assets/blog_articles.xlsx --out blog --per-category-limit ${{ inputs.per_category_limit }}"
+          if [ "${{ inputs.overwrite }}" = "true" ]; then
+            ARGS="$ARGS --overwrite"
+          fi
+          python scripts/generate_blog_sample.py $ARGS
+
+      - name: Show generated summary
+        run: |
+          set -euo pipefail
+          if [ -f blog/posts.json ]; then
+            python - <<'PY'
+          import json
+          from collections import Counter
+          posts=json.load(open('blog/posts.json', encoding='utf-8'))
+          print(f"Generated posts: {len(posts)}")
+          for cat, n in Counter(p.get('category','') for p in posts).most_common():
+              print(f"- {cat}: {n}")
+          PY
+          fi
+
+      - name: Commit generated sample blog
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add blog sitemap.xml index.html
+          if git diff --cached --quiet; then
+            echo "No blog changes to commit."
+          else
+            git commit -m "Generate sample blog articles from Excel"
+            git push origin main
+          fi
