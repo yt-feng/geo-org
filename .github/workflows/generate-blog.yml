@@ -1,0 +1,76 @@
+name: Generate Blog
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_row:
+        description: "Excel start row. Use 2 to start after the header row."
+        required: true
+        default: "2"
+      limit:
+        description: "Number of rows to generate. 0 means all rows."
+        required: true
+        default: "0"
+      overwrite:
+        description: "Overwrite existing article pages. true or false."
+        required: true
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-blog
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate static blog pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Generate blog from Excel with DeepSeek
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          SITE_URL: https://eco-geo.org
+          DEEPSEEK_MODEL: deepseek-chat
+          DEEPSEEK_MAX_TOKENS: "2200"
+          DEEPSEEK_TEMPERATURE: "0.72"
+          DEEPSEEK_REQUEST_DELAY: "0.2"
+          DEEPSEEK_RETRIES: "3"
+        run: |
+          set -euo pipefail
+          ARGS="--excel assets/blog_articles.xlsx --out blog --start-row ${{ inputs.start_row }} --limit ${{ inputs.limit }}"
+          if [ "${{ inputs.overwrite }}" = "true" ]; then
+            ARGS="$ARGS --overwrite"
+          fi
+          python scripts/generate_blog.py $ARGS
+
+      - name: Commit generated blog
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add blog sitemap.xml index.html
+          if git diff --cached --quiet; then
+            echo "No blog changes to commit."
+          else
+            git commit -m "Generate blog articles from Excel"
+            git push origin main
+          fi
