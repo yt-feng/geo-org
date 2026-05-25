@@ -254,14 +254,16 @@ def page_css(prefix: str = "") -> str:
 """.strip()
 
 
-def site_header(prefix: str) -> str:
+def site_header(prefix: str, blog_href: Optional[str] = None) -> str:
+    blog_link = blog_href or f"{prefix}blog/"
     return f"""
-<header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="{prefix}index.html#top"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="{prefix}index.html#why">为什么</a><a href="{prefix}index.html#method">方法</a><a href="{prefix}index.html#tool">AIBE工具</a><a href="{prefix}index.html#credentials">服务品牌</a><a href="{prefix}blog/">Blog</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
+<header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="{prefix}index.html#top"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="{prefix}index.html#why">为什么</a><a href="{prefix}index.html#method">方法</a><a href="{prefix}index.html#tool">AIBE工具</a><a href="{prefix}index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="{blog_link}">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
 """.strip()
 
 
-def site_footer(prefix: str) -> str:
-    return f"""<footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="{prefix}index.html">首页</a> · <a href="{prefix}blog/">Blog</a> · <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a></div></footer>"""
+def site_footer(prefix: str, blog_href: Optional[str] = None) -> str:
+    blog_link = blog_href or f"{prefix}blog/"
+    return f"""<footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="{prefix}index.html">首页</a> · <a href="{blog_link}">前沿观点</a> · <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a></div></footer>"""
 
 
 def bottom_cta() -> str:
@@ -275,8 +277,8 @@ def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_nam
     title = html.escape(article["title"])
     excerpt = html.escape(article["excerpt"])
     return f"""<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO Blog</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../logo.svg" type="image/svg+xml"/><style>{page_css('../../')}</style></head>
-<body>{site_header('../../')}<main class="wrap"><article><div class="eyebrow">Eco GEO Blog</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../')}</body></html>"""
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../logo.svg" type="image/svg+xml"/><style>{page_css('../../')}</style></head>
+<body>{site_header('../../', '../../')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../', '../../')}</body></html>"""
 
 
 def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_pages: int, prefix: str) -> str:
@@ -294,7 +296,8 @@ def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_page
         prev_link = f"<a href='{prev_href}'>上一页</a>"
     next_link = f"<a href='{prefix}page/{page+1}/'>下一页</a>" if page < total_pages else ""
     pager = f"<div class='pager'>{prev_link}<span>第 {page} / {total_pages} 页</span>{next_link}</div>"
-    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Eco GEO Blog｜品牌化 GEO 与 AI 搜索洞察</title><meta name="description" content="Eco GEO Blog：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章。"/><link rel="icon" href="{prefix}logo.svg" type="image/svg+xml"/><style>{page_css(prefix)}</style></head><body>{site_header(prefix)}<main class="wrap"><section class="hero"><div class="eyebrow">Insights Library</div><h1>Eco GEO Blog</h1><p class="lead">围绕品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索的全量选题文章库。</p></section><section class="grid">{''.join(cards)}</section>{pager}</main>{bottom_cta()}{site_footer(prefix)}</body></html>"""
+    blog_href = "./" if page == 1 else "../../"
+    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Eco GEO 前沿观点｜品牌化 GEO 与 AI 搜索洞察</title><meta name="description" content="Eco GEO 前沿观点：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章。"/><link rel="icon" href="{prefix}logo.svg" type="image/svg+xml"/><style>{page_css(prefix)}</style></head><body>{site_header(prefix, blog_href)}<main class="wrap"><section class="hero"><div class="eyebrow">Insights Library</div><h1>Eco GEO 前沿观点</h1><p class="lead">围绕品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索的全量选题文章库。</p></section><section class="grid">{''.join(cards)}</section>{pager}</main>{bottom_cta()}{site_footer(prefix, blog_href)}</body></html>"""
 
 
 def patch_homepage(blog_count: int) -> None:
@@ -303,12 +306,12 @@ def patch_homepage(blog_count: int) -> None:
         return
     text = path.read_text(encoding="utf-8")
     if 'href="blog/"' not in text:
-        text = text.replace('<a href="#insights">观点库</a><a href="#contact">联系</a>', '<a href="#insights">观点库</a><a href="blog/">Blog</a><a href="#contact">联系</a>')
+        text = text.replace('<a href="#insights">观点库</a><a href="#contact">联系</a>', '<a href="#insights">观点库</a><a class="nav-cta nav-insights" href="blog/">前沿观点</a><a href="#contact">联系</a>')
     marker = '<section class="section" id="insights">'
     if marker in text and 'href="blog/" class="btn primary"' not in text:
         text = text.replace(
             '<p class="section-intro">Eco GEO 关注的是“AI 会不会引用你、如何解释你、和谁一起比较你”。观点库会持续沉淀 GEO、AIBE、KNIT 与 AI 搜索的实践。</p>',
-            f'<p class="section-intro">Eco GEO 关注的是“AI 会不会引用你、如何解释你、和谁一起比较你”。观点库已扩展为 Blog 文章库，当前按 Excel 选题生成 {blog_count} 篇文章。</p><div class="actions"><a href="blog/" class="btn primary">进入 Blog</a></div>'
+            f'<p class="section-intro">Eco GEO 关注的是“AI 会不会引用你、如何解释你、和谁一起比较你”。前沿观点库已沉淀 {blog_count} 篇行业文章，覆盖品牌化 GEO、白帽 GEO、AIBE 与 AI 搜索实践。</p><div class="actions"><a href="blog/" class="btn primary">查看前沿观点</a></div>'
         )
     path.write_text(text, encoding="utf-8")
 

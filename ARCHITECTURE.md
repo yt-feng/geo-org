@@ -83,7 +83,7 @@ python3 -m http.server 8000
 - Method：讲 AIBE 诊断、GEO 策略框架、KNIT 可信知识网络三步方法。
 - AIBE Lite：纯前端的示例诊断工具。
 - Use cases：列出 B2B/SaaS、咨询/服务、出海/多语言等适用场景。
-- Insights：引导进入 Blog。
+- Insights：引导进入前沿观点文章库。
 - Contact：邮件咨询入口和交付物示例。
 
 首页的 AIBE Lite 不调用外部接口，也不上传数据。它用品牌名字符做一个确定性伪随机评分，只用于演示诊断框架。

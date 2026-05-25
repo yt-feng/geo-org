@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Eco GEO Blog｜品牌化 GEO 与 AI 搜索洞察</title>
-  <meta name="description" content="Eco GEO Blog：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章库。" />
+  <title>Eco GEO 前沿观点｜品牌化 GEO 与 AI 搜索洞察</title>
+  <meta name="description" content="Eco GEO 前沿观点：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章库。" />
   <link rel="icon" href="../logo.svg" type="image/svg+xml" />
   <style>
     :root{--bg:#07110d;--panel:rgba(255,255,255,.075);--panel2:rgba(255,255,255,.12);--text:#f5f8f4;--muted:#b8c7bc;--line:rgba(255,255,255,.15);--green:#8ce99a;--blue:#80c7ff;--gold:#ffd166;--shadow:0 26px 80px rgba(0,0,0,.32)}
@@ -12,11 +12,11 @@
   </style>
 </head>
 <body>
-  <header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="../index.html#top"><img src="../logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="../index.html#why">为什么</a><a href="../index.html#method">方法</a><a href="../index.html#tool">AIBE工具</a><a href="../index.html#credentials">服务品牌</a><a href="../blog/">Blog</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
+  <header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="../index.html#top"><img src="../logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="../index.html#why">为什么</a><a href="../index.html#method">方法</a><a href="../index.html#tool">AIBE工具</a><a href="../index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="./">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
   <main class="wrap">
     <section class="hero">
       <div class="eyebrow">Insights Library</div>
-      <h1>Eco GEO Blog</h1>
+      <h1>Eco GEO 前沿观点</h1>
       <p class="lead">围绕品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索的文章库。支持分类筛选、关键词搜索和页码跳转。</p>
       <div class="tools">
         <label class="searchbox" aria-label="搜索文章"><span>🔎</span><input id="searchInput" type="search" placeholder="搜索标题、摘要、作者、标签..." autocomplete="off" /></label>
@@ -25,13 +25,13 @@
       <div class="summary"><span class="pill" id="countText">加载中...</span><span class="pill" id="activeText">全部文章</span></div>
       <div class="categories" id="categoryChips"></div>
     </section>
-    <div class="loading" id="loading">正在加载 Blog 文章...</div>
+    <div class="loading" id="loading">正在加载前沿观点文章...</div>
     <section class="grid" id="postGrid" aria-live="polite"></section>
     <div class="empty" id="emptyState">没有找到匹配文章。试试清空搜索词或切换分类。</div>
     <div class="pager" id="pager" style="display:none"><button id="prevBtn">上一页</button><span class="page-info" id="pageInfo"></span><button id="nextBtn">下一页</button><input id="pageInput" type="number" min="1" value="1"/><button id="jumpBtn">跳转</button></div>
   </main>
   <div class="bottom-cta" role="region" aria-label="Eco GEO contact"><div class="wrap bottom-cta-inner"><div class="bottom-cta-text"><strong>AIBE 初诊</strong><span>检查你的品牌在 AI 答案里的可见度与引用风险</span></div><a href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">邮件咨询</a></div></div>
-  <footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="../index.html">首页</a> · <a href="../blog/">Blog</a> · <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a></div></footer>
+  <footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="../index.html">首页</a> · <a href="./">前沿观点</a> · <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a></div></footer>
   <script>
     const PAGE_SIZE = 24;
     const IMAGE_POOL = [
@@ -75,7 +75,7 @@
     el('nextBtn').addEventListener('click', () => { state.page++; applyFilters(false); scrollTo({top:0,behavior:'smooth'}); });
     el('jumpBtn').addEventListener('click', () => { state.page = parseInt(el('pageInput').value || '1', 10); applyFilters(false); scrollTo({top:0,behavior:'smooth'}); });
     el('pageInput').addEventListener('keydown', e => { if(e.key === 'Enter') el('jumpBtn').click(); });
-    fetch('posts.json', {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('posts.json not found'); return r.json(); }).then(data => { state.posts = data.map(normalizePost); buildCategories(); applyFilters(false); }).catch(err => { el('loading').textContent = 'Blog 数据加载失败：' + err.message; });
+    fetch('posts.json', {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('posts.json not found'); return r.json(); }).then(data => { state.posts = data.map(normalizePost); buildCategories(); applyFilters(false); }).catch(err => { el('loading').textContent = '文章数据加载失败：' + err.message; });
   </script>
 </body>
 </html>
