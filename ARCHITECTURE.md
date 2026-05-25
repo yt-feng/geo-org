@@ -76,8 +76,8 @@ python3 -m http.server 8000
 
 首页是单文件实现，主要区块如下：
 
-- 顶部导航：锚点跳转到首页不同 section，并链接到 `blog/`。
-- Hero：解释 Brand-first GEO，给出咨询入口和 AIBE 工具入口。
+- 顶部导航：锚点跳转到首页不同 section，并链接到 `brand-audit/` 与 `blog/`。
+- Hero：解释 Brand-first GEO，给出咨询入口和品牌评测 Demo 入口。
 - Why：解释为什么 AI 答案时代要关注品牌被理解和引用的方式。
 - Credentials：展示服务过的国际品牌和项目经验，使用 `assets/logos/*.svg`。
 - Method：讲 AIBE 诊断、GEO 策略框架、KNIT 可信知识网络三步方法。
@@ -87,6 +87,10 @@ python3 -m http.server 8000
 - Contact：邮件咨询入口和交付物示例。
 
 首页的 AIBE Lite 不调用外部接口，也不上传数据。它用品牌名字符做一个确定性伪随机评分，只用于演示诊断框架。
+
+## 4.1 品牌评测工具页
+
+`brand-audit/index.html` 是独立的品牌评测 Demo 页面。它在浏览器端根据品牌名、官网、行业、目标市场和品牌阶段生成示例 AIBE 分数，不上传数据、不调用外部接口。结果区提供预填品牌信息的邮件入口，引导看完 Demo 的访客联系 `yt.feng@foxmail.com` 做正式 AIBE 初诊。
 
 ## 5. Blog 展示架构
 
@@ -238,6 +242,7 @@ DEEPSEEK_RETRIES          # 默认 3
 常见修改入口：
 
 - 改首页文案、结构或 AIBE Lite：编辑 `index.html`。
+- 改独立品牌评测 Demo：编辑 `brand-audit/index.html`。
 - 改首页品牌 logo 列表：编辑 `index.html` 和 `assets/logos/`。
 - 改 Blog 列表交互：优先编辑 `scripts/enhance_blog_index.py`，再运行脚本生成 `blog/index.html`。
 - 改文章模板、生成 prompt、sitemap 输出：编辑 `scripts/generate_blog.py`。

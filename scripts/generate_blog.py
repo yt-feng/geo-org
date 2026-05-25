@@ -254,10 +254,11 @@ def page_css(prefix: str = "") -> str:
 """.strip()
 
 
-def site_header(prefix: str, blog_href: Optional[str] = None) -> str:
+def site_header(prefix: str, blog_href: Optional[str] = None, tool_href: Optional[str] = None) -> str:
     blog_link = blog_href or f"{prefix}blog/"
+    tool_link = tool_href or f"{prefix}brand-audit/"
     return f"""
-<header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="{prefix}index.html#top"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="{prefix}index.html#why">为什么</a><a href="{prefix}index.html#method">方法</a><a href="{prefix}index.html#tool">AIBE工具</a><a href="{prefix}index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="{blog_link}">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
+<header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="{prefix}index.html#top"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="{prefix}index.html#why">为什么</a><a href="{prefix}index.html#method">方法</a><a href="{tool_link}">品牌评测</a><a href="{prefix}index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="{blog_link}">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
 """.strip()
 
 
@@ -278,7 +279,7 @@ def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_nam
     excerpt = html.escape(article["excerpt"])
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../logo.svg" type="image/svg+xml"/><style>{page_css('../../')}</style></head>
-<body>{site_header('../../', '../../')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../', '../../')}</body></html>"""
+<body>{site_header('../../', '../../', '../../../brand-audit/')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../', '../../')}</body></html>"""
 
 
 def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_pages: int, prefix: str) -> str:
@@ -297,7 +298,8 @@ def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_page
     next_link = f"<a href='{prefix}page/{page+1}/'>下一页</a>" if page < total_pages else ""
     pager = f"<div class='pager'>{prev_link}<span>第 {page} / {total_pages} 页</span>{next_link}</div>"
     blog_href = "./" if page == 1 else "../../"
-    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Eco GEO 前沿观点｜品牌化 GEO 与 AI 搜索洞察</title><meta name="description" content="Eco GEO 前沿观点：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章。"/><link rel="icon" href="{prefix}logo.svg" type="image/svg+xml"/><style>{page_css(prefix)}</style></head><body>{site_header(prefix, blog_href)}<main class="wrap"><section class="hero"><div class="eyebrow">Insights Library</div><h1>Eco GEO 前沿观点</h1><p class="lead">围绕品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索的全量选题文章库。</p></section><section class="grid">{''.join(cards)}</section>{pager}</main>{bottom_cta()}{site_footer(prefix, blog_href)}</body></html>"""
+    tool_href = "../brand-audit/" if page == 1 else "../../../brand-audit/"
+    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Eco GEO 前沿观点｜品牌化 GEO 与 AI 搜索洞察</title><meta name="description" content="Eco GEO 前沿观点：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章。"/><link rel="icon" href="{prefix}logo.svg" type="image/svg+xml"/><style>{page_css(prefix)}</style></head><body>{site_header(prefix, blog_href, tool_href)}<main class="wrap"><section class="hero"><div class="eyebrow">Insights Library</div><h1>Eco GEO 前沿观点</h1><p class="lead">围绕品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索的全量选题文章库。</p></section><section class="grid">{''.join(cards)}</section>{pager}</main>{bottom_cta()}{site_footer(prefix, blog_href)}</body></html>"""
 
 
 def patch_homepage(blog_count: int) -> None:
@@ -362,7 +364,7 @@ def write_blog(topics: List[TopicRow], out_dir: Path, overwrite: bool) -> None:
         page_dir.joinpath("index.html").write_text(index_page(posts, page, per_page, total_pages, "../../"), encoding="utf-8")
     (out_dir / "posts.json").write_text(json.dumps(posts, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    sitemap_items = [f"  <url><loc>{SITE_URL}/</loc></url>", f"  <url><loc>{SITE_URL}/blog/</loc></url>"]
+    sitemap_items = [f"  <url><loc>{SITE_URL}/</loc></url>", f"  <url><loc>{SITE_URL}/brand-audit/</loc></url>", f"  <url><loc>{SITE_URL}/blog/</loc></url>"]
     sitemap_items += [f"  <url><loc>{p['url']}</loc></url>" for p in posts]
     Path("sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(sitemap_items) + "\n</urlset>\n", encoding="utf-8")
     patch_homepage(len(posts))

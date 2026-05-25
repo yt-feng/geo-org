@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07110d" />
+    <meta name="description" content="Eco GEO 品牌评测 Demo：快速查看品牌在 AI 搜索与生成式答案中的可见度、可信引用资产和内容缺口。" />
+    <link rel="canonical" href="https://eco-geo.org/brand-audit/" />
+    <link rel="icon" href="../logo.svg" type="image/svg+xml" />
+    <title>品牌评测 Demo｜Eco GEO</title>
+    <style>
+      :root{--bg:#07110d;--panel:rgba(255,255,255,.075);--panel2:rgba(255,255,255,.12);--text:#f5f8f4;--muted:#b8c7bc;--line:rgba(255,255,255,.15);--green:#8ce99a;--green2:#30c775;--blue:#80c7ff;--gold:#ffd166;--danger:#ff8f8f;--shadow:0 26px 80px rgba(0,0,0,.32)}
+      *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;padding-bottom:78px;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 10% 0%,rgba(34,150,123,.30),transparent 34rem),radial-gradient(circle at 90% 8%,rgba(128,199,255,.14),transparent 30rem),linear-gradient(135deg,#050806,var(--bg),#101a13);line-height:1.65}a{color:inherit}.wrap{width:min(1160px,calc(100% - 42px));margin:auto}.site-header{position:sticky;top:0;z-index:40;background:rgba(7,17,13,.86);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}.site-nav{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0}.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:900;letter-spacing:.08em}.brand img{width:46px;height:34px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.94);padding:3px}.brand small{display:block;letter-spacing:.02em;color:var(--muted);font-weight:700;font-size:11px;margin-top:-4px}.site-links{display:flex;align-items:center;gap:16px;color:var(--muted);font-size:14px}.site-links a{text-decoration:none;white-space:nowrap}.site-links a:hover{color:var(--text)}.site-links .active{color:var(--text);font-weight:900}.site-links .nav-cta{border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--text);background:rgba(255,255,255,.08);font-weight:900}.hero{padding:58px 0 30px}.eyebrow{color:var(--green);font-weight:900;font-size:13px;letter-spacing:.18em;text-transform:uppercase}.hero h1{font-size:clamp(36px,6vw,72px);line-height:1.02;letter-spacing:-.055em;margin:14px 0 16px}.lead{font-size:clamp(18px,2vw,22px);color:var(--muted);max-width:880px;margin:0}.tool-shell{display:grid;grid-template-columns:.88fr 1.12fr;gap:18px;align-items:start;padding:22px 0 76px}.panel{border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:var(--shadow);padding:24px}.panel h2,.panel h3{margin:0 0 12px;line-height:1.2;letter-spacing:-.025em}.panel p{color:var(--muted);margin:0 0 16px}.form{display:grid;gap:14px}.field label{display:block;font-weight:900;margin:0 0 7px}.field input,.field select{width:100%;border:1px solid var(--line);background:rgba(0,0,0,.24);color:var(--text);border-radius:16px;padding:13px 14px;font-size:16px;outline:none}.field select option{background:#07110d;color:var(--text)}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.btn{border:1px solid var(--line);border-radius:999px;background:var(--panel2);color:var(--text);padding:12px 15px;font-weight:900;text-decoration:none;cursor:pointer;font-size:15px}.btn.primary{background:var(--text);border-color:var(--text);color:#07110d}.btn:hover{transform:translateY(-1px);transition:.18s}.note{font-size:13px;color:var(--muted);margin:0}.score-head{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;margin-bottom:18px}.score-ring{width:150px;aspect-ratio:1;border-radius:999px;display:grid;place-items:center;background:conic-gradient(var(--green) calc(var(--score)*1%),rgba(255,255,255,.12) 0);position:relative}.score-ring:before{content:"";position:absolute;inset:12px;border-radius:999px;background:#07110d;border:1px solid var(--line)}.score-ring strong{position:relative;font-size:42px;line-height:1;letter-spacing:-.04em}.score-ring span{position:relative;color:var(--muted);font-size:12px;font-weight:900}.score-copy strong{display:block;font-size:24px;letter-spacing:-.03em;margin-bottom:6px}.bars{display:grid;gap:12px;margin:18px 0}.barrow{display:grid;grid-template-columns:130px 1fr 42px;gap:12px;align-items:center;color:var(--muted)}.bar{height:12px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden}.fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green2),var(--blue));width:40%}.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}.insight{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.055);padding:14px;min-height:132px}.insight b{display:block;margin-bottom:8px}.insight span{color:var(--muted);font-size:14px}.mailto{margin-top:18px;border:1px solid rgba(140,233,154,.32);background:rgba(140,233,154,.08);border-radius:22px;padding:16px;display:grid;gap:12px}.mailto p{margin:0;color:#dbe9df}.bottom-cta{position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(7,17,13,.91);backdrop-filter:blur(18px);border-top:1px solid var(--line)}.bottom-cta-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}.bottom-cta-text{display:flex;align-items:baseline;gap:10px;color:var(--muted);min-width:0}.bottom-cta-text strong{color:var(--text)}.bottom-cta-text span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bottom-cta a{flex:0 0 auto;text-decoration:none;border-radius:999px;padding:9px 13px;background:var(--text);color:#07110d;font-weight:900}.site-footer{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted)}.site-footer a{color:inherit}.empty-state{color:var(--muted);border:1px dashed var(--line);border-radius:22px;padding:20px;background:rgba(255,255,255,.045)}
+      @media(max-width:920px){.tool-shell,.score-head,.insights{grid-template-columns:1fr}.score-ring{width:132px}.site-links{display:flex}.site-links a:not(.nav-cta){display:none}.bottom-cta-text span{display:none}}
+      @media(max-width:560px){.wrap{width:min(100% - 28px,1160px)}.barrow{grid-template-columns:1fr 1fr 36px}.panel{padding:18px}.hero{padding-top:42px}}
+    </style>
+  </head>
+  <body>
+    <header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="../index.html#top"><img src="../logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="../index.html#why">为什么</a><a href="../index.html#method">方法</a><a class="active" href="./">品牌评测</a><a href="../index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="../blog/">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
+    <main>
+      <section class="hero wrap">
+        <div class="eyebrow">Brand Audit Demo</div>
+        <h1>品牌 AI 可见度评测</h1>
+        <p class="lead">输入品牌基础信息，快速生成一份示例 AIBE 评测。这个 Demo 不上传数据、不调用外部接口，用来展示正式诊断会关注的维度和交付方向。</p>
+      </section>
+      <section class="tool-shell wrap" aria-label="品牌评测工具">
+        <form class="panel form" id="auditForm">
+          <h2>开始评测</h2>
+          <p>适合演示时快速跑一遍品牌现状，再通过邮件发起正式 AIBE 初诊。</p>
+          <div class="field"><label for="brandName">品牌 / 产品 / 机构名称</label><input id="brandName" name="brandName" value="Eco GEO" autocomplete="organization" /></div>
+          <div class="field"><label for="website">官网或主要页面</label><input id="website" name="website" value="https://eco-geo.org" inputmode="url" autocomplete="url" /></div>
+          <div class="field"><label for="industry">所在行业</label><select id="industry" name="industry"><option>企业服务 / SaaS</option><option>消费品 / DTC</option><option>医疗健康</option><option>汽车 / 出行</option><option>金融 / 保险</option><option>教育培训</option><option>酒店旅游</option><option>其他</option></select></div>
+          <div class="field"><label for="market">目标市场</label><input id="market" name="market" value="中国与海外英文市场" /></div>
+          <div class="field"><label for="stage">品牌阶段</label><select id="stage" name="stage"><option>0-1 冷启动</option><option selected>增长期</option><option>品牌升级期</option><option>融资 / IPO 准备期</option><option>危机修复期</option></select></div>
+          <div class="actions"><button class="btn primary" type="submit">生成示例评测</button><a class="btn" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">直接邮件咨询</a></div>
+          <p class="note">正式版本会基于真实 Prompt Matrix、跨模型结果、引用来源和竞品对比输出报告。</p>
+        </form>
+        <section class="panel" aria-live="polite">
+          <div id="emptyState" class="empty-state">填写左侧信息并生成示例评测后，这里会展示品牌 AI 可见度评分、风险提示和建议行动。</div>
+          <div id="result" hidden>
+            <div class="score-head">
+              <div class="score-ring" id="scoreRing" style="--score:72"><div><strong id="scoreValue">72</strong><br/><span>AIBE Score</span></div></div>
+              <div class="score-copy"><strong id="resultTitle">Eco GEO 的示例评测</strong><p id="resultSummary">你的品牌具备初步的 AI 可读基础，但仍需要补齐可信证据链和高价值问题内容。</p></div>
+            </div>
+            <div class="bars" id="bars"></div>
+            <div class="insights" id="insights"></div>
+            <div class="mailto">
+              <p><strong>下一步：</strong>把品牌名、官网和目标市场发过来，我会按真实问题集做一版 AIBE 初诊。</p>
+              <div class="actions"><a class="btn primary" id="emailCta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">看完 Demo，邮件联系</a><button class="btn" id="rerunBtn" type="button">重新生成</button></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+    <div class="bottom-cta" role="region" aria-label="Eco GEO contact"><div class="wrap bottom-cta-inner"><div class="bottom-cta-text"><strong>看完 Demo 后</strong><span>发来品牌名、官网和目标市场，开始 AIBE 初诊</span></div><a href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">邮件联系</a></div></div>
+    <footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="../index.html">首页</a> · <a href="../blog/">前沿观点</a> · <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a></div></footer>
+    <script>
+      const dimensions = ["AI可见度","品牌事实一致性","可信引用资产","竞争区分度","内容可引用性"];
+      const form = document.getElementById("auditForm");
+      const result = document.getElementById("result");
+      const emptyState = document.getElementById("emptyState");
+      const scoreRing = document.getElementById("scoreRing");
+      const scoreValue = document.getElementById("scoreValue");
+      const resultTitle = document.getElementById("resultTitle");
+      const resultSummary = document.getElementById("resultSummary");
+      const bars = document.getElementById("bars");
+      const insights = document.getElementById("insights");
+      const emailCta = document.getElementById("emailCta");
+      const rerunBtn = document.getElementById("rerunBtn");
+      function clean(v){return (v || "").toString().trim();}
+      function seed(text){let n=19;for(const ch of text)n=(n*31+ch.charCodeAt(0))%9973;return n;}
+      function scoreFor(base,i){return 48+((base+i*17)%42);}
+      function render(){
+        const data = Object.fromEntries(new FormData(form).entries());
+        const brand = clean(data.brandName) || "你的品牌";
+        const website = clean(data.website) || "未填写官网";
+        const base = seed(`${brand}|${website}|${data.industry}|${data.market}|${data.stage}`);
+        const scores = dimensions.map((name,i)=>({name,value:scoreFor(base,i)}));
+        const overall = Math.round(scores.reduce((sum,item)=>sum+item.value,0)/scores.length);
+        scoreRing.style.setProperty("--score", overall);
+        scoreValue.textContent = overall;
+        resultTitle.textContent = `${brand} 的示例评测`;
+        resultSummary.textContent = overall >= 78 ? "品牌基础较好，下一步重点是扩大高权威引用源和竞品比较场景。" : overall >= 64 ? "品牌具备初步 AI 可读基础，但需要补齐可信证据链和高价值问题内容。" : "品牌在 AI 答案中的可见度基础偏弱，建议先统一品牌事实和官网核心资产。";
+        bars.innerHTML = scores.map(item=>`<div class="barrow"><span>${item.name}</span><div class="bar"><div class="fill" style="width:${item.value}%"></div></div><b>${item.value}</b></div>`).join("");
+        insights.innerHTML = [
+          ["优先问题", `围绕“${brand} 是什么、适合谁、为什么可信”建立标准答案页。`],
+          ["证据缺口", `补齐案例、资质、第三方报道和可引用 FAQ，减少 AI 误读。`],
+          ["转化建议", `把高价值问题接到邮件咨询或诊断表单，承接 Demo 后的意向。`]
+        ].map(([title,text])=>`<div class="insight"><b>${title}</b><span>${text}</span></div>`).join("");
+        const subject = `Eco GEO AIBE 诊断咨询 - ${brand}`;
+        const body = [`品牌：${brand}`,`官网：${website}`,`行业：${data.industry}`,`目标市场：${clean(data.market)}`,`品牌阶段：${data.stage}`,`Demo 分数：${overall}`,`我想了解正式 AIBE 初诊。`].join("\\n");
+        emailCta.href = `mailto:yt.feng@foxmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        emptyState.hidden = true;
+        result.hidden = false;
+      }
+      form.addEventListener("submit", event=>{event.preventDefault();render();});
+      rerunBtn.addEventListener("click", render);
+      render();
+    </script>
+  </body>
+</html>

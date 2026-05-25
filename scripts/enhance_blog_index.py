@@ -20,7 +20,7 @@ HTML = r'''<!doctype html>
   </style>
 </head>
 <body>
-  <header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="../index.html#top"><img src="../logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="../index.html#why">为什么</a><a href="../index.html#method">方法</a><a href="../index.html#tool">AIBE工具</a><a href="../index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="./">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
+  <header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="../index.html#top"><img src="../logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="../index.html#why">为什么</a><a href="../index.html#method">方法</a><a href="../brand-audit/">品牌评测</a><a href="../index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="./">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
   <main class="wrap">
     <section class="hero">
       <div class="eyebrow">Insights Library</div>
