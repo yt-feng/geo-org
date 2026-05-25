@@ -45,6 +45,20 @@ IMAGE_KEYWORDS = [
     "knowledge graph", "digital business", "search engine", "content strategy",
     "technology office", "data network", "customer journey", "green technology",
 ]
+UNSPLASH_IMAGE_POOL = [
+    "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=1600&q=80",
+]
 
 TITLE_KEYS = ["选题", "标题", "题目", "title", "topic", "article", "文章标题", "主题"]
 CATEGORY_KEYS = ["分类", "类别", "category", "行业", "板块", "cluster"]
@@ -229,23 +243,29 @@ def avatar_svg(initials: str, seed_text: str) -> str:
 
 
 def image_url(topic: TopicRow) -> str:
-    seed = hashlib.sha1(topic.title.encode("utf-8")).hexdigest()[:8]
-    terms = f"{topic.keywords} {topic.category} {random.choice(IMAGE_KEYWORDS)}"
-    query = urllib.parse.quote_plus(terms[:90])
-    return f"https://source.unsplash.com/1600x900/?{query}&sig={seed}"
+    seed = int(hashlib.sha1(f"{topic.category}:{topic.title}".encode("utf-8")).hexdigest()[:8], 16)
+    return UNSPLASH_IMAGE_POOL[seed % len(UNSPLASH_IMAGE_POOL)]
 
 
 def page_css(prefix: str = "") -> str:
     return f"""
 :root{{--bg:#07110d;--panel:rgba(255,255,255,.075);--text:#f5f8f4;--muted:#b8c7bc;--line:rgba(255,255,255,.15);--green:#8ce99a;--blue:#80c7ff;--gold:#ffd166;--shadow:0 26px 80px rgba(0,0,0,.32)}}
-*{{box-sizing:border-box}}body{{margin:0;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 10% 0%,rgba(34,150,123,.28),transparent 34rem),linear-gradient(135deg,#050806,var(--bg),#101a13);line-height:1.75}}a{{color:inherit}}.wrap{{width:min(1120px,calc(100% - 42px));margin:auto}}header{{position:sticky;top:0;z-index:10;background:rgba(7,17,13,.78);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}}nav{{display:flex;align-items:center;justify-content:space-between;padding:14px 0}}.brand{{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:900;letter-spacing:.08em}}.brand img{{width:46px;height:34px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.94);padding:3px}}.navlinks{{display:flex;gap:16px;color:var(--muted);font-size:14px}}.navlinks a{{text-decoration:none}}.hero{{padding:72px 0 44px}}.eyebrow{{color:var(--green);font-weight:900;font-size:13px;letter-spacing:.18em;text-transform:uppercase}}h1{{font-size:clamp(38px,6vw,72px);line-height:1.02;letter-spacing:-.055em;margin:16px 0 18px}}.lead{{font-size:20px;color:var(--muted);max-width:820px}}.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:18px 0 72px}}.card{{border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden;text-decoration:none;display:flex;flex-direction:column}}.card img{{width:100%;aspect-ratio:16/9;object-fit:cover;background:#13221b}}.card-body{{padding:20px}}.card h2{{font-size:22px;line-height:1.25;margin:0 0 10px}}.card p{{color:var(--muted);margin:0}}.meta{{display:flex;gap:10px;flex-wrap:wrap;color:var(--green);font-size:13px;font-weight:800;margin-bottom:12px}}.pager{{display:flex;justify-content:center;gap:10px;padding:0 0 70px}}.pager a,.pager span{{border:1px solid var(--line);border-radius:999px;padding:10px 14px;text-decoration:none;background:var(--panel)}}footer{{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted)}}article{{max-width:860px;margin:auto;padding:56px 0 80px}}.cover{{width:100%;border-radius:32px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow);background:#13221b}}.article-meta{{display:flex;align-items:center;gap:14px;color:var(--muted);margin:22px 0}}.author-avatar{{width:54px;height:54px;border-radius:18px;flex:0 0 auto}}.content{{font-size:18px;color:#e8efe9}}.content h2{{font-size:32px;line-height:1.15;margin:42px 0 12px;letter-spacing:-.03em;color:var(--text)}}.content p{{margin:0 0 18px}}.content li{{margin:8px 0}}.tags{{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}}.tag{{border:1px solid rgba(140,233,154,.35);border-radius:999px;padding:6px 10px;color:var(--green);font-size:13px}}@media(max-width:900px){{.grid{{grid-template-columns:1fr}}.navlinks{{display:none}}}}
+*{{box-sizing:border-box}}body{{margin:0;padding-bottom:78px;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 10% 0%,rgba(34,150,123,.28),transparent 34rem),linear-gradient(135deg,#050806,var(--bg),#101a13);line-height:1.75}}a{{color:inherit}}.wrap{{width:min(1120px,calc(100% - 42px));margin:auto}}.site-header{{position:sticky;top:0;z-index:40;background:rgba(7,17,13,.86);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}}.site-nav{{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0}}.brand{{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:900;letter-spacing:.08em}}.brand img{{width:46px;height:34px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.94);padding:3px}}.brand small{{display:block;letter-spacing:.02em;color:var(--muted);font-weight:700;font-size:11px;margin-top:-4px}}.site-links{{display:flex;align-items:center;gap:16px;color:var(--muted);font-size:14px}}.site-links a{{text-decoration:none;white-space:nowrap}}.site-links a:hover{{color:var(--text)}}.site-links .nav-cta{{border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--text);background:rgba(255,255,255,.08);font-weight:900}}.hero{{padding:72px 0 44px}}.eyebrow{{color:var(--green);font-weight:900;font-size:13px;letter-spacing:.18em;text-transform:uppercase}}h1{{font-size:clamp(38px,6vw,72px);line-height:1.02;letter-spacing:-.055em;margin:16px 0 18px}}.lead{{font-size:20px;color:var(--muted);max-width:820px}}.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:18px 0 72px}}.card{{border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden;text-decoration:none;display:flex;flex-direction:column}}.card img{{width:100%;aspect-ratio:16/9;object-fit:cover;background:#13221b}}.card-body{{padding:20px}}.card h2{{font-size:22px;line-height:1.25;margin:0 0 10px}}.card p{{color:var(--muted);margin:0}}.meta{{display:flex;gap:10px;flex-wrap:wrap;color:var(--green);font-size:13px;font-weight:800;margin-bottom:12px}}.pager{{display:flex;justify-content:center;gap:10px;padding:0 0 70px}}.pager a,.pager span{{border:1px solid var(--line);border-radius:999px;padding:10px 14px;text-decoration:none;background:var(--panel)}}.site-footer{{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted)}}article{{max-width:860px;margin:auto;padding:56px 0 80px}}.cover{{width:100%;border-radius:32px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow);background:#13221b}}.article-meta{{display:flex;align-items:center;gap:14px;color:var(--muted);margin:22px 0}}.author-avatar{{width:54px;height:54px;border-radius:18px;flex:0 0 auto}}.content{{font-size:18px;color:#e8efe9}}.content h2{{font-size:32px;line-height:1.15;margin:42px 0 12px;letter-spacing:-.03em;color:var(--text)}}.content p{{margin:0 0 18px}}.content li{{margin:8px 0}}.tags{{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}}.tag{{border:1px solid rgba(140,233,154,.35);border-radius:999px;padding:6px 10px;color:var(--green);font-size:13px}}.bottom-cta{{position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(7,17,13,.91);backdrop-filter:blur(18px);border-top:1px solid var(--line)}}.bottom-cta-inner{{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}}.bottom-cta-text{{display:flex;align-items:baseline;gap:10px;color:var(--muted);min-width:0}}.bottom-cta-text strong{{color:var(--text)}}.bottom-cta-text span{{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.bottom-cta a{{flex:0 0 auto;text-decoration:none;border-radius:999px;padding:9px 13px;background:var(--text);color:#07110d;font-weight:900}}@media(max-width:900px){{.grid{{grid-template-columns:1fr}}.site-links{{display:flex}}.site-links a:not(.nav-cta){{display:none}}.bottom-cta-text span{{display:none}}}}
 """.strip()
 
 
 def site_header(prefix: str) -> str:
     return f"""
-<header><nav class="wrap"><a class="brand" href="{prefix}index.html"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO</span></a><div class="navlinks"><a href="{prefix}index.html#credentials">Credentials</a><a href="{prefix}blog/">Blog</a><a href="mailto:yt.feng@foxmail.com">Contact</a></div></nav></header>
+<header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="{prefix}index.html#top"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="{prefix}index.html#why">为什么</a><a href="{prefix}index.html#method">方法</a><a href="{prefix}index.html#tool">AIBE工具</a><a href="{prefix}index.html#credentials">服务品牌</a><a href="{prefix}blog/">Blog</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div></nav></header>
 """.strip()
+
+
+def site_footer(prefix: str) -> str:
+    return f"""<footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="{prefix}index.html">首页</a> · <a href="{prefix}blog/">Blog</a> · <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a></div></footer>"""
+
+
+def bottom_cta() -> str:
+    return """<div class="bottom-cta" role="region" aria-label="Eco GEO contact"><div class="wrap bottom-cta-inner"><div class="bottom-cta-text"><strong>AIBE 初诊</strong><span>检查你的品牌在 AI 答案里的可见度与引用风险</span></div><a href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">邮件咨询</a></div></div>"""
 
 
 def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_name: str, initials: str) -> str:
@@ -256,7 +276,7 @@ def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_nam
     excerpt = html.escape(article["excerpt"])
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO Blog</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../logo.svg" type="image/svg+xml"/><style>{page_css('../../')}</style></head>
-<body>{site_header('../../')}<main class="wrap"><article><div class="eyebrow">Eco GEO Blog</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main><footer><div class="wrap">© 2026 Eco GEO · <a href="../../blog/">Back to Blog</a></div></footer></body></html>"""
+<body>{site_header('../../')}<main class="wrap"><article><div class="eyebrow">Eco GEO Blog</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../')}</body></html>"""
 
 
 def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_pages: int, prefix: str) -> str:
@@ -264,7 +284,7 @@ def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_page
     subset = posts[start : start + per_page]
     cards = []
     for p in subset:
-        cards.append(f"""<a class="card" href="{prefix}articles/{p['slug']}/"><img src="{p['image']}" alt="{html.escape(p['title'])}" loading="lazy"/><div class="card-body"><div class="meta"><span>{html.escape(p['category'])}</span><span>{html.escape(p['author'])}</span></div><h2>{html.escape(p['title'])}</h2><p>{html.escape(p['excerpt'])}</p></div></a>""")
+        cards.append(f"""<a class="card" href="{prefix}articles/{p['slug']}/"><img src="{p['image']}" alt="{html.escape(p['title'])}" loading="lazy" referrerpolicy="no-referrer"/><div class="card-body"><div class="meta"><span>{html.escape(p['category'])}</span><span>{html.escape(p['author'])}</span></div><h2>{html.escape(p['title'])}</h2><p>{html.escape(p['excerpt'])}</p></div></a>""")
     if page == 1:
         canonical = "../"
         prev_link = ""
@@ -274,7 +294,7 @@ def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_page
         prev_link = f"<a href='{prev_href}'>上一页</a>"
     next_link = f"<a href='{prefix}page/{page+1}/'>下一页</a>" if page < total_pages else ""
     pager = f"<div class='pager'>{prev_link}<span>第 {page} / {total_pages} 页</span>{next_link}</div>"
-    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Eco GEO Blog｜品牌化 GEO 与 AI 搜索洞察</title><meta name="description" content="Eco GEO Blog：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章。"/><link rel="icon" href="{prefix}logo.svg" type="image/svg+xml"/><style>{page_css(prefix)}</style></head><body>{site_header(prefix)}<main class="wrap"><section class="hero"><div class="eyebrow">Insights Library</div><h1>Eco GEO Blog</h1><p class="lead">围绕品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索的全量选题文章库。</p></section><section class="grid">{''.join(cards)}</section>{pager}</main><footer><div class="wrap">© 2026 Eco GEO · Brand-first GEO</div></footer></body></html>"""
+    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Eco GEO Blog｜品牌化 GEO 与 AI 搜索洞察</title><meta name="description" content="Eco GEO Blog：品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索优化文章。"/><link rel="icon" href="{prefix}logo.svg" type="image/svg+xml"/><style>{page_css(prefix)}</style></head><body>{site_header(prefix)}<main class="wrap"><section class="hero"><div class="eyebrow">Insights Library</div><h1>Eco GEO Blog</h1><p class="lead">围绕品牌化 GEO、白帽 GEO、AIBE、KNIT 与 AI 搜索的全量选题文章库。</p></section><section class="grid">{''.join(cards)}</section>{pager}</main>{bottom_cta()}{site_footer(prefix)}</body></html>"""
 
 
 def patch_homepage(blog_count: int) -> None:
