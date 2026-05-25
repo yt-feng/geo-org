@@ -70,6 +70,12 @@ def git_commit_progress(message: str) -> None:
 
 def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
     posts_sorted = sorted(posts, key=lambda p: int(p.get("order", "0")))
+    total = len(posts_sorted)
+    for idx, post in enumerate(posts_sorted, start=1):
+        post["title"] = gb.ensure_title_prefix(post.get("title", ""))
+        post["tags"] = gb.ensure_required_tags(post.get("tags", ""))
+        if not post.get("date"):
+            post["date"] = gb.historical_publish_date(idx, total)
     per_page = 24
     total_pages = max(1, (len(posts_sorted) + per_page - 1) // per_page)
     (out_dir / "index.html").write_text(gb.index_page(posts_sorted, 1, per_page, total_pages, "../"), encoding="utf-8")
@@ -81,7 +87,7 @@ def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
     (out_dir / "posts.json").write_text(json.dumps(posts_sorted, ensure_ascii=False, indent=2), encoding="utf-8")
 
     sitemap_items = [f"  <url><loc>{gb.SITE_URL}/</loc></url>", f"  <url><loc>{gb.SITE_URL}/brand-audit/</loc></url>", f"  <url><loc>{gb.SITE_URL}/blog/</loc></url>"]
-    sitemap_items += [f"  <url><loc>{p['url']}</loc></url>" for p in posts_sorted]
+    sitemap_items += [f"  <url><loc>{p['url']}</loc><lastmod>{p.get('date', '')}</lastmod></url>" for p in posts_sorted]
     Path("sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(sitemap_items) + "\n</urlset>\n", encoding="utf-8")
     gb.patch_homepage(len(posts_sorted))
 
@@ -109,11 +115,12 @@ def generate_one(order: int, total: int, topic: gb.TopicRow, out_dir: Path, over
             "order": str(order),
             "row": str(topic.idx),
             "slug": slug,
-            "title": topic.title,
+            "title": gb.ensure_title_prefix(topic.title),
             "excerpt": f"围绕 {topic.title} 的品牌化 GEO 实践框架。",
             "category": topic.category,
-            "tags": topic.keywords,
+            "tags": gb.ensure_required_tags(topic.keywords),
             "author": author,
+            "date": gb.historical_publish_date(order, total),
             "image": gb.image_url(topic),
             "url": f"{gb.SITE_URL}/blog/articles/{slug}/",
         }
@@ -122,17 +129,19 @@ def generate_one(order: int, total: int, topic: gb.TopicRow, out_dir: Path, over
     started = time.time()
     try:
         article = gb.deepseek_article(topic, os.environ["DEEPSEEK_API_KEY"])
+        article["date"] = gb.historical_publish_date(order, total)
         article_dir.mkdir(parents=True, exist_ok=True)
         article_file.write_text(gb.article_html(topic, article, slug, author, initials), encoding="utf-8")
         post = {
             "order": str(order),
             "row": str(topic.idx),
             "slug": slug,
-            "title": article["title"],
+            "title": gb.ensure_title_prefix(article["title"]),
             "excerpt": article["excerpt"],
             "category": topic.category,
-            "tags": article["tags"],
+            "tags": gb.ensure_required_tags(article["tags"]),
             "author": author,
+            "date": article["date"],
             "image": gb.image_url(topic),
             "url": f"{gb.SITE_URL}/blog/articles/{slug}/",
         }

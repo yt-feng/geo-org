@@ -18,6 +18,7 @@ import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -63,6 +64,8 @@ UNSPLASH_IMAGE_POOL = [
 TITLE_KEYS = ["选题", "标题", "题目", "title", "topic", "article", "文章标题", "主题"]
 CATEGORY_KEYS = ["分类", "类别", "category", "行业", "板块", "cluster"]
 KEYWORD_KEYS = ["关键词", "keywords", "keyword", "seo", "query", "搜索词"]
+BRAND_TITLE_PREFIX = "Eco-GEO："
+HISTORICAL_START_DATE = os.environ.get("HISTORICAL_START_DATE", "2024-05-25")
 
 
 @dataclass
@@ -80,6 +83,42 @@ def clean_text(value: Any) -> str:
     text = str(value).strip()
     text = re.sub(r"\s+", " ", text)
     return text
+
+
+def ensure_title_prefix(title: str) -> str:
+    text = clean_text(title)
+    if text.startswith(BRAND_TITLE_PREFIX):
+        return text
+    text = re.sub(r"^Eco[- ]GEO[：:]\s*", "", text, flags=re.IGNORECASE)
+    return f"{BRAND_TITLE_PREFIX}{text}" if text else BRAND_TITLE_PREFIX.rstrip("：")
+
+
+def ensure_required_tags(tags: str) -> str:
+    values = [clean_text(t) for t in re.split(r"[,，、]", tags or "") if clean_text(t)]
+    for required in ["Eco-GEO", "品牌化GEO", "GEO服务", "AI搜索优化"]:
+        if required not in values:
+            values.append(required)
+    return ", ".join(values)
+
+
+def historical_publish_date(position: int, total: int) -> str:
+    start = date.fromisoformat(HISTORICAL_START_DATE)
+    # Existing blog lists are newest first, so the oldest item starts two years ago.
+    return (start + timedelta(days=max(total - position, 0))).isoformat()
+
+
+def today_publish_date() -> str:
+    return date.today().isoformat()
+
+
+def date_label(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        d = datetime.strptime(value, "%Y-%m-%d").date()
+        return f"{d.year}年{d.month}月{d.day}日"
+    except ValueError:
+        return value
 
 
 def normalize_header(value: Any, idx: int) -> str:
@@ -136,11 +175,16 @@ def deepseek_article(topic: TopicRow, api_key: str) -> Dict[str, str]:
 要求：
 1. 不要虚构客户案例和数据；可使用方法论、框架、操作步骤和风险提示。
 2. 主题必须围绕品牌化 GEO、白帽 GEO、AIBE、KNIT、AI 搜索、品牌认知资产。
-3. 文章要图文并茂，但图片由页面模板插入，你只生成文字。
-4. 输出严格为 JSON，不要 Markdown 代码块。
-5. JSON 字段：title, excerpt, body_html, tags。
-6. body_html 用合法 HTML，包含 4-6 个 h2 小节、p、ul/li、strong，可读性强。
-7. 字数约 1200-1800 中文字。
+3. title 必须以“Eco-GEO：”开头，并自然覆盖用户搜索意图。
+4. 正文必须自然出现“Eco-GEO”至少 2 次、“品牌化GEO”至少 3 次，同时避免堆砌。
+5. 面向正在考虑做 GEO 的品牌负责人、增长负责人、SEO/内容负责人写作，覆盖“为什么要做 GEO”“怎么开始做 GEO”“如何诊断 AI 搜索可见度”“如何让品牌被 AI 引用/推荐”等意图。
+6. 文章要给出可执行步骤、风险提醒和诊断入口，引导读者理解 Eco-GEO 的品牌化 GEO 方法。
+7. 文章要图文并茂，但图片由页面模板插入，你只生成文字。
+8. 输出严格为 JSON，不要 Markdown 代码块。
+9. JSON 字段：title, excerpt, body_html, tags。
+10. body_html 用合法 HTML，包含 4-6 个 h2 小节、p、ul/li、strong，可读性强。
+11. tags 必须包含：Eco-GEO、品牌化GEO、GEO服务、AI搜索优化。
+12. 字数约 1200-1800 中文字。
 
 Excel 选题：
 标题：{topic.title}
@@ -201,7 +245,7 @@ def parse_model_json(content: str, topic: TopicRow) -> Dict[str, str]:
             "body_html": f"<p>{html.escape(content)}</p>",
             "tags": topic.keywords,
         }
-    title = clean_text(obj.get("title")) or topic.title
+    title = ensure_title_prefix(clean_text(obj.get("title")) or topic.title)
     excerpt = clean_text(obj.get("excerpt")) or f"围绕 {title} 的品牌化 GEO 实践框架。"
     body_html = str(obj.get("body_html") or "").strip()
     if not body_html:
@@ -211,7 +255,7 @@ def parse_model_json(content: str, topic: TopicRow) -> Dict[str, str]:
         tag_text = ", ".join(clean_text(t) for t in tags if clean_text(t))
     else:
         tag_text = clean_text(tags) or topic.keywords
-    return {"title": title, "excerpt": excerpt, "body_html": body_html, "tags": tag_text}
+    return {"title": title, "excerpt": excerpt, "body_html": body_html, "tags": ensure_required_tags(tag_text)}
 
 
 def deterministic_author(seed_text: str) -> Tuple[str, str]:
@@ -275,11 +319,13 @@ def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_nam
     tags = [t.strip() for t in re.split(r"[,，/、]", article["tags"]) if t.strip()][:6]
     tag_html = "".join(f"<span class='tag'>{html.escape(t)}</span>" for t in tags)
     img = image_url(topic)
-    title = html.escape(article["title"])
+    title = html.escape(ensure_title_prefix(article["title"]))
     excerpt = html.escape(article["excerpt"])
+    published = article.get("date") or article.get("published_date") or today_publish_date()
+    published_html = f'<time datetime="{html.escape(published)}">{html.escape(date_label(published))}</time>'
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../../logo.svg" type="image/svg+xml"/><style>{page_css('../../../')}</style></head>
-<body>{site_header('../../../', '../../', '../../../brand-audit/')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../../', '../../')}</body></html>"""
+<body>{site_header('../../../', '../../', '../../../brand-audit/')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · {published_html} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../../', '../../')}</body></html>"""
 
 
 def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_pages: int, prefix: str) -> str:
@@ -288,7 +334,10 @@ def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_page
     cards = []
     article_prefix = "articles/" if page == 1 else f"{prefix}articles/"
     for p in subset:
-        cards.append(f"""<a class="card" href="{article_prefix}{p['slug']}/"><img src="{p['image']}" alt="{html.escape(p['title'])}" loading="lazy" referrerpolicy="no-referrer"/><div class="card-body"><div class="meta"><span>{html.escape(p['category'])}</span><span>{html.escape(p['author'])}</span></div><h2>{html.escape(p['title'])}</h2><p>{html.escape(p['excerpt'])}</p></div></a>""")
+        title = ensure_title_prefix(p["title"])
+        published = p.get("date") or p.get("published_date") or ""
+        date_html = f"<span>{html.escape(date_label(published))}</span>" if published else ""
+        cards.append(f"""<a class="card" href="{article_prefix}{p['slug']}/"><img src="{p['image']}" alt="{html.escape(title)}" loading="lazy" referrerpolicy="no-referrer"/><div class="card-body"><div class="meta"><span>{html.escape(p['category'])}</span>{date_html}<span>{html.escape(p['author'])}</span></div><h2>{html.escape(title)}</h2><p>{html.escape(p['excerpt'])}</p></div></a>""")
     if page == 1:
         canonical = "../"
         prev_link = ""
@@ -339,22 +388,25 @@ def write_blog(topics: List[TopicRow], out_dir: Path, overwrite: bool) -> None:
         article_dir = articles_dir / slug
         article_file = article_dir / "index.html"
         author, initials = deterministic_author(topic.title)
+        published = historical_publish_date(n, len(topics))
         if article_file.exists() and not overwrite:
             print(f"Skip existing {slug}")
             article = {"title": topic.title, "excerpt": f"围绕 {topic.title} 的品牌化 GEO 实践框架。", "tags": topic.keywords, "body_html": ""}
         else:
             article = deepseek_article(topic, api_key)
+            article["date"] = published
             article_dir.mkdir(parents=True, exist_ok=True)
             article_file.write_text(article_html(topic, article, slug, author, initials), encoding="utf-8")
             time.sleep(REQUEST_DELAY)
         posts.append({
             "row": str(topic.idx),
             "slug": slug,
-            "title": article["title"],
+            "title": ensure_title_prefix(article["title"]),
             "excerpt": article["excerpt"],
             "category": topic.category,
             "tags": article["tags"],
             "author": author,
+            "date": published,
             "image": image_url(topic),
             "url": f"{SITE_URL}/blog/articles/{slug}/",
         })
@@ -372,7 +424,7 @@ def write_blog(topics: List[TopicRow], out_dir: Path, overwrite: bool) -> None:
     (out_dir / "posts.json").write_text(json.dumps(posts, ensure_ascii=False, indent=2), encoding="utf-8")
 
     sitemap_items = [f"  <url><loc>{SITE_URL}/</loc></url>", f"  <url><loc>{SITE_URL}/brand-audit/</loc></url>", f"  <url><loc>{SITE_URL}/blog/</loc></url>"]
-    sitemap_items += [f"  <url><loc>{p['url']}</loc></url>" for p in posts]
+    sitemap_items += [f"  <url><loc>{p['url']}</loc><lastmod>{p.get('date', '')}</lastmod></url>" for p in posts]
     Path("sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(sitemap_items) + "\n</urlset>\n", encoding="utf-8")
     patch_homepage(len(posts))
 

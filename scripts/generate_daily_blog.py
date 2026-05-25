@@ -51,6 +51,13 @@ def select_next_topic(topics: List[gb.TopicRow], posts: List[Dict[str, str]], ou
 
 
 def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
+    total = len(posts)
+    for idx, post in enumerate(posts, start=1):
+        post["title"] = gb.ensure_title_prefix(post.get("title", ""))
+        post["tags"] = gb.ensure_required_tags(post.get("tags", ""))
+        if not post.get("date"):
+            post["date"] = gb.historical_publish_date(idx, total)
+
     per_page = 24
     total_pages = max(1, (len(posts) + per_page - 1) // per_page)
 
@@ -68,7 +75,7 @@ def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
         f"  <url><loc>{gb.SITE_URL}/brand-audit/</loc></url>",
         f"  <url><loc>{gb.SITE_URL}/blog/</loc></url>",
     ]
-    sitemap_items += [f"  <url><loc>{post['url']}</loc></url>" for post in posts]
+    sitemap_items += [f"  <url><loc>{post['url']}</loc><lastmod>{post.get('date', '')}</lastmod></url>" for post in posts]
     Path("sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -99,6 +106,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
 
     author, initials = gb.deterministic_author(topic.title)
     article = gb.deepseek_article(topic, api_key)
+    article["date"] = gb.today_publish_date()
     article_dir = out_dir / "articles" / slug
     article_dir.mkdir(parents=True, exist_ok=True)
     article_dir.joinpath("index.html").write_text(
@@ -111,11 +119,12 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         "order": str(next_order(posts)),
         "row": str(topic.idx),
         "slug": slug,
-        "title": article["title"],
+        "title": gb.ensure_title_prefix(article["title"]),
         "excerpt": article["excerpt"],
         "category": topic.category,
-        "tags": article["tags"],
+        "tags": gb.ensure_required_tags(article["tags"]),
         "author": author,
+        "date": article["date"],
         "image": gb.image_url(topic),
         "url": f"{gb.SITE_URL}/blog/articles/{slug}/",
     }

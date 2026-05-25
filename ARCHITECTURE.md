@@ -172,6 +172,7 @@ blog/articles/<slug>/index.html
 - 每次只选择一个未生成选题，调用 DeepSeek 生成文章。
 - 把新文章插入 `blog/posts.json` 顶部，并刷新静态分页、sitemap 和首页文章数量。
 - 最后重新运行增强版 Blog 列表页生成逻辑，保留搜索、筛选和分页体验。
+- 新文章标题统一使用 `Eco-GEO：` 前缀，正文 prompt 会要求自然包含 `Eco-GEO`、`品牌化GEO`、`GEO服务`、`AI搜索优化` 等关键词，并面向正在考虑做 GEO 的用户意图写作。
 
 `.github/workflows/generate-daily-blog.yml` 每天 UTC 00:30 自动运行一次，也可以手动触发。Workflow 使用 `GITHUB_TOKEN` 自动 commit 到 `main`，随后 `pages.yml` 会在 push 后部署静态站点。
 
@@ -199,11 +200,12 @@ DEEPSEEK_RETRIES          # 默认 3
   "order": "1",
   "row": "1",
   "slug": "00001-geo-ai-e6a842ca",
-  "title": "文章标题",
+  "title": "Eco-GEO：文章标题",
   "excerpt": "文章摘要",
   "category": "酒店旅游",
   "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, ...",
   "author": "Harper Gray",
+  "date": "2026-01-14",
   "image": "https://images.unsplash.com/photo-...?...",
   "url": "https://yt-feng.github.io/geo-org/blog/articles/..."
 }
@@ -214,6 +216,8 @@ DEEPSEEK_RETRIES          # 默认 3
 - `order`：展示和生成顺序。
 - `row`：对应 Excel 原始行。
 - `slug`：文章目录名，也是列表页链接目标。
+- `title`：文章标题，统一使用 `Eco-GEO：` 前缀。
+- `date`：发布日期。历史 600 篇文章已按从 `2024-05-25` 开始每天一篇的节奏回填，列表展示为新日期在前。
 - `category`：分类筛选维度。
 - `tags`：搜索和文章标签展示。
 - `image`：生成时写入的 Unsplash 外部图 URL。当前增强版列表页不用它，但文章页和静态分页页会使用外部 cover 图。
