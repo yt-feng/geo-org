@@ -165,6 +165,16 @@ blog/articles/<slug>/index.html
 - 支持每完成一定数量就提交和推送 checkpoint。
 - 当前产物看起来是按 `60` 个分类、每类 `10` 篇生成出的 600 篇文章。
 
+`scripts/generate_daily_blog.py` 用于 GitHub Actions 的每日增量生成：
+
+- 读取同一个 `assets/blog_articles.xlsx` 选题库。
+- 根据 `blog/posts.json`、已有 slug 和文章文件跳过已生成选题。
+- 每次只选择一个未生成选题，调用 DeepSeek 生成文章。
+- 把新文章插入 `blog/posts.json` 顶部，并刷新静态分页、sitemap 和首页文章数量。
+- 最后重新运行增强版 Blog 列表页生成逻辑，保留搜索、筛选和分页体验。
+
+`.github/workflows/generate-daily-blog.yml` 每天 UTC 00:30 自动运行一次，也可以手动触发。Workflow 使用 `GITHUB_TOKEN` 自动 commit 到 `main`，随后 `pages.yml` 会在 push 后部署静态站点。
+
 需要的关键环境变量：
 
 ```text
@@ -246,6 +256,7 @@ DEEPSEEK_RETRIES          # 默认 3
 - 改首页品牌 logo 列表：编辑 `index.html` 和 `assets/logos/`。
 - 改 Blog 列表交互：优先编辑 `scripts/enhance_blog_index.py`，再运行脚本生成 `blog/index.html`。
 - 改文章模板、生成 prompt、sitemap 输出：编辑 `scripts/generate_blog.py`。
+- 改每日自动生成策略：编辑 `scripts/generate_daily_blog.py` 和 `.github/workflows/generate-daily-blog.yml`。
 - 改批量生成策略、并发、每类文章数：编辑或运行 `scripts/generate_blog_sample.py`。
 - 改内容选题：更新 `assets/blog_articles.xlsx`，然后重新生成 Blog。
 

@@ -1,0 +1,61 @@
+name: Generate Daily Blog Article
+
+on:
+  schedule:
+    - cron: "30 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-daily-blog
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate one new article
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Generate one blog article
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          SITE_URL: https://yt-feng.github.io/geo-org
+          DEEPSEEK_MODEL: deepseek-chat
+          DEEPSEEK_MAX_TOKENS: "2200"
+          DEEPSEEK_TEMPERATURE: "0.72"
+          DEEPSEEK_REQUEST_DELAY: "0.2"
+          DEEPSEEK_RETRIES: "3"
+        run: |
+          set -euo pipefail
+          python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog
+
+      - name: Commit generated article
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add blog sitemap.xml index.html
+          if git diff --cached --quiet; then
+            echo "No generated blog changes to commit."
+          else
+            git commit -m "Generate daily blog article"
+            git push origin HEAD:main
+          fi

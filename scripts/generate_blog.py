@@ -278,16 +278,17 @@ def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_nam
     title = html.escape(article["title"])
     excerpt = html.escape(article["excerpt"])
     return f"""<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../logo.svg" type="image/svg+xml"/><style>{page_css('../../')}</style></head>
-<body>{site_header('../../', '../../', '../../../brand-audit/')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../', '../../')}</body></html>"""
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../../logo.svg" type="image/svg+xml"/><style>{page_css('../../../')}</style></head>
+<body>{site_header('../../../', '../../', '../../../brand-audit/')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../../', '../../')}</body></html>"""
 
 
 def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_pages: int, prefix: str) -> str:
     start = (page - 1) * per_page
     subset = posts[start : start + per_page]
     cards = []
+    article_prefix = "articles/" if page == 1 else f"{prefix}articles/"
     for p in subset:
-        cards.append(f"""<a class="card" href="{prefix}articles/{p['slug']}/"><img src="{p['image']}" alt="{html.escape(p['title'])}" loading="lazy" referrerpolicy="no-referrer"/><div class="card-body"><div class="meta"><span>{html.escape(p['category'])}</span><span>{html.escape(p['author'])}</span></div><h2>{html.escape(p['title'])}</h2><p>{html.escape(p['excerpt'])}</p></div></a>""")
+        cards.append(f"""<a class="card" href="{article_prefix}{p['slug']}/"><img src="{p['image']}" alt="{html.escape(p['title'])}" loading="lazy" referrerpolicy="no-referrer"/><div class="card-body"><div class="meta"><span>{html.escape(p['category'])}</span><span>{html.escape(p['author'])}</span></div><h2>{html.escape(p['title'])}</h2><p>{html.escape(p['excerpt'])}</p></div></a>""")
     if page == 1:
         canonical = "../"
         prev_link = ""
@@ -295,7 +296,8 @@ def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_page
         canonical = "../../"
         prev_href = "../" if page == 2 else f"../{page-1}/"
         prev_link = f"<a href='{prev_href}'>上一页</a>"
-    next_link = f"<a href='{prefix}page/{page+1}/'>下一页</a>" if page < total_pages else ""
+    next_href = f"page/{page+1}/" if page == 1 else f"{prefix}page/{page+1}/"
+    next_link = f"<a href='{next_href}'>下一页</a>" if page < total_pages else ""
     pager = f"<div class='pager'>{prev_link}<span>第 {page} / {total_pages} 页</span>{next_link}</div>"
     blog_href = "./" if page == 1 else "../../"
     tool_href = "../brand-audit/" if page == 1 else "../../../brand-audit/"
@@ -315,6 +317,11 @@ def patch_homepage(blog_count: int) -> None:
             '<p class="section-intro">Eco GEO 关注的是“AI 会不会引用你、如何解释你、和谁一起比较你”。观点库会持续沉淀 GEO、AIBE、KNIT 与 AI 搜索的实践。</p>',
             f'<p class="section-intro">Eco GEO 关注的是“AI 会不会引用你、如何解释你、和谁一起比较你”。前沿观点库已沉淀 {blog_count} 篇行业文章，覆盖品牌化 GEO、白帽 GEO、AIBE 与 AI 搜索实践。</p><div class="actions"><a href="blog/" class="btn primary">查看前沿观点</a></div>'
         )
+    text = re.sub(
+        r"前沿观点库已沉淀 \d+ 篇行业文章",
+        f"前沿观点库已沉淀 {blog_count} 篇行业文章",
+        text,
+    )
     path.write_text(text, encoding="utf-8")
 
 

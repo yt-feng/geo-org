@@ -80,7 +80,7 @@ def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
         page_dir.joinpath("index.html").write_text(gb.index_page(posts_sorted, page, per_page, total_pages, "../../"), encoding="utf-8")
     (out_dir / "posts.json").write_text(json.dumps(posts_sorted, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    sitemap_items = [f"  <url><loc>{gb.SITE_URL}/</loc></url>", f"  <url><loc>{gb.SITE_URL}/blog/</loc></url>"]
+    sitemap_items = [f"  <url><loc>{gb.SITE_URL}/</loc></url>", f"  <url><loc>{gb.SITE_URL}/brand-audit/</loc></url>", f"  <url><loc>{gb.SITE_URL}/blog/</loc></url>"]
     sitemap_items += [f"  <url><loc>{p['url']}</loc></url>" for p in posts_sorted]
     Path("sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(sitemap_items) + "\n</urlset>\n", encoding="utf-8")
     gb.patch_homepage(len(posts_sorted))
