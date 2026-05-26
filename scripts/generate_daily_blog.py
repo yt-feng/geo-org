@@ -8,14 +8,18 @@ refreshes blog indexes and sitemap, then lets the workflow commit the diff.
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import os
+import re
 import time
+import urllib.request
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Mapping, Optional
 
 import enhance_blog_index
 import generate_blog as gb
+import i18n_site
 
 
 def load_posts(out_dir: Path) -> List[Dict[str, str]]:
@@ -34,6 +38,154 @@ def int_value(value: object, fallback: int = 0) -> int:
 
 def next_order(posts: List[Dict[str, str]]) -> int:
     return max((int_value(post.get("order")) for post in posts), default=0) + 1
+
+
+def parse_model_json(content: str, source_article: Mapping[str, str], lang: str) -> Dict[str, str]:
+    content = content.strip()
+    if content.startswith("```"):
+        content = re.sub(r"^```(?:json)?", "", content).strip()
+        content = re.sub(r"```$", "", content).strip()
+    start = content.find("{")
+    end = content.rfind("}")
+    if start >= 0 and end > start:
+        content = content[start : end + 1]
+    try:
+        obj = json.loads(content)
+    except json.JSONDecodeError:
+        obj = {}
+
+    fallback_title = source_article.get("title", "Brand GEO insight")
+    title = gb.clean_text(obj.get("title")) or fallback_title
+    title = re.sub(r"^Eco[- ]GEO[：:]\s*", "", title, flags=re.IGNORECASE)
+    title = f"Eco-GEO: {title}" if title else "Eco-GEO: Brand GEO insight"
+    excerpt = gb.clean_text(obj.get("excerpt")) or gb.clean_text(source_article.get("excerpt"))
+    if not excerpt:
+        excerpt = "A practical Eco-GEO article about Brand GEO and AI search optimization."
+    body_html = str(obj.get("body_html") or "").strip()
+    if not body_html:
+        body_html = f"<p>{html.escape(excerpt)}</p>"
+    tags = obj.get("tags")
+    if isinstance(tags, list):
+        tag_values = [gb.clean_text(t) for t in tags if gb.clean_text(t)]
+    else:
+        tag_values = [gb.clean_text(t) for t in re.split(r"[,،，、]", str(tags or "")) if gb.clean_text(t)]
+    required = (
+        ["Eco-GEO", "Brand GEO", "AI search optimization", "AIBE"]
+        if lang == "en"
+        else ["Eco-GEO", "Brand GEO", "GEO للعلامات التجارية", "تحسين بحث الذكاء الاصطناعي", "AIBE"]
+    )
+    for tag in required:
+        if tag not in tag_values:
+            tag_values.append(tag)
+    return {"title": title, "excerpt": excerpt, "body_html": body_html, "tags": ", ".join(tag_values)}
+
+
+def deepseek_localized_article(topic: gb.TopicRow, source_article: Mapping[str, str], lang: str, api_key: str) -> Dict[str, str]:
+    target = "English" if lang == "en" else "Arabic"
+    direction_note = "" if lang == "en" else "Write fluent Modern Standard Arabic for an RTL page."
+    prompt = f"""
+You are a senior Brand GEO and AI search consultant for Eco-GEO.
+Create a localized {target} version of the Chinese Eco-GEO article below.
+
+Requirements:
+1. Keep the same strategic intent, but rewrite naturally for {target} readers.
+2. Do not invent customers, case studies, statistics, awards, or claims.
+3. The title must start with "Eco-GEO:".
+4. The article must naturally include "Eco-GEO", "Brand GEO", "AIBE", and AI search optimization concepts.
+5. Write for people considering GEO services: brand leaders, growth leaders, SEO/content leads, and founders.
+6. Cover why to do GEO, how to start, how to diagnose AI search visibility, and how to make a brand more citable in AI answers.
+7. Output strict JSON only. No Markdown code fences.
+8. JSON fields: title, excerpt, body_html, tags.
+9. body_html must be valid HTML with 4-6 h2 sections, p, ul/li, and strong tags.
+10. tags may be an array or comma-separated string.
+11. {direction_note}
+
+Topic:
+Title: {topic.title}
+Category: {topic.category}
+Keywords: {topic.keywords}
+
+Chinese source article:
+Title: {source_article.get("title", "")}
+Excerpt: {source_article.get("excerpt", "")}
+Body HTML:
+{source_article.get("body_html", "")}
+""".strip()
+    payload = {
+        "model": gb.MODEL,
+        "messages": [
+            {"role": "system", "content": "You produce localized Eco-GEO Brand GEO articles as clean JSON."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": gb.TEMPERATURE,
+        "max_tokens": gb.MAX_TOKENS,
+    }
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(
+        gb.DEEPSEEK_URL,
+        data=data,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    last_error: Optional[Exception] = None
+    for attempt in range(1, gb.RETRIES + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                raw = resp.read().decode("utf-8")
+            obj = json.loads(raw)
+            content = obj["choices"][0]["message"]["content"].strip()
+            return parse_model_json(content, source_article, lang)
+        except Exception as exc:  # noqa: BLE001
+            last_error = exc
+            wait = min(30, attempt * 4)
+            print(f"DeepSeek {lang} attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {exc}; retry in {wait}s")
+            time.sleep(wait)
+    raise RuntimeError(f"DeepSeek {lang} localization failed for row {topic.idx}: {last_error}")
+
+
+def localized_category(lang: str) -> str:
+    return "Brand GEO" if lang == "en" else "GEO للعلامات التجارية"
+
+
+def write_localized_output(
+    *,
+    lang: str,
+    slug: str,
+    topic: gb.TopicRow,
+    article: Mapping[str, str],
+    author: str,
+    initials: str,
+    image: str,
+    order: str,
+    date: str,
+) -> List[Dict[str, str]]:
+    blog_dir = Path(lang) / "blog"
+    blog_dir.mkdir(parents=True, exist_ok=True)
+    posts = load_posts(blog_dir)
+    post = {
+        "order": order,
+        "row": str(topic.idx),
+        "slug": slug,
+        "title": article["title"],
+        "excerpt": article["excerpt"],
+        "category": localized_category(lang),
+        "tags": article["tags"],
+        "author": author,
+        "date": date,
+        "image": image,
+        "url": f"{gb.SITE_URL}/{lang}/blog/articles/{slug}/",
+    }
+    article_dir = blog_dir / "articles" / slug
+    article_dir.mkdir(parents=True, exist_ok=True)
+    article_dir.joinpath("index.html").write_text(
+        i18n_site.localized_article_html(lang=lang, post=post, body_html=article["body_html"], initials=initials),
+        encoding="utf-8",
+    )
+    posts = [existing for existing in posts if existing.get("slug") != slug]
+    posts.insert(0, post)
+    (blog_dir / "posts.json").write_text(json.dumps(posts, ensure_ascii=False, indent=2), encoding="utf-8")
+    (blog_dir / "index.html").write_text(i18n_site.blog_index_page(lang), encoding="utf-8")
+    return posts
 
 
 def select_next_topic(topics: List[gb.TopicRow], posts: List[Dict[str, str]], out_dir: Path) -> Optional[gb.TopicRow]:
@@ -104,9 +256,11 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     if not api_key:
         raise RuntimeError("DEEPSEEK_API_KEY is required in repository secrets")
 
+    i18n_site.ensure_language_scaffold()
     author, initials = gb.deterministic_author(topic.title)
     article = gb.deepseek_article(topic, api_key)
     article["date"] = gb.today_publish_date()
+    image = gb.image_url(topic)
     article_dir = out_dir / "articles" / slug
     article_dir.mkdir(parents=True, exist_ok=True)
     article_dir.joinpath("index.html").write_text(
@@ -125,12 +279,28 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         "tags": gb.ensure_required_tags(article["tags"]),
         "author": author,
         "date": article["date"],
-        "image": gb.image_url(topic),
+        "image": image,
         "url": f"{gb.SITE_URL}/blog/articles/{slug}/",
     }
     posts = [existing for existing in posts if existing.get("slug") != slug]
     posts.insert(0, post)
     write_indexes(posts, out_dir)
+    localized_posts: Dict[str, List[Dict[str, str]]] = {}
+    for lang in ("en", "ar"):
+        localized_article = deepseek_localized_article(topic, article, lang, api_key)
+        localized_posts[lang] = write_localized_output(
+            lang=lang,
+            slug=slug,
+            topic=topic,
+            article=localized_article,
+            author=author,
+            initials=initials,
+            image=image,
+            order=post["order"],
+            date=article["date"],
+        )
+        time.sleep(gb.REQUEST_DELAY)
+    i18n_site.write_sitemap({"zh": posts, "en": localized_posts.get("en", []), "ar": localized_posts.get("ar", [])})
     print(f"Generated daily blog article: blog/articles/{slug}/", flush=True)
     return True
 
