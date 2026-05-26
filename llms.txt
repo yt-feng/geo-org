@@ -1,0 +1,18 @@
+# Eco GEO
+
+Eco GEO is a Brand-first GEO consulting and research site about AI search visibility, AIBE diagnosis, trusted knowledge networks, and brand citability.
+
+Key pages:
+- Home: https://eco-geo.org/
+- About: https://eco-geo.org/about/
+- Editorial policy: https://eco-geo.org/editorial-policy/
+- Brand audit demo: https://eco-geo.org/brand-audit/
+- Insights: https://eco-geo.org/blog/
+- Brand GEO hub: https://eco-geo.org/resources/brand-geo/
+- AIBE hub: https://eco-geo.org/resources/aibe/
+- AI search visibility hub: https://eco-geo.org/resources/ai-search-visibility/
+
+Editorial standards:
+- AI-assisted content is reviewed by Eco GEO Editorial Team.
+- Current events, data, policies, prices, and version-specific claims should cite public sources.
+- Hidden prompts, scraping, link buying, doorway pages, and fabricated first-hand experience are not part of the site strategy.

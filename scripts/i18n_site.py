@@ -14,7 +14,7 @@ from string import Template
 from typing import Dict, Iterable, List, Mapping, Optional
 
 EMAIL = "yt.feng@foxmail.com"
-SITE_URL = os.environ.get("SITE_URL", "https://yt-feng.github.io/geo-org").rstrip("/")
+SITE_URL = os.environ.get("SITE_URL", "https://eco-geo.org").rstrip("/")
 
 GLOBE_SVG = (
     '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" '
@@ -67,6 +67,11 @@ LANGS = {
         "nav_contact": "Contact",
         "footer_home": "Home",
         "footer_blog": "Insights",
+        "footer_about": "About",
+        "footer_editorial": "Editorial policy",
+        "footer_privacy": "Privacy",
+        "footer_terms": "Terms",
+        "footer_contact": "Contact",
         "cta_title": "AIBE quick check",
         "cta_body": "Check your brand visibility and citation risks in AI answers",
         "cta_link": "Email us",
@@ -117,6 +122,11 @@ LANGS = {
         "nav_contact": "تواصل",
         "footer_home": "الرئيسية",
         "footer_blog": "الرؤى",
+        "footer_about": "حول Eco GEO",
+        "footer_editorial": "سياسة التحرير",
+        "footer_privacy": "الخصوصية",
+        "footer_terms": "الشروط",
+        "footer_contact": "تواصل",
         "cta_title": "فحص AIBE أولي",
         "cta_body": "افحص ظهور علامتك ومخاطر الاقتباس داخل إجابات الذكاء الاصطناعي",
         "cta_link": "راسلنا",
@@ -219,7 +229,7 @@ def header(root_prefix: str, active: str, section: str = "home") -> str:
         f'<a{audit_active} href="{base}brand-audit/">{cfg["nav_audit"]}</a>'
         f'<a href="{base}index.html#credentials">{cfg["nav_brands"]}</a>'
         f'<a class="{blog_class}" href="{base}blog/">{cfg["nav_blog"]}</a>'
-        f'<a class="nav-cta" href="mailto:{EMAIL}?subject=Eco%20GEO%20AIBE%20Consultation">{cfg["nav_contact"]}</a>'
+        f'<a class="nav-cta" href="{base}contact/">{cfg["nav_contact"]}</a>'
         "</div>"
         f"{language_switcher(root_prefix, active, section)}</nav></header>"
     )
@@ -231,7 +241,12 @@ def footer(root_prefix: str, active: str) -> str:
     return (
         '<footer class="footer site-footer"><div class="wrap">'
         f'© 2026 Eco GEO · Brand-first GEO · <a href="{base}index.html">{cfg["footer_home"]}</a> · '
-        f'<a href="{base}blog/">{cfg["footer_blog"]}</a> · <a href="mailto:{EMAIL}">{EMAIL}</a>'
+        f'<a href="{base}blog/">{cfg["footer_blog"]}</a> · '
+        f'<a href="{base}about/">{cfg["footer_about"]}</a> · '
+        f'<a href="{base}editorial-policy/">{cfg["footer_editorial"]}</a> · '
+        f'<a href="{base}privacy/">{cfg["footer_privacy"]}</a> · '
+        f'<a href="{base}terms/">{cfg["footer_terms"]}</a> · '
+        f'<a href="{base}contact/">{cfg["footer_contact"]}</a>'
         "</div></footer>"
     )
 
@@ -450,16 +465,42 @@ def localized_article_html(
     )
     article_css = (
         base_css()
-        + ".article{max-width:860px;margin:auto;padding:56px 0 84px}.cover{width:100%;border-radius:30px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow);background:#13221b}.article-meta{display:flex;align-items:center;gap:14px;color:var(--muted);margin:22px 0}.author-avatar{width:54px;height:54px;border-radius:18px;flex:0 0 auto}.content{font-size:18px;color:#e8efe9}.content h2{font-size:30px;line-height:1.2;letter-spacing:0;margin:40px 0 12px;color:var(--text)}.content p{margin:0 0 18px}.content li{margin:8px 0}.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}.tag{border:1px solid rgba(140,233,154,.35);border-radius:999px;padding:6px 10px;color:var(--green);font-size:13px}"
+        + ".article{max-width:860px;margin:auto;padding:56px 0 84px}.cover{width:100%;border-radius:30px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow);background:#13221b}.article-meta{display:flex;align-items:center;gap:14px;color:var(--muted);margin:22px 0}.authority-note{border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.06);padding:14px 16px;color:var(--muted);margin:18px 0}.authority-note a,.source-list a{color:var(--green);text-decoration:none}.source-list{border-top:1px solid var(--line);margin-top:34px;padding-top:22px;color:var(--muted)}.author-avatar{width:54px;height:54px;border-radius:18px;flex:0 0 auto}.content{font-size:18px;color:#e8efe9}.content h2{font-size:30px;line-height:1.2;letter-spacing:0;margin:40px 0 12px;color:var(--text)}.content p{margin:0 0 18px}.content li{margin:8px 0}.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}.tag{border:1px solid rgba(140,233,154,.35);border-radius:999px;padding:6px 10px;color:var(--green);font-size:13px}"
     )
+    canonical = esc(post.get("url") or f"{SITE_URL}/{lang}/blog/articles/{post.get('slug', '')}/")
+    schema = json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "mainEntityOfPage": {"@type": "WebPage", "@id": canonical},
+            "headline": post.get("title", ""),
+            "description": post.get("excerpt", ""),
+            "image": post.get("image") or IMAGE_POOL[0],
+            "datePublished": post.get("date", ""),
+            "dateModified": post.get("dateModified") or post.get("date", ""),
+            "author": {"@type": "Organization", "name": "Eco GEO Editorial Team", "url": f"{SITE_URL}/about/"},
+            "editor": {"@type": "Organization", "name": "Eco GEO Research Desk", "url": f"{SITE_URL}/editorial-policy/"},
+            "publisher": {"@type": "Organization", "name": "Eco GEO", "logo": {"@type": "ImageObject", "url": f"{SITE_URL}/logo.svg"}},
+            "keywords": post.get("tags", ""),
+            "inLanguage": cfg["html_lang"],
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    note = {
+        "en": 'Edited and fact-checked by Eco GEO Research Desk. This article follows the <a href="../../../../en/editorial-policy/">Eco GEO editorial policy</a>.',
+        "ar": 'تم التحرير والتدقيق بواسطة Eco GEO Research Desk. يتبع هذا المقال <a href="../../../../ar/editorial-policy/">سياسة تحرير Eco GEO</a>.',
+    }[lang]
     return render(
         """<!doctype html>
 <html lang="$html_lang" dir="$dir"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="description" content="$excerpt"/><link rel="icon" href="${prefix}logo.svg" type="image/svg+xml"/>
-<title>$title｜$article_suffix</title><style>$css</style></head><body>$header<main class="wrap"><article class="article"><div class="eyebrow">$article_eyebrow</div><h1>$title</h1><p class="lead">$excerpt</p><img class="cover" src="$image" alt="$title" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">$avatar<div><strong>$author</strong><br/><span>$category · <time datetime="$published">$date_label</time> · $article_meta</span></div></div><div class="content">$body_html</div><div class="tags">$tags</div></article></main>$bottom$footer</body></html>""",
+<meta name="description" content="$excerpt"/><meta name="author" content="Eco GEO Editorial Team"/><link rel="icon" href="${prefix}logo.svg" type="image/svg+xml"/><link rel="canonical" href="$canonical"/>
+<title>$title｜$article_suffix</title><style>$css</style><script id="schema-article" type="application/ld+json">$schema</script></head><body>$header<main class="wrap"><article class="article"><div class="eyebrow">$article_eyebrow</div><h1>$title</h1><p class="lead">$excerpt</p><img class="cover" src="$image" alt="$title" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">$avatar<div><strong>$author</strong><br/><span>$category · <time datetime="$published">$date_label</time> · $article_meta</span></div></div><div class="authority-note">$note</div><div class="content">$body_html</div><div class="tags">$tags</div></article></main>$bottom$footer</body></html>""",
         prefix=prefix,
         excerpt=excerpt,
         title=title,
+        canonical=canonical,
+        schema=schema,
         css=article_css,
         header=header(prefix, lang, "blog"),
         avatar=avatar_svg(initials, post.get("title", "")),
@@ -470,6 +511,7 @@ def localized_article_html(
         date_label=esc(date_label(post.get("date", ""), lang)),
         body_html=body_html,
         tags=tag_html,
+        note=note,
         bottom=bottom_cta(lang),
         footer=footer(prefix, lang),
         **cfg,
@@ -518,7 +560,11 @@ def write_sitemap(posts_by_lang: Optional[Mapping[str, Iterable[Mapping[str, str
             "en": read_json(root / "en" / "blog" / "posts.json", []),
             "ar": read_json(root / "ar" / "blog" / "posts.json", []),
         }
-    static_paths = ["", "brand-audit/", "blog/", "en/", "en/brand-audit/", "en/blog/", "ar/", "ar/brand-audit/", "ar/blog/"]
+    trust_paths = ["about/", "editorial-policy/", "privacy/", "terms/", "contact/"]
+    hub_paths = ["resources/brand-geo/", "resources/aibe/", "resources/ai-search-visibility/"]
+    static_paths = ["", "brand-audit/", "blog/"] + trust_paths + hub_paths
+    static_paths += [f"en/{path}" for path in ["", "brand-audit/", "blog/"] + trust_paths + hub_paths]
+    static_paths += [f"ar/{path}" for path in ["", "brand-audit/", "blog/"] + trust_paths + hub_paths]
     items = [f"  <url><loc>{SITE_URL}/{path}</loc></url>" for path in static_paths]
     for lang, posts in posts_by_lang.items():
         for post in posts:

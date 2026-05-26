@@ -16,6 +16,7 @@ Eco GEO 是一个面向「品牌化 GEO」咨询服务的静态官网。
 
 - 咨询转化：通过首页叙事、服务品牌、方法论、轻量诊断工具和邮件入口获得咨询线索。
 - 内容资产沉淀：通过大量行业化 Blog 文章覆盖「品牌化 GEO」「白帽 GEO」「AI 搜索」相关问题，形成可被搜索引擎和 AI 系统读取的内容库。
+- 权威信任建设：通过 About、编辑政策、隐私、条款、联系页、主题 Hub、Article schema、作者/审核人和可验证来源，把站点从“文章集合”升级为可被引用的信息源。
 
 ## 2. 技术形态
 
@@ -44,6 +45,7 @@ python3 -m http.server 8000
 ├── 404.html                   # 自定义 404 页面
 ├── CNAME                      # GitHub Pages 自定义域名
 ├── robots.txt                 # 爬虫入口，引用 sitemap
+├── llms.txt                   # 给 AI/agent 的站点摘要，可选辅助入口
 ├── sitemap.xml                # 站点地图，由 Blog 生成脚本写入
 ├── logo.svg                   # Eco GEO 主 logo
 ├── credentials.svg            # 旧的资质/品牌整图资产，首页当前未直接使用
@@ -57,9 +59,19 @@ python3 -m http.server 8000
 │   ├── page/<n>/index.html    # 静态分页页，用于传统爬取/兜底
 │   └── articles/<slug>/index.html
 │                               # 单篇文章静态 HTML
+├── about/ editorial-policy/ privacy/ terms/ contact/
+│                               # 信任、政策和联系页面
+├── resources/
+│   ├── brand-geo/
+│   ├── aibe/
+│   └── ai-search-visibility/  # 主题 Hub 页面
+├── en/ ar/                    # 英文、阿拉伯语站点外壳和日更文章版本
 └── scripts/
     ├── generate_blog.py        # 从 Excel 调 DeepSeek 生成完整 Blog
     ├── generate_blog_sample.py # 按分类抽样、并发、可断点提交的生成器
+    ├── generate_daily_blog.py  # 每日新闻信号 + 多语言增量文章生成器
+    ├── i18n_site.py            # 英文/阿拉伯语站点外壳生成器
+    ├── authority_site.py       # 权威站点标准维护器
     └── enhance_blog_index.py   # 覆盖生成增强版 Blog 列表页
 ```
 
@@ -131,9 +143,10 @@ blog/articles/<slug>/index.html
 - HTML `title` 和 `meta description` 来自模型输出。
 - Header 复用 Eco GEO logo 和导航。
 - Cover 图片使用稳定的 `images.unsplash.com` 外部图片 URL。
-- 作者名由标题确定性生成，头像是内联 SVG。
+- 作者统一为 `Eco GEO Editorial Team`，审核人为 `Eco GEO Research Desk`。
 - 正文 `body_html` 来自 DeepSeek 输出。
 - 底部展示最多 6 个标签。
+- 页面包含 canonical、BlogPosting JSON-LD 和编辑/事实核查说明。
 
 文章 slug 由 Excel 行号、英文/数字化标题片段和 SHA1 摘要组成，形如：
 
@@ -169,9 +182,10 @@ blog/articles/<slug>/index.html
 
 - 读取同一个 `assets/blog_articles.xlsx` 选题库。
 - 根据 `blog/posts.json`、已有 slug 和文章文件跳过已生成选题。
-- 每次只选择一个未生成选题，调用 DeepSeek 生成文章。
+- 每次只选择一个未生成选题，先通过 Google News RSS 获取 0-3 条公开新闻信号，再调用 DeepSeek 生成一篇中文评论文章。
 - 把新文章插入 `blog/posts.json` 顶部，并刷新静态分页、sitemap 和首页文章数量。
-- 最后重新运行增强版 Blog 列表页生成逻辑，保留搜索、筛选和分页体验。
+- 同步生成英文和阿拉伯语文章版本，写入 `en/blog/articles/` 与 `ar/blog/articles/`。
+- 最后重新运行增强版 Blog 列表页、英文/阿拉伯语站点外壳和 `authority_site.py`，保持信任页面、robots、llms、canonical、schema、sitemap 一致。
 - 新文章标题统一使用 `Eco-GEO：` 前缀，正文 prompt 会要求自然包含 `Eco-GEO`、`品牌化GEO`、`GEO服务`、`AI搜索优化` 等关键词，并面向正在考虑做 GEO 的用户意图写作。
 
 `.github/workflows/generate-daily-blog.yml` 每天 UTC 00:30 自动运行一次，也可以手动触发。Workflow 使用 `GITHUB_TOKEN` 自动 commit 到 `main`，随后 `pages.yml` 会在 push 后部署静态站点。
@@ -187,9 +201,17 @@ DEEPSEEK_MAX_TOKENS       # 默认 2200
 DEEPSEEK_TEMPERATURE      # 默认 0.72
 DEEPSEEK_REQUEST_DELAY    # 默认 0.2
 DEEPSEEK_RETRIES          # 默认 3
+NEWS_QUERY                # 可选，覆盖 Google News RSS 查询
+NEWS_RSS_URL              # 可选，改用指定 RSS 源
+NEWS_MAX_ITEMS            # 默认 3
+NEWS_CONTEXT_DISABLED     # 设置为 1 时禁用新闻信号
 ```
 
-当前本地环境没有安装 `openpyxl`，所以在本机重新生成前需要先安装依赖。仓库目前没有 `requirements.txt`。
+本地重新生成前建议执行：
+
+```bash
+python3 -m pip install -r requirements.txt
+```
 
 ## 8. Blog 数据模型
 
@@ -204,10 +226,11 @@ DEEPSEEK_RETRIES          # 默认 3
   "excerpt": "文章摘要",
   "category": "酒店旅游",
   "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, ...",
-  "author": "Harper Gray",
+  "author": "Eco GEO Editorial Team",
+  "reviewed_by": "Eco GEO Research Desk",
   "date": "2026-01-14",
   "image": "https://images.unsplash.com/photo-...?...",
-  "url": "https://yt-feng.github.io/geo-org/blog/articles/..."
+  "url": "https://eco-geo.org/blog/articles/..."
 }
 ```
 
@@ -225,14 +248,15 @@ DEEPSEEK_RETRIES          # 默认 3
 
 ## 9. SEO 和部署注意点
 
-当前有几个需要统一的地方：
+当前主域统一为 `https://eco-geo.org`：
 
-- 首页 canonical 和结构化数据使用 `https://eco-geo.org/`。
-- `CNAME` 也是 `eco-geo.org`。
-- 但 `robots.txt` 指向 `https://yt-feng.github.io/geo-org/sitemap.xml`。
-- `sitemap.xml` 和 `blog/posts.json` 里的文章 URL 也使用 `https://yt-feng.github.io/geo-org/...`。
+- `CNAME` 指向 `eco-geo.org`。
+- 生成脚本默认 `SITE_URL=https://eco-geo.org`。
+- `robots.txt` 指向 `https://eco-geo.org/sitemap.xml`。
+- `sitemap.xml`、`posts.json.url`、canonical 和 JSON-LD 都应保持同一主域。
+- 多语言页面通过右上角地球入口切换，`authority_site.py` 会为已存在的对应页面补充 `hreflang`。
 
-如果正式主域是 `eco-geo.org`，建议后续把 `SITE_URL`、`robots.txt`、`sitemap.xml`、`posts.json.url`、canonical 统一到这个域名。
+`robots.txt` 明确允许 Googlebot、OAI-SearchBot、ChatGPT-User、GPTBot 和 Google-Extended 抓取公开内容。GPTBot / Google-Extended 属于训练或模型使用策略，后续可按版权策略在 `scripts/authority_site.py` 中调整。
 
 ## 10. 外部依赖
 
@@ -261,14 +285,13 @@ DEEPSEEK_RETRIES          # 默认 3
 - 改 Blog 列表交互：优先编辑 `scripts/enhance_blog_index.py`，再运行脚本生成 `blog/index.html`。
 - 改文章模板、生成 prompt、sitemap 输出：编辑 `scripts/generate_blog.py`。
 - 改每日自动生成策略：编辑 `scripts/generate_daily_blog.py` 和 `.github/workflows/generate-daily-blog.yml`。
+- 改权威信任页面、robots、llms、主题 Hub：编辑 `scripts/authority_site.py`，再运行 `python3 scripts/authority_site.py`。
 - 改批量生成策略、并发、每类文章数：编辑或运行 `scripts/generate_blog_sample.py`。
 - 改内容选题：更新 `assets/blog_articles.xlsx`，然后重新生成 Blog。
 
 建议补齐的工程化事项：
 
-- 增加 `requirements.txt`，至少包含 `openpyxl`。
 - 增加一个明确的生成命令说明，例如放到 `README.md`。
 - 把 GitHub Actions 拆成「生成 Blog」和「部署 Pages」两个流程，或者明确生成只在本地/手动完成。
-- 统一 `eco-geo.org` 和 `yt-feng.github.io/geo-org` 两套 URL。
 - 在生成文章前对模型输出的 `body_html` 做白名单清洗，避免模型异常输出脚本或不期望的 HTML。
 - 如果图片稳定性重要，把关键图片本地化或使用明确可控的 CDN URL。

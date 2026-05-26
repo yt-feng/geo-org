@@ -13,11 +13,14 @@ import json
 import os
 import re
 import time
+import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, List, Mapping, Optional
 
 import enhance_blog_index
+import authority_site
 import generate_blog as gb
 import i18n_site
 
@@ -38,6 +41,181 @@ def int_value(value: object, fallback: int = 0) -> int:
 
 def next_order(posts: List[Dict[str, str]]) -> int:
     return max((int_value(post.get("order")) for post in posts), default=0) + 1
+
+
+def strip_html(value: str) -> str:
+    return re.sub(r"<[^>]+>", " ", value or "").replace("&nbsp;", " ").strip()
+
+
+def news_query(topic: gb.TopicRow) -> str:
+    configured = os.environ.get("NEWS_QUERY", "").strip()
+    if configured:
+        return configured
+    topic_bits = " ".join(bit for bit in [topic.category, topic.keywords, topic.title] if bit)
+    return f'("AI search" OR "Google AI Overviews" OR "ChatGPT Search" OR "generative AI search") ({topic_bits})'
+
+
+def google_news_rss_url(query: str) -> str:
+    configured = os.environ.get("NEWS_RSS_URL", "").strip()
+    if configured:
+        return configured
+    encoded = urllib.parse.quote_plus(query)
+    return f"https://news.google.com/rss/search?q={encoded}&hl=zh-CN&gl=CN&ceid=CN:zh-Hans"
+
+
+def fetch_news_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
+    if os.environ.get("NEWS_CONTEXT_DISABLED", "").lower() in {"1", "true", "yes"}:
+        return []
+    limit = int(os.environ.get("NEWS_MAX_ITEMS", "3"))
+    req = urllib.request.Request(
+        google_news_rss_url(news_query(topic)),
+        headers={"User-Agent": "Eco-GEO-EditorialBot/1.0 (+https://eco-geo.org/)"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read()
+    except Exception as exc:  # noqa: BLE001
+        print(f"News context unavailable: {exc}", flush=True)
+        return []
+
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as exc:
+        print(f"News RSS parse failed: {exc}", flush=True)
+        return []
+
+    items: List[Dict[str, str]] = []
+    for item in root.findall(".//item"):
+        title = gb.clean_text(item.findtext("title"))
+        link = gb.clean_text(item.findtext("link"))
+        published = gb.clean_text(item.findtext("pubDate"))
+        description = strip_html(item.findtext("description") or "")
+        source_node = item.find("source")
+        publisher = gb.clean_text(source_node.text if source_node is not None else "")
+        if not title or not link:
+            continue
+        items.append(
+            {
+                "title": title,
+                "url": link,
+                "publisher": publisher,
+                "published": published,
+                "summary": description[:260],
+            }
+        )
+        if len(items) >= limit:
+            break
+    if items:
+        print(f"Using {len(items)} news context item(s) from RSS.", flush=True)
+    return items
+
+
+def news_context_text(items: List[Mapping[str, str]]) -> str:
+    if not items:
+        return "No fresh RSS item was available. Write evergreen analysis and do not invent current events."
+    return "\n".join(
+        f"- Source: {item.get('publisher') or 'News source'}\n"
+        f"  Title: {item.get('title')}\n"
+        f"  Published: {item.get('published')}\n"
+        f"  URL: {item.get('url')}\n"
+        f"  RSS summary: {item.get('summary')}"
+        for item in items
+    )
+
+
+def source_section(items: List[Mapping[str, str]], lang: str) -> str:
+    if not items:
+        return ""
+    title = {
+        "zh": "参考来源与时事信号",
+        "en": "Sources and Current Signals",
+        "ar": "المصادر وإشارات الأخبار الحالية",
+    }[lang]
+    note = {
+        "zh": "以下公开新闻条目用于提供时事背景；正文评论只基于可验证信息和 Eco GEO 方法论判断。",
+        "en": "The public news items below provide current context; the commentary uses only verifiable signals and Eco GEO methodology.",
+        "ar": "توفر العناصر الإخبارية العامة التالية سياقا حديثا؛ ويعتمد التعليق على إشارات قابلة للتحقق ومنهجية Eco GEO.",
+    }[lang]
+    links = "".join(
+        f'<li><a href="{html.escape(item.get("url", ""), quote=True)}" rel="noopener nofollow" target="_blank">'
+        f'{html.escape(item.get("title", ""))}</a>'
+        f' <span>{html.escape(item.get("publisher") or "")}</span></li>'
+        for item in items
+    )
+    return f'<section class="source-list"><h2>{html.escape(title)}</h2><p>{html.escape(note)}</p><ul>{links}</ul></section>'
+
+
+def deepseek_news_article(topic: gb.TopicRow, news_items: List[Mapping[str, str]], api_key: str) -> Dict[str, str]:
+    context_lines = "\n".join(f"- {k}: {v}" for k, v in topic.context.items())
+    prompt = f"""
+你是一名资深中文品牌战略、白帽 GEO（Generative Engine Optimization）和 AI 搜索评论作者，代表 Eco-GEO 写作。
+请基于 Excel 选题和今天的公开新闻 RSS 条目，生成一篇 Eco-GEO 官网 Blog 的原创中文评论文章。
+
+写作目标：
+1. 文章要像“基于时事的专业评论”，不是新闻搬运，也不是通用清单。
+2. 只使用下方新闻条目中可见的标题、来源、发布日期和摘要作为时事信号；不要编造新闻正文、数据、客户案例、价格、政策或第三方报告。
+3. 如果新闻条目与选题弱相关，要明确把它作为 AI 搜索生态变化的背景信号，而不是强行推断。
+4. title 必须以“Eco-GEO：”开头，并自然覆盖需要做 GEO 的人的搜索意图。
+5. 正文必须自然出现“Eco-GEO”至少 2 次、“品牌化GEO”至少 3 次、“AI搜索优化”至少 1 次。
+6. 面向品牌负责人、增长负责人、SEO/内容负责人和创始人，覆盖：为什么现在要做 GEO、怎么开始、如何诊断 AI 搜索可见度、如何让品牌更容易被 AI 引用/推荐。
+7. 前 25% 给出明确结论；正文包含 4-6 个 h2 小节、p、ul/li、strong。
+8. 至少有一个“今天的时事信号”小节，解释新闻信号对品牌化 GEO 的启发。
+9. 至少有一个“Eco-GEO 建议的行动清单”小节。
+10. 输出严格 JSON，不要 Markdown 代码块。JSON 字段：title, excerpt, body_html, tags。
+11. 字数约 1200-1800 中文字。
+
+Excel 选题：
+标题：{topic.title}
+分类：{topic.category}
+关键词：{topic.keywords}
+完整上下文：
+{context_lines}
+
+今天的公开新闻 RSS 条目：
+{news_context_text(news_items)}
+""".strip()
+    payload = {
+        "model": gb.MODEL,
+        "messages": [
+            {"role": "system", "content": "You write source-aware, practical, white-hat Chinese Brand GEO commentary as clean JSON."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": gb.TEMPERATURE,
+        "max_tokens": gb.MAX_TOKENS,
+    }
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(
+        gb.DEEPSEEK_URL,
+        data=data,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    last_error: Optional[Exception] = None
+    for attempt in range(1, gb.RETRIES + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                raw = resp.read().decode("utf-8")
+            obj = json.loads(raw)
+            content = obj["choices"][0]["message"]["content"].strip()
+            article = gb.parse_model_json(content, topic)
+            validate_article(article, require_news=bool(news_items))
+            return article
+        except Exception as exc:  # noqa: BLE001
+            last_error = exc
+            wait = min(30, attempt * 4)
+            print(f"DeepSeek news article attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {exc}; retry in {wait}s")
+            time.sleep(wait)
+    raise RuntimeError(f"DeepSeek news article failed for row {topic.idx}: {last_error}")
+
+
+def validate_article(article: Mapping[str, str], require_news: bool) -> None:
+    text = strip_html(str(article.get("body_html", "")))
+    required = ["Eco-GEO", "品牌化GEO", "AI搜索优化"]
+    missing = [term for term in required if term not in text and term not in str(article.get("tags", ""))]
+    if missing:
+        raise ValueError(f"article missing required trust/intent terms: {', '.join(missing)}")
+    if require_news and "时事" not in text and "新闻" not in text:
+        raise ValueError("news-aware article did not include a visible current-signal discussion")
 
 
 def parse_model_json(content: str, source_article: Mapping[str, str], lang: str) -> Dict[str, str]:
@@ -110,6 +288,9 @@ Title: {source_article.get("title", "")}
 Excerpt: {source_article.get("excerpt", "")}
 Body HTML:
 {source_article.get("body_html", "")}
+
+Source signals:
+{news_context_text(source_article.get("sources", []))}
 """.strip()
     payload = {
         "model": gb.MODEL,
@@ -174,11 +355,18 @@ def write_localized_output(
         "date": date,
         "image": image,
         "url": f"{gb.SITE_URL}/{lang}/blog/articles/{slug}/",
+        "sources": article.get("sources", []),
+        "reviewed_by": gb.REVIEWER_NAME,
     }
     article_dir = blog_dir / "articles" / slug
     article_dir.mkdir(parents=True, exist_ok=True)
     article_dir.joinpath("index.html").write_text(
-        i18n_site.localized_article_html(lang=lang, post=post, body_html=article["body_html"], initials=initials),
+        i18n_site.localized_article_html(
+            lang=lang,
+            post=post,
+            body_html=article["body_html"] + str(article.get("sources_html", "")),
+            initials=initials,
+        ),
         encoding="utf-8",
     )
     posts = [existing for existing in posts if existing.get("slug") != slug]
@@ -258,8 +446,11 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
 
     i18n_site.ensure_language_scaffold()
     author, initials = gb.deterministic_author(topic.title)
-    article = gb.deepseek_article(topic, api_key)
+    news_items = fetch_news_items(topic)
+    article = deepseek_news_article(topic, news_items, api_key)
     article["date"] = gb.today_publish_date()
+    article["sources"] = news_items
+    article["sources_html"] = source_section(news_items, "zh")
     image = gb.image_url(topic)
     article_dir = out_dir / "articles" / slug
     article_dir.mkdir(parents=True, exist_ok=True)
@@ -281,6 +472,8 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         "date": article["date"],
         "image": image,
         "url": f"{gb.SITE_URL}/blog/articles/{slug}/",
+        "sources": news_items,
+        "reviewed_by": gb.REVIEWER_NAME,
     }
     posts = [existing for existing in posts if existing.get("slug") != slug]
     posts.insert(0, post)
@@ -288,6 +481,8 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     localized_posts: Dict[str, List[Dict[str, str]]] = {}
     for lang in ("en", "ar"):
         localized_article = deepseek_localized_article(topic, article, lang, api_key)
+        localized_article["sources"] = news_items
+        localized_article["sources_html"] = source_section(news_items, lang)
         localized_posts[lang] = write_localized_output(
             lang=lang,
             slug=slug,
@@ -301,6 +496,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         )
         time.sleep(gb.REQUEST_DELAY)
     i18n_site.write_sitemap({"zh": posts, "en": localized_posts.get("en", []), "ar": localized_posts.get("ar", [])})
+    authority_site.main()
     print(f"Generated daily blog article: blog/articles/{slug}/", flush=True)
     return True
 

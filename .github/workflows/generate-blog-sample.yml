@@ -14,7 +14,7 @@ on:
       site_url:
         description: "Canonical site URL for generated links"
         required: true
-        default: "https://yt-feng.github.io/geo-org"
+        default: "https://eco-geo.org"
       request_delay:
         description: "Delay in seconds between DeepSeek requests"
         required: true
@@ -47,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install openpyxl
+          pip install -r requirements.txt
 
       - name: Verify inputs and estimate scope
         run: |
@@ -82,6 +82,15 @@ jobs:
           fi
           python scripts/generate_blog_sample.py $ARGS
 
+      - name: Apply authority site standards
+        env:
+          SITE_URL: ${{ inputs.site_url }}
+        run: |
+          set -euo pipefail
+          python scripts/enhance_blog_index.py
+          python scripts/i18n_site.py
+          python scripts/authority_site.py
+
       - name: Show generated summary
         run: |
           set -euo pipefail
@@ -101,7 +110,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add blog sitemap.xml index.html
+          git add blog en ar sitemap.xml index.html robots.txt llms.txt about editorial-policy privacy terms contact resources
           if git diff --cached --quiet; then
             echo "No blog changes to commit."
           else

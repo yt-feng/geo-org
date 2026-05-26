@@ -64,6 +64,9 @@ CATEGORY_KEYS = ["分类", "类别", "category", "行业", "板块", "cluster"]
 KEYWORD_KEYS = ["关键词", "keywords", "keyword", "seo", "query", "搜索词"]
 BRAND_TITLE_PREFIX = "Eco-GEO："
 HISTORICAL_START_DATE = os.environ.get("HISTORICAL_START_DATE", "2024-05-25")
+AUTHOR_NAME = "Eco GEO Editorial Team"
+AUTHOR_INITIALS = "EGE"
+REVIEWER_NAME = "Eco GEO Research Desk"
 
 
 @dataclass
@@ -179,12 +182,14 @@ def deepseek_article(topic: TopicRow, api_key: str) -> Dict[str, str]:
 4. 正文必须自然出现“Eco-GEO”至少 2 次、“品牌化GEO”至少 3 次，同时避免堆砌。
 5. 面向正在考虑做 GEO 的品牌负责人、增长负责人、SEO/内容负责人写作，覆盖“为什么要做 GEO”“怎么开始做 GEO”“如何诊断 AI 搜索可见度”“如何让品牌被 AI 引用/推荐”等意图。
 6. 文章要给出可执行步骤、风险提醒和诊断入口，引导读者理解 Eco-GEO 的品牌化 GEO 方法。
-7. 文章要图文并茂，但图片由页面模板插入，你只生成文字。
-8. 输出严格为 JSON，不要 Markdown 代码块。
-9. JSON 字段：title, excerpt, body_html, tags。
-10. body_html 用合法 HTML，包含 4-6 个 h2 小节、p、ul/li、strong，可读性强。
-11. tags 必须包含：Eco-GEO、品牌化GEO、GEO服务、AI搜索优化。
-12. 字数约 1200-1800 中文字。
+7. 文章必须有人类编辑增值的口吻：明确适用对象、边界、判断依据，不要写成通用清单。
+8. 不要虚构新闻、客户、数据、来源、价格、政策或第三方报告；缺少可验证来源时，只能写方法论判断。
+9. 文章要图文并茂，但图片由页面模板插入，你只生成文字。
+10. 输出严格为 JSON，不要 Markdown 代码块。
+11. JSON 字段：title, excerpt, body_html, tags。
+12. body_html 用合法 HTML，包含 4-6 个 h2 小节、p、ul/li、strong，可读性强。
+13. tags 必须包含：Eco-GEO、品牌化GEO、GEO服务、AI搜索优化。
+14. 字数约 1200-1800 中文字。
 
 Excel 选题：
 标题：{topic.title}
@@ -259,11 +264,7 @@ def parse_model_json(content: str, topic: TopicRow) -> Dict[str, str]:
 
 
 def deterministic_author(seed_text: str) -> Tuple[str, str]:
-    seed = int(hashlib.sha1(seed_text.encode("utf-8")).hexdigest()[:8], 16)
-    rnd = random.Random(seed)
-    name = f"{rnd.choice(FIRST_NAMES)} {rnd.choice(LAST_NAMES)}"
-    initials = "".join(part[0] for part in name.split()[:2]).upper()
-    return name, initials
+    return AUTHOR_NAME, AUTHOR_INITIALS
 
 
 def avatar_svg(initials: str, seed_text: str) -> str:
@@ -294,7 +295,7 @@ def image_url(topic: TopicRow) -> str:
 def page_css(prefix: str = "") -> str:
     return f"""
 :root{{--bg:#07110d;--panel:rgba(255,255,255,.075);--text:#f5f8f4;--muted:#b8c7bc;--line:rgba(255,255,255,.15);--green:#8ce99a;--blue:#80c7ff;--gold:#ffd166;--shadow:0 26px 80px rgba(0,0,0,.32)}}
-*{{box-sizing:border-box}}body{{margin:0;padding-bottom:78px;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 10% 0%,rgba(34,150,123,.28),transparent 34rem),linear-gradient(135deg,#050806,var(--bg),#101a13);line-height:1.75}}a{{color:inherit}}.wrap{{width:min(1120px,calc(100% - 42px));margin:auto}}.site-header{{position:sticky;top:0;z-index:40;background:rgba(7,17,13,.86);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}}.site-nav{{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0}}.brand{{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:900;letter-spacing:.08em}}.brand img{{width:46px;height:34px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.94);padding:3px}}.brand small{{display:block;letter-spacing:.02em;color:var(--muted);font-weight:700;font-size:11px;margin-top:-4px}}.site-links{{display:flex;align-items:center;gap:16px;color:var(--muted);font-size:14px}}.site-links a{{text-decoration:none;white-space:nowrap}}.site-links a:hover{{color:var(--text)}}.site-links .nav-cta{{border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--text);background:rgba(255,255,255,.08);font-weight:900}}.lang-switcher{{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.075);padding:7px 9px;color:var(--text);font-size:12px;font-weight:900;white-space:nowrap}}.lang-switcher svg{{width:15px;height:15px;flex:0 0 auto}}.lang-switcher a{{text-decoration:none;color:inherit;opacity:.68}}.lang-switcher a.active{{opacity:1;color:var(--green)}}.hero{{padding:72px 0 44px}}.eyebrow{{color:var(--green);font-weight:900;font-size:13px;letter-spacing:.18em;text-transform:uppercase}}h1{{font-size:clamp(38px,6vw,72px);line-height:1.02;letter-spacing:-.055em;margin:16px 0 18px}}.lead{{font-size:20px;color:var(--muted);max-width:820px}}.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:18px 0 72px}}.card{{border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden;text-decoration:none;display:flex;flex-direction:column}}.card img{{width:100%;aspect-ratio:16/9;object-fit:cover;background:#13221b}}.card-body{{padding:20px}}.card h2{{font-size:22px;line-height:1.25;margin:0 0 10px}}.card p{{color:var(--muted);margin:0}}.meta{{display:flex;gap:10px;flex-wrap:wrap;color:var(--green);font-size:13px;font-weight:800;margin-bottom:12px}}.pager{{display:flex;justify-content:center;gap:10px;padding:0 0 70px}}.pager a,.pager span{{border:1px solid var(--line);border-radius:999px;padding:10px 14px;text-decoration:none;background:var(--panel)}}.site-footer{{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted)}}article{{max-width:860px;margin:auto;padding:56px 0 80px}}.cover{{width:100%;border-radius:32px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow);background:#13221b}}.article-meta{{display:flex;align-items:center;gap:14px;color:var(--muted);margin:22px 0}}.author-avatar{{width:54px;height:54px;border-radius:18px;flex:0 0 auto}}.content{{font-size:18px;color:#e8efe9}}.content h2{{font-size:32px;line-height:1.15;margin:42px 0 12px;letter-spacing:-.03em;color:var(--text)}}.content p{{margin:0 0 18px}}.content li{{margin:8px 0}}.tags{{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}}.tag{{border:1px solid rgba(140,233,154,.35);border-radius:999px;padding:6px 10px;color:var(--green);font-size:13px}}.bottom-cta{{position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(7,17,13,.91);backdrop-filter:blur(18px);border-top:1px solid var(--line)}}.bottom-cta-inner{{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}}.bottom-cta-text{{display:flex;align-items:baseline;gap:10px;color:var(--muted);min-width:0}}.bottom-cta-text strong{{color:var(--text)}}.bottom-cta-text span{{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.bottom-cta a{{flex:0 0 auto;text-decoration:none;border-radius:999px;padding:9px 13px;background:var(--text);color:#07110d;font-weight:900}}@media(max-width:900px){{.grid{{grid-template-columns:1fr}}.site-links{{display:flex}}.site-links a:not(.nav-cta){{display:none}}.lang-switcher a{{display:none}}.lang-switcher a.active{{display:inline}}.bottom-cta-text span{{display:none}}}}
+*{{box-sizing:border-box}}body{{margin:0;padding-bottom:78px;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 10% 0%,rgba(34,150,123,.28),transparent 34rem),linear-gradient(135deg,#050806,var(--bg),#101a13);line-height:1.75}}a{{color:inherit}}.wrap{{width:min(1120px,calc(100% - 42px));margin:auto}}.site-header{{position:sticky;top:0;z-index:40;background:rgba(7,17,13,.86);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}}.site-nav{{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0}}.brand{{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:900;letter-spacing:.08em}}.brand img{{width:46px;height:34px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.94);padding:3px}}.brand small{{display:block;letter-spacing:.02em;color:var(--muted);font-weight:700;font-size:11px;margin-top:-4px}}.site-links{{display:flex;align-items:center;gap:16px;color:var(--muted);font-size:14px}}.site-links a{{text-decoration:none;white-space:nowrap}}.site-links a:hover{{color:var(--text)}}.site-links .nav-cta{{border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--text);background:rgba(255,255,255,.08);font-weight:900}}.lang-switcher{{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.075);padding:7px 9px;color:var(--text);font-size:12px;font-weight:900;white-space:nowrap}}.lang-switcher svg{{width:15px;height:15px;flex:0 0 auto}}.lang-switcher a{{text-decoration:none;color:inherit;opacity:.68}}.lang-switcher a.active{{opacity:1;color:var(--green)}}.hero{{padding:72px 0 44px}}.eyebrow{{color:var(--green);font-weight:900;font-size:13px;letter-spacing:.18em;text-transform:uppercase}}h1{{font-size:clamp(38px,6vw,72px);line-height:1.02;letter-spacing:-.055em;margin:16px 0 18px}}.lead{{font-size:20px;color:var(--muted);max-width:820px}}.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:18px 0 72px}}.card{{border:1px solid var(--line);border-radius:28px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden;text-decoration:none;display:flex;flex-direction:column}}.card img{{width:100%;aspect-ratio:16/9;object-fit:cover;background:#13221b}}.card-body{{padding:20px}}.card h2{{font-size:22px;line-height:1.25;margin:0 0 10px}}.card p{{color:var(--muted);margin:0}}.meta{{display:flex;gap:10px;flex-wrap:wrap;color:var(--green);font-size:13px;font-weight:800;margin-bottom:12px}}.pager{{display:flex;justify-content:center;gap:10px;padding:0 0 70px}}.pager a,.pager span{{border:1px solid var(--line);border-radius:999px;padding:10px 14px;text-decoration:none;background:var(--panel)}}.site-footer{{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted)}}article{{max-width:860px;margin:auto;padding:56px 0 80px}}.cover{{width:100%;border-radius:32px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow);background:#13221b}}.article-meta{{display:flex;align-items:center;gap:14px;color:var(--muted);margin:22px 0}}.authority-note{{border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.06);padding:14px 16px;color:var(--muted);margin:18px 0}}.authority-note a,.source-list a{{color:var(--green);text-decoration:none}}.author-avatar{{width:54px;height:54px;border-radius:18px;flex:0 0 auto}}.content{{font-size:18px;color:#e8efe9}}.content h2{{font-size:32px;line-height:1.15;margin:42px 0 12px;letter-spacing:-.03em;color:var(--text)}}.content p{{margin:0 0 18px}}.content li{{margin:8px 0}}.source-list{{border-top:1px solid var(--line);margin-top:34px;padding-top:22px;color:var(--muted)}}.tags{{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}}.tag{{border:1px solid rgba(140,233,154,.35);border-radius:999px;padding:6px 10px;color:var(--green);font-size:13px}}.bottom-cta{{position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(7,17,13,.91);backdrop-filter:blur(18px);border-top:1px solid var(--line)}}.bottom-cta-inner{{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}}.bottom-cta-text{{display:flex;align-items:baseline;gap:10px;color:var(--muted);min-width:0}}.bottom-cta-text strong{{color:var(--text)}}.bottom-cta-text span{{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.bottom-cta a{{flex:0 0 auto;text-decoration:none;border-radius:999px;padding:9px 13px;background:var(--text);color:#07110d;font-weight:900}}@media(max-width:900px){{.grid{{grid-template-columns:1fr}}.site-links{{display:flex}}.site-links a:not(.nav-cta){{display:none}}.lang-switcher a{{display:none}}.lang-switcher a.active{{display:inline}}.bottom-cta-text span{{display:none}}}}
 """.strip()
 
 
@@ -310,13 +311,13 @@ def site_header(prefix: str, blog_href: Optional[str] = None, tool_href: Optiona
     blog_link = blog_href or f"{prefix}blog/"
     tool_link = tool_href or f"{prefix}brand-audit/"
     return f"""
-<header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="{prefix}index.html#top"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="{prefix}index.html#why">为什么</a><a href="{prefix}index.html#method">方法</a><a href="{tool_link}">品牌评测</a><a href="{prefix}index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="{blog_link}">前沿观点</a><a class="nav-cta" href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">联系</a></div>{language_switcher(prefix, 'zh', section)}</nav></header>
+<header class="top site-header"><nav class="wrap site-nav"><a class="brand site-brand" href="{prefix}index.html#top"><img src="{prefix}logo.svg" alt="Eco GEO logo"/><span>ECO GEO<small>Brand-first GEO</small></span></a><div class="links navlinks site-links"><a href="{prefix}index.html#why">为什么</a><a href="{prefix}index.html#method">方法</a><a href="{tool_link}">品牌评测</a><a href="{prefix}index.html#credentials">服务品牌</a><a class="nav-cta nav-insights" href="{blog_link}">前沿观点</a><a class="nav-cta" href="{prefix}contact/">联系</a></div>{language_switcher(prefix, 'zh', section)}</nav></header>
 """.strip()
 
 
 def site_footer(prefix: str, blog_href: Optional[str] = None) -> str:
     blog_link = blog_href or f"{prefix}blog/"
-    return f"""<footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="{prefix}index.html">首页</a> · <a href="{blog_link}">前沿观点</a> · <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a></div></footer>"""
+    return f"""<footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="{prefix}index.html">首页</a> · <a href="{blog_link}">前沿观点</a> · <a href="{prefix}about/">关于</a> · <a href="{prefix}editorial-policy/">编辑政策</a> · <a href="{prefix}privacy/">隐私</a> · <a href="{prefix}terms/">条款</a> · <a href="{prefix}contact/">联系</a></div></footer>"""
 
 
 def bottom_cta() -> str:
@@ -331,9 +332,30 @@ def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_nam
     excerpt = html.escape(article["excerpt"])
     published = article.get("date") or article.get("published_date") or today_publish_date()
     published_html = f'<time datetime="{html.escape(published)}">{html.escape(date_label(published))}</time>'
+    canonical = f"{SITE_URL}/blog/articles/{slug}/"
+    body_html = article["body_html"] + str(article.get("sources_html", ""))
+    schema = json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "mainEntityOfPage": {"@type": "WebPage", "@id": canonical},
+            "headline": ensure_title_prefix(article["title"]),
+            "description": article["excerpt"],
+            "image": img,
+            "datePublished": published,
+            "dateModified": article.get("dateModified") or published,
+            "author": {"@type": "Organization", "name": AUTHOR_NAME, "url": f"{SITE_URL}/about/"},
+            "editor": {"@type": "Organization", "name": REVIEWER_NAME, "url": f"{SITE_URL}/editorial-policy/"},
+            "publisher": {"@type": "Organization", "name": "Eco GEO", "logo": {"@type": "ImageObject", "url": f"{SITE_URL}/logo.svg"}},
+            "keywords": article["tags"],
+            "inLanguage": "zh-CN",
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
     return f"""<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><link rel="icon" href="../../../logo.svg" type="image/svg+xml"/><style>{page_css('../../../')}</style></head>
-<body>{site_header('../../../', '../../', '../../../brand-audit/', 'blog')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · {published_html} · Brand-first GEO</span></div></div><div class="content">{article['body_html']}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../../', '../../')}</body></html>"""
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><meta name="author" content="{html.escape(AUTHOR_NAME)}"/><link rel="icon" href="../../../logo.svg" type="image/svg+xml"/><link rel="canonical" href="{canonical}"/><style>{page_css('../../../')}</style><script id="schema-article" type="application/ld+json">{schema}</script></head>
+<body>{site_header('../../../', '../../', '../../../brand-audit/', 'blog')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · {published_html} · Brand-first GEO</span></div></div><div class="authority-note"><strong>编辑与事实核查：</strong>{html.escape(REVIEWER_NAME)} · 本文遵循 <a href="../../../editorial-policy/">Eco GEO 编辑政策</a>，涉及事实、数据和时事信息时优先引用可验证来源。</div><div class="content">{body_html}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../../', '../../')}</body></html>"""
 
 
 def index_page(posts: List[Dict[str, str]], page: int, per_page: int, total_pages: int, prefix: str) -> str:
@@ -415,6 +437,7 @@ def write_blog(topics: List[TopicRow], out_dir: Path, overwrite: bool) -> None:
             "category": topic.category,
             "tags": article["tags"],
             "author": author,
+            "reviewed_by": REVIEWER_NAME,
             "date": published,
             "image": image_url(topic),
             "url": f"{SITE_URL}/blog/articles/{slug}/",

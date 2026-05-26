@@ -1,5 +1,21 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://yt-feng.github.io/geo-org/sitemap.xml
-# deploy-marker: blog-enabled
+User-agent: Googlebot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://eco-geo.org/sitemap.xml
+# Eco GEO allows search and AI answer crawlers for public content.
+# Training/grounding crawler policy should be reviewed quarterly.
