@@ -46,7 +46,7 @@ test("fails closed by default and ships D1 migrations", async () => {
   const [example, proxy, hosting, migration, guardMigration, authMigration] = await Promise.all([
     source("../.env.example"),
     source("../lib/proxy.ts"),
-    source("../dist/.openai/hosting.json"),
+    source("../wrangler.jsonc"),
     source("../drizzle/0000_lumpy_naoko.sql"),
     source("../drizzle/0001_silky_gamma_corps.sql"),
     source("../drizzle/0002_milky_dragon_man.sql"),
@@ -54,9 +54,9 @@ test("fails closed by default and ships D1 migrations", async () => {
   assert.match(example, /SERVICE_ENABLED=false/);
   assert.match(proxy, /service_locked/);
   const hostingConfig = JSON.parse(hosting);
-  assert.equal(hostingConfig.d1, "DB");
-  assert.equal(hostingConfig.r2, null);
-  assert.match(hostingConfig.project_id, /^appgprj_/);
+  assert.equal(hostingConfig.name, "eco-geo-api");
+  assert.equal(hostingConfig.d1_databases[0].binding, "DB");
+  assert.equal(hostingConfig.assets.binding, "ASSETS");
   assert.match(migration, /CREATE TABLE `users`/);
   assert.match(migration, /CREATE TABLE `api_keys`/);
   assert.match(migration, /CREATE TABLE `usage_daily`/);

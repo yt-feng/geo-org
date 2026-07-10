@@ -1,7 +1,7 @@
 # Eco Geo API Gateway
 
 Authenticated member portal and API relay for Eco Geo. The application is a
-Cloudflare-compatible vinext Worker with D1 persistence.
+Cloudflare-native vinext Worker with D1 persistence.
 
 ## Included
 
