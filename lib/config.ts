@@ -7,6 +7,9 @@ export type RuntimeEnv = {
   AUTH_BASE_URL?: string;
   AUTH_ANON_KEY?: string;
   ADMIN_EMAIL?: string;
+  ADMIN_USERNAME?: string;
+  ADMIN_PASSWORD?: string;
+  ADMIN_SESSION_SECRET?: string;
   UPSTREAM_BASE_URL?: string;
   UPSTREAM_OPENAPI_URL?: string;
   UPSTREAM_API_TOKEN?: string;

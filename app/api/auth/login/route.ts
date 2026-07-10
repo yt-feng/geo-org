@@ -3,6 +3,7 @@ import {
   REFRESH_COOKIE,
   authBaseUrl,
   authRequestHeaders,
+  createAdminSession,
 } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,18 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Email and password are required." }, { status: 400 });
   }
 
+  const secure = new URL(request.url).protocol === "https:";
+  const adminSession = await createAdminSession(email, password);
+  if (adminSession) {
+    const headers = new Headers({ "content-type": "application/json" });
+    headers.append(
+      "set-cookie",
+      cookieHeader(ACCESS_COOKIE, adminSession, 60 * 60 * 12, secure),
+    );
+    headers.append("set-cookie", cookieHeader(REFRESH_COOKIE, "", 0, secure));
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
+  }
+
   let authResponse: Response;
   try {
     authResponse = await fetch(`${authBaseUrl()}/auth/v1/token?grant_type=password`, {
@@ -71,7 +84,6 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const headers = new Headers({ "content-type": "application/json" });
-  const secure = new URL(request.url).protocol === "https:";
   headers.append(
     "set-cookie",
     cookieHeader(

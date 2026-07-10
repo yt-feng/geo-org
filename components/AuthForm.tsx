@@ -65,21 +65,21 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </label>
       ) : null}
       <label>
-        <span>邮箱</span>
+        <span>{isLogin ? "用户名或邮箱" : "邮箱"}</span>
         <input
-          autoComplete="email"
-          inputMode="email"
+          autoComplete={isLogin ? "username" : "email"}
+          inputMode={isLogin ? "text" : "email"}
           name="email"
-          placeholder="name@example.com"
+          placeholder={isLogin ? "admin 或 name@example.com" : "name@example.com"}
           required
-          type="email"
+          type={isLogin ? "text" : "email"}
         />
       </label>
       <label>
         <span>密码</span>
         <input
           autoComplete={isLogin ? "current-password" : "new-password"}
-          minLength={10}
+          minLength={isLogin ? undefined : 10}
           name="password"
           placeholder={isLogin ? "输入密码" : "至少 10 位"}
           required
