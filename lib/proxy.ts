@@ -67,6 +67,12 @@ const BLOCKED_UNBOUNDED_ENDPOINTS = new Set([
 
 const PER_ROOM_ENDPOINT = "/api/v1/tiktok/web/fetch_batch_check_live_alive";
 
+const MAX_REQUEST_COST_MULTIPLIERS = new Map([
+  ["/api/v1/linkedin/web/get_user_profile", 11],
+  ["/api/v1/linkedin/web/get_company_profile", 2],
+  ["/api/v1/linkedin/web/get_job_detail", 2],
+]);
+
 function jsonError(
   status: number,
   code: string,
@@ -327,15 +333,17 @@ function requestCostMicrousd(
   upstreamPath: string,
   unitCostMicrousd: number,
 ): number {
-  if (upstreamPath !== PER_ROOM_ENDPOINT) return unitCostMicrousd;
-  const roomIdValues = new URL(request.url).searchParams.getAll("room_ids");
-  const roomCount = Math.max(
-    1,
-    ...roomIdValues.map(
-      (roomIds) => roomIds.split(",").filter((entry) => entry.trim()).length,
-    ),
-  );
-  const total = unitCostMicrousd * roomCount;
+  let multiplier = MAX_REQUEST_COST_MULTIPLIERS.get(upstreamPath) || 1;
+  if (upstreamPath === PER_ROOM_ENDPOINT) {
+    const roomIdValues = new URL(request.url).searchParams.getAll("room_ids");
+    multiplier = Math.max(
+      1,
+      ...roomIdValues.map(
+        (roomIds) => roomIds.split(",").filter((entry) => entry.trim()).length,
+      ),
+    );
+  }
+  const total = unitCostMicrousd * multiplier;
   return Number.isSafeInteger(total) ? total : Number.MAX_SAFE_INTEGER;
 }
 
@@ -431,7 +439,7 @@ function isPathWithin(path: string, prefix: string): boolean {
 
 function upstreamPathFor(request: Request): string | null {
   const originalPath = new URL(request.url).pathname;
-  if (/%2f|%5c/i.test(originalPath)) return null;
+  if (originalPath.includes("%")) return null;
   let upstreamPath = originalPath;
   const rawRewrites = runtimeEnv().UPSTREAM_PATH_REWRITES;
   if (rawRewrites) {

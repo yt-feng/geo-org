@@ -39,6 +39,22 @@ export function buildReplacements(current = runtimeEnv()): Replacement[] {
     }
   }
 
+  if (current.UPSTREAM_PATH_REWRITES) {
+    try {
+      const rewrites = JSON.parse(current.UPSTREAM_PATH_REWRITES) as Record<
+        string,
+        string
+      >;
+      for (const [publicPath, upstreamPath] of Object.entries(rewrites)) {
+        if (publicPath.startsWith("/") && upstreamPath.startsWith("/")) {
+          replacements.push({ from: upstreamPath, to: publicPath });
+        }
+      }
+    } catch {
+      // Invalid mappings are rejected by the documentation and proxy routes.
+    }
+  }
+
   if (current.UPSTREAM_REPLACEMENTS_JSON) {
     try {
       const custom = JSON.parse(current.UPSTREAM_REPLACEMENTS_JSON) as Array<{
@@ -63,12 +79,14 @@ export function buildReplacements(current = runtimeEnv()): Replacement[] {
   }
 
   const seen = new Set<string>();
-  return replacements.filter((replacement) => {
-    const key = replacement.from.toLowerCase();
-    if (!replacement.from || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return replacements
+    .filter((replacement) => {
+      const key = replacement.from.toLowerCase();
+      if (!replacement.from || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((left, right) => right.from.length - left.from.length);
 }
 
 export function sanitizeText(

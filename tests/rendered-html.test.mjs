@@ -34,10 +34,12 @@ test("keeps the OpenAPI document behind a server-side session check", async () =
   assert.match(route, /private, no-store/);
   assert.match(route, /Documentation is not enabled/);
   assert.match(route, /sanitizeOpenApiDocument/);
+  assert.match(route, /hasOpenApiSanitizationConfig/);
   assert.match(sanitizer, /operationId/);
   assert.match(sanitizer, /HIDDEN_PATHS/);
-  assert.match(sanitizer, /LOCAL_MANAGEMENT_PATHS/);
+  assert.match(sanitizer, /if \(isManagementPath\) continue/);
   assert.match(sanitizer, /EXTERNAL_FINGERPRINT_URL/);
+  assert.match(sanitizer, /API document sanitization failed/);
 });
 
 test("fails closed by default and ships D1 migrations", async () => {
@@ -124,9 +126,10 @@ test("meters every authenticated request before pricing and blocks unbounded rou
   const priceCheck = proxy.indexOf("await endpointCostMicrousd(");
   assert.ok(quotaCheck >= 0 && quotaCheck < priceCheck);
   assert.match(proxy, /BLOCKED_UNBOUNDED_ENDPOINTS\.has\(upstreamPath\)/);
-  assert.match(proxy, /upstreamPath !== PER_ROOM_ENDPOINT/);
+  assert.match(proxy, /upstreamPath === PER_ROOM_ENDPOINT/);
   assert.match(proxy, /searchParams\.getAll\("room_ids"\)/);
-  assert.match(proxy, /unitCostMicrousd \* roomCount/);
+  assert.match(proxy, /MAX_REQUEST_COST_MULTIPLIERS/);
+  assert.match(proxy, /unitCostMicrousd \* multiplier/);
   assert.match(proxy, /rewrites\.some\(\(\[, target\]\)/);
   assert.doesNotMatch(proxy, /FROM endpoint_prices/);
   assert.doesNotMatch(proxy, /startsWith\("\/api\/v1\/demo\/"\)/);

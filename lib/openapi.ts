@@ -7,16 +7,6 @@ import { buildReplacements, sanitizeText } from "./sanitize";
 
 const LOCAL_MANAGEMENT_BASE = "/api/v1/gateway";
 
-const LOCAL_MANAGEMENT_PATHS = new Set([
-  `${LOCAL_MANAGEMENT_BASE}/user/get_user_info`,
-  `${LOCAL_MANAGEMENT_BASE}/user/get_user_daily_usage`,
-  `${LOCAL_MANAGEMENT_BASE}/user/calculate_price`,
-  `${LOCAL_MANAGEMENT_BASE}/user/get_tiered_discount_info`,
-  `${LOCAL_MANAGEMENT_BASE}/user/get_endpoint_info`,
-  `${LOCAL_MANAGEMENT_BASE}/user/get_all_endpoints_info`,
-  `${LOCAL_MANAGEMENT_BASE}/downloader/version`,
-]);
-
 const HIDDEN_PATHS = new Set([
   "/api/v1/tiktok/web/tiktok_live_room",
   "/api/v1/douyin/web/douyin_live_room",
@@ -24,6 +14,9 @@ const HIDDEN_PATHS = new Set([
 
 const OMITTED_KEYS = new Set([
   "contact",
+  "description",
+  "example",
+  "examples",
   "externalDocs",
   "license",
   "operationId",
@@ -31,7 +24,33 @@ const OMITTED_KEYS = new Set([
 ]);
 
 const EXTERNAL_FINGERPRINT_URL =
-  /https?:\/\/(?:www\.)?(?:discord\.gg|github\.com|apifox\.com)\/[^\s)\]}>"']*/gi;
+  /https?:\/\/(?:www\.)?(?:discord\.gg|github\.com|(?:[a-z0-9-]+\.)?github\.io|apifox\.com)\/[^\s)\]}>"']*/gi;
+
+export function hasOpenApiSanitizationConfig(current: RuntimeEnv): boolean {
+  const markers = (current.UPSTREAM_MARKERS || "")
+    .split(/[\n,]/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (
+    !current.UPSTREAM_BASE_URL?.trim() ||
+    !current.UPSTREAM_OPENAPI_URL?.trim() ||
+    markers.length === 0
+  ) {
+    return false;
+  }
+  try {
+    const rewrites = JSON.parse(current.UPSTREAM_PATH_REWRITES || "") as Record<
+      string,
+      string
+    >;
+    return Object.entries(rewrites).some(
+      ([publicPath, upstreamPath]) =>
+        publicPath === LOCAL_MANAGEMENT_BASE && upstreamPath.startsWith("/"),
+    );
+  } catch {
+    return false;
+  }
+}
 
 function scrubValue(
   value: unknown,
@@ -70,11 +89,19 @@ export function sanitizeOpenApiDocument(
   );
   const brand = current.PUBLIC_BRAND_NAME?.trim() || publicBrandName();
   const replacements = buildReplacements(current);
-  const scrubbed = scrubValue(
+  const scrubbedValue = scrubValue(
     input,
     replacements,
     publicBase,
-  ) as Record<string, unknown>;
+  );
+  if (
+    !scrubbedValue ||
+    typeof scrubbedValue !== "object" ||
+    Array.isArray(scrubbedValue)
+  ) {
+    throw new Error("Invalid API document");
+  }
+  const scrubbed = scrubbedValue as Record<string, unknown>;
 
   const paths = scrubbed.paths;
   if (paths && typeof paths === "object" && !Array.isArray(paths)) {
@@ -84,7 +111,7 @@ export function sanitizeOpenApiDocument(
         path === LOCAL_MANAGEMENT_BASE ||
         path.startsWith(`${LOCAL_MANAGEMENT_BASE}/`);
       if (HIDDEN_PATHS.has(path)) continue;
-      if (isManagementPath && !LOCAL_MANAGEMENT_PATHS.has(path)) continue;
+      if (isManagementPath) continue;
       filtered[path] = operation;
     }
     scrubbed.paths = filtered;
@@ -96,5 +123,17 @@ export function sanitizeOpenApiDocument(
     description: "Private API reference for authenticated members.",
   };
   scrubbed.servers = [{ url: publicBase }];
+
+  const serialized = JSON.stringify(scrubbed).toLowerCase();
+  const forbidden = [
+    current.UPSTREAM_BASE_URL || "",
+    current.UPSTREAM_OPENAPI_URL || "",
+    ...(current.UPSTREAM_MARKERS || "").split(/[\n,]/),
+  ]
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  if (forbidden.some((entry) => serialized.includes(entry))) {
+    throw new Error("API document sanitization failed");
+  }
   return scrubbed;
 }
