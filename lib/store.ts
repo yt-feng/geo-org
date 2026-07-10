@@ -1,5 +1,5 @@
 import type { PortalUser } from "./auth";
-import { getD1, numericEnv } from "./config";
+import { decimalEnv, getD1, numericEnv } from "./config";
 
 export type ApiKeyRow = {
   id: string;
@@ -79,10 +79,12 @@ export async function getAdminOverview(): Promise<{
   users: Array<Record<string, string | number | null>>;
   callsToday: number;
   globalLimit: number;
+  reservedSpendUsd: number;
+  spendLimitUsd: number;
 }> {
   const database = getD1();
   const day = new Date().toISOString().slice(0, 10);
-  const [usersResult, globalRow] = await Promise.all([
+  const [usersResult, globalRow, spendRow] = await Promise.all([
     database
       .prepare(
         `SELECT
@@ -101,10 +103,15 @@ export async function getAdminOverview(): Promise<{
       .prepare("SELECT calls FROM global_usage WHERE day = ?")
       .bind(day)
       .first<{ calls: number }>(),
+    database
+      .prepare("SELECT reserved_microusd FROM spend_guard WHERE id = 'relay'")
+      .first<{ reserved_microusd: number }>(),
   ]);
   return {
     users: usersResult.results || [],
     callsToday: Number(globalRow?.calls || 0),
-    globalLimit: numericEnv("GLOBAL_PROXY_DAILY_LIMIT", 8000),
+    globalLimit: numericEnv("GLOBAL_PROXY_DAILY_LIMIT", 5000),
+    reservedSpendUsd: Number(spendRow?.reserved_microusd || 0) / 1_000_000,
+    spendLimitUsd: decimalEnv("UPSTREAM_SPEND_LIMIT_USD", 1),
   };
 }

@@ -21,8 +21,14 @@ export function buildReplacements(current = runtimeEnv()): Replacement[] {
   const upstreamSpec = current.UPSTREAM_OPENAPI_URL?.trim();
   const replacements: Replacement[] = [];
 
+  if (upstreamSpec) {
+    replacements.push({
+      from: upstreamSpec,
+      to: `${publicBase}/api/private/openapi`,
+    });
+  }
   if (upstreamBase) {
-    replacements.push({ from: upstreamBase, to: `${publicBase}/api/v1` });
+    replacements.push({ from: upstreamBase, to: publicBase });
     try {
       replacements.push({
         from: new URL(upstreamBase).origin,
@@ -32,7 +38,6 @@ export function buildReplacements(current = runtimeEnv()): Replacement[] {
       // Configuration is validated by the proxy before use.
     }
   }
-  if (upstreamSpec) replacements.push({ from: upstreamSpec, to: `${publicBase}/api/private/openapi` });
 
   if (current.UPSTREAM_REPLACEMENTS_JSON) {
     try {
@@ -103,10 +108,11 @@ export function sanitizeTextStream(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
         const combined = carry + decoder.decode(chunk, { stream: true });
-        const splitAt = Math.max(0, combined.length - longest);
-        const safe = combined.slice(0, splitAt);
-        carry = combined.slice(splitAt);
-        if (safe) controller.enqueue(encoder.encode(sanitizeText(safe, replacements)));
+        const sanitized = sanitizeText(combined, replacements);
+        const splitAt = Math.max(0, sanitized.length - longest);
+        const safe = sanitized.slice(0, splitAt);
+        carry = sanitized.slice(splitAt);
+        if (safe) controller.enqueue(encoder.encode(safe));
       },
       flush(controller) {
         carry += decoder.decode();

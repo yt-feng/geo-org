@@ -37,6 +37,30 @@ export default async function AdminPage() {
         </div>
       </section>
 
+      <section className="panel admin-quota">
+        <div>
+          <span className="section-kicker">UPSTREAM SPEND GUARD</span>
+          <h2>中转累计预留成本</h2>
+        </div>
+        <div className="quota-number">
+          <strong>${overview.reservedSpendUsd.toFixed(4)}</strong>
+          <span> / ${overview.spendLimitUsd.toFixed(2)}</span>
+        </div>
+        <div className="progress-track large" aria-label="上游成本额度">
+          <span
+            style={{
+              width: `${Math.min(
+                100,
+                Math.round(
+                  (overview.reservedSpendUsd / Math.max(0.000001, overview.spendLimitUsd)) *
+                    100,
+                ),
+              )}%`,
+            }}
+          />
+        </div>
+      </section>
+
       <section className="panel">
         <div className="panel-header">
           <div>

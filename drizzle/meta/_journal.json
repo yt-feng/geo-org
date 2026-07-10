@@ -8,6 +8,20 @@
       "when": 1783689253934,
       "tag": "0000_lumpy_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1783690624922,
+      "tag": "0001_silky_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783691364167,
+      "tag": "0002_milky_dragon_man",
+      "breakpoints": true
     }
   ]
 }

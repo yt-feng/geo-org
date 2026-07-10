@@ -12,11 +12,13 @@ export type RuntimeEnv = {
   ADMIN_SESSION_SECRET?: string;
   UPSTREAM_BASE_URL?: string;
   UPSTREAM_OPENAPI_URL?: string;
+  UPSTREAM_PRICE_ENDPOINT?: string;
   UPSTREAM_API_TOKEN?: string;
   UPSTREAM_MARKERS?: string;
   UPSTREAM_REPLACEMENTS_JSON?: string;
   UPSTREAM_PATH_REWRITES?: string;
   UPSTREAM_TIMEOUT_MS?: string;
+  UPSTREAM_SPEND_LIMIT_USD?: string;
   GLOBAL_PROXY_DAILY_LIMIT?: string;
   DEFAULT_USER_DAILY_LIMIT?: string;
   MAX_ACTIVE_KEYS_PER_USER?: string;
@@ -45,6 +47,16 @@ export function numericEnv(
   return Number.isFinite(parsed) && parsed >= minimum
     ? Math.floor(parsed)
     : fallback;
+}
+
+export function decimalEnv(
+  name: keyof RuntimeEnv,
+  fallback: number,
+  minimum = 0,
+): number {
+  const raw = runtimeEnv()[name];
+  const parsed = typeof raw === "string" ? Number(raw) : Number.NaN;
+  return Number.isFinite(parsed) && parsed >= minimum ? parsed : fallback;
 }
 
 export function publicBaseUrl(): string {

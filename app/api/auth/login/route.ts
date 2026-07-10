@@ -5,6 +5,7 @@ import {
   authRequestHeaders,
   createAdminSession,
 } from "@/lib/auth";
+import { consumeLoginAttempt } from "@/lib/login-rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,14 @@ function cookieHeader(
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const allowed = await consumeLoginAttempt(request).catch(() => false);
+  if (!allowed) {
+    return Response.json(
+      { error: "Too many sign-in attempts. Please try again later." },
+      { status: 429 },
+    );
+  }
+
   let payload: { email?: string; password?: string };
   try {
     payload = (await request.json()) as typeof payload;

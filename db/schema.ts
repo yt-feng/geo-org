@@ -72,6 +72,25 @@ export const globalUsage = sqliteTable("global_usage", {
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const spendGuard = sqliteTable("spend_guard", {
+  id: text("id").primaryKey(),
+  reservedMicrousd: integer("reserved_microusd").notNull().default(0),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const endpointPrices = sqliteTable("endpoint_prices", {
+  endpoint: text("endpoint").primaryKey(),
+  costMicrousd: integer("cost_microusd").notNull(),
+  refreshedAt: text("refreshed_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const loginRateLimits = sqliteTable("login_rate_limits", {
+  id: text("id").primaryKey(),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: text("expires_at").notNull(),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const usageEvents = sqliteTable(
   "usage_events",
   {
@@ -86,6 +105,7 @@ export const usageEvents = sqliteTable(
     path: text("path").notNull(),
     status: integer("status").notNull(),
     latencyMs: integer("latency_ms").notNull(),
+    estimatedCostMicrousd: integer("estimated_cost_microusd").notNull().default(0),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [

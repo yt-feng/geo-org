@@ -9,7 +9,8 @@ Cloudflare-compatible vinext Worker with D1 persistence.
 - HttpOnly session cookies and server-side session verification.
 - Private dashboard, API key management, usage summary, and searchable OpenAPI
   reference.
-- Administrator dashboard selected by an email allowlist.
+- Administrator dashboard protected by a host-configured account; an optional
+  email allowlist can also grant administrator access to managed-auth users.
 - Wildcard `/api/v1/*` relay with server-side upstream credentials.
 - Per-user and platform-wide daily limits, atomic D1 counters, and request IDs.
 - Response-header allowlisting, same-domain URL rewriting, configurable marker
@@ -20,15 +21,19 @@ Cloudflare-compatible vinext Worker with D1 persistence.
 
 The checked-in defaults reserve headroom below the infrastructure analysis:
 
-- 8,000 proxied requests per UTC day across the service.
+- 5,000 proxied requests per UTC day across the service.
 - 100 requests per member per UTC day.
 - 5 active API keys per member.
-- D1 stores compact metadata and 30-day-scale request indexes; request and
-  response bodies are never persisted.
+- A service-wide upstream spend guard reserves the current endpoint price in D1
+  before forwarding and stops at the configured USD ceiling.
+- Unknown or temporarily unavailable endpoint prices fail closed before any
+  upstream request is sent.
+- D1 stores compact aggregate and error metadata; request and response bodies
+  are never persisted.
 - R2 is not enabled.
 
-These limits cover infrastructure usage only. Any upstream usage terms and
-credits must be configured separately before activation.
+The spend ceiling is cumulative and fail-closed. Endpoints whose future cost
+cannot be bounded before forwarding are intentionally unavailable.
 
 ## Local setup
 
@@ -40,16 +45,14 @@ credits must be configured separately before activation.
 The production environment uses the same keys listed in `.env.example`.
 Secrets belong in the hosting platform and must not be committed.
 
-## Activation checklist
+## Production configuration
 
 - Configure the managed auth project and verified redirect URL.
-- Set `ADMIN_EMAIL` to the administrator's verified account.
+- Set the administrator credentials and session-signing secret in the host.
 - Add the upstream base URL, documentation URL, token, path rewrites, and all
   identity markers as host-side secrets.
-- Confirm written permission for downstream redistribution and white-label use.
 - Bind the intended custom hostname.
-- Test binary downloads, redirects, streaming responses, and large payloads.
-- Only then set `SERVICE_ENABLED=true`.
+- Set the spend ceiling and daily request limits before enabling the relay.
 
 ## Commands
 

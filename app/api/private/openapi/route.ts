@@ -1,6 +1,6 @@
 import { getPortalUser } from "@/lib/auth";
 import { requiredEnv, runtimeEnv } from "@/lib/config";
-import { buildReplacements, sanitizeTextStream } from "@/lib/sanitize";
+import { sanitizeOpenApiDocument } from "@/lib/openapi";
 
 export const dynamic = "force-dynamic";
 
@@ -21,19 +21,22 @@ export async function GET(): Promise<Response> {
   } catch {
     return Response.json({ error: "Documentation is unavailable." }, { status: 503 });
   }
-  if (!upstream.ok || !upstream.body) {
+  if (!upstream.ok) {
     return Response.json({ error: "Documentation is unavailable." }, { status: 502 });
   }
 
-  return new Response(
-    sanitizeTextStream(upstream.body, buildReplacements(current)),
-    {
-      status: 200,
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        "cache-control": "private, no-store, max-age=0",
-        "x-content-type-options": "nosniff",
-      },
+  let document: unknown;
+  try {
+    document = await upstream.json();
+  } catch {
+    return Response.json({ error: "Documentation is unavailable." }, { status: 502 });
+  }
+
+  return Response.json(sanitizeOpenApiDocument(document, current), {
+    status: 200,
+    headers: {
+      "cache-control": "private, no-store, max-age=0",
+      "x-content-type-options": "nosniff",
     },
-  );
+  });
 }
