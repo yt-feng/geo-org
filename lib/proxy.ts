@@ -1,0 +1,401 @@
+import { getD1, isServiceEnabled, numericEnv, requiredEnv, runtimeEnv } from "./config";
+import { randomId, sha256Hex } from "./crypto";
+import {
+  buildReplacements,
+  isTextualContentType,
+  sanitizeLocation,
+  sanitizeTextStream,
+} from "./sanitize";
+
+type AuthorizedKey = {
+  keyId: string;
+  userId: string;
+  email: string;
+  dailyLimit: number;
+};
+
+const REQUEST_HEADER_ALLOWLIST = new Set([
+  "accept",
+  "accept-encoding",
+  "content-encoding",
+  "content-language",
+  "content-type",
+  "if-match",
+  "if-modified-since",
+  "if-none-match",
+  "if-unmodified-since",
+  "range",
+]);
+
+const RESPONSE_HEADER_ALLOWLIST = new Set([
+  "accept-ranges",
+  "cache-control",
+  "content-disposition",
+  "content-language",
+  "content-range",
+  "content-type",
+  "expires",
+  "last-modified",
+  "retry-after",
+  "vary",
+]);
+
+function jsonError(
+  status: number,
+  code: string,
+  message: string,
+  requestId: string,
+): Response {
+  return Response.json(
+    { error: { code, message, request_id: requestId } },
+    {
+      status,
+      headers: {
+        "cache-control": "no-store",
+        "x-request-id": requestId,
+      },
+    },
+  );
+}
+
+function extractClientKey(request: Request): string {
+  const authorization = request.headers.get("authorization") || "";
+  const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+  return bearer || request.headers.get("x-api-key")?.trim() || "";
+}
+
+async function authorizeKey(request: Request): Promise<AuthorizedKey | null> {
+  const rawKey = extractClientKey(request);
+  if (!rawKey.startsWith("eco_live_") || rawKey.length < 32) return null;
+  const keyHash = await sha256Hex(rawKey);
+  const row = await getD1()
+    .prepare(
+      `SELECT
+         k.id AS key_id,
+         k.user_id AS user_id,
+         u.email AS email,
+         u.daily_limit AS daily_limit
+       FROM api_keys k
+       JOIN users u ON u.id = k.user_id
+       WHERE k.key_hash = ?
+         AND k.revoked_at IS NULL
+         AND u.status = 'active'
+       LIMIT 1`,
+    )
+    .bind(keyHash)
+    .first<{
+      key_id: string;
+      user_id: string;
+      email: string;
+      daily_limit: number;
+    }>();
+  if (!row) return null;
+  return {
+    keyId: row.key_id,
+    userId: row.user_id,
+    email: row.email,
+    dailyLimit: Number(row.daily_limit || 0),
+  };
+}
+
+function localEnvelope(
+  requestId: string,
+  path: string,
+  data: unknown,
+  message = "Request completed",
+): Response {
+  return Response.json(
+    {
+      code: 200,
+      message,
+      data,
+      request_id: requestId,
+      router: path,
+    },
+    {
+      headers: {
+        "cache-control": "no-store",
+        "x-request-id": requestId,
+      },
+    },
+  );
+}
+
+async function handleLocalGatewayEndpoint(
+  request: Request,
+  key: AuthorizedKey,
+  requestId: string,
+): Promise<Response | null> {
+  if (request.method !== "GET") return null;
+  const path = new URL(request.url).pathname;
+  const base = "/api/v1/gateway";
+  if (!path.startsWith(`${base}/`)) return null;
+
+  const database = getD1();
+  const day = new Date().toISOString().slice(0, 10);
+  if (path === `${base}/user/get_user_info`) {
+    const usage = await database
+      .prepare(
+        `SELECT calls, successes, errors
+         FROM usage_daily WHERE user_id = ? AND day = ?`,
+      )
+      .bind(key.userId, day)
+      .first<{ calls: number; successes: number; errors: number }>();
+    return localEnvelope(requestId, path, {
+      email: key.email,
+      plan: "free",
+      status: "active",
+      daily_limit: key.dailyLimit,
+      calls_today: Number(usage?.calls || 0),
+      successes_today: Number(usage?.successes || 0),
+      errors_today: Number(usage?.errors || 0),
+    });
+  }
+
+  if (path === `${base}/user/get_user_daily_usage`) {
+    const result = await database
+      .prepare(
+        `SELECT day, calls, successes, errors, bytes_in, bytes_out
+         FROM usage_daily
+         WHERE user_id = ?
+         ORDER BY day DESC
+         LIMIT 30`,
+      )
+      .bind(key.userId)
+      .all();
+    return localEnvelope(requestId, path, result.results || []);
+  }
+
+  if (
+    path === `${base}/user/calculate_price` ||
+    path === `${base}/user/get_tiered_discount_info` ||
+    path === `${base}/user/get_endpoint_info` ||
+    path === `${base}/user/get_all_endpoints_info`
+  ) {
+    return localEnvelope(requestId, path, {
+      plan: "free",
+      unit_price: 0,
+      currency: "USD",
+      daily_limit: key.dailyLimit,
+      note: "Usage is included while the account remains within its quota.",
+    });
+  }
+
+  if (path === `${base}/downloader/version`) {
+    return localEnvelope(requestId, path, {
+      version: "1.0.0",
+      download_url: null,
+      homepage: runtimeEnv().PUBLIC_BASE_URL || "https://api.eco-geo.com",
+    });
+  }
+
+  if (path === `${base}/downloader/redirect_download`) {
+    return jsonError(404, "not_available", "Download is not available.", requestId);
+  }
+  return null;
+}
+
+async function reserveQuota(
+  key: AuthorizedKey,
+  inputBytes: number,
+): Promise<"ok" | "global" | "user"> {
+  const database = getD1();
+  const day = new Date().toISOString().slice(0, 10);
+  const globalLimit = numericEnv("GLOBAL_PROXY_DAILY_LIMIT", 8000);
+  const global = await database
+    .prepare(
+      `INSERT INTO global_usage (day, calls, updated_at)
+       VALUES (?, 1, CURRENT_TIMESTAMP)
+       ON CONFLICT(day) DO UPDATE SET
+         calls = global_usage.calls + 1,
+         updated_at = CURRENT_TIMESTAMP
+       WHERE global_usage.calls < ?
+       RETURNING calls`,
+    )
+    .bind(day, globalLimit)
+    .first<{ calls: number }>();
+  if (!global) return "global";
+
+  const perUser = await database
+    .prepare(
+      `INSERT INTO usage_daily
+         (user_id, day, calls, successes, errors, bytes_in, bytes_out, updated_at)
+       VALUES (?, ?, 1, 0, 0, ?, 0, CURRENT_TIMESTAMP)
+       ON CONFLICT(user_id, day) DO UPDATE SET
+         calls = usage_daily.calls + 1,
+         bytes_in = usage_daily.bytes_in + excluded.bytes_in,
+         updated_at = CURRENT_TIMESTAMP
+       WHERE usage_daily.calls < ?
+       RETURNING calls`,
+    )
+    .bind(key.userId, day, Math.max(0, inputBytes), key.dailyLimit)
+    .first<{ calls: number }>();
+  return perUser ? "ok" : "user";
+}
+
+function buildUpstreamHeaders(request: Request): Headers {
+  const output = new Headers();
+  for (const [name, value] of request.headers) {
+    if (REQUEST_HEADER_ALLOWLIST.has(name.toLowerCase())) output.set(name, value);
+  }
+  output.set("authorization", `Bearer ${requiredEnv("UPSTREAM_API_TOKEN")}`);
+  output.set("user-agent", "EcoGeoGateway/1.0");
+  return output;
+}
+
+function buildClientHeaders(upstream: Response, requestId: string): Headers {
+  const output = new Headers({
+    "cache-control": "no-store",
+    "x-request-id": requestId,
+  });
+  for (const [name, value] of upstream.headers) {
+    const normalized = name.toLowerCase();
+    if (RESPONSE_HEADER_ALLOWLIST.has(normalized)) output.set(name, value);
+    if (normalized === "location") output.set("location", sanitizeLocation(value));
+  }
+  output.delete("content-length");
+  output.delete("content-md5");
+  output.delete("digest");
+  output.delete("etag");
+  return output;
+}
+
+async function recordUsage(
+  key: AuthorizedKey,
+  requestId: string,
+  request: Request,
+  status: number,
+  latencyMs: number,
+  outputBytes: number,
+): Promise<void> {
+  const database = getD1();
+  const day = new Date().toISOString().slice(0, 10);
+  const success = status >= 200 && status < 400 ? 1 : 0;
+  const error = success ? 0 : 1;
+  await database.batch([
+    database
+      .prepare(
+        `UPDATE usage_daily
+         SET successes = successes + ?,
+             errors = errors + ?,
+             bytes_out = bytes_out + ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = ? AND day = ?`,
+      )
+      .bind(success, error, Math.max(0, outputBytes), key.userId, day),
+    database
+      .prepare(
+        `UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      )
+      .bind(key.keyId),
+    database
+      .prepare(
+        `INSERT INTO usage_events
+           (request_id, user_id, api_key_id, method, path, status, latency_ms)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        requestId,
+        key.userId,
+        key.keyId,
+        request.method,
+        new URL(request.url).pathname.slice(0, 500),
+        status,
+        latencyMs,
+      ),
+  ]);
+}
+
+function upstreamUrlFor(request: Request): string {
+  const requestUrl = new URL(request.url);
+  const base = requiredEnv("UPSTREAM_BASE_URL").replace(/\/+$/, "");
+  let upstreamPath = requestUrl.pathname;
+  const rawRewrites = runtimeEnv().UPSTREAM_PATH_REWRITES;
+  if (rawRewrites) {
+    try {
+      const rewrites = Object.entries(
+        JSON.parse(rawRewrites) as Record<string, string>,
+      )
+        .filter(([from, to]) => from.startsWith("/") && to.startsWith("/"))
+        .sort(([left], [right]) => right.length - left.length);
+      for (const [from, to] of rewrites) {
+        if (upstreamPath.startsWith(from)) {
+          upstreamPath = `${to}${upstreamPath.slice(from.length)}`;
+          break;
+        }
+      }
+    } catch {
+      throw new Error("Invalid upstream path rewrite configuration");
+    }
+  }
+  return `${base}${upstreamPath}${requestUrl.search}`;
+}
+
+export async function handleApiProxy(request: Request): Promise<Response> {
+  const requestId = randomId("req_");
+  if (!isServiceEnabled()) {
+    return jsonError(
+      503,
+      "service_locked",
+      "The API relay is not enabled yet.",
+      requestId,
+    );
+  }
+
+  const key = await authorizeKey(request);
+  if (!key) return jsonError(401, "invalid_api_key", "Invalid API key.", requestId);
+
+  const localResponse = await handleLocalGatewayEndpoint(request, key, requestId);
+  if (localResponse) return localResponse;
+
+  const inputBytes = Number(request.headers.get("content-length") || 0);
+  const quota = await reserveQuota(key, Number.isFinite(inputBytes) ? inputBytes : 0);
+  if (quota !== "ok") {
+    return jsonError(
+      429,
+      quota === "global" ? "service_daily_limit" : "daily_limit",
+      "Daily request limit reached.",
+      requestId,
+    );
+  }
+
+  const startedAt = Date.now();
+  let upstream: Response;
+  try {
+    const timeoutMs = numericEnv("UPSTREAM_TIMEOUT_MS", 90_000, 1_000);
+    upstream = await fetch(upstreamUrlFor(request), {
+      method: request.method,
+      headers: buildUpstreamHeaders(request),
+      body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+      redirect: "manual",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch {
+    const latency = Date.now() - startedAt;
+    await recordUsage(key, requestId, request, 502, latency, 0).catch(() => undefined);
+    return jsonError(502, "upstream_unavailable", "Service temporarily unavailable.", requestId);
+  }
+
+  const headers = buildClientHeaders(upstream, requestId);
+  const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+  const outputBytes = Number(upstream.headers.get("content-length") || 0);
+  const body =
+    upstream.body && isTextualContentType(contentType)
+      ? sanitizeTextStream(upstream.body, buildReplacements(runtimeEnv()))
+      : upstream.body;
+
+  const response = new Response(body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers,
+  });
+  await recordUsage(
+    key,
+    requestId,
+    request,
+    upstream.status,
+    Date.now() - startedAt,
+    Number.isFinite(outputBytes) ? outputBytes : 0,
+  ).catch(() => undefined);
+  return response;
+}
