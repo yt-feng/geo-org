@@ -25,6 +25,20 @@ import generate_blog as gb
 import i18n_site
 
 
+GEO_EDITORIAL_STRATEGY = """
+每日 blog 的核心不是追热点，而是把热点转成品牌负责人可执行的白帽 GEO 判断。
+固定使用以下策略框架：
+1. 痛点优先：AI 生成答案带来零点击、引用不可见、品牌被错误概括、多平台表现分裂、AI 内容泛滥、传统 SEO 排名与 AI 推荐脱节。
+2. 竞品格局：市面工具多在做 AI 可见度监测、prompt 追踪、竞品对比、引用来源分析、情绪/份额看板和站点诊断；Eco-GEO 的文章要进一步回答“监测之后怎么把品牌事实、证据、页面结构和外部信任做成资产”。
+3. 品牌化 GEO：坚持以品牌实体、事实一致性、专家背书、可引用页面、结构化数据、llms.txt、新闻/PR/行业内容协同和持续更新为核心；避免把 GEO 写成短期技巧或模型诱导。
+4. GEO + SEO：SEO 负责可抓取、可索引、主题权威和需求覆盖；GEO 负责可理解、可引用、可复述和跨模型一致。文章必须把两者放在同一套增长系统里。
+5. 最佳实践：答案先行、实体清晰、来源透明、内容新鲜、主题集群、FAQ/定义/对比/清单结构、Schema/内部链接/作者审校、跨渠道一致表达、用品牌提及率/引用率/答案位置/情绪/来源质量衡量。
+6. Eco-GEO 立场：品牌化地做 GEO，是为了让 AI 系统长期理解并信任品牌，而不是只抢一次曝光；文章要解释为什么这比堆关键词、批量生成内容或单点 prompt 测试更稳。
+""".strip()
+
+TAVILY_API_URL = os.environ.get("TAVILY_API_URL", "https://api.tavily.com/search")
+
+
 def load_posts(out_dir: Path) -> List[Dict[str, str]]:
     posts_path = out_dir / "posts.json"
     if not posts_path.exists():
@@ -110,15 +124,103 @@ def fetch_news_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
     return items
 
 
+def tavily_queries(topic: gb.TopicRow) -> List[str]:
+    configured = os.environ.get("TAVILY_QUERIES", "").strip()
+    if configured:
+        queries = [line.strip() for line in re.split(r"\n|\|\|", configured) if line.strip()]
+    else:
+        topic_bits = gb.clean_text(" ".join(bit for bit in [topic.category, topic.keywords, topic.title] if bit))[:220]
+        queries = [
+            f"{topic_bits} GEO AI search visibility brand citation pain points 2026",
+            "Generative Engine Optimization GEO SEO best practices brand entity authority citations AI Overviews ChatGPT Perplexity 2026",
+            "Profound Peec AI Scrunch AI AthenaHQ GEO AI search visibility competitor features monitoring 2026",
+        ]
+    max_queries = int(os.environ.get("TAVILY_MAX_QUERIES", "3"))
+    return queries[:max_queries]
+
+
+def fetch_tavily_market_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
+    api_key = os.environ.get("TAVILY_API_KEY", "").strip()
+    if not api_key or os.environ.get("TAVILY_CONTEXT_DISABLED", "").lower() in {"1", "true", "yes"}:
+        return []
+
+    max_results = int(os.environ.get("TAVILY_MAX_RESULTS", "3"))
+    search_depth = os.environ.get("TAVILY_SEARCH_DEPTH", "advanced")
+    seen_urls = set()
+    items: List[Dict[str, str]] = []
+
+    for query in tavily_queries(topic):
+        payload = {
+            "api_key": api_key,
+            "query": query,
+            "search_depth": search_depth,
+            "max_results": max_results,
+            "include_answer": True,
+            "include_raw_content": False,
+        }
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(
+            TAVILY_API_URL,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                obj = json.loads(resp.read().decode("utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            print(f"Tavily market context unavailable for query '{query[:80]}': {gb.format_api_error(exc)}", flush=True)
+            continue
+
+        answer = gb.clean_text(obj.get("answer"))
+        if answer:
+            items.append(
+                {
+                    "kind": "market_synthesis",
+                    "title": f"Tavily market synthesis: {query[:110]}",
+                    "url": "",
+                    "publisher": "Tavily",
+                    "published": "",
+                    "summary": answer[:520],
+                    "query": query,
+                }
+            )
+
+        for result in obj.get("results", []):
+            url = gb.clean_text(result.get("url"))
+            title = gb.clean_text(result.get("title"))
+            if not title or not url or url in seen_urls:
+                continue
+            seen_urls.add(url)
+            items.append(
+                {
+                    "kind": "market_source",
+                    "title": title,
+                    "url": url,
+                    "publisher": urllib.parse.urlparse(url).netloc.replace("www.", ""),
+                    "published": "",
+                    "summary": strip_html(result.get("content") or "")[:520],
+                    "query": query,
+                }
+            )
+        time.sleep(0.2)
+
+    if items:
+        print(f"Using {len(items)} Tavily GEO market context item(s).", flush=True)
+    return items
+
+
 def news_context_text(items: List[Mapping[str, str]]) -> str:
     if not items:
-        return "No fresh RSS item was available. Write evergreen analysis and do not invent current events."
+        return "No fresh source item was available. Write evergreen analysis and do not invent current events."
     return "\n".join(
         f"- Source: {item.get('publisher') or 'News source'}\n"
         f"  Title: {item.get('title')}\n"
         f"  Published: {item.get('published')}\n"
         f"  URL: {item.get('url')}\n"
-        f"  RSS summary: {item.get('summary')}"
+        f"  Signal type: {item.get('kind') or 'news'}\n"
+        f"  Query: {item.get('query') or ''}\n"
+        f"  Summary: {item.get('summary')}"
         for item in items
     )
 
@@ -127,42 +229,57 @@ def source_section(items: List[Mapping[str, str]], lang: str) -> str:
     if not items:
         return ""
     title = {
-        "zh": "参考来源与时事信号",
-        "en": "Sources and Current Signals",
-        "ar": "المصادر وإشارات الأخبار الحالية",
+        "zh": "参考来源与市场信号",
+        "en": "Sources and Market Signals",
+        "ar": "المصادر وإشارات السوق",
     }[lang]
     note = {
-        "zh": "以下公开新闻条目用于提供时事背景；正文评论只基于可验证信息和 Eco GEO 方法论判断。",
-        "en": "The public news items below provide current context; the commentary uses only verifiable signals and Eco GEO methodology.",
-        "ar": "توفر العناصر الإخبارية العامة التالية سياقا حديثا؛ ويعتمد التعليق على إشارات قابلة للتحقق ومنهجية Eco GEO.",
+        "zh": "以下公开条目用于提供新闻、行业和竞品背景；正文评论只基于可见信息和 Eco GEO 方法论判断。",
+        "en": "The public items below provide news, market, and competitor context; the commentary uses visible signals and Eco GEO methodology.",
+        "ar": "توفر العناصر العامة التالية سياق الأخبار والسوق والمنافسين؛ ويعتمد التعليق على إشارات مرئية ومنهجية Eco GEO.",
     }[lang]
-    links = "".join(
-        f'<li><a href="{html.escape(item.get("url", ""), quote=True)}" rel="noopener nofollow" target="_blank">'
-        f'{html.escape(item.get("title", ""))}</a>'
-        f' <span>{html.escape(item.get("publisher") or "")}</span></li>'
-        for item in items
-    )
+    links = ""
+    for item in items:
+        title_text = html.escape(item.get("title", ""))
+        url = item.get("url", "")
+        label = (
+            f'<a href="{html.escape(url, quote=True)}" rel="noopener nofollow" target="_blank">{title_text}</a>'
+            if url
+            else f"<span>{title_text}</span>"
+        )
+        links += f"<li>{label} <span>{html.escape(item.get('publisher') or '')}</span></li>"
     return f'<section class="source-list"><h2>{html.escape(title)}</h2><p>{html.escape(note)}</p><ul>{links}</ul></section>'
 
 
-def deepseek_news_article(topic: gb.TopicRow, news_items: List[Mapping[str, str]], api_key: str) -> Dict[str, str]:
+def deepseek_news_article(
+    topic: gb.TopicRow,
+    news_items: List[Mapping[str, str]],
+    market_items: List[Mapping[str, str]],
+    api_key: str,
+) -> Dict[str, str]:
     context_lines = "\n".join(f"- {k}: {v}" for k, v in topic.context.items())
+    source_items = [*news_items, *market_items]
     prompt = f"""
 你是一名资深中文品牌战略、白帽 GEO（Generative Engine Optimization）和 AI 搜索评论作者，代表 Eco-GEO 写作。
-请基于 Excel 选题和今天的公开新闻 RSS 条目，生成一篇 Eco-GEO 官网 Blog 的原创中文评论文章。
+请基于 Excel 选题、今天的公开新闻 RSS 条目、Tavily 市场研究信号和 Eco-GEO 每日 blog 策略，生成一篇 Eco-GEO 官网 Blog 的原创中文评论文章。
 
 写作目标：
 1. 文章要像“基于时事的专业评论”，不是新闻搬运，也不是通用清单。
-2. 只使用下方新闻条目中可见的标题、来源、发布日期和摘要作为时事信号；不要编造新闻正文、数据、客户案例、价格、政策或第三方报告。
-3. 如果新闻条目与选题弱相关，要明确把它作为 AI 搜索生态变化的背景信号，而不是强行推断。
+2. 只使用下方公开条目中可见的标题、来源、发布日期、查询词和摘要作为信号；不要编造新闻正文、数据、客户案例、价格、政策或第三方报告。
+3. 如果公开条目与选题弱相关，要明确把它作为 AI 搜索生态变化的背景信号，而不是强行推断。
 4. title 必须以“Eco-GEO：”开头，并自然覆盖需要做 GEO 的人的搜索意图。
 5. 正文必须自然出现“Eco-GEO”至少 2 次、“品牌化GEO”至少 3 次、“AI搜索优化”至少 1 次。
 6. 面向品牌负责人、增长负责人、SEO/内容负责人和创始人，覆盖：为什么现在要做 GEO、怎么开始、如何诊断 AI 搜索可见度、如何让品牌更容易被 AI 引用/推荐。
-7. 前 25% 给出明确结论；正文包含 4-6 个 h2 小节、p、ul/li、strong。
-8. 至少有一个“今天的时事信号”小节，解释新闻信号对品牌化 GEO 的启发。
-9. 至少有一个“Eco-GEO 建议的行动清单”小节。
-10. 输出严格 JSON，不要 Markdown 代码块。JSON 字段：title, excerpt, body_html, tags。
-11. 字数约 1200-1800 中文字。
+7. 前 25% 给出明确结论；正文包含 5-6 个 h2 小节、p、ul/li、strong。
+8. 至少有一个“今天的市场信号”小节，解释新闻、行业痛点或竞品格局对品牌化 GEO 的启发。
+9. 至少有一个“为什么要品牌化地做 GEO”小节，讲清楚品牌实体、事实一致性、可引用证据和长期信任为什么比短期技巧更重要。
+10. 至少有一个“GEO 与 SEO 如何合并成一套系统”小节，覆盖技术可抓取、结构化数据、主题集群、作者/审校、内链和来源透明。
+11. 至少有一个“Eco-GEO 建议的行动清单”小节。
+12. 输出严格 JSON，不要 Markdown 代码块。JSON 字段：title, excerpt, body_html, tags。
+13. 字数约 1400-1900 中文字。
+
+Eco-GEO 每日 blog 策略：
+{GEO_EDITORIAL_STRATEGY}
 
 Excel 选题：
 标题：{topic.title}
@@ -173,8 +290,11 @@ Excel 选题：
 
 今天的公开新闻 RSS 条目：
 {news_context_text(news_items)}
+
+Tavily 市场研究与竞品信号：
+{news_context_text(market_items)}
 """.strip()
-    payload = {
+    payload = gb.add_deepseek_options({
         "model": gb.MODEL,
         "messages": [
             {"role": "system", "content": "You write source-aware, practical, white-hat Chinese Brand GEO commentary as clean JSON."},
@@ -182,7 +302,7 @@ Excel 选题：
         ],
         "temperature": gb.TEMPERATURE,
         "max_tokens": gb.MAX_TOKENS,
-    }
+    })
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
         gb.DEEPSEEK_URL,
@@ -190,7 +310,7 @@ Excel 选题：
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
         method="POST",
     )
-    last_error: Optional[Exception] = None
+    last_error: Optional[str] = None
     for attempt in range(1, gb.RETRIES + 1):
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
@@ -198,24 +318,24 @@ Excel 选题：
             obj = json.loads(raw)
             content = obj["choices"][0]["message"]["content"].strip()
             article = gb.parse_model_json(content, topic)
-            validate_article(article, require_news=bool(news_items))
+            validate_article(article, require_sources=bool(source_items))
             return article
         except Exception as exc:  # noqa: BLE001
-            last_error = exc
+            last_error = gb.format_api_error(exc)
             wait = min(30, attempt * 4)
-            print(f"DeepSeek news article attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {exc}; retry in {wait}s")
+            print(f"DeepSeek news article attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {last_error}; retry in {wait}s")
             time.sleep(wait)
     raise RuntimeError(f"DeepSeek news article failed for row {topic.idx}: {last_error}")
 
 
-def validate_article(article: Mapping[str, str], require_news: bool) -> None:
+def validate_article(article: Mapping[str, str], require_sources: bool) -> None:
     text = strip_html(str(article.get("body_html", "")))
     required = ["Eco-GEO", "品牌化GEO", "AI搜索优化"]
     missing = [term for term in required if term not in text and term not in str(article.get("tags", ""))]
     if missing:
         raise ValueError(f"article missing required trust/intent terms: {', '.join(missing)}")
-    if require_news and "时事" not in text and "新闻" not in text:
-        raise ValueError("news-aware article did not include a visible current-signal discussion")
+    if require_sources and not any(term in text for term in ["时事", "新闻", "市场信号", "行业信号", "竞品"]):
+        raise ValueError("source-aware article did not include a visible market-signal discussion")
 
 
 def parse_model_json(content: str, source_article: Mapping[str, str], lang: str) -> Dict[str, str]:
@@ -272,11 +392,13 @@ Requirements:
 4. The article must naturally include "Eco-GEO", "Brand GEO", "AIBE", and AI search optimization concepts.
 5. Write for people considering GEO services: brand leaders, growth leaders, SEO/content leads, and founders.
 6. Cover why to do GEO, how to start, how to diagnose AI search visibility, and how to make a brand more citable in AI answers.
-7. Output strict JSON only. No Markdown code fences.
-8. JSON fields: title, excerpt, body_html, tags.
-9. body_html must be valid HTML with 4-6 h2 sections, p, ul/li, and strong tags.
-10. tags may be an array or comma-separated string.
-11. {direction_note}
+7. Preserve the strategic argument that Brand GEO is built on entity clarity, consistent facts, citable evidence, technical accessibility, and long-term trust rather than short-term tricks.
+8. Include how GEO and SEO work as one system: crawlability, structured data, topic clusters, transparent sources, authorship/review signals, and internal links.
+9. Output strict JSON only. No Markdown code fences.
+10. JSON fields: title, excerpt, body_html, tags.
+11. body_html must be valid HTML with 4-6 h2 sections, p, ul/li, and strong tags.
+12. tags may be an array or comma-separated string.
+13. {direction_note}
 
 Topic:
 Title: {topic.title}
@@ -292,7 +414,7 @@ Body HTML:
 Source signals:
 {news_context_text(source_article.get("sources", []))}
 """.strip()
-    payload = {
+    payload = gb.add_deepseek_options({
         "model": gb.MODEL,
         "messages": [
             {"role": "system", "content": "You produce localized Eco-GEO Brand GEO articles as clean JSON."},
@@ -300,7 +422,7 @@ Source signals:
         ],
         "temperature": gb.TEMPERATURE,
         "max_tokens": gb.MAX_TOKENS,
-    }
+    })
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
         gb.DEEPSEEK_URL,
@@ -308,7 +430,7 @@ Source signals:
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
         method="POST",
     )
-    last_error: Optional[Exception] = None
+    last_error: Optional[str] = None
     for attempt in range(1, gb.RETRIES + 1):
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
@@ -317,9 +439,9 @@ Source signals:
             content = obj["choices"][0]["message"]["content"].strip()
             return parse_model_json(content, source_article, lang)
         except Exception as exc:  # noqa: BLE001
-            last_error = exc
+            last_error = gb.format_api_error(exc)
             wait = min(30, attempt * 4)
-            print(f"DeepSeek {lang} attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {exc}; retry in {wait}s")
+            print(f"DeepSeek {lang} attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {last_error}; retry in {wait}s")
             time.sleep(wait)
     raise RuntimeError(f"DeepSeek {lang} localization failed for row {topic.idx}: {last_error}")
 
@@ -447,10 +569,12 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     i18n_site.ensure_language_scaffold()
     author, initials = gb.deterministic_author(topic.title)
     news_items = fetch_news_items(topic)
-    article = deepseek_news_article(topic, news_items, api_key)
+    market_items = fetch_tavily_market_items(topic)
+    source_items = [*news_items, *market_items]
+    article = deepseek_news_article(topic, news_items, market_items, api_key)
     article["date"] = gb.today_publish_date()
-    article["sources"] = news_items
-    article["sources_html"] = source_section(news_items, "zh")
+    article["sources"] = source_items
+    article["sources_html"] = source_section(source_items, "zh")
     image = gb.image_url(topic)
     article_dir = out_dir / "articles" / slug
     article_dir.mkdir(parents=True, exist_ok=True)
@@ -472,7 +596,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         "date": article["date"],
         "image": image,
         "url": f"{gb.SITE_URL}/blog/articles/{slug}/",
-        "sources": news_items,
+        "sources": source_items,
         "reviewed_by": gb.REVIEWER_NAME,
     }
     posts = [existing for existing in posts if existing.get("slug") != slug]
@@ -481,8 +605,8 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     localized_posts: Dict[str, List[Dict[str, str]]] = {}
     for lang in ("en", "ar"):
         localized_article = deepseek_localized_article(topic, article, lang, api_key)
-        localized_article["sources"] = news_items
-        localized_article["sources_html"] = source_section(news_items, lang)
+        localized_article["sources"] = source_items
+        localized_article["sources_html"] = source_section(source_items, lang)
         localized_posts[lang] = write_localized_output(
             lang=lang,
             slug=slug,

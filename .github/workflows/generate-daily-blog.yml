@@ -37,13 +37,17 @@ jobs:
       - name: Generate one blog article
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           SITE_URL: https://eco-geo.org
-          DEEPSEEK_MODEL: deepseek-chat
-          DEEPSEEK_MAX_TOKENS: "2200"
+          DEEPSEEK_MODEL: deepseek-v4-flash
+          DEEPSEEK_THINKING: "disabled"
+          DEEPSEEK_MAX_TOKENS: "2800"
           DEEPSEEK_TEMPERATURE: "0.72"
           DEEPSEEK_REQUEST_DELAY: "0.2"
           DEEPSEEK_RETRIES: "3"
           NEWS_MAX_ITEMS: "3"
+          TAVILY_MAX_QUERIES: "3"
+          TAVILY_MAX_RESULTS: "3"
         run: |
           set -euo pipefail
           python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog

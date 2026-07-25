@@ -15,6 +15,7 @@ import os
 import random
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -24,7 +25,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 SITE_URL = os.environ.get("SITE_URL", "https://eco-geo.org").rstrip("/")
 DEEPSEEK_URL = os.environ.get("DEEPSEEK_API_URL", "https://api.deepseek.com/chat/completions")
-MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
+MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")
+THINKING_MODE = os.environ.get("DEEPSEEK_THINKING", "disabled").strip().lower()
 MAX_TOKENS = int(os.environ.get("DEEPSEEK_MAX_TOKENS", "2200"))
 TEMPERATURE = float(os.environ.get("DEEPSEEK_TEMPERATURE", "0.72"))
 REQUEST_DELAY = float(os.environ.get("DEEPSEEK_REQUEST_DELAY", "0.2"))
@@ -67,6 +69,26 @@ HISTORICAL_START_DATE = os.environ.get("HISTORICAL_START_DATE", "2024-05-25")
 AUTHOR_NAME = "Eco GEO Editorial Team"
 AUTHOR_INITIALS = "EGE"
 REVIEWER_NAME = "Eco GEO Research Desk"
+
+
+def add_deepseek_options(payload: Dict[str, Any]) -> Dict[str, Any]:
+    if THINKING_MODE in {"enabled", "disabled"}:
+        payload["thinking"] = {"type": THINKING_MODE}
+    if os.environ.get("DEEPSEEK_JSON_RESPONSE", "1").strip().lower() not in {"0", "false", "no"}:
+        payload["response_format"] = {"type": "json_object"}
+    return payload
+
+
+def format_api_error(exc: Exception) -> str:
+    if isinstance(exc, urllib.error.HTTPError):
+        body = ""
+        try:
+            body = exc.read().decode("utf-8", errors="replace").strip()
+        except Exception:  # noqa: BLE001
+            body = ""
+        if body:
+            return f"{exc}; response body: {body[:1200]}"
+    return str(exc)
 
 
 @dataclass
@@ -181,7 +203,7 @@ def deepseek_article(topic: TopicRow, api_key: str) -> Dict[str, str]:
 3. title 必须以“Eco-GEO：”开头，并自然覆盖用户搜索意图。
 4. 正文必须自然出现“Eco-GEO”至少 2 次、“品牌化GEO”至少 3 次，同时避免堆砌。
 5. 面向正在考虑做 GEO 的品牌负责人、增长负责人、SEO/内容负责人写作，覆盖“为什么要做 GEO”“怎么开始做 GEO”“如何诊断 AI 搜索可见度”“如何让品牌被 AI 引用/推荐”等意图。
-6. 文章要给出可执行步骤、风险提醒和诊断入口，引导读者理解 Eco-GEO 的品牌化 GEO 方法。
+6. 文章要给出可执行步骤、边界提醒和诊断入口，引导读者理解 Eco-GEO 的品牌化 GEO 方法。
 7. 文章必须有人类编辑增值的口吻：明确适用对象、边界、判断依据，不要写成通用清单。
 8. 不要虚构新闻、客户、数据、来源、价格、政策或第三方报告；缺少可验证来源时，只能写方法论判断。
 9. 文章要图文并茂，但图片由页面模板插入，你只生成文字。
@@ -199,7 +221,7 @@ Excel 选题：
 {context_lines}
 """.strip()
 
-    payload = {
+    payload = add_deepseek_options({
         "model": MODEL,
         "messages": [
             {"role": "system", "content": "You write original, practical, white-hat Chinese brand GEO articles in clean JSON."},
@@ -207,7 +229,7 @@ Excel 选题：
         ],
         "temperature": TEMPERATURE,
         "max_tokens": MAX_TOKENS,
-    }
+    })
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
         DEEPSEEK_URL,
@@ -216,7 +238,7 @@ Excel 选题：
         method="POST",
     )
 
-    last_error: Optional[Exception] = None
+    last_error: Optional[str] = None
     for attempt in range(1, RETRIES + 1):
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
@@ -225,9 +247,9 @@ Excel 选题：
             content = obj["choices"][0]["message"]["content"].strip()
             return parse_model_json(content, topic)
         except Exception as exc:  # noqa: BLE001
-            last_error = exc
+            last_error = format_api_error(exc)
             wait = min(30, attempt * 4)
-            print(f"DeepSeek attempt {attempt}/{RETRIES} failed for row {topic.idx}: {exc}; retry in {wait}s")
+            print(f"DeepSeek attempt {attempt}/{RETRIES} failed for row {topic.idx}: {last_error}; retry in {wait}s")
             time.sleep(wait)
     raise RuntimeError(f"DeepSeek failed for row {topic.idx}: {last_error}")
 
