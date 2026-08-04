@@ -40,11 +40,16 @@ jobs:
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           SITE_URL: https://eco-geo.org
           DEEPSEEK_MODEL: deepseek-v4-flash
+          DEEPSEEK_FALLBACK_MODELS: deepseek-v4-pro
           DEEPSEEK_THINKING: "disabled"
           DEEPSEEK_MAX_TOKENS: "2800"
           DEEPSEEK_TEMPERATURE: "0.72"
           DEEPSEEK_REQUEST_DELAY: "0.2"
-          DEEPSEEK_RETRIES: "3"
+          DEEPSEEK_RETRIES: "5"
+          DEEPSEEK_RETRY_BASE_SECONDS: "15"
+          DEEPSEEK_RETRY_MAX_SECONDS: "90"
+          ALLOW_DEEPSEEK_FALLBACK_ARTICLE: "1"
+          ALLOW_DEEPSEEK_FALLBACK_LOCALIZATION: "1"
           NEWS_MAX_ITEMS: "3"
           TAVILY_MAX_QUERIES: "3"
           TAVILY_MAX_RESULTS: "3"

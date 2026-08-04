@@ -57,6 +57,10 @@ Each daily article should include:
 - An Eco-GEO action checklist.
 - Visible source links, while avoiding claims not supported by source titles/summaries.
 
+## Automation Continuity
+
+The scheduled workflow should not fail only because one LLM endpoint is temporarily busy. The generator uses longer retry intervals, can rotate from `deepseek-v4-flash` to `deepseek-v4-pro`, and can publish a structured Eco-GEO fallback article when all model attempts fail. The fallback article still uses the selected Excel topic, RSS/Tavily source summaries, visible source links, and the same Brand GEO / SEO strategy framework.
+
 ## Source Themes Used
 
 - Adobe: brand visibility in AI search engines.

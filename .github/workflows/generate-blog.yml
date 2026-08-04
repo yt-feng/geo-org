@@ -50,11 +50,14 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           SITE_URL: https://eco-geo.org
           DEEPSEEK_MODEL: deepseek-v4-flash
+          DEEPSEEK_FALLBACK_MODELS: deepseek-v4-pro
           DEEPSEEK_THINKING: "disabled"
           DEEPSEEK_MAX_TOKENS: "2200"
           DEEPSEEK_TEMPERATURE: "0.72"
           DEEPSEEK_REQUEST_DELAY: "0.2"
-          DEEPSEEK_RETRIES: "3"
+          DEEPSEEK_RETRIES: "5"
+          DEEPSEEK_RETRY_BASE_SECONDS: "15"
+          DEEPSEEK_RETRY_MAX_SECONDS: "90"
         run: |
           set -euo pipefail
           ARGS="--excel assets/blog_articles.xlsx --out blog --start-row ${{ inputs.start_row }} --limit ${{ inputs.limit }}"

@@ -65,11 +65,14 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           SITE_URL: ${{ inputs.site_url }}
           DEEPSEEK_MODEL: deepseek-v4-flash
+          DEEPSEEK_FALLBACK_MODELS: deepseek-v4-pro
           DEEPSEEK_THINKING: "disabled"
           DEEPSEEK_MAX_TOKENS: "2200"
           DEEPSEEK_TEMPERATURE: "0.72"
           DEEPSEEK_REQUEST_DELAY: ${{ inputs.request_delay }}
-          DEEPSEEK_RETRIES: "3"
+          DEEPSEEK_RETRIES: "5"
+          DEEPSEEK_RETRY_BASE_SECONDS: "15"
+          DEEPSEEK_RETRY_MAX_SECONDS: "90"
           EST_INPUT_TOKENS_PER_ARTICLE: "1800"
           EST_OUTPUT_TOKENS_PER_ARTICLE: "2200"
           DEEPSEEK_PRICE_INPUT_PER_M: "2"

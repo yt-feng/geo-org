@@ -31,6 +31,8 @@ MAX_TOKENS = int(os.environ.get("DEEPSEEK_MAX_TOKENS", "2200"))
 TEMPERATURE = float(os.environ.get("DEEPSEEK_TEMPERATURE", "0.72"))
 REQUEST_DELAY = float(os.environ.get("DEEPSEEK_REQUEST_DELAY", "0.2"))
 RETRIES = int(os.environ.get("DEEPSEEK_RETRIES", "3"))
+RETRY_BASE_SECONDS = int(os.environ.get("DEEPSEEK_RETRY_BASE_SECONDS", "15"))
+RETRY_MAX_SECONDS = int(os.environ.get("DEEPSEEK_RETRY_MAX_SECONDS", "90"))
 
 FIRST_NAMES = [
     "Ethan", "Rowan", "Mason", "Oliver", "Lucas", "Noah", "Henry", "Leo",
@@ -77,6 +79,32 @@ def add_deepseek_options(payload: Dict[str, Any]) -> Dict[str, Any]:
     if os.environ.get("DEEPSEEK_JSON_RESPONSE", "1").strip().lower() not in {"0", "false", "no"}:
         payload["response_format"] = {"type": "json_object"}
     return payload
+
+
+def deepseek_model_candidates() -> List[str]:
+    fallback = os.environ.get("DEEPSEEK_FALLBACK_MODELS", "").strip()
+    models = [MODEL]
+    if fallback:
+        models.extend(clean_text(model) for model in re.split(r"[,，\\s]+", fallback) if clean_text(model))
+    unique: List[str] = []
+    for model in models:
+        if model and model not in unique:
+            unique.append(model)
+    return unique
+
+
+def retry_sleep_seconds(attempt: int) -> int:
+    return min(RETRY_MAX_SECONDS, RETRY_BASE_SECONDS * (2 ** max(attempt - 1, 0)))
+
+
+def deepseek_request(api_key: str, payload: Dict[str, Any]) -> urllib.request.Request:
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    return urllib.request.Request(
+        DEEPSEEK_URL,
+        data=data,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
 
 
 def format_api_error(exc: Exception) -> str:
@@ -230,17 +258,13 @@ Excel 选题：
         "temperature": TEMPERATURE,
         "max_tokens": MAX_TOKENS,
     })
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        DEEPSEEK_URL,
-        data=data,
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
-    )
-
     last_error: Optional[str] = None
+    models = deepseek_model_candidates()
     for attempt in range(1, RETRIES + 1):
+        attempt_payload = dict(payload)
+        attempt_payload["model"] = models[(attempt - 1) % len(models)]
         try:
+            req = deepseek_request(api_key, attempt_payload)
             with urllib.request.urlopen(req, timeout=120) as resp:
                 raw = resp.read().decode("utf-8")
             obj = json.loads(raw)
@@ -248,8 +272,13 @@ Excel 选题：
             return parse_model_json(content, topic)
         except Exception as exc:  # noqa: BLE001
             last_error = format_api_error(exc)
-            wait = min(30, attempt * 4)
-            print(f"DeepSeek attempt {attempt}/{RETRIES} failed for row {topic.idx}: {last_error}; retry in {wait}s")
+            if attempt >= RETRIES:
+                break
+            wait = retry_sleep_seconds(attempt)
+            print(
+                f"DeepSeek attempt {attempt}/{RETRIES} with {attempt_payload['model']} failed for row {topic.idx}: "
+                f"{last_error}; retry in {wait}s"
+            )
             time.sleep(wait)
     raise RuntimeError(f"DeepSeek failed for row {topic.idx}: {last_error}")
 

@@ -251,6 +251,110 @@ def source_section(items: List[Mapping[str, str]], lang: str) -> str:
     return f'<section class="source-list"><h2>{html.escape(title)}</h2><p>{html.escape(note)}</p><ul>{links}</ul></section>'
 
 
+def fallback_enabled(name: str) -> bool:
+    return os.environ.get(name, "1").strip().lower() not in {"0", "false", "no"}
+
+
+def source_signal_list(items: List[Mapping[str, str]], limit: int = 5) -> str:
+    if not items:
+        return "<li>今天没有稳定的公开来源摘要，因此正文只使用 Eco-GEO 的常青方法论。</li>"
+    lis = []
+    for item in items[:limit]:
+        publisher = gb.clean_text(item.get("publisher")) or "公开来源"
+        title = gb.clean_text(item.get("title")) or "市场信号"
+        summary = gb.clean_text(item.get("summary"))[:180]
+        text = f"{publisher}：{title}"
+        if summary:
+            text += f"。{summary}"
+        lis.append(f"<li>{html.escape(text)}</li>")
+    return "".join(lis)
+
+
+def fallback_news_article(
+    topic: gb.TopicRow,
+    news_items: List[Mapping[str, str]],
+    market_items: List[Mapping[str, str]],
+    last_error: Optional[str],
+) -> Dict[str, str]:
+    source_items = [*news_items, *market_items]
+    title = gb.ensure_title_prefix(topic.title)
+    category = gb.clean_text(topic.category) or "Brand GEO"
+    keywords = gb.clean_text(topic.keywords) or topic.title
+    source_lis = source_signal_list(source_items)
+    body_html = f"""
+<p><strong>结论：</strong>这篇文章采用 Eco-GEO 的备用编辑框架生成，因为上游模型服务临时不可用。对于“{html.escape(topic.title)}”这个选题，核心判断仍然清楚：白帽 GEO 不只是让页面被 AI 搜到，而是让品牌实体、事实证据、内容结构和外部可信来源长期保持一致，让 AI 搜索优化从一次性曝光变成可积累的品牌资产。</p>
+<h2>今天的市场信号</h2>
+<p>公开新闻和 Tavily 市场信号显示，GEO 正在从单一排名问题变成品牌可见度、引用质量和跨平台一致性的系统问题。品牌负责人需要关注的不只是“有没有被提到”，还包括 AI 答案引用了谁、如何描述品牌、是否把品牌放进正确的品类和场景。</p>
+<ul>{source_lis}</ul>
+<h2>这个痛点为什么适合用品牌化GEO解决</h2>
+<p>在 {html.escape(category)} 场景里，短期内容技巧很容易制造噪音，却很难建立稳定认知。品牌化GEO 的重点是把品牌名、产品边界、方法论、适用对象、证据来源和常见问题写成可被检索、理解和复述的公开资产。Eco-GEO 会优先处理事实一致性，而不是追逐单次 prompt 的偶然结果。</p>
+<h2>GEO 与 SEO 要合并成一套系统</h2>
+<p>SEO 负责让页面可抓取、可索引、可理解；GEO 负责让内容可引用、可复述、可对比。每日内容应该同时覆盖主题集群、内部链接、结构化数据、作者与审校信号、清晰定义、FAQ、对比表述和来源透明。这样 Google 搜索、AI Overviews、ChatGPT、Perplexity、Gemini 等入口才更容易把品牌放进同一套语义框架。</p>
+<h2>竞品工具格局给品牌的启发</h2>
+<p>市面上的 GEO 工具普遍强调 AI 可见度监测、prompt 追踪、竞品对比、引用来源分析和情绪看板。监测很重要，但监测之后更关键的是改造内容资产：哪些页面能回答购买前问题，哪些证据能被引用，哪些第三方来源能支撑品牌可信度，哪些表述需要在官网、博客、FAQ 和资源页中保持一致。</p>
+<h2>Eco-GEO 建议的行动清单</h2>
+<ul>
+<li><strong>先定义品牌实体：</strong>统一品牌名、服务名、适用对象、核心方法和不适用边界。</li>
+<li><strong>再补可引用证据：</strong>把方法论、流程、FAQ、案例边界、术语解释和来源页做成稳定 URL。</li>
+<li><strong>同步 SEO 基础：</strong>检查 sitemap、robots、llms.txt、Schema、内链和页面标题层级。</li>
+<li><strong>持续监测 AI 答案：</strong>观察品牌提及率、引用来源、答案位置、竞品共现和描述偏差。</li>
+<li><strong>用内容集群沉淀信任：</strong>围绕 {html.escape(keywords)} 持续发布定义、对比、清单和诊断型内容。</li>
+</ul>
+<h2>为什么要坚持白帽路线</h2>
+<p>AI 搜索优化的长期价值来自可验证的品牌事实，而不是绕过系统的短期动作。品牌化GEO 要让 AI 系统更容易理解真实品牌，也让用户在看到 AI 推荐后能回到官网验证。对 Eco-GEO 来说，白帽方法的目标不是制造一次答案，而是持续提高品牌被正确引用、正确比较和正确推荐的概率。</p>
+""".strip()
+    excerpt = (
+        f"围绕 {topic.title}，用 Eco-GEO 的白帽品牌化GEO框架梳理市场信号、GEO 与 SEO 协同、"
+        "以及品牌长期 AI 可见性的行动清单。"
+    )
+    if last_error:
+        print(f"Using fallback Chinese article for row {topic.idx} after DeepSeek failure: {last_error}", flush=True)
+    return {
+        "title": title,
+        "excerpt": excerpt,
+        "body_html": body_html,
+        "tags": gb.ensure_required_tags(f"{keywords}, {category}, 白帽GEO, 品牌化GEO, AI搜索优化"),
+    }
+
+
+def fallback_localized_article(source_article: Mapping[str, str], lang: str, last_error: Optional[str]) -> Dict[str, str]:
+    if lang == "en":
+        title = source_article.get("title", "Brand GEO insight")
+        title = re.sub(r"^Eco[- ]GEO[：:]\s*", "", str(title), flags=re.IGNORECASE)
+        body_html = """
+<p><strong>Conclusion:</strong> Eco-GEO treats Brand GEO as a durable brand asset system, not a short-term prompt tactic. The priority is entity clarity, consistent facts, citable evidence, technical accessibility, and ongoing measurement across AI search surfaces.</p>
+<h2>Market Signals</h2>
+<p>AI search is shifting discovery from rankings and clicks toward mentions, citations, recommendations, and answer consistency. Brands need to know how AI systems describe them, which sources are cited, and whether competitors own the comparison frame.</p>
+<h2>Why Brand GEO</h2>
+<p>Brand GEO helps AI systems understand what the brand is, who it serves, how it is different, and which public evidence supports those claims. This is stronger than producing isolated content for one prompt.</p>
+<h2>How GEO And SEO Work Together</h2>
+<ul><li>Keep pages crawlable, indexable, structured, and internally linked.</li><li>Use answer-first sections, clear definitions, transparent sources, and reviewer signals.</li><li>Measure AI mentions, citations, sentiment, answer position, and source quality alongside SEO metrics.</li></ul>
+<h2>Eco-GEO Action Checklist</h2>
+<ul><li>Define brand entities and category language.</li><li>Build citable pages for methods, FAQs, comparisons, and diagnostics.</li><li>Maintain schema, sitemap, robots, llms.txt, and internal links.</li><li>Monitor how AI systems mention the brand and competitors.</li></ul>
+""".strip()
+        tags = "Eco-GEO, Brand GEO, AI search optimization, AIBE"
+        excerpt = "A practical Eco-GEO note on Brand GEO, AI search visibility, and the SEO foundation needed for durable citations."
+        localized_title = f"Eco-GEO: {title}" if title else "Eco-GEO: Brand GEO insight"
+    else:
+        body_html = """
+<p><strong>الخلاصة:</strong> تتعامل Eco-GEO مع GEO للعلامات التجارية بوصفه نظام أصول طويل الأمد، لا مجرد تكتيك قصير المدى. الأولوية هي وضوح الكيان، واتساق الحقائق، والأدلة القابلة للاقتباس، وإتاحة المحتوى تقنيا، والقياس المستمر عبر أسطح بحث الذكاء الاصطناعي.</p>
+<h2>إشارات السوق</h2>
+<p>ينتقل اكتشاف العلامات من الترتيب والنقرات إلى الذكر والاقتباس والتوصية واتساق الإجابات. لذلك تحتاج العلامة إلى فهم كيفية وصف أنظمة الذكاء الاصطناعي لها والمصادر التي تستند إليها.</p>
+<h2>لماذا GEO للعلامات التجارية</h2>
+<p>يساعد GEO للعلامات التجارية الأنظمة على فهم ماهية العلامة، ومن تخدم، وما الذي يميزها، وأي أدلة عامة تدعم هذه الرسائل.</p>
+<h2>كيف يعمل GEO مع SEO</h2>
+<ul><li>اجعل الصفحات قابلة للزحف والفهرسة ومنظمة بروابط داخلية واضحة.</li><li>استخدم إجابات مباشرة وتعريفات واضحة ومصادر شفافة وإشارات مراجعة.</li><li>قس الذكر والاقتباسات والمشاعر وموضع الإجابة وجودة المصادر إلى جانب مقاييس SEO.</li></ul>
+<h2>قائمة عمل Eco-GEO</h2>
+<ul><li>حدد كيانات العلامة ولغة الفئة.</li><li>ابن صفحات قابلة للاقتباس للمنهجيات والأسئلة والمقارنات والتشخيص.</li><li>حافظ على Schema وsitemap وrobots وllms.txt والروابط الداخلية.</li></ul>
+""".strip()
+        tags = "Eco-GEO, Brand GEO, GEO للعلامات التجارية, تحسين بحث الذكاء الاصطناعي, AIBE"
+        excerpt = "مقال عملي من Eco-GEO حول GEO للعلامات التجارية ووضوح العلامة في بحث الذكاء الاصطناعي."
+        localized_title = "Eco-GEO: Brand GEO insight"
+    if last_error:
+        print(f"Using fallback {lang} article after DeepSeek failure: {last_error}", flush=True)
+    return {"title": localized_title, "excerpt": excerpt, "body_html": body_html, "tags": tags}
+
+
 def deepseek_news_article(
     topic: gb.TopicRow,
     news_items: List[Mapping[str, str]],
@@ -303,16 +407,13 @@ Tavily 市场研究与竞品信号：
         "temperature": gb.TEMPERATURE,
         "max_tokens": gb.MAX_TOKENS,
     })
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        gb.DEEPSEEK_URL,
-        data=data,
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
-    )
     last_error: Optional[str] = None
+    models = gb.deepseek_model_candidates()
     for attempt in range(1, gb.RETRIES + 1):
+        attempt_payload = dict(payload)
+        attempt_payload["model"] = models[(attempt - 1) % len(models)]
         try:
+            req = gb.deepseek_request(api_key, attempt_payload)
             with urllib.request.urlopen(req, timeout=120) as resp:
                 raw = resp.read().decode("utf-8")
             obj = json.loads(raw)
@@ -322,9 +423,16 @@ Tavily 市场研究与竞品信号：
             return article
         except Exception as exc:  # noqa: BLE001
             last_error = gb.format_api_error(exc)
-            wait = min(30, attempt * 4)
-            print(f"DeepSeek news article attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {last_error}; retry in {wait}s")
+            if attempt >= gb.RETRIES:
+                break
+            wait = gb.retry_sleep_seconds(attempt)
+            print(
+                f"DeepSeek news article attempt {attempt}/{gb.RETRIES} with {attempt_payload['model']} failed "
+                f"for row {topic.idx}: {last_error}; retry in {wait}s"
+            )
             time.sleep(wait)
+    if fallback_enabled("ALLOW_DEEPSEEK_FALLBACK_ARTICLE"):
+        return fallback_news_article(topic, news_items, market_items, last_error)
     raise RuntimeError(f"DeepSeek news article failed for row {topic.idx}: {last_error}")
 
 
@@ -423,16 +531,13 @@ Source signals:
         "temperature": gb.TEMPERATURE,
         "max_tokens": gb.MAX_TOKENS,
     })
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        gb.DEEPSEEK_URL,
-        data=data,
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
-    )
     last_error: Optional[str] = None
+    models = gb.deepseek_model_candidates()
     for attempt in range(1, gb.RETRIES + 1):
+        attempt_payload = dict(payload)
+        attempt_payload["model"] = models[(attempt - 1) % len(models)]
         try:
+            req = gb.deepseek_request(api_key, attempt_payload)
             with urllib.request.urlopen(req, timeout=120) as resp:
                 raw = resp.read().decode("utf-8")
             obj = json.loads(raw)
@@ -440,9 +545,16 @@ Source signals:
             return parse_model_json(content, source_article, lang)
         except Exception as exc:  # noqa: BLE001
             last_error = gb.format_api_error(exc)
-            wait = min(30, attempt * 4)
-            print(f"DeepSeek {lang} attempt {attempt}/{gb.RETRIES} failed for row {topic.idx}: {last_error}; retry in {wait}s")
+            if attempt >= gb.RETRIES:
+                break
+            wait = gb.retry_sleep_seconds(attempt)
+            print(
+                f"DeepSeek {lang} attempt {attempt}/{gb.RETRIES} with {attempt_payload['model']} failed "
+                f"for row {topic.idx}: {last_error}; retry in {wait}s"
+            )
             time.sleep(wait)
+    if fallback_enabled("ALLOW_DEEPSEEK_FALLBACK_LOCALIZATION"):
+        return fallback_localized_article(source_article, lang, last_error)
     raise RuntimeError(f"DeepSeek {lang} localization failed for row {topic.idx}: {last_error}")
 
 
