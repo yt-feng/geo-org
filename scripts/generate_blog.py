@@ -85,7 +85,7 @@ def deepseek_model_candidates() -> List[str]:
     fallback = os.environ.get("DEEPSEEK_FALLBACK_MODELS", "").strip()
     models = [MODEL]
     if fallback:
-        models.extend(clean_text(model) for model in re.split(r"[,，\\s]+", fallback) if clean_text(model))
+        models.extend(clean_text(model) for model in re.split(r"[,，\s]+", fallback) if clean_text(model))
     unique: List[str] = []
     for model in models:
         if model and model not in unique:
