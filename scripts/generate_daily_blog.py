@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Generate one new blog article from the Excel topic backlog.
+"""Generate a researched, reviewed insight in Chinese, English and Arabic.
 
-Designed for a scheduled GitHub Actions run. It keeps existing posts,
-selects the first topic that has not been generated yet, writes one article,
-refreshes blog indexes and sitemap, then lets the workflow commit the diff.
+No article or public index is written until every language passes quality gates.
 """
 from __future__ import annotations
 
@@ -23,6 +21,8 @@ import enhance_blog_index
 import authority_site
 import generate_blog as gb
 import i18n_site
+import insight_pipeline
+from insight_research import build_research_pack
 
 
 GEO_EDITORIAL_STRATEGY = """
@@ -131,9 +131,9 @@ def tavily_queries(topic: gb.TopicRow) -> List[str]:
     else:
         topic_bits = gb.clean_text(" ".join(bit for bit in [topic.category, topic.keywords, topic.title] if bit))[:220]
         queries = [
-            f"{topic_bits} GEO AI search visibility brand citation pain points 2026",
-            "Generative Engine Optimization GEO SEO best practices brand entity authority citations AI Overviews ChatGPT Perplexity 2026",
-            "Profound Peec AI Scrunch AI AthenaHQ GEO AI search visibility competitor features monitoring 2026",
+            f"{topic_bits} AI search brand discovery evidence research",
+            f"{topic.category} AI search customer journey resource allocation measurement research",
+            "AI search citations indexing measurement official documentation Google Bing",
         ]
     max_queries = int(os.environ.get("TAVILY_MAX_QUERIES", "3"))
     return queries[:max_queries]
@@ -155,7 +155,8 @@ def fetch_tavily_market_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
             "query": query,
             "search_depth": search_depth,
             "max_results": max_results,
-            "include_answer": True,
+            "include_domains": ["bcg.com", "developers.google.com", "blogs.bing.com", "arxiv.org"],
+            "include_answer": False,
             "include_raw_content": False,
         }
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -226,336 +227,21 @@ def news_context_text(items: List[Mapping[str, str]]) -> str:
 
 
 def source_section(items: List[Mapping[str, str]], lang: str) -> str:
-    if not items:
-        return ""
-    title = {
-        "zh": "参考来源与市场信号",
-        "en": "Sources and Market Signals",
-        "ar": "المصادر وإشارات السوق",
-    }[lang]
-    note = {
-        "zh": "以下公开条目用于提供新闻、行业和竞品背景；正文评论只基于可见信息和 Eco GEO 方法论判断。",
-        "en": "The public items below provide news, market, and competitor context; the commentary uses visible signals and Eco GEO methodology.",
-        "ar": "توفر العناصر العامة التالية سياق الأخبار والسوق والمنافسين؛ ويعتمد التعليق على إشارات مرئية ومنهجية Eco GEO.",
-    }[lang]
-    links = ""
-    for item in items:
-        title_text = html.escape(item.get("title", ""))
-        url = item.get("url", "")
-        label = (
-            f'<a href="{html.escape(url, quote=True)}" rel="noopener nofollow" target="_blank">{title_text}</a>'
-            if url
-            else f"<span>{title_text}</span>"
-        )
-        links += f"<li>{label} <span>{html.escape(item.get('publisher') or '')}</span></li>"
-    return f'<section class="source-list"><h2>{html.escape(title)}</h2><p>{html.escape(note)}</p><ul>{links}</ul></section>'
-
-
-def fallback_enabled(name: str) -> bool:
-    return os.environ.get(name, "1").strip().lower() not in {"0", "false", "no"}
-
-
-def source_signal_list(items: List[Mapping[str, str]], limit: int = 5) -> str:
-    if not items:
-        return "<li>今天没有稳定的公开来源摘要，因此正文只使用 Eco-GEO 的常青方法论。</li>"
-    lis = []
-    for item in items[:limit]:
-        publisher = gb.clean_text(item.get("publisher")) or "公开来源"
-        title = gb.clean_text(item.get("title")) or "市场信号"
-        summary = gb.clean_text(item.get("summary"))[:180]
-        text = f"{publisher}：{title}"
-        if summary:
-            text += f"。{summary}"
-        lis.append(f"<li>{html.escape(text)}</li>")
-    return "".join(lis)
-
-
-def fallback_news_article(
-    topic: gb.TopicRow,
-    news_items: List[Mapping[str, str]],
-    market_items: List[Mapping[str, str]],
-    last_error: Optional[str],
-) -> Dict[str, str]:
-    source_items = [*news_items, *market_items]
-    title = gb.ensure_title_prefix(topic.title)
-    category = gb.clean_text(topic.category) or "Brand GEO"
-    keywords = gb.clean_text(topic.keywords) or topic.title
-    source_lis = source_signal_list(source_items)
-    body_html = f"""
-<p><strong>结论：</strong>这篇文章采用 Eco-GEO 的备用编辑框架生成，因为上游模型服务临时不可用。对于“{html.escape(topic.title)}”这个选题，核心判断仍然清楚：白帽 GEO 不只是让页面被 AI 搜到，而是让品牌实体、事实证据、内容结构和外部可信来源长期保持一致，让 AI 搜索优化从一次性曝光变成可积累的品牌资产。</p>
-<h2>今天的市场信号</h2>
-<p>公开新闻和 Tavily 市场信号显示，GEO 正在从单一排名问题变成品牌可见度、引用质量和跨平台一致性的系统问题。品牌负责人需要关注的不只是“有没有被提到”，还包括 AI 答案引用了谁、如何描述品牌、是否把品牌放进正确的品类和场景。</p>
-<ul>{source_lis}</ul>
-<h2>这个痛点为什么适合用品牌化GEO解决</h2>
-<p>在 {html.escape(category)} 场景里，短期内容技巧很容易制造噪音，却很难建立稳定认知。品牌化GEO 的重点是把品牌名、产品边界、方法论、适用对象、证据来源和常见问题写成可被检索、理解和复述的公开资产。Eco-GEO 会优先处理事实一致性，而不是追逐单次 prompt 的偶然结果。</p>
-<h2>GEO 与 SEO 要合并成一套系统</h2>
-<p>SEO 负责让页面可抓取、可索引、可理解；GEO 负责让内容可引用、可复述、可对比。每日内容应该同时覆盖主题集群、内部链接、结构化数据、作者与审校信号、清晰定义、FAQ、对比表述和来源透明。这样 Google 搜索、AI Overviews、ChatGPT、Perplexity、Gemini 等入口才更容易把品牌放进同一套语义框架。</p>
-<h2>竞品工具格局给品牌的启发</h2>
-<p>市面上的 GEO 工具普遍强调 AI 可见度监测、prompt 追踪、竞品对比、引用来源分析和情绪看板。监测很重要，但监测之后更关键的是改造内容资产：哪些页面能回答购买前问题，哪些证据能被引用，哪些第三方来源能支撑品牌可信度，哪些表述需要在官网、博客、FAQ 和资源页中保持一致。</p>
-<h2>Eco-GEO 建议的行动清单</h2>
-<ul>
-<li><strong>先定义品牌实体：</strong>统一品牌名、服务名、适用对象、核心方法和不适用边界。</li>
-<li><strong>再补可引用证据：</strong>把方法论、流程、FAQ、案例边界、术语解释和来源页做成稳定 URL。</li>
-<li><strong>同步 SEO 基础：</strong>检查 sitemap、robots、llms.txt、Schema、内链和页面标题层级。</li>
-<li><strong>持续监测 AI 答案：</strong>观察品牌提及率、引用来源、答案位置、竞品共现和描述偏差。</li>
-<li><strong>用内容集群沉淀信任：</strong>围绕 {html.escape(keywords)} 持续发布定义、对比、清单和诊断型内容。</li>
-</ul>
-<h2>为什么要坚持白帽路线</h2>
-<p>AI 搜索优化的长期价值来自可验证的品牌事实，而不是绕过系统的短期动作。品牌化GEO 要让 AI 系统更容易理解真实品牌，也让用户在看到 AI 推荐后能回到官网验证。对 Eco-GEO 来说，白帽方法的目标不是制造一次答案，而是持续提高品牌被正确引用、正确比较和正确推荐的概率。</p>
-""".strip()
-    excerpt = (
-        f"围绕 {topic.title}，用 Eco-GEO 的白帽品牌化GEO框架梳理市场信号、GEO 与 SEO 协同、"
-        "以及品牌长期 AI 可见性的行动清单。"
-    )
-    if last_error:
-        print(f"Using fallback Chinese article for row {topic.idx} after DeepSeek failure: {last_error}", flush=True)
-    return {
-        "title": title,
-        "excerpt": excerpt,
-        "body_html": body_html,
-        "tags": gb.ensure_required_tags(f"{keywords}, {category}, 白帽GEO, 品牌化GEO, AI搜索优化"),
+    titles = {"zh": "来源与研究方法", "en": "Sources and Methodology", "ar": "المصادر والمنهجية"}
+    notes = {
+        "zh": "本文基于下列公开资料的已读取正文展开分析。外部事实、作者推论和示例假设在正文中分别标明；来源适用的市场、样本和时间不自动外推到其他行业。",
+        "en": "This analysis draws on the retrieved source text below. External facts, analytical inferences and illustrative assumptions are distinguished in the article; findings are bounded by their market, sample and date.",
+        "ar": "يستند هذا التحليل إلى النصوص المسترجعة من المصادر العامة أدناه. يميز المقال بين الحقائق الخارجية والاستنتاجات التحليلية والافتراضات التوضيحية، ضمن حدود السوق والعينة والتاريخ."
     }
-
-
-def fallback_localized_article(source_article: Mapping[str, str], lang: str, last_error: Optional[str]) -> Dict[str, str]:
-    if lang == "en":
-        title = source_article.get("title", "Brand GEO insight")
-        title = re.sub(r"^Eco[- ]GEO[：:]\s*", "", str(title), flags=re.IGNORECASE)
-        body_html = """
-<p><strong>Conclusion:</strong> Eco-GEO treats Brand GEO as a durable brand asset system, not a short-term prompt tactic. The priority is entity clarity, consistent facts, citable evidence, technical accessibility, and ongoing measurement across AI search surfaces.</p>
-<h2>Market Signals</h2>
-<p>AI search is shifting discovery from rankings and clicks toward mentions, citations, recommendations, and answer consistency. Brands need to know how AI systems describe them, which sources are cited, and whether competitors own the comparison frame.</p>
-<h2>Why Brand GEO</h2>
-<p>Brand GEO helps AI systems understand what the brand is, who it serves, how it is different, and which public evidence supports those claims. This is stronger than producing isolated content for one prompt.</p>
-<h2>How GEO And SEO Work Together</h2>
-<ul><li>Keep pages crawlable, indexable, structured, and internally linked.</li><li>Use answer-first sections, clear definitions, transparent sources, and reviewer signals.</li><li>Measure AI mentions, citations, sentiment, answer position, and source quality alongside SEO metrics.</li></ul>
-<h2>Eco-GEO Action Checklist</h2>
-<ul><li>Define brand entities and category language.</li><li>Build citable pages for methods, FAQs, comparisons, and diagnostics.</li><li>Maintain schema, sitemap, robots, llms.txt, and internal links.</li><li>Monitor how AI systems mention the brand and competitors.</li></ul>
-""".strip()
-        tags = "Eco-GEO, Brand GEO, AI search optimization, AIBE"
-        excerpt = "A practical Eco-GEO note on Brand GEO, AI search visibility, and the SEO foundation needed for durable citations."
-        localized_title = f"Eco-GEO: {title}" if title else "Eco-GEO: Brand GEO insight"
-    else:
-        body_html = """
-<p><strong>الخلاصة:</strong> تتعامل Eco-GEO مع GEO للعلامات التجارية بوصفه نظام أصول طويل الأمد، لا مجرد تكتيك قصير المدى. الأولوية هي وضوح الكيان، واتساق الحقائق، والأدلة القابلة للاقتباس، وإتاحة المحتوى تقنيا، والقياس المستمر عبر أسطح بحث الذكاء الاصطناعي.</p>
-<h2>إشارات السوق</h2>
-<p>ينتقل اكتشاف العلامات من الترتيب والنقرات إلى الذكر والاقتباس والتوصية واتساق الإجابات. لذلك تحتاج العلامة إلى فهم كيفية وصف أنظمة الذكاء الاصطناعي لها والمصادر التي تستند إليها.</p>
-<h2>لماذا GEO للعلامات التجارية</h2>
-<p>يساعد GEO للعلامات التجارية الأنظمة على فهم ماهية العلامة، ومن تخدم، وما الذي يميزها، وأي أدلة عامة تدعم هذه الرسائل.</p>
-<h2>كيف يعمل GEO مع SEO</h2>
-<ul><li>اجعل الصفحات قابلة للزحف والفهرسة ومنظمة بروابط داخلية واضحة.</li><li>استخدم إجابات مباشرة وتعريفات واضحة ومصادر شفافة وإشارات مراجعة.</li><li>قس الذكر والاقتباسات والمشاعر وموضع الإجابة وجودة المصادر إلى جانب مقاييس SEO.</li></ul>
-<h2>قائمة عمل Eco-GEO</h2>
-<ul><li>حدد كيانات العلامة ولغة الفئة.</li><li>ابن صفحات قابلة للاقتباس للمنهجيات والأسئلة والمقارنات والتشخيص.</li><li>حافظ على Schema وsitemap وrobots وllms.txt والروابط الداخلية.</li></ul>
-""".strip()
-        tags = "Eco-GEO, Brand GEO, GEO للعلامات التجارية, تحسين بحث الذكاء الاصطناعي, AIBE"
-        excerpt = "مقال عملي من Eco-GEO حول GEO للعلامات التجارية ووضوح العلامة في بحث الذكاء الاصطناعي."
-        localized_title = "Eco-GEO: Brand GEO insight"
-    if last_error:
-        print(f"Using fallback {lang} article after DeepSeek failure: {last_error}", flush=True)
-    return {"title": localized_title, "excerpt": excerpt, "body_html": body_html, "tags": tags}
-
-
-def deepseek_news_article(
-    topic: gb.TopicRow,
-    news_items: List[Mapping[str, str]],
-    market_items: List[Mapping[str, str]],
-    api_key: str,
-) -> Dict[str, str]:
-    context_lines = "\n".join(f"- {k}: {v}" for k, v in topic.context.items())
-    source_items = [*news_items, *market_items]
-    prompt = f"""
-你是一名资深中文品牌战略、白帽 GEO（Generative Engine Optimization）和 AI 搜索评论作者，代表 Eco-GEO 写作。
-请基于 Excel 选题、今天的公开新闻 RSS 条目、Tavily 市场研究信号和 Eco-GEO 每日 blog 策略，生成一篇 Eco-GEO 官网 Blog 的原创中文评论文章。
-
-写作目标：
-1. 文章要像“基于时事的专业评论”，不是新闻搬运，也不是通用清单。
-2. 只使用下方公开条目中可见的标题、来源、发布日期、查询词和摘要作为信号；不要编造新闻正文、数据、客户案例、价格、政策或第三方报告。
-3. 如果公开条目与选题弱相关，要明确把它作为 AI 搜索生态变化的背景信号，而不是强行推断。
-4. title 必须以“Eco-GEO：”开头，并自然覆盖需要做 GEO 的人的搜索意图。
-5. 正文必须自然出现“Eco-GEO”至少 2 次、“品牌化GEO”至少 3 次、“AI搜索优化”至少 1 次。
-6. 面向品牌负责人、增长负责人、SEO/内容负责人和创始人，覆盖：为什么现在要做 GEO、怎么开始、如何诊断 AI 搜索可见度、如何让品牌更容易被 AI 引用/推荐。
-7. 前 25% 给出明确结论；正文包含 5-6 个 h2 小节、p、ul/li、strong。
-8. 至少有一个“今天的市场信号”小节，解释新闻、行业痛点或竞品格局对品牌化 GEO 的启发。
-9. 至少有一个“为什么要品牌化地做 GEO”小节，讲清楚品牌实体、事实一致性、可引用证据和长期信任为什么比短期技巧更重要。
-10. 至少有一个“GEO 与 SEO 如何合并成一套系统”小节，覆盖技术可抓取、结构化数据、主题集群、作者/审校、内链和来源透明。
-11. 至少有一个“Eco-GEO 建议的行动清单”小节。
-12. 输出严格 JSON，不要 Markdown 代码块。JSON 字段：title, excerpt, body_html, tags。
-13. 字数约 1400-1900 中文字。
-
-Eco-GEO 每日 blog 策略：
-{GEO_EDITORIAL_STRATEGY}
-
-Excel 选题：
-标题：{topic.title}
-分类：{topic.category}
-关键词：{topic.keywords}
-完整上下文：
-{context_lines}
-
-今天的公开新闻 RSS 条目：
-{news_context_text(news_items)}
-
-Tavily 市场研究与竞品信号：
-{news_context_text(market_items)}
-""".strip()
-    payload = gb.add_deepseek_options({
-        "model": gb.MODEL,
-        "messages": [
-            {"role": "system", "content": "You write source-aware, practical, white-hat Chinese Brand GEO commentary as clean JSON."},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": gb.TEMPERATURE,
-        "max_tokens": gb.MAX_TOKENS,
-    })
-    last_error: Optional[str] = None
-    models = gb.deepseek_model_candidates()
-    for attempt in range(1, gb.RETRIES + 1):
-        attempt_payload = dict(payload)
-        attempt_payload["model"] = models[(attempt - 1) % len(models)]
-        try:
-            req = gb.deepseek_request(api_key, attempt_payload)
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                raw = resp.read().decode("utf-8")
-            obj = json.loads(raw)
-            content = obj["choices"][0]["message"]["content"].strip()
-            article = gb.parse_model_json(content, topic)
-            validate_article(article, require_sources=bool(source_items))
-            return article
-        except Exception as exc:  # noqa: BLE001
-            last_error = gb.format_api_error(exc)
-            if attempt >= gb.RETRIES:
-                break
-            wait = gb.retry_sleep_seconds(attempt)
-            print(
-                f"DeepSeek news article attempt {attempt}/{gb.RETRIES} with {attempt_payload['model']} failed "
-                f"for row {topic.idx}: {last_error}; retry in {wait}s"
-            )
-            time.sleep(wait)
-    if fallback_enabled("ALLOW_DEEPSEEK_FALLBACK_ARTICLE"):
-        return fallback_news_article(topic, news_items, market_items, last_error)
-    raise RuntimeError(f"DeepSeek news article failed for row {topic.idx}: {last_error}")
-
-
-def validate_article(article: Mapping[str, str], require_sources: bool) -> None:
-    text = strip_html(str(article.get("body_html", "")))
-    required = ["Eco-GEO", "品牌化GEO", "AI搜索优化"]
-    missing = [term for term in required if term not in text and term not in str(article.get("tags", ""))]
-    if missing:
-        raise ValueError(f"article missing required trust/intent terms: {', '.join(missing)}")
-    if require_sources and not any(term in text for term in ["时事", "新闻", "市场信号", "行业信号", "竞品"]):
-        raise ValueError("source-aware article did not include a visible market-signal discussion")
-
-
-def parse_model_json(content: str, source_article: Mapping[str, str], lang: str) -> Dict[str, str]:
-    content = content.strip()
-    if content.startswith("```"):
-        content = re.sub(r"^```(?:json)?", "", content).strip()
-        content = re.sub(r"```$", "", content).strip()
-    start = content.find("{")
-    end = content.rfind("}")
-    if start >= 0 and end > start:
-        content = content[start : end + 1]
-    try:
-        obj = json.loads(content)
-    except json.JSONDecodeError:
-        obj = {}
-
-    fallback_title = source_article.get("title", "Brand GEO insight")
-    title = gb.clean_text(obj.get("title")) or fallback_title
-    title = re.sub(r"^Eco[- ]GEO[：:]\s*", "", title, flags=re.IGNORECASE)
-    title = f"Eco-GEO: {title}" if title else "Eco-GEO: Brand GEO insight"
-    excerpt = gb.clean_text(obj.get("excerpt")) or gb.clean_text(source_article.get("excerpt"))
-    if not excerpt:
-        excerpt = "A practical Eco-GEO article about Brand GEO and AI search optimization."
-    body_html = str(obj.get("body_html") or "").strip()
-    if not body_html:
-        body_html = f"<p>{html.escape(excerpt)}</p>"
-    tags = obj.get("tags")
-    if isinstance(tags, list):
-        tag_values = [gb.clean_text(t) for t in tags if gb.clean_text(t)]
-    else:
-        tag_values = [gb.clean_text(t) for t in re.split(r"[,،，、]", str(tags or "")) if gb.clean_text(t)]
-    required = (
-        ["Eco-GEO", "Brand GEO", "AI search optimization", "AIBE"]
-        if lang == "en"
-        else ["Eco-GEO", "Brand GEO", "GEO للعلامات التجارية", "تحسين بحث الذكاء الاصطناعي", "AIBE"]
+    links = "".join(
+        f'<li id="source-{html.escape(str(item["id"]))}">'
+        f'<a href="{html.escape(str(item["url"]), quote=True)}" rel="noopener" target="_blank">'
+        f'[{html.escape(str(item["id"]))}] {html.escape(str(item["title"]))}</a>'
+        f' — {html.escape(str(item.get("publisher", "")))}'
+        f' · {html.escape(str(item.get("published") or ""))}'
+        f' · {html.escape(str(item.get("retrieved_at", ""))[:10])}</li>' for item in items
     )
-    for tag in required:
-        if tag not in tag_values:
-            tag_values.append(tag)
-    return {"title": title, "excerpt": excerpt, "body_html": body_html, "tags": ", ".join(tag_values)}
-
-
-def deepseek_localized_article(topic: gb.TopicRow, source_article: Mapping[str, str], lang: str, api_key: str) -> Dict[str, str]:
-    target = "English" if lang == "en" else "Arabic"
-    direction_note = "" if lang == "en" else "Write fluent Modern Standard Arabic for an RTL page."
-    prompt = f"""
-You are a senior Brand GEO and AI search consultant for Eco-GEO.
-Create a localized {target} version of the Chinese Eco-GEO article below.
-
-Requirements:
-1. Keep the same strategic intent, but rewrite naturally for {target} readers.
-2. Do not invent customers, case studies, statistics, awards, or claims.
-3. The title must start with "Eco-GEO:".
-4. The article must naturally include "Eco-GEO", "Brand GEO", "AIBE", and AI search optimization concepts.
-5. Write for people considering GEO services: brand leaders, growth leaders, SEO/content leads, and founders.
-6. Cover why to do GEO, how to start, how to diagnose AI search visibility, and how to make a brand more citable in AI answers.
-7. Preserve the strategic argument that Brand GEO is built on entity clarity, consistent facts, citable evidence, technical accessibility, and long-term trust rather than short-term tricks.
-8. Include how GEO and SEO work as one system: crawlability, structured data, topic clusters, transparent sources, authorship/review signals, and internal links.
-9. Output strict JSON only. No Markdown code fences.
-10. JSON fields: title, excerpt, body_html, tags.
-11. body_html must be valid HTML with 4-6 h2 sections, p, ul/li, and strong tags.
-12. tags may be an array or comma-separated string.
-13. {direction_note}
-
-Topic:
-Title: {topic.title}
-Category: {topic.category}
-Keywords: {topic.keywords}
-
-Chinese source article:
-Title: {source_article.get("title", "")}
-Excerpt: {source_article.get("excerpt", "")}
-Body HTML:
-{source_article.get("body_html", "")}
-
-Source signals:
-{news_context_text(source_article.get("sources", []))}
-""".strip()
-    payload = gb.add_deepseek_options({
-        "model": gb.MODEL,
-        "messages": [
-            {"role": "system", "content": "You produce localized Eco-GEO Brand GEO articles as clean JSON."},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": gb.TEMPERATURE,
-        "max_tokens": gb.MAX_TOKENS,
-    })
-    last_error: Optional[str] = None
-    models = gb.deepseek_model_candidates()
-    for attempt in range(1, gb.RETRIES + 1):
-        attempt_payload = dict(payload)
-        attempt_payload["model"] = models[(attempt - 1) % len(models)]
-        try:
-            req = gb.deepseek_request(api_key, attempt_payload)
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                raw = resp.read().decode("utf-8")
-            obj = json.loads(raw)
-            content = obj["choices"][0]["message"]["content"].strip()
-            return parse_model_json(content, source_article, lang)
-        except Exception as exc:  # noqa: BLE001
-            last_error = gb.format_api_error(exc)
-            if attempt >= gb.RETRIES:
-                break
-            wait = gb.retry_sleep_seconds(attempt)
-            print(
-                f"DeepSeek {lang} attempt {attempt}/{gb.RETRIES} with {attempt_payload['model']} failed "
-                f"for row {topic.idx}: {last_error}; retry in {wait}s"
-            )
-            time.sleep(wait)
-    if fallback_enabled("ALLOW_DEEPSEEK_FALLBACK_LOCALIZATION"):
-        return fallback_localized_article(source_article, lang, last_error)
-    raise RuntimeError(f"DeepSeek {lang} localization failed for row {topic.idx}: {last_error}")
+    return f'<section class="source-list"><h2>{titles[lang]}</h2><p>{notes[lang]}</p><ol>{links}</ol></section>'
 
 
 def localized_category(lang: str) -> str:
@@ -591,6 +277,7 @@ def write_localized_output(
         "url": f"{gb.SITE_URL}/{lang}/blog/articles/{slug}/",
         "sources": article.get("sources", []),
         "reviewed_by": gb.REVIEWER_NAME,
+        "quality": article.get("quality", {}),
     }
     article_dir = blog_dir / "articles" / slug
     article_dir.mkdir(parents=True, exist_ok=True)
@@ -661,79 +348,75 @@ def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
     enhance_blog_index.main()
 
 
-def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_run: bool) -> bool:
+def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_run: bool,
+                           preview_dir: Optional[Path] = None) -> bool:
     topics = gb.read_topics(excel_path, start_row=start_row, limit=0)
     posts = load_posts(out_dir)
     topic = select_next_topic(topics, posts, out_dir)
     if topic is None:
         print("No ungenerated topics remain in the Excel backlog.", flush=True)
         return False
-
     slug = gb.slugify(topic.title, topic.idx)
     print(f"Next topic: row={topic.idx} slug={slug} title={topic.title}", flush=True)
     if dry_run:
         return False
-
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         raise RuntimeError("DEEPSEEK_API_KEY is required in repository secrets")
 
-    i18n_site.ensure_language_scaffold()
+    # Discovery summaries are leads only; the research pack contains retrieved originals.
+    leads = [*fetch_news_items(topic), *fetch_tavily_market_items(topic)]
+    sources = build_research_pack(topic, leads)
+    metadata = insight_pipeline.public_sources(sources)
+    audit_dir = Path(os.environ.get("INSIGHT_AUDIT_DIR", ".artifacts/insights")) / slug
+    recent = [{key: post.get(key, "") for key in ("title", "category", "excerpt")} for post in posts[:30]]
+    articles = {}
+    articles["zh"] = insight_pipeline.produce_article(topic, sources, api_key, recent_posts=recent,
+                                                       audit_path=audit_dir / "zh.json")
+    for lang in ("en", "ar"):
+        articles[lang] = insight_pipeline.produce_article(topic, sources, api_key, lang=lang,
+                          original=articles["zh"], audit_path=audit_dir / f"{lang}.json")
     author, initials = gb.deterministic_author(topic.title)
-    news_items = fetch_news_items(topic)
-    market_items = fetch_tavily_market_items(topic)
-    source_items = [*news_items, *market_items]
-    article = deepseek_news_article(topic, news_items, market_items, api_key)
-    article["date"] = gb.today_publish_date()
-    article["sources"] = source_items
-    article["sources_html"] = source_section(source_items, "zh")
+    publish_date = gb.today_publish_date()
     image = gb.image_url(topic)
+    for lang, article in articles.items():
+        article.update(date=publish_date, sources=metadata, sources_html=source_section(metadata, lang))
+
+    # Stage all three complete, reviewed versions before touching any public index.
+    if preview_dir is not None:
+        preview_dir.mkdir(parents=True, exist_ok=True)
+        for lang, article in articles.items():
+            (preview_dir / f"{lang}.json").write_text(json.dumps(article, ensure_ascii=False, indent=2), encoding="utf-8")
+            page = gb.article_html(topic, article, slug, author, initials) if lang == "zh" else i18n_site.localized_article_html(
+                lang=lang, post={**article, "category": localized_category(lang), "author": author,
+                "image": image, "url": f"{gb.SITE_URL}/{lang}/blog/articles/{slug}/"},
+                body_html=article["body_html"] + article["sources_html"], initials=initials)
+            (preview_dir / f"{lang}.html").write_text(page, encoding="utf-8")
+        print(f"Reviewed preview written to {preview_dir}; site indexes untouched.", flush=True)
+        return True
+
+    article = articles["zh"]
+    i18n_site.ensure_language_scaffold()
     article_dir = out_dir / "articles" / slug
     article_dir.mkdir(parents=True, exist_ok=True)
-    article_dir.joinpath("index.html").write_text(
-        gb.article_html(topic, article, slug, author, initials),
-        encoding="utf-8",
-    )
-    time.sleep(gb.REQUEST_DELAY)
-
+    article_dir.joinpath("index.html").write_text(gb.article_html(topic, article, slug, author, initials), encoding="utf-8")
     post = {
-        "order": str(next_order(posts)),
-        "row": str(topic.idx),
-        "slug": slug,
-        "title": gb.ensure_title_prefix(article["title"]),
-        "excerpt": article["excerpt"],
-        "category": topic.category,
-        "tags": gb.ensure_required_tags(article["tags"]),
-        "author": author,
-        "date": article["date"],
-        "image": image,
-        "url": f"{gb.SITE_URL}/blog/articles/{slug}/",
-        "sources": source_items,
-        "reviewed_by": gb.REVIEWER_NAME,
+        "order": str(next_order(posts)), "row": str(topic.idx), "slug": slug,
+        "title": article["title"], "excerpt": article["excerpt"], "category": topic.category,
+        "tags": article["tags"], "author": author, "date": publish_date, "image": image,
+        "url": f"{gb.SITE_URL}/blog/articles/{slug}/", "sources": metadata,
+        "reviewed_by": gb.REVIEWER_NAME, "quality": article["quality"],
     }
-    posts = [existing for existing in posts if existing.get("slug") != slug]
     posts.insert(0, post)
     write_indexes(posts, out_dir)
-    localized_posts: Dict[str, List[Dict[str, str]]] = {}
+    localized_posts = {}
     for lang in ("en", "ar"):
-        localized_article = deepseek_localized_article(topic, article, lang, api_key)
-        localized_article["sources"] = source_items
-        localized_article["sources_html"] = source_section(source_items, lang)
-        localized_posts[lang] = write_localized_output(
-            lang=lang,
-            slug=slug,
-            topic=topic,
-            article=localized_article,
-            author=author,
-            initials=initials,
-            image=image,
-            order=post["order"],
-            date=article["date"],
-        )
-        time.sleep(gb.REQUEST_DELAY)
-    i18n_site.write_sitemap({"zh": posts, "en": localized_posts.get("en", []), "ar": localized_posts.get("ar", [])})
+        localized_posts[lang] = write_localized_output(lang=lang, slug=slug, topic=topic,
+            article=articles[lang], author=author, initials=initials, image=image,
+            order=post["order"], date=publish_date)
+    i18n_site.write_sitemap({"zh": posts, **localized_posts})
     authority_site.main()
-    print(f"Generated daily blog article: blog/articles/{slug}/", flush=True)
+    print(f"Generated reviewed daily insight: blog/articles/{slug}/", flush=True)
     return True
 
 
@@ -743,12 +426,13 @@ def main() -> None:
     parser.add_argument("--out", default="blog")
     parser.add_argument("--start-row", type=int, default=2)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--preview-dir", type=Path, help="Write reviewed preview only; do not update the site")
     args = parser.parse_args()
 
     excel_path = Path(args.excel)
     if not excel_path.exists():
         raise FileNotFoundError(excel_path)
-    generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run)
+    generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run, args.preview_dir)
 
 
 if __name__ == "__main__":

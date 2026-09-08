@@ -10,6 +10,7 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
+from insight_styles import INSIGHT_CSS
 from string import Template
 from typing import Dict, Iterable, List, Mapping, Optional
 
@@ -467,6 +468,7 @@ def localized_article_html(
         base_css()
         + ".article{max-width:860px;margin:auto;padding:56px 0 84px}.cover{width:100%;border-radius:30px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow);background:#13221b}.article-meta{display:flex;align-items:center;gap:14px;color:var(--muted);margin:22px 0}.authority-note{border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.06);padding:14px 16px;color:var(--muted);margin:18px 0}.authority-note a,.source-list a{color:var(--green);text-decoration:none}.source-list{border-top:1px solid var(--line);margin-top:34px;padding-top:22px;color:var(--muted)}.author-avatar{width:54px;height:54px;border-radius:18px;flex:0 0 auto}.content{font-size:18px;color:#e8efe9}.content h2{font-size:30px;line-height:1.2;letter-spacing:0;margin:40px 0 12px;color:var(--text)}.content p{margin:0 0 18px}.content li{margin:8px 0}.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}.tag{border:1px solid rgba(140,233,154,.35);border-radius:999px;padding:6px 10px;color:var(--green);font-size:13px}"
     )
+    article_css += INSIGHT_CSS
     canonical = esc(post.get("url") or f"{SITE_URL}/{lang}/blog/articles/{post.get('slug', '')}/")
     schema = json.dumps(
         {

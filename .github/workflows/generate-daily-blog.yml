@@ -4,9 +4,15 @@ on:
   schedule:
     - cron: "30 0 * * *"
   workflow_dispatch:
+    inputs:
+      preview:
+        description: "Generate reviewed previews without publishing"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: generate-daily-blog
@@ -16,7 +22,7 @@ jobs:
   generate:
     name: Generate one new article
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -34,30 +40,47 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate one blog article
+      - name: Verify insight pipeline
+        run: python -m unittest discover -s tests -p "test_insight*.py" -v
+
+      - name: Generate one researched insight
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           SITE_URL: https://eco-geo.org
-          DEEPSEEK_MODEL: deepseek-v4-flash
-          DEEPSEEK_FALLBACK_MODELS: deepseek-v4-pro
-          DEEPSEEK_THINKING: "disabled"
-          DEEPSEEK_MAX_TOKENS: "2800"
-          DEEPSEEK_TEMPERATURE: "0.72"
+          DEEPSEEK_MODEL: deepseek-v4-pro
+          INSIGHT_THINKING: "enabled"
+          INSIGHT_MAX_TOKENS: "24000"
           DEEPSEEK_REQUEST_DELAY: "0.2"
-          DEEPSEEK_RETRIES: "5"
-          DEEPSEEK_RETRY_BASE_SECONDS: "15"
-          DEEPSEEK_RETRY_MAX_SECONDS: "90"
-          ALLOW_DEEPSEEK_FALLBACK_ARTICLE: "1"
-          ALLOW_DEEPSEEK_FALLBACK_LOCALIZATION: "1"
+          DEEPSEEK_RETRIES: "3"
+          INSIGHT_MAX_REVISIONS: "2"
+          INSIGHT_MIN_ZH_CHARS: "2600"
+          INSIGHT_API_TIMEOUT: "300"
+          PREVIEW_ONLY: ${{ inputs.preview }}
           NEWS_MAX_ITEMS: "3"
           TAVILY_MAX_QUERIES: "3"
           TAVILY_MAX_RESULTS: "3"
         run: |
           set -euo pipefail
-          python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog
+          args=()
+          if [ "$PREVIEW_ONLY" = "true" ]; then
+            args+=(--preview-dir .artifacts/preview)
+          fi
+          python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog "${args[@]}"
+
+      - name: Save research and review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-insight-review-${{ github.run_id }}
+          path: .artifacts/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Commit generated article
+        if: ${{ inputs.preview != true }}
+        id: commit
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -68,4 +91,11 @@ jobs:
           else
             git commit -m "Generate daily blog article"
             git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Deploy the generated article
+        if: ${{ steps.commit.outputs.changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

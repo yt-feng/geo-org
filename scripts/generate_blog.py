@@ -18,6 +18,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from insight_styles import INSIGHT_CSS
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -405,7 +406,7 @@ def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_nam
         separators=(",", ":"),
     )
     return f"""<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><meta name="author" content="{html.escape(AUTHOR_NAME)}"/><link rel="icon" href="../../../logo.svg" type="image/svg+xml"/><link rel="canonical" href="{canonical}"/><style>{page_css('../../../')}</style><script id="schema-article" type="application/ld+json">{schema}</script></head>
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Eco GEO 前沿观点</title><meta name="description" content="{excerpt}"/><meta name="author" content="{html.escape(AUTHOR_NAME)}"/><link rel="icon" href="../../../logo.svg" type="image/svg+xml"/><link rel="canonical" href="{canonical}"/><style>{page_css('../../../')}{INSIGHT_CSS}</style><script id="schema-article" type="application/ld+json">{schema}</script></head>
 <body>{site_header('../../../', '../../', '../../../brand-audit/', 'blog')}<main class="wrap"><article><div class="eyebrow">Eco GEO 前沿观点</div><h1>{title}</h1><p class="lead">{excerpt}</p><img class="cover" src="{img}" alt="{title}" loading="lazy" referrerpolicy="no-referrer"/><div class="article-meta">{avatar_svg(initials, topic.title)}<div><strong>{html.escape(author_name)}</strong><br/><span>{html.escape(topic.category)} · {published_html} · Brand-first GEO</span></div></div><div class="authority-note"><strong>编辑与事实核查：</strong>{html.escape(REVIEWER_NAME)} · 本文遵循 <a href="../../../editorial-policy/">Eco GEO 编辑政策</a>，涉及事实、数据和时事信息时优先引用可验证来源。</div><div class="content">{body_html}</div><div class="tags">{tag_html}</div></article></main>{bottom_cta()}{site_footer('../../../', '../../')}</body></html>"""
 
 
