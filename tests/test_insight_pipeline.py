@@ -216,6 +216,61 @@ class RevisionMetadataTests(unittest.TestCase):
         self.assertTrue(ip.review_errors(review))
         self.assertTrue(any("blocker_checks" in blocker for blocker in review["blockers"]))
 
+    def test_missing_or_unknown_claim_source_ids_get_one_review_format_repair(self):
+        for ids in ([], ["S99"], ["S1", 42], "S1", None):
+            bad = self.good_review()
+            bad["claim_checks"][0]["source_ids"] = ids
+            with self.subTest(ids=ids), patch.object(ip, "request_json", side_effect=[bad, self.good_review()]) as request:
+                review = ip.review_article(self.article, self.sources, "test", "zh")
+            self.assertEqual([call.kwargs["stage"] for call in request.call_args_list], ["zh-review", "zh-review-format-repair"])
+            self.assertEqual(ip.review_errors(review), [])
+            self.assertEqual(review["format_repair"]["original_review"], bad)
+            article_json = json.dumps(self.article, ensure_ascii=False)
+            self.assertTrue(all(article_json in call.args[0] for call in request.call_args_list))
+            self.assertIn("不得编造ID或机械绑定无关来源", request.call_args.args[0])
+
+    def test_claim_classification_can_be_corrected_without_inventing_source_ids(self):
+        original = self.good_review()
+        original["claim_checks"][0].update(source_ids=[], claim="本文明确假设成本为一千元的内部示例")
+        repaired = copy.deepcopy(original)
+        repaired["claim_checks"][0].update(verdict="illustrative", reason="本文明确将这一数字作为透明模型假设，并非外部统计事实。")
+        with patch.object(ip, "request_json", side_effect=[original, repaired]) as request:
+            review = ip.review_article(self.article, self.sources, "test", "zh")
+        self.assertEqual(request.call_count, 2)
+        self.assertEqual(ip.review_errors(review), [])
+        self.assertEqual(review["claim_checks"][0]["source_ids"], [])
+        self.assertEqual(review["claim_checks"][0]["verdict"], "illustrative")
+
+    def test_claim_source_contract_still_invalid_after_repair_is_rejected(self):
+        for ids in ([], ["S99"]):
+            bad = self.good_review()
+            bad["claim_checks"][0]["source_ids"] = ids
+            with self.subTest(ids=ids), patch.object(ip, "request_json", side_effect=[bad, copy.deepcopy(bad)]) as request:
+                review = ip.review_article(self.article, self.sources, "test", "zh")
+            self.assertEqual(request.call_count, 2)
+            self.assertTrue(ip.review_errors(review))
+            self.assertTrue(any("invalid review response" in error for error in review["blockers"]))
+
+    def test_repaired_classification_does_not_hide_an_unsupported_external_fact(self):
+        original = self.good_review()
+        original["claim_checks"][0]["source_ids"] = []
+        repaired = copy.deepcopy(original)
+        repaired["claim_checks"][0].update(verdict="unsupported", reason="当前资料没有支持该外部事实，不能补上无关来源作为依据。")
+        with patch.object(ip, "request_json", side_effect=[original, repaired]) as request:
+            review = ip.review_article(self.article, self.sources, "test", "zh")
+        self.assertEqual(request.call_count, 2)
+        self.assertTrue(ip.review_errors(review))
+        self.assertTrue(any("unsupported claim" in error for error in review["blockers"]))
+
+    def test_source_id_repair_cannot_erase_original_factual_blocker(self):
+        original = self.good_review()
+        original["claim_checks"][0]["source_ids"] = ["S99"]
+        original["blockers"] = ["表2的门槛与推荐情景互相矛盾"]
+        with patch.object(ip, "request_json", side_effect=[original, self.good_review()]):
+            review = ip.review_article(self.article, self.sources, "test", "zh")
+        self.assertIn("表2的门槛与推荐情景互相矛盾", review["blockers"])
+        self.assertTrue(ip.review_errors(review))
+
     def test_unresolved_or_unverifiable_history_cannot_be_cleared_by_author(self):
         for status in ("unresolved", "unverifiable"):
             value = {**self.good_review(), "blocker_checks": [{**self.resolved_check(), "status": status}]}
@@ -646,6 +701,22 @@ class EditorialRevisionTests(unittest.TestCase):
         self.assertNotIn("DO_NOT_ACCEPT_FROM_CANDIDATE", prompts["zh-review"][0])
         self.assertEqual({check["issue_id"] for check in saved["attempts"][-1]["review"]["blocker_checks"]},
                          {"r0-blocker-1", "r2-blocker-1"})
+
+    def test_source_id_review_repair_does_not_consume_an_article_revision(self):
+        repaired = self.good_review(self.fixes)
+        original = copy.deepcopy(repaired)
+        original["claim_checks"][0]["source_ids"] = []
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": "1"}), \
+             patch.object(ip, "request_json", side_effect=[original, repaired]) as request, contextlib.redirect_stdout(io.StringIO()):
+            audit_path = Path(directory) / "audit.json"
+            article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
+                                         resume_audit=self.audit, editorial_revision=self.candidate)
+            saved = json.loads(audit_path.read_text())
+        self.assertEqual([call.kwargs["stage"] for call in request.call_args_list], ["zh-review", "zh-review-format-repair"])
+        self.assertEqual(len(saved["attempts"]), 4)
+        self.assertEqual(article["quality"]["revisions"], 3)
+        self.assertEqual(article["body_html"], self.candidate["body_html"])
+        self.assertTrue(saved["passed"])
 
     def test_invalid_candidate_contract_rejected_before_model_or_audit_write(self):
         cases = [(None, "zh", self.candidate), (self.audit, "en", self.candidate),

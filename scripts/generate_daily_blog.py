@@ -266,14 +266,20 @@ def source_section(items: List[Mapping[str, str]], lang: str) -> str:
         "en": "This analysis draws on the retrieved source text below. External facts, analytical inferences and illustrative assumptions are distinguished in the article; findings are bounded by their market, sample and date.",
         "ar": "يستند هذا التحليل إلى النصوص المسترجعة من المصادر العامة أدناه. يميز المقال بين الحقائق الخارجية والاستنتاجات التحليلية والافتراضات التوضيحية، ضمن حدود السوق والعينة والتاريخ."
     }
-    links = "".join(
-        f'<li id="source-{html.escape(str(item["id"]))}">'
-        f'<a href="{html.escape(str(item["url"]), quote=True)}" rel="noopener" target="_blank">'
-        f'[{html.escape(str(item["id"]))}] {html.escape(str(item["title"]))}</a>'
-        f' — {html.escape(str(item.get("publisher", "")))}'
-        f' · {html.escape(str(item.get("published") or ""))}'
-        f' · {html.escape(str(item.get("retrieved_at", ""))[:10])}</li>' for item in items
-    )
+    date_labels = {"zh": ("发布", "读取"), "en": ("Published", "Retrieved"),
+                   "ar": ("نُشر", "تاريخ الاطلاع")}
+    links = []
+    for item in items:
+        details = [str(item.get("publisher") or "")]
+        for field, label in zip(("published", "retrieved_at"), date_labels[lang]):
+            if item.get(field):
+                details.append(f"{label} {str(item[field])[:10]}")
+        detail_text = " · ".join(html.escape(value) for value in details if value)
+        links.append(f'<li id="source-{html.escape(str(item["id"]))}">'
+            f'<a href="{html.escape(str(item["url"]), quote=True)}" rel="noopener" target="_blank">'
+            f'[{html.escape(str(item["id"]))}] {html.escape(str(item["title"]))}</a>'
+            f' — {detail_text}</li>')
+    links = "".join(links)
     return f'<section class="source-list"><h2>{titles[lang]}</h2><p>{notes[lang]}</p><ol>{links}</ol></section>'
 
 

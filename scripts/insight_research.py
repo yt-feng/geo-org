@@ -11,7 +11,7 @@ scope_notes explains the geography, population and claim boundaries. Optional
 excerpt_anchor selects a verified passage in a long report. A fixture is
 explicitly labelled local_fixture in the result.
 RESEARCH_MIN_SOURCES / RESEARCH_MIN_DOMAINS: defaults 3 / 2, hard floors 3 / 2.
-RESEARCH_MAX_SOURCES: default 5 (at most 8).
+RESEARCH_MAX_SOURCES: default 5 (at most 5 for a fresh research pack).
 RESEARCH_MIN_BODY_CHARS: default 900 (at least 300).
 RESEARCH_MAX_SOURCE_CHARS: default 10000 (at most 10000).
 RESEARCH_FETCH_TIMEOUT: seconds per request, default 20 (maximum 45).
@@ -67,11 +67,42 @@ TRUSTED_HOSTS = {
     "www.who.int": ("who.int", "World Health Organization", "institutional_research"),
 }
 
+GOOGLE_BASELINE_URL = "https://developers.google.com/search/docs/appearance/ai-features"
+RESEARCH_PAPER_SCOPE = (
+    "可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。"
+    " Only the exact read excerpt is evidence; do not attribute unread appendices, code, "
+    "or repository details to this source. Controlled visibility results do not establish "
+    "the selected industry's results or current production-platform behaviour."
+)
+
 DEFAULT_SOURCES = [
     {
-        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "url": GOOGLE_BASELINE_URL,
         "title": "AI features and your website",
         "tags": ["geo", "AI搜索", "AI search", "seo", "引用", "索引", "可见度", "监测", "技术", "结构化"],
+    },
+    {
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "tags": ["geo", "AI搜索", "AI search", "引用", "citation", "可见度", "visibility", "内容", "content", "证据", "机制", "实验", "结构化"],
+        "excerpt_anchor": "Identifying which content attributes drive LLM citations",
+        "scope_notes": (
+            "Controlled comparisons of supplied source variants, not a live search-index experiment. "
+            "Use exact per-model table values in the read excerpt; reported odds ratios are odds "
+            "multipliers, not citation probabilities or percentage-point gains. Model-specific "
+            "results and estimation warnings must not be merged into a universal effect."
+        ),
+    },
+    {
+        "url": "https://arxiv.org/html/2311.09735v3",
+        "title": "GEO: Generative Engine Optimization",
+        "tags": ["geo", "AI搜索", "AI search", "引用", "citation", "可见度", "visibility", "内容", "content", "证据", "机制", "实验", "结构化"],
+        "excerpt_anchor": "In accordance with previous works",
+        "scope_notes": (
+            "The selected experimental passage includes visibility definitions and Table 1 comparisons. "
+            "Keep the model, dataset, baseline and metric attached to each finding; a visibility-score "
+            "change is not a citation-probability change or proof of real-world retrieval performance."
+        ),
     },
     {
         "url": "https://developers.google.com/search/docs/fundamentals/creating-helpful-content",
@@ -785,6 +816,12 @@ def _lead_relevance(title: str, topic_text: str) -> int:
     return score + sum(1 for term in tokens if _matches(term, title))
 
 
+def _is_paper_candidate(candidate: Mapping[str, Any]) -> bool:
+    # Classification comes from the validated original-publisher URL, never a
+    # lead's self-declared evidence_kind. It only determines fetch priority.
+    return TRUSTED_HOSTS[urllib.parse.urlsplit(candidate["url"]).hostname][2] == "research_paper"
+
+
 def _load_candidates(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     configured = os.environ.get("RESEARCH_SOURCE_FILE", "").strip()
     if configured:
@@ -839,20 +876,33 @@ def _load_candidates(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> lis
                 matched |= industries & _industry_values(item.get("industries", []))
             if not score and not matched:
                 continue
-            candidates.append({"url": url, "title": title, "_relevance": (150 if matched else 50) + score,
+            # A rediscovered curated paper retains its verified excerpt anchor
+            # and scope, even when a current lead increases its priority.
+            curated = next((item for item in candidates if item["url"] == url), {})
+            candidates.append({**curated, "url": url, "title": title, "_relevance": (150 if matched else 50) + score,
                                "_matched_industries": sorted(matched)})
-    # Start with one candidate from each publisher to avoid a one-domain pack.
+    # Reserve the platform baseline and one industry candidate before trying
+    # relevant papers. Try paper alternatives consecutively so a failed fetch
+    # does not consume a slot or crowd out actual industry evidence.
     ranked = sorted(candidates, key=lambda item: item["_relevance"], reverse=True)
     first, rest, domains = [], [], set()
-    # Keep a relevant Google platform reference, then prioritize original pages
-    # discovered today over reusable background sources. Do not inject defaults
-    # into an explicit per-topic research file.
-    baseline = next((item for item in ranked if item["url"] == DEFAULT_SOURCES[0]["url"]), None) if not configured and DEFAULT_SOURCES else None
+    baseline = next((item for item in ranked if item["url"] == GOOGLE_BASELINE_URL), None)
     if baseline is not None:
         first.append(baseline)
         domains.add("google.com")
+    industry = next((item for item in ranked if item is not baseline and item.get("_matched_industries")), None)
+    if industry is not None:
+        first.append(industry)
+        domains.add(TRUSTED_HOSTS[urllib.parse.urlsplit(industry["url"]).hostname][0])
+    papers = [item for item in ranked if item is not baseline and item is not industry and _is_paper_candidate(item)]
+    first.extend(papers)
+    if papers:
+        domains.add("arxiv.org")
+    reserved = {id(item) for item in first}
+    # Then retain publisher diversity and prioritize current relevant leads
+    # over reusable background. Explicit source files receive no extra defaults.
     for item in ranked:
-        if item is baseline:
+        if id(item) in reserved:
             continue
         domain = TRUSTED_HOSTS[urllib.parse.urlsplit(item["url"]).hostname][0]
         if domain in domains:
@@ -871,9 +921,9 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
     when publication metadata is absent or ambiguous; retrieval time is not
     publication. Date conflicts are retained in the source's scope notes.
     """
-    minimum = _integer("RESEARCH_MIN_SOURCES", 3, 3, 8)
+    minimum = _integer("RESEARCH_MIN_SOURCES", 3, 3, 5)
     domains_min = _integer("RESEARCH_MIN_DOMAINS", 2, 2, 5)
-    maximum = _integer("RESEARCH_MAX_SOURCES", 5, minimum, 8)
+    maximum = _integer("RESEARCH_MAX_SOURCES", 5, minimum, 5)
     min_chars = _integer("RESEARCH_MIN_BODY_CHARS", 900, 300, 10000)
     max_chars = _integer("RESEARCH_MAX_SOURCE_CHARS", 10000, min_chars, 10000)
     timeout = _integer("RESEARCH_FETCH_TIMEOUT", 20, 1, 45)
@@ -891,6 +941,8 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
         candidate_domain = TRUSTED_HOSTS[urllib.parse.urlsplit(requested_url).hostname][0]
         covered_industries = {industry for item in pack for industry in item["industries"]}
         new_industries = set(candidate.get("_matched_industries", [])) - covered_industries
+        if _is_paper_candidate(candidate) and any(item["evidence_kind"] == "research_paper" for item in pack) and not new_industries:
+            continue
         if len(pack) >= maximum and candidate_domain in publisher_domains and not new_industries:
             continue
         seen_urls.add(requested_url)
@@ -922,6 +974,13 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                 # diversity requirement impossible merely due to ordering.
                 replaceable = []
                 for index in range(len(pack) - 1, -1, -1):
+                    # Keep the baseline. Prefer retaining the empirical paper,
+                    # but mandatory industry evidence wins if capacity cannot
+                    # accommodate both (for example, a multi-industry topic).
+                    if pack[index]["requested_url"] == GOOGLE_BASELINE_URL:
+                        continue
+                    if pack[index]["evidence_kind"] == "research_paper" and evidence_kind != "research_paper" and not new_industries:
+                        continue
                     remaining = pack[:index] + pack[index + 1:]
                     next_domains = {item["publisher_domain"] for item in remaining} | {domain}
                     next_industries = {industry for item in remaining for industry in item["industries"]} | matched_industries
@@ -929,10 +988,18 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                         replaceable.append(index)
                 if not replaceable:
                     continue
-                duplicate = replaceable[0]
+                duplicate = min(replaceable, key=lambda index: pack[index]["evidence_kind"] == "research_paper")
                 pack.pop(duplicate)
             seen_bodies.add(digest)
             publisher_domains.add(domain)
+            scope_notes = str(candidate.get("scope_notes") or (
+                "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness."
+                if matched_industries else
+                "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion."
+            )) + " ".join(" Sector boundary: " + INDUSTRY_SCOPE_NOTES[industry]
+                          for industry in sorted(matched_industries) if industry in INDUSTRY_SCOPE_NOTES)
+            if evidence_kind == "research_paper":
+                scope_notes = _with_publication_note(scope_notes, RESEARCH_PAPER_SCOPE)
             pack.append({
                 "id": f"S{len(pack) + 1}",
                 "title": metadata.get("title") or str(candidate.get("title") or urllib.parse.urlsplit(url).path),
@@ -946,12 +1013,7 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                 "evidence_kind": evidence_kind,
                 "evidence_role": "industry_context" if matched_industries else "general_context",
                 "industries": sorted(matched_industries),
-                "scope_notes": _with_publication_note(str(candidate.get("scope_notes") or (
-                    "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness."
-                    if matched_industries else
-                    "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion."
-                )) + " ".join(" Sector boundary: " + INDUSTRY_SCOPE_NOTES[industry]
-                              for industry in sorted(matched_industries) if industry in INDUSTRY_SCOPE_NOTES), publication_note),
+                "scope_notes": _with_publication_note(scope_notes, publication_note),
                 "retrieval_method": method,
                 "excerpt_start": excerpt_start,
                 "excerpt_end": excerpt_start + len(excerpt),

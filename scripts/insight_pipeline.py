@@ -459,7 +459,8 @@ def _blocker_check_errors(review: dict, required_blockers: list[dict], *, format
     return errors
 
 
-def _review_contract_errors(review: dict, required_blockers: list[dict] | None = None) -> list[str]:
+def _review_contract_errors(review: dict, required_blockers: list[dict] | None = None,
+                            *, allowed_source_ids: set[str] | None = None) -> list[str]:
     """Separate a malformed review response from an article's editorial failures."""
     errors = []
     scores = review.get("scores")
@@ -483,6 +484,16 @@ def _review_contract_errors(review: dict, required_blockers: list[dict] | None =
         for check in checks
     ):
         errors.append("each claim check requires claim, reason, source_ids, and a permitted verdict")
+    if isinstance(checks, list):
+        for index, check in enumerate(checks, 1):
+            if not isinstance(check, dict) or not isinstance(check.get("source_ids"), list):
+                continue  # The required field/type error is already recorded.
+            source_ids = check["source_ids"]
+            if any(not isinstance(sid, str) or not sid.strip()
+                   or (allowed_source_ids is not None and sid not in allowed_source_ids) for sid in source_ids):
+                errors.append(f"claim_checks[{index}] source_ids must contain only IDs from the supplied source pack")
+            if check.get("verdict") == "supported" and not source_ids:
+                errors.append(f"claim_checks[{index}] supported verdict requires source IDs for actual supporting evidence")
     errors.extend(_blocker_check_errors(review, required_blockers or [], format_only=True))
     return errors
 
@@ -596,6 +607,9 @@ tradeoffs重点检查同一资源约束下的选项、放弃项、触发条件�
 对每个重要外部事实和数值给出 claim_checks: [{{"claim":"原文短句","source_ids":["S1"],
 "verdict":"supported|unsupported|inference|illustrative","reason":"判断依据与来源适用边界"}}]。
 至少检查5项；外推、情景假设不能冒充实测。纯概念重复、空泛建议、缺乏解释的表格也应扣分。
+source_ids只能使用本次已读取资料包中的真实ID。supported必须给出确实支持该论断的来源ID；
+不要为补齐字段编造ID或把无关来源填进去。先核实论断类型：明示模型假设/内部算例应归类为
+illustrative或inference并解释成立边界；声称外部事实而找不到支持时应归为unsupported并列入blockers。
 如果语言不是中文，逐项核对中文原文的表格、数字、推断强度、限定条件与建议，任何遗漏/增强承诺均是blocker。
 JSON字段 scores（六维）、issues（具体修改建议数组）、blockers（必须修正问题数组）、claim_checks。
 如有历史blocker，另返回blocker_checks数组，每个历史ID必须恰好出现一次：
@@ -606,13 +620,15 @@ JSON字段 scores（六维）、issues（具体修改建议数组）、blockers�
 新表述的位置。不要把被删旧claim列入当前claim_checks后再判unsupported。
 如果问题仍存在或无法确认修复，分别标unresolved或unverifiable并放入blockers。
 作者的辅助回应不作为修复证据；resolved必须由你独立核查当前正文与来源后作出。
+审稿输出保持紧凑：每项claim和finding各用一到两句，保留具体依据与限定条件；不要重复整段正文。
 待核历史blocker：{json.dumps(required_blockers, ensure_ascii=False)}
 语言：{lang}
 已读取来源（仅这些文字可为事实提供支持）：{research_text(sources)}
 中文原文（仅翻译审稿时提供）：{json.dumps(original, ensure_ascii=False) if original else '无'}
 待审文章：{json.dumps(article, ensure_ascii=False)}"""
-    review = request_json(prompt, api_key, stage=f"{lang}-review", max_tokens=16000)
-    format_errors = _review_contract_errors(review, required_blockers)
+    allowed_source_ids = {source["id"] for source in sources}
+    review = request_json(prompt, api_key, stage=f"{lang}-review", max_tokens=24000)
+    format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
     if format_errors:
         original_review = json.loads(json.dumps(review))
         original_format_errors = list(format_errors)
@@ -621,11 +637,13 @@ JSON字段 scores（六维）、issues（具体修改建议数组）、blockers�
         review = request_json(
             prompt + "\n上次审稿输出格式不合格，请重新完成同一篇文章的独立审稿。"
             "只修正JSON契约，继续逐项核实同一证据；不得为格式通过提高分数、删除事实问题"
-            "或改低验收门槛。格式问题：" + json.dumps(format_errors, ensure_ascii=False)
+            "或改低验收门槛。source_ids缺失或无效时重新核查该条论断的类型与真实支持，"
+            "不得编造ID或机械绑定无关来源；无支持的外部事实必须unsupported并保留为blocker。"
+            "格式问题：" + json.dumps(format_errors, ensure_ascii=False)
             + "\n上次审稿结果（保留具体事实问题）：" + json.dumps(original_review, ensure_ascii=False),
-            api_key, stage=f"{lang}-review-format-repair", max_tokens=16000,
+            api_key, stage=f"{lang}-review-format-repair", max_tokens=24000,
         )
-        format_errors = _review_contract_errors(review, required_blockers)
+        format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
         if not isinstance(review.get("blockers"), list):
             review["blockers"] = ["editorial review blockers must be an array"]
         # Repairing the schema cannot erase previously identified factual blockers.
@@ -653,7 +671,7 @@ JSON字段 scores（六维）、issues（具体修改建议数组）、blockers�
     if not isinstance(review.get("claim_checks"), list) or len(review["claim_checks"]) < 5:
         review.setdefault("blockers", []).append("review must check at least five substantive claims")
     else:
-        allowed = {source["id"] for source in sources}
+        allowed = allowed_source_ids
         seen_claims = set()
         supported_sources = set()
         for check in review["claim_checks"]:
@@ -789,7 +807,11 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 brief = {key: value for key, value in brief.items() if key in brief_fields}
                 audit["brief"] = brief
                 write_audit(audit_path, audit)
-            base_prompt = f"""按照下列研究提纲，写一篇有独立观点和证据链的中文行业洞察。
+            draft_instruction = ("依据本次编辑稿和独立审稿意见，续修一篇有独立观点和证据链的中文行业洞察。"
+                                 if editorial_revision is not None else
+                                 "按照下列研究提纲，写一篇有独立观点和证据链的中文行业洞察。")
+            brief_label = "历史提纲（仅供来源脉络参考，不作为当前方案与数字基准）" if editorial_revision is not None else "提纲"
+            base_prompt = f"""{draft_instruction}
 目标质量参照顶级战略咨询的研究严谨度，不声称达到BCG审定标准，不模仿其文字。
 {DRAFT_REQUIREMENTS}
 {DECISION_ANALYSIS_REQUIREMENTS}
@@ -805,8 +827,20 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 每源最多25个英文词或短句直接引用，其余用原创归纳；不得复制来源的整段文字。
 输出JSON字段title,excerpt,body_html,tags，正文必须完整，3200–4800个汉字。
 选题：{json.dumps(vars(topic), ensure_ascii=False)}
-提纲：{json.dumps(brief, ensure_ascii=False)}
+{brief_label}：{json.dumps(brief, ensure_ascii=False)}
 已读取原始资料：{research_text(sources)}"""
+            if editorial_revision is not None:
+                base_prompt += """\n编辑稿续修规则：本次编辑稿的方案、指标定义、预算/工时与观察时间窗是当前基准。
+在下方最新上稿中保留这些基准及按独立审稿要求完成的修正，针对本轮具体issues补足机制、
+证据或表达。历史提纲只供来源脉络参考；与编辑稿冲突时，以编辑稿为准，不得为遵循旧
+提纲恢复已弃用的预算、付费AI提及、合成指标或旧方案，也不能只因某维低分就重启旧框架。
+这不要求保留错误：独立审稿若指出现行方案、数字、口径或推导有误，必须依据该问题修正，
+并说明对应issue_id、改动理由及正文位置；不得把编辑稿的假设视为已获事实支持或免审。
+细化机制应写出中介变量、可观察的证据和使因果解释失败的条件，不为显得可执行而随意
+追加Q阈值等硬性准入条件。若独立审稿要求新增或调整条件，必须同步核验摘要、表1、表2
+及行动路径的全部情景：同一情景是否满足该条件、推荐是否仍成立；不能补强机制后重新
+引入门槛与基线/推荐相互冲突的问题。
+其余事实、结构、历史blocker和六维评分门槛全部保持。"""
         else:
             if not original:
                 raise ValueError("localization requires the complete Chinese original")
@@ -902,9 +936,15 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
                                       "scores": review["scores"], "revisions": revision,
                                       "review_type": "automated editorial review"}
+                print(f"Insight {lang}: revision {revision} passed; scores={json.dumps(review['scores'])}", flush=True)
                 return article
             feedback = _revision_feedback(audit)
             print(f"Insight {lang}: revision {revision} rejected: {json.dumps(errors, ensure_ascii=False)}", flush=True)
+            issues = attempt.get("review", {}).get("issues", [])
+            if isinstance(issues, list):
+                visible_issues = [issue[:500] for issue in issues[:8] if isinstance(issue, str)]
+                if visible_issues:
+                    print(f"Insight {lang}: revision {revision} review issues: {json.dumps(visible_issues, ensure_ascii=False)}", flush=True)
         raise RuntimeError(f"{lang} insight did not pass quality gates; inspect {audit_path}")
     except Exception as exc:
         audit["error"] = str(exc)

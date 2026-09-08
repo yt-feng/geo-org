@@ -135,7 +135,9 @@ class ResearchTests(unittest.TestCase):
         self.topic.context = {"行业": "农业科技"}
         candidates = research._load_candidates(self.topic, [])
         self.assertEqual(candidates[0]["url"], research.DEFAULT_SOURCES[0]["url"])
-        self.assertTrue(all(item["_matched_industries"] == ["agriculture_technology"] for item in candidates[1:4]))
+        self.assertEqual(candidates[1]["_matched_industries"], ["agriculture_technology"])
+        self.assertEqual(candidates[2]["url"], "https://arxiv.org/html/2605.25517v1")
+        self.assertEqual(candidates[3]["url"], "https://arxiv.org/html/2311.09735v3")
 
     def test_new_industry_publisher_lead_matches_chinese_industry_without_geo_keyword(self):
         self.topic.context = {"行业": "农业科技"}
@@ -144,6 +146,156 @@ class ResearchTests(unittest.TestCase):
         lead = next(item for item in candidates if item["url"] == url)
         self.assertEqual(lead["_matched_industries"], ["agriculture_technology"])
         self.assertEqual(candidates[1]["url"], url)
+
+    def paper_fixture_catalog(self):
+        """Synthetic arXiv-shaped documents; no copied third-party bodies."""
+        sources = self.sources(count=6)
+        sources[0]["url"] = research.GOOGLE_BASELINE_URL
+        papers = [item for item in research.DEFAULT_SOURCES if "arxiv.org/html/" in item["url"]]
+        for index, paper in enumerate(papers, 1):
+            sources[index].update(paper)
+            sources[index]["text_file"] = f"paper-{index}.html"
+            (self.root / sources[index]["text_file"]).write_text(
+                f'<html><head><title>Synthetic paper {index}</title></head><body>'
+                '<nav>UNREAD NAVIGATION</nav><article class="ltx_document">'
+                '<section class="ltx_abstract"><p>UNREAD ABSTRACT CLAIM</p></section>'
+                f'<section><h2>{paper["excerpt_anchor"]}</h2>'
+                '<p>CONTROLLED METHOD. Synthetic experimental methods and bounded metrics.</p>'
+                '<figure class="ltx_table"><table><tr><td>READ TABLE CELL</td></tr></table></figure>'
+                f'<p>{("Synthetic paragraph with scoped experimental observations. " + str(index) + " ") * 240}</p>'
+                '<p>UNREAD APPENDIX AND REPOSITORY CLAIM</p></section></article></body></html>', encoding="utf-8")
+        sources[3].update({"url": "https://www.fao.org/synthetic-agriculture",
+                           "industries": ["农业科技"], "scope_notes": "Original agricultural population boundary."})
+        (self.root / sources[3]["text_file"]).write_text("Agricultural technology adoption in a defined population. " * 40, encoding="utf-8")
+        sources[4]["url"] = "https://blogs.bing.com/synthetic-background"
+        sources[5]["url"] = "https://www.bcg.com/synthetic-background"
+        self.topic.context = {"行业": "农业科技"}
+        self.configure(sources)
+        return sources
+
+    def test_one_fetched_paper_preserves_google_industry_and_five_source_cap(self):
+        sources = self.paper_fixture_catalog()
+        with mock.patch.object(research, "_fetch_source", wraps=research._fetch_source) as fetch:
+            pack = research.build_research_pack(self.topic, [])
+        self.assertEqual(len(pack), 5)
+        self.assertEqual(pack[0]["url"], research.GOOGLE_BASELINE_URL)
+        self.assertEqual(pack[1]["industries"], ["agriculture_technology"])
+        self.assertEqual(pack[2]["url"], sources[1]["url"])
+        self.assertEqual(sum(item["evidence_kind"] == "research_paper" for item in pack), 1)
+        self.assertNotIn(sources[2]["url"], [call.args[0]["url"] for call in fetch.call_args_list])
+
+    def test_failed_paper_fetch_tries_next_paper_before_general_background(self):
+        sources = self.paper_fixture_catalog()
+        sources[1]["text_file"] = "not-downloaded.html"
+        self.configure(sources)
+        pack = research.build_research_pack(self.topic, [])
+        self.assertNotIn(sources[1]["url"], [item["url"] for item in pack])
+        self.assertEqual(pack[2]["url"], sources[2]["url"])
+        self.assertEqual(pack[2]["evidence_kind"], "research_paper")
+        self.assertEqual(len(pack), 5)
+
+    def test_missing_paper_bodies_fall_back_without_counting_labels(self):
+        sources = self.paper_fixture_catalog()
+        for paper in sources[1:3]:
+            paper["text_file"] = "not-downloaded.html"
+        sources[4]["evidence_kind"] = "research_paper"
+        self.configure(sources)
+        pack = research.build_research_pack(self.topic, [])
+        self.assertEqual(len(pack), 4)
+        self.assertFalse(any(item["evidence_kind"] == "research_paper" for item in pack))
+        self.assertTrue(any(item["industries"] == ["agriculture_technology"] for item in pack))
+        sources[4]["text_file"] = sources[5]["text_file"] = "also-missing.txt"
+        self.configure(sources)
+        with self.assertRaisesRegex(research.ResearchError, "2/3 source bodies"):
+            research.build_research_pack(self.topic, [])
+
+    def test_late_industry_recovery_keeps_already_read_paper_and_google(self):
+        sources = self.paper_fixture_catalog()
+        os.environ["RESEARCH_MAX_SOURCES"] = "3"
+        candidates = research._load_candidates(self.topic, [])
+        industry = next(item for item in candidates if item["_matched_industries"])
+        candidates = [item for item in candidates if item is not industry] + [industry]
+        with mock.patch.object(research, "_load_candidates", return_value=candidates):
+            pack = research.build_research_pack(self.topic, [])
+        self.assertEqual({item["url"] for item in pack},
+                         {research.GOOGLE_BASELINE_URL, sources[1]["url"], industry["url"]})
+
+    def test_paper_never_satisfies_missing_industry_evidence(self):
+        sources = self.paper_fixture_catalog()
+        sources[3]["text_file"] = "industry-source-missing.txt"
+        self.configure(sources)
+        with self.assertRaisesRegex(research.ResearchError, "Missing industry evidence: agriculture_technology"):
+            research.build_research_pack(self.topic, [])
+
+    def test_required_second_industry_replaces_paper_only_when_no_other_slot_exists(self):
+        sources = self.paper_fixture_catalog()
+        self.topic.context = {"行业": "农业科技、保险"}
+        sources[4].update({"url": "https://www.iais.org/synthetic-insurance", "industries": ["保险"]})
+        (self.root / sources[4]["text_file"]).write_text("Insurance observations about a defined population. " * 40, encoding="utf-8")
+        self.configure(sources)
+        ranked = research._load_candidates(self.topic, [])
+        by_url = {item["url"]: item for item in ranked}
+        # Both requested industries are real bodies. A full pack must not fail
+        # merely because the preferred paper was read before the second one.
+        candidates = [by_url[sources[index]["url"]] for index in (0, 3, 1, 4)]
+        os.environ["RESEARCH_MAX_SOURCES"] = "3"
+        with mock.patch.object(research, "_load_candidates", return_value=candidates):
+            pack = research.build_research_pack(self.topic, [])
+        self.assertEqual({item["url"] for item in pack}, {sources[index]["url"] for index in (0, 3, 4)})
+        self.assertFalse(any(item["evidence_kind"] == "research_paper" for item in pack))
+        # When there is another replaceable background source, preserve paper
+        # even if its later position makes it the first replacement considered.
+        os.environ["RESEARCH_MAX_SOURCES"] = "4"
+        candidates = [by_url[sources[index]["url"]] for index in (0, 3, 5, 1, 4)]
+        with mock.patch.object(research, "_load_candidates", return_value=candidates):
+            pack = research.build_research_pack(self.topic, [])
+        self.assertEqual({item["url"] for item in pack}, {sources[index]["url"] for index in (0, 3, 1, 4)})
+
+    def test_paper_excerpt_and_scope_cover_only_the_actually_read_window(self):
+        sources = self.paper_fixture_catalog()
+        for selected in (1, 2):
+            with self.subTest(paper=selected):
+                if selected == 2:
+                    sources[1]["text_file"] = "missing-preferred-paper.html"
+                    self.configure(sources)
+                pack = research.build_research_pack(self.topic, [])
+                paper = next(item for item in pack if item["evidence_kind"] == "research_paper")
+                body, _ = research.extract_body((self.root / sources[selected]["text_file"]).read_text(encoding="utf-8"))
+                self.assertGreater(paper["excerpt_start"], 0)
+                self.assertEqual(paper["text"], body[paper["excerpt_start"]:paper["excerpt_end"]])
+                self.assertEqual(len(paper["text"]), 10000)
+                self.assertEqual(paper["text_sha256"], hashlib.sha256(paper["text"].encode("utf-8")).hexdigest())
+                self.assertIn("CONTROLLED METHOD", paper["text"])
+                self.assertIn("READ TABLE CELL", paper["text"])
+                self.assertNotIn("UNREAD", paper["text"])
+                self.assertIn(research.RESEARCH_PAPER_SCOPE, paper["scope_notes"])
+                self.assertIn(sources[selected]["scope_notes"], paper["scope_notes"])
+                self.assertNotIn("industry_context", paper["evidence_role"])
+                if selected == 1:
+                    self.assertIn("not citation probabilities", paper["scope_notes"])
+
+    def test_paper_anchor_missing_from_body_is_a_fetch_failure_not_abstract_evidence(self):
+        sources = self.paper_fixture_catalog()
+        (self.root / sources[1]["text_file"]).write_text("An abstract with no experimental setup. " * 100, encoding="utf-8")
+        pack = research.build_research_pack(self.topic, [])
+        self.assertEqual(next(item["url"] for item in pack if item["evidence_kind"] == "research_paper"), sources[2]["url"])
+
+    def test_paper_defaults_are_relevant_only_and_live_rediscovery_preserves_scope(self):
+        paper = next(item for item in research.DEFAULT_SOURCES if "arxiv.org/html/2605.25517" in item["url"])
+        candidates = research._load_candidates(self.topic, [{"url": paper["url"], "title": "GEO Content Evidence and Citation"}])
+        selected = next(item for item in candidates if item["url"] == paper["url"])
+        self.assertEqual(selected["excerpt_anchor"], paper["excerpt_anchor"])
+        self.assertEqual(selected["scope_notes"], paper["scope_notes"])
+        unrelated = SimpleNamespace(title="水稻病害防治", category="种植", keywords="", context={})
+        self.assertFalse(any(research._is_paper_candidate(item) for item in research._load_candidates(unrelated, [])))
+
+    def test_fresh_research_cannot_expand_beyond_five_sources(self):
+        self.sources()
+        os.environ["RESEARCH_MAX_SOURCES"] = "6"
+        with mock.patch.object(research, "_fetch_source") as fetch:
+            with self.assertRaisesRegex(research.ResearchError, "RESEARCH_MAX_SOURCES"):
+                research.build_research_pack(self.topic, [])
+        fetch.assert_not_called()
 
     def test_next_ten_industries_have_bilingual_independent_search_and_specific_sources(self):
         industries = ["直播电商", "本地生活", "医美", "保险", "管理咨询", "美妆个护", "B2B外贸", "线下门店", "知识产权", "AI工具"]
@@ -383,8 +535,9 @@ class ResearchTests(unittest.TestCase):
         ])
         urls = [item["url"] for item in candidates]
         self.assertEqual(urls[0], research.DEFAULT_SOURCES[0]["url"])
-        self.assertEqual(urls[1], "https://www.bcg.com/publications/2026/new-brand-content-insight")
-        self.assertNotIn("summary", candidates[1])
+        lead_index = urls.index("https://www.bcg.com/publications/2026/new-brand-content-insight")
+        self.assertLess(lead_index, urls.index("https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you"))
+        self.assertNotIn("summary", candidates[lead_index])
 
     def test_unrelated_live_leads_are_ignored(self):
         candidates = research._load_candidates(self.topic, [
@@ -532,7 +685,8 @@ class ResumeResearchTests(unittest.TestCase):
 
     def test_reread_preserves_original_order_ids_urls_windows_hashes_and_metadata(self):
         before = json.dumps(self.sources, sort_keys=True)
-        with mock.patch.object(research, "_fetch_source", side_effect=self.fetch) as fetch:
+        with mock.patch.object(research, "_load_candidates", side_effect=AssertionError("Resume must not select new sources")), \
+                mock.patch.object(research, "_fetch_source", side_effect=self.fetch) as fetch:
             pack = research.reread_research_pack(self.sources)
         self.assertEqual(json.dumps(self.sources, sort_keys=True), before)
         self.assertEqual([item["id"] for item in pack], ["S9", "S2", "S11"])
