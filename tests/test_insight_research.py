@@ -79,6 +79,95 @@ class ResearchTests(unittest.TestCase):
         with self.assertRaisesRegex(research.ResearchError, "2/3 source bodies"):
             research.build_research_pack(self.topic, [])
 
+    def test_explicit_excel_industry_overrides_incidental_mentions_and_category(self):
+        topic = SimpleNamespace(title="农业科技用户如何选择云服务", category="农业科技", keywords="GEO", context={"行业": "云计算"})
+        self.assertEqual(research.topic_industries(topic), {"云计算"})
+        urls = [item["url"] for item in research._load_candidates(topic, [])]
+        self.assertFalse(any("fao.org" in url or "oecd.org" in url or "usda.gov" in url for url in urls))
+        topic.category, topic.context = "非农业科技", {}
+        self.assertEqual(research.topic_industries(topic), set())
+
+    def test_exact_industry_aliases_work_across_chinese_and_english(self):
+        self.topic.context = {"行业": "农业科技"}
+        self.assertEqual(research.topic_industries(self.topic), {"agriculture_technology"})
+        sources = self.sources()
+        sources[0]["industries"] = ["agri-tech"]
+        (self.root / sources[0]["text_file"]).write_text("Agricultural technology and the measured adoption context. " * 40, encoding="utf-8")
+        self.configure(sources)
+        pack = research.build_research_pack(self.topic, [])
+        scoped = [item for item in pack if item["evidence_role"] == "industry_context"]
+        self.assertEqual(len(scoped), 1)
+        self.assertEqual(scoped[0]["industries"], ["agriculture_technology"])
+        general = next(item for item in pack if item["evidence_role"] == "general_context")
+        self.assertIn("cannot establish", general["scope_notes"])
+
+    def test_generic_sources_never_satisfy_explicit_industry_evidence(self):
+        self.sources()
+        self.topic.context = {"行业": "农业科技"}
+        with self.assertRaisesRegex(research.ResearchError, "Missing industry evidence: agriculture_technology"):
+            research.build_research_pack(self.topic, [])
+
+    def test_late_industry_source_can_replace_generic_source_at_capacity(self):
+        sources = self.sources(count=4)
+        self.topic.context = {"行业": "农业科技"}
+        os.environ["RESEARCH_MAX_SOURCES"] = "3"
+        candidates = [{**source, "_fixture_path": str(self.root / source["text_file"]), "_matched_industries": []} for source in sources]
+        candidates[-1]["_matched_industries"] = ["agriculture_technology"]
+        (self.root / sources[-1]["text_file"]).write_text("Agricultural adoption conditions in the source population. " * 40, encoding="utf-8")
+        with mock.patch.object(research, "_load_candidates", return_value=candidates):
+            pack = research.build_research_pack(self.topic, [])
+        self.assertEqual(len(pack), 3)
+        self.assertTrue(any(item["evidence_role"] == "industry_context" for item in pack))
+        self.assertGreaterEqual(len({item["publisher_domain"] for item in pack}), 2)
+
+    def test_source_industry_tag_must_be_supported_in_the_read_body(self):
+        self.topic.context = {"行业": "农业科技"}
+        sources = self.sources()
+        sources[0]["industries"] = ["农业科技"]
+        self.configure(sources)
+        with self.assertRaisesRegex(research.ResearchError, "does not contain the declared industry"):
+            research.build_research_pack(self.topic, [])
+
+    def test_industry_defaults_are_prioritized_after_platform_reference(self):
+        self.topic.context = {"行业": "农业科技"}
+        candidates = research._load_candidates(self.topic, [])
+        self.assertEqual(candidates[0]["url"], research.DEFAULT_SOURCES[0]["url"])
+        self.assertTrue(all(item["_matched_industries"] == ["agriculture_technology"] for item in candidates[1:4]))
+
+    def test_new_industry_publisher_lead_matches_chinese_industry_without_geo_keyword(self):
+        self.topic.context = {"行业": "农业科技"}
+        url = "https://www.fao.org/newsroom/detail/agriculture-research/en"
+        candidates = research._load_candidates(self.topic, [{"url": url, "title": "Agricultural technology adoption in small farms"}])
+        lead = next(item for item in candidates if item["url"] == url)
+        self.assertEqual(lead["_matched_industries"], ["agriculture_technology"])
+        self.assertEqual(candidates[1]["url"], url)
+
+    def test_selected_report_passage_records_absolute_excerpt_offsets(self):
+        sources = self.sources()
+        prefix = "Introductory context. " * 100
+        selected = "Scepticism among European farmers: " + "Evidence from the selected passage. " * 100
+        (self.root / sources[0]["text_file"]).write_text(prefix + selected, encoding="utf-8")
+        sources[0]["excerpt_anchor"] = "Scepticism among European farmers"
+        self.configure(sources)
+        os.environ["RESEARCH_MAX_SOURCE_CHARS"] = "1200"
+        pack = research.build_research_pack(self.topic, [])
+        chosen = next(item for item in pack if item["requested_url"] == sources[0]["url"])
+        self.assertEqual(chosen["excerpt_start"], len(prefix))
+        self.assertEqual(chosen["excerpt_end"], len(prefix) + 1200)
+        self.assertTrue(chosen["text"].startswith("Scepticism among European farmers"))
+
+    def test_missing_verified_report_anchor_fails_instead_of_reading_irrelevant_opening(self):
+        sources = self.sources()
+        sources[0]["excerpt_anchor"] = "A heading absent from this body"
+        self.configure(sources)
+        with self.assertRaisesRegex(research.ResearchError, "excerpt anchor was not found"):
+            research.build_research_pack(self.topic, [])
+
+    def test_fao_news_body_excludes_page_chrome(self):
+        body = "Agricultural automation evidence and local conditions. " * 40
+        text, _ = research.extract_body(f'<div>Menu irrelevant text</div><div class="news-detail__body">{body}</div><div>Other footer content</div>')
+        self.assertEqual(text, body.strip())
+
     def test_minimum_cannot_be_silently_lowered(self):
         self.sources()
         os.environ["RESEARCH_MIN_SOURCES"] = "1"

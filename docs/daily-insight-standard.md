@@ -16,13 +16,13 @@
 
 ## 工作流与维护
 
-日更仍在每天北京时间 08:30 运行，沿用 Excel 未生成选题和三语输出。生产使用 DeepSeek V4 Pro thinking，单次稿件 token 上限 24,000。流程：选题 → 原文检索/读取 → 研究提纲 → 写作/审稿/修订 → 英阿本地化与审稿 → 保存 → 提交 → 显式触发 Pages 部署。
+日更计划于每天北京时间 08:30 触发（GitHub 排队可能延迟），沿用 Excel 未生成选题和三语输出。生产使用 DeepSeek V4 Pro thinking，单次稿件 token 上限 24,000。流程：选题 → 原文检索/读取 → 研究提纲 → 写作/审稿/修订 → 英阿本地化与审稿 → 保存 → 提交 main → Vercel Git 集成部署主站；另行触发仓库的 Pages 发布链路。
 
 `generate_daily_blog.py --preview-dir .artifacts/preview` 或 GitHub workflow 的 `preview=true` 生成样稿、保持网站不变。审稿记录在 `.artifacts/insights/<slug>/<lang>.json`，GitHub artifact 保留 14 天；记录读取边界与正文哈希，网站只保存来源元数据，不保存第三方正文。
 
 `RESEARCH_SOURCE_FILE` 可指定选题资料目录（JSON `sources` 数组，条目含 `url/title/tags`）。默认从允许的一手来源域采集；`text_file` 仅用于显式离线测试。源码中的抓取与质量门槛有不可降低的底线。新增出版源需检查正文提取结果和来源适用范围。
 
-本地验证：`python -m unittest discover -s tests -p 'test_insight*.py' -v`。上线核实须同时查看生成审稿、提交、Pages 部署与公开文章，单一绿色生成任务不能证明文章已对外更新。
+本地验证：`python -m unittest discover -s tests -p 'test_insight*.py' -v`。上线核实须核对生成审稿、提交 SHA、对应 Vercel 生产部署及 eco-geo.org 公开文章，Pages 状态或单一绿色生成任务不能证明主站文章已对外更新。
 
 ## 参考的研究组织方法
 
@@ -33,3 +33,5 @@
 - [Google Search Central: AI features and your website](https://developers.google.com/search/docs/appearance/ai-features)
 
 生成后显式触发部署是因为 [GITHUB_TOKEN 产生的 push 不会触发其他 push 工作流](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)。
+
+Vercel 是主站当前生产部署平台；GITHUB_TOKEN 的限制不能用来推断 Vercel Git 集成未运行。Pages 手动触发仅针对独立的 Pages 链路。

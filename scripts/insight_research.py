@@ -6,13 +6,18 @@ metadata and the article's own analysis only. RSS text is never evidence.
 RESEARCH_SOURCE_FILE: optional JSON list, or {"sources": [...]}, replacing the
 curated catalogue. Each source has url, title, tags (topic-matching strings), and
 optionally published and text_file (UTF-8 plain text/HTML fixture, relative to the
-JSON file). A fixture is explicitly labelled local_fixture in the result.
+JSON file). Optional industries are exact industry names or supported aliases;
+scope_notes explains the geography, population and claim boundaries. Optional
+excerpt_anchor selects a verified passage in a long report. A fixture is
+explicitly labelled local_fixture in the result.
 RESEARCH_MIN_SOURCES / RESEARCH_MIN_DOMAINS: defaults 3 / 2, hard floors 3 / 2.
 RESEARCH_MAX_SOURCES: default 5 (at most 8).
 RESEARCH_MIN_BODY_CHARS: default 900 (at least 300).
 RESEARCH_MAX_SOURCE_CHARS: default 10000 (at most 10000).
 RESEARCH_FETCH_TIMEOUT: seconds per request, default 20 (maximum 45).
 RESEARCH_MAX_RESPONSE_BYTES: default 2500000 (maximum 4000000).
+Industry topics require at least one matching industry source body. General AI
+search/marketing sources cannot satisfy this additional evidence requirement.
 """
 from __future__ import annotations
 
@@ -38,6 +43,11 @@ TRUSTED_HOSTS = {
     "www.bing.com": ("bing.com", "Microsoft Bing", "platform_documentation"),
     "www.bcg.com": ("bcg.com", "BCG", "consulting_analysis"),
     "arxiv.org": ("arxiv.org", "arXiv authors", "research_paper"),
+    "www.fao.org": ("fao.org", "Food and Agriculture Organization of the United Nations", "institutional_analysis"),
+    "openknowledge.fao.org": ("fao.org", "Food and Agriculture Organization of the United Nations", "institutional_research"),
+    "www.oecd.org": ("oecd.org", "OECD", "institutional_analysis"),
+    "ers.usda.gov": ("usda.gov", "USDA Economic Research Service", "government_research"),
+    "www.ers.usda.gov": ("usda.gov", "USDA Economic Research Service", "government_research"),
 }
 
 DEFAULT_SOURCES = [
@@ -81,7 +91,45 @@ DEFAULT_SOURCES = [
         "title": "Agentic Scenarios Every Marketer Must Prepare For",
         "tags": ["营销", "marketing", "品牌", "战略", "情景", "规划", "预算", "投资", "转化", "agentic", "智能体"],
     },
+    {
+        "url": "https://www.oecd.org/en/topics/innovation-and-digital-in-agriculture.html",
+        "title": "Innovation and digital in agriculture",
+        "tags": ["信任", "证据", "投入", "成本", "预算", "采用", "数字化"],
+        "industries": ["agriculture_technology"],
+        "excerpt_anchor": "Innovation and digitalisation are transformative forces",
+        "scope_notes": "OECD policy synthesis about agricultural digitalisation: adoption barriers and trust. It does not measure a brand's GEO conversion, prove procurement-cycle length, or establish that its market is currently more competitive.",
+    },
+    {
+        "url": "https://www.fao.org/newsroom/detail/fao-state-of-food-and-agriculture--sofa-2022-automation-agrifood-systems/en",
+        "title": "The State of Food and Agriculture 2022: Leveraging automation to transform agrifood systems",
+        "tags": ["采用", "成本", "投入", "预算", "证据", "基础设施", "自动化"],
+        "industries": ["agriculture_technology"],
+        "published": "2022-11-02",
+        "scope_notes": "FAO's own 2022 report announcement discussing 27 global case studies, adoption and local enabling conditions. This is the complete announcement body, not the full report or evidence of current Chinese agricultural technology purchasing behaviour.",
+    },
+    {
+        "url": "https://ers.usda.gov/data-products/charts-of-note/110550",
+        "title": "Precision agriculture use increases with farm size and varies widely by technology",
+        "tags": ["分层", "采用", "规模", "投入", "成本", "预算", "证据"],
+        "industries": ["agriculture_technology"],
+        "published": "2024-12-10",
+        "scope_notes": "USDA analysis of US farms in 2023, stratified by farm size and technology. Adoption percentages describe those US populations and technologies only; they are not Chinese market estimates, GEO metrics or a causal estimate of marketing effectiveness.",
+    },
+    {
+        "url": "https://www.oecd.org/en/publications/progress-in-implementing-the-european-union-coordinated-plan-on-artificial-intelligence-volume-2_3ac96d41-en/full-report/ai-in-agriculture_c9ac6d24.html",
+        "title": "AI in agriculture — Progress in Implementing the European Union Coordinated Plan on Artificial Intelligence (Volume 2)",
+        "tags": ["采用", "证据", "信任", "成本", "预算", "采购", "投资"],
+        "industries": ["agriculture_technology"],
+        "excerpt_anchor": "Scepticism among European farmers",
+        "scope_notes": "OECD chapter on EU agriculture; the selected passage includes interview-based adoption observations. Attribute interview anecdotes and geography explicitly; do not generalise them into universal procurement timelines, Chinese market statistics or GEO outcomes.",
+    },
 ]
+
+INDUSTRY_ALIASES = {
+    "agriculture_technology": ("农业科技", "农科", "农业技术", "智慧农业", "数字农业", "精准农业", "农业", "agriculture technology", "agricultural technology", "agriculture", "agricultural", "agritech", "agri-tech", "agtech", "digital farming", "precision farming"),
+}
+INDUSTRY_FIELDS = {"行业", "行业类别", "所属行业", "industry", "sector", "industry category"}
+GENERIC_CATEGORIES = {"", "brand geo", "geo", "seo", "品牌化geo", "内容", "阶段路线图", "营销", "marketing"}
 
 TOPIC_CONCEPTS = [
     ("geo", "generative engine", "aeo", "answer engine"),
@@ -195,7 +243,7 @@ class _BodyParser(HTMLParser):
             self._append("\n")
         index = None
         if not inherited_skip:
-            body_marker = bool(re.search(r"article[-_ ]?(?:body|content)|post[-_ ]?(?:body|content)|devsite-article-body|richtextbody", marker, re.I))
+            body_marker = bool(re.search(r"article[-_ ]?(?:body|content)|post[-_ ]?(?:body|content)|devsite-article-body|richtextbody|news-detail__body", marker, re.I))
             priority = 3 if body_marker or attributes.get("itemprop") == "articleBody" else 2 if tag == "article" else 1 if tag == "main" or attributes.get("role") == "main" else 0
             if priority:
                 index = len(self.candidates)
@@ -295,6 +343,51 @@ def _matches(term: str, text: str) -> bool:
     return term in text
 
 
+def _industry_name(value: str) -> str:
+    value = re.sub(r"\s+", " ", value.strip().lower())
+    return next((key for key, aliases in INDUSTRY_ALIASES.items() if value == key or value in aliases), value)
+
+
+def _industry_values(value: Any) -> set[str]:
+    values = re.split(r"[,，;；|/、]", value) if isinstance(value, str) else value
+    if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
+        raise ResearchError("Source industries must be a list of exact industry names")
+    return {_industry_name(item) for item in values if item.strip()}
+
+
+def topic_industries(topic: Any) -> set[str]:
+    """Prefer the Excel industry column; category aliases are exact fallbacks.
+
+    An unrelated sector merely mentioned in a title/context never changes an
+    explicitly declared industry (for example cloud services used by farmers).
+    """
+    context = getattr(topic, "context", {})
+    explicit = [str(value) for key, value in context.items() if key.strip().lower() in INDUSTRY_FIELDS and value]
+    if explicit:
+        return set().union(*(_industry_values(value) for value in explicit)) - GENERIC_CATEGORIES
+    category = str(getattr(topic, "category", "")).strip().lower()
+    name = _industry_name(category)
+    return {name} if name in INDUSTRY_ALIASES else set()
+
+
+def _industry_mentions(text: str, industries: set[str]) -> set[str]:
+    text = text.lower()
+    return {industry for industry in industries
+            if any(_matches(alias, text) for alias in INDUSTRY_ALIASES.get(industry, (industry,)))}
+
+
+def _excerpt(body: str, candidate: Mapping[str, Any], max_chars: int) -> tuple[str, int]:
+    anchor = candidate.get("excerpt_anchor")
+    start = 0
+    if anchor:
+        if not isinstance(anchor, str) or not anchor.strip():
+            raise ResearchError("excerpt_anchor must be a nonempty exact passage")
+        start = body.lower().find(anchor.lower())
+        if start < 0:
+            raise ResearchError("The configured source excerpt anchor was not found in the read body")
+    return body[start:start + max_chars], start
+
+
 def _relevance(source: Mapping[str, Any], topic_text: str) -> int:
     tags = source.get("tags", [])
     if isinstance(tags, str):
@@ -331,20 +424,26 @@ def _load_candidates(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> lis
         entries = DEFAULT_SOURCES
         path = None
     topic_text = _topic_text(topic)
+    industries = topic_industries(topic)
     candidates = []
     for entry in entries:
         if not isinstance(entry, dict):
             raise ResearchError("Each research source must be an object")
         candidate = dict(entry)
         candidate["url"] = validate_source_url(candidate.get("url", ""))
+        source_industries = _industry_values(candidate.get("industries", []))
+        matched = industries & source_industries
+        if source_industries and not matched:
+            continue
         score = _relevance(candidate, topic_text)
-        if not score:
+        if not score and not matched:
             continue
         if candidate.get("text_file"):
             if path is None:
                 raise ResearchError("Source fixtures require an explicit RESEARCH_SOURCE_FILE")
             candidate["_fixture_path"] = str((path.parent / candidate["text_file"]).resolve())
-        candidate["_relevance"] = score
+        candidate["_matched_industries"] = sorted(matched)
+        candidate["_relevance"] = score + (100 if matched else 0)
         candidates.append(candidate)
     # A direct original-publisher URL may provide a lead. RSS titles/descriptions
     # are never copied into the evidence body or counted towards source minimums.
@@ -356,9 +455,11 @@ def _load_candidates(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> lis
                 continue
             title = str(item.get("title", ""))
             score = _lead_relevance(title, topic_text)
-            if not score:
+            matched = _industry_mentions(title, industries)
+            if not score and not matched:
                 continue
-            candidates.append({"url": url, "title": title, "_relevance": 50 + score})
+            candidates.append({"url": url, "title": title, "_relevance": (150 if matched else 50) + score,
+                               "_matched_industries": sorted(matched)})
     # Start with one candidate from each publisher to avoid a one-domain pack.
     ranked = sorted(candidates, key=lambda item: item["_relevance"], reverse=True)
     first, rest, domains = [], [], set()
@@ -397,6 +498,7 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
     max_bytes = _integer("RESEARCH_MAX_RESPONSE_BYTES", 2500000, 10000, 4000000)
     if domains_min > maximum:
         raise ResearchError("RESEARCH_MIN_DOMAINS exceeds RESEARCH_MAX_SOURCES")
+    industries = topic_industries(topic)
     pack: list[dict[str, Any]] = []
     seen_urls, seen_bodies, publisher_domains = set(), set(), set()
     failures = []
@@ -405,7 +507,9 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
         if requested_url in seen_urls:
             continue
         candidate_domain = TRUSTED_HOSTS[urllib.parse.urlsplit(requested_url).hostname][0]
-        if len(pack) >= maximum and candidate_domain in publisher_domains:
+        covered_industries = {industry for item in pack for industry in item["industries"]}
+        new_industries = set(candidate.get("_matched_industries", [])) - covered_industries
+        if len(pack) >= maximum and candidate_domain in publisher_domains and not new_industries:
             continue
         seen_urls.add(requested_url)
         try:
@@ -417,19 +521,32 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                 raise ResearchError(f"Extracted body has only {len(body)} characters; minimum {min_chars}")
             if re.search(r"access denied|just a moment|verify (?:you are|you're) human|robot check|page not found", metadata.get("title", ""), re.I):
                 raise ResearchError("Source returned an error or access-check page instead of an article")
-            excerpt = body[:max_chars]
+            excerpt, excerpt_start = _excerpt(body, candidate, max_chars)
+            if len(excerpt) < min_chars:
+                raise ResearchError(f"Selected excerpt has only {len(excerpt)} characters; minimum {min_chars}")
+            matched_industries = set(candidate.get("_matched_industries", []))
+            if matched_industries and _industry_mentions(excerpt, matched_industries) != matched_industries:
+                raise ResearchError("Read excerpt does not contain the declared industry context")
             digest = hashlib.sha256(excerpt.encode("utf-8")).hexdigest()
             if digest in seen_bodies:
                 continue
             domain, publisher, evidence_kind = TRUSTED_HOSTS[urllib.parse.urlsplit(url).hostname]
             if len(pack) >= maximum:
-                if domain in publisher_domains:
+                if domain in publisher_domains and not new_industries:
                     continue
                 # A later successful source from a missing domain can replace a
                 # duplicate publisher; initial fetch failures must not make the
                 # diversity requirement impossible merely due to ordering.
-                duplicate = next(index for index in range(len(pack) - 1, -1, -1)
-                                 if sum(item["publisher_domain"] == pack[index]["publisher_domain"] for item in pack) > 1)
+                replaceable = []
+                for index in range(len(pack) - 1, -1, -1):
+                    remaining = pack[:index] + pack[index + 1:]
+                    next_domains = {item["publisher_domain"] for item in remaining} | {domain}
+                    next_industries = {industry for item in remaining for industry in item["industries"]} | matched_industries
+                    if len(next_domains) >= min(domains_min, len(publisher_domains)) and next_industries >= covered_industries:
+                        replaceable.append(index)
+                if not replaceable:
+                    continue
+                duplicate = replaceable[0]
                 pack.pop(duplicate)
             seen_bodies.add(digest)
             publisher_domains.add(domain)
@@ -445,22 +562,34 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                 "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "text": excerpt,
                 "evidence_kind": evidence_kind,
+                "evidence_role": "industry_context" if matched_industries else "general_context",
+                "industries": sorted(matched_industries),
+                "scope_notes": str(candidate.get("scope_notes") or (
+                    "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness."
+                    if matched_industries else
+                    "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion."
+                )),
                 "retrieval_method": method,
-                "excerpt_start": 0,
-                "excerpt_end": len(excerpt),
+                "excerpt_start": excerpt_start,
+                "excerpt_end": excerpt_start + len(excerpt),
                 "body_chars": len(body),
-                "excerpt_truncated": len(excerpt) < len(body),
+                "excerpt_truncated": excerpt_start > 0 or len(excerpt) < len(body),
                 "text_sha256": digest,
             })
-            if len(pack) >= maximum and len(publisher_domains) >= domains_min:
+            publisher_domains = {item["publisher_domain"] for item in pack}
+            covered_industries = {industry for item in pack for industry in item["industries"]}
+            if len(pack) >= maximum and len(publisher_domains) >= domains_min and covered_industries >= industries:
                 break
         except (OSError, ValueError, LookupError, ResearchError) as exc:
             failures.append(f"{requested_url}: {type(exc).__name__}: {exc}")
-    if len(pack) < minimum or len(publisher_domains) < domains_min:
+    covered_industries = {industry for item in pack for industry in item["industries"]}
+    missing_industries = sorted(industries - covered_industries)
+    if len(pack) < minimum or len(publisher_domains) < domains_min or missing_industries:
         detail = "; ".join(failures) or "No additional relevant, distinct source bodies were available"
         raise ResearchError(
             f"Insufficient research: {len(pack)}/{minimum} source bodies and "
-            f"{len(publisher_domains)}/{domains_min} publisher domains. {detail}"
+            f"{len(publisher_domains)}/{domains_min} publisher domains. "
+            f"Missing industry evidence: {', '.join(missing_industries) or 'none'}. {detail}"
         )
     print(f"Research pack: {len(pack)} read source bodies across {len(publisher_domains)} publisher domains.", flush=True)
     for index, item in enumerate(pack, 1):

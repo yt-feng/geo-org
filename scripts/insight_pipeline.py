@@ -21,6 +21,38 @@ claim BCG affiliation. Separate observed facts, inference and illustrative assum
 Do not fabricate research, interviews, customers, citations or measured performance.
 """
 
+DECISION_ANALYSIS_REQUIREMENTS = """把分析写成读者能够使用的条件式决策，而非宽泛原则：
+1. 明确一个具体决策、两个相互竞争的做法以及维持现状/暂缓投入的选项。给定相同的
+   预算、团队工时或执行容量，写清选A必须放弃什么，选B失去什么；不凭空声称行业
+   已处于“竞争加剧”等阶段。没有行业原始证据时，按可观测业务条件分群，而不是
+   按想象中的行业客户画像分群；标题和摘要须明确适用条件。
+2. 自行推导一个有解释力的比较框架，选择与本篇决策有因果联系的轴/变量，例如
+   基础事实错误率、证据缺口、可测量性或资源约束。说明为什么这些变量改变优先级，
+   用至少两个条件不同的情境展示推荐次序发生反转；框架的价值是帮助选择，不是
+   给常识清单起一个新名字。不要把同一套图表套在每个选题上。
+3. 第一张表展示可选行动及真实取舍：适用条件、可核验触发指标、资源强度、
+   延后的工作、停止/扩大条件；正文解释“若X且Y则先A，否则B或暂缓”。阈值如果
+   是建议试验值，应在出现处说明校准方式；不能只写“仅供参考、不能指导预算”
+   然后不给读者任何条件式选择。明确假设的决策模型可支持假设条件内的选择，
+   不能证明哪种方案在现实中一定有效。
+4. 第二张表服务于另一项判断，优先给同一资源约束下的经济性/指标计算或双向
+   敏感性分析：变量、单位、公式、校准数据、低/基准/高情境和推荐反转点。
+   不把引用次数×平台描述性影响分×凭空的转化系数当作收入、线索或业务贡献。
+   没有实测转化关系时，停留在可观测量（有效任务完成率、正确引用的目标问题数、
+   经人工复核的有效线索或单项工时成本）；需要新增变量就说明如何采集。
+   自定数字只能演示公式与条件阈值，明确“示意假设，非行业基准”，不贴一个
+   无关来源让读者误以为是假设的依据。至少改变一个关键变量，使优劣反转或
+   明确无方案可达到最低条件；区间也要说明是演示范围还是已有测量。
+5. 对每个关键指标给出分子/分母、抽样单位、采集者、时间窗口和偏差控制。
+   如用人工评估AI答案，说明目标问题如何选、同一组问题如何按平台重复采样、
+   如何处理结果波动、独立复核和分歧裁决；不要凭空承诺统计显著性。
+   先测基线，再校准阈值。建议时间表由任务工时/团队容量推得，不能冒充研究结果。
+6. 把通用来源迁移到本场景时逐步说明：来源观察→可能机制→本场景满足的条件→
+   如何验证→什么结果将推翻建议。缺少垂直证据时收窄为条件式试验，不重复加上
+   “无证据”就继续肯定外推。至少回应一个会改变资源分配的反方解释。
+优先重构论点、表格和计算，删去低价值复述；不要靠多写段落解决低分。
+"""
+
 
 def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 24000) -> dict:
     """Reject truncated/malformed responses; never turn a failed response into an article."""
@@ -81,7 +113,8 @@ def research_text(sources: list[dict]) -> str:
 def public_sources(sources: list[dict]) -> list[dict]:
     """Publish provenance, never a copy of third-party source bodies."""
     keys = ("id", "title", "url", "publisher", "published", "retrieved_at", "evidence_kind",
-            "excerpt_start", "excerpt_end", "body_chars", "excerpt_truncated", "retrieval_method", "publisher_domain")
+            "excerpt_start", "excerpt_end", "body_chars", "excerpt_truncated", "retrieval_method", "publisher_domain",
+            "evidence_role", "industries", "scope_notes")
     return [{**{key: source[key] for key in keys if key in source},
              "text_sha256": hashlib.sha256(source["text"].encode()).hexdigest()} for source in sources]
 
@@ -97,8 +130,8 @@ def review_errors(review: dict) -> list[str]:
     if sum(scores[key] for key in SCORE_KEYS) < 25:
         errors.append("editorial total below 25/30")
     for name in ("issues", "blockers"):
-        if not isinstance(review.get(name), list):
-            errors.append(f"review omitted {name}")
+        if not isinstance(review.get(name), list) or any(not isinstance(item, str) or not item.strip() for item in review[name]):
+            errors.append(f"review {name} must be an array of nonempty strings")
     if review.get("blockers"):
         errors.extend(str(issue) for issue in review["blockers"])
     return errors
@@ -109,11 +142,106 @@ def write_audit(path: Path, audit: dict) -> None:
     path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _review_contract_errors(review: dict) -> list[str]:
+    """Separate a malformed review response from an article's editorial failures."""
+    errors = []
+    scores = review.get("scores")
+    if not isinstance(scores, dict) or set(scores) != set(SCORE_KEYS) or any(
+        type(scores.get(key)) is not int or not 0 <= scores[key] <= 5 for key in SCORE_KEYS
+    ):
+        errors.append("scores must contain exactly six named integer scores from 0 to 5")
+    for key in ("issues", "blockers"):
+        values = review.get(key)
+        if not isinstance(values, list) or any(not isinstance(value, str) or not value.strip() for value in values):
+            errors.append(f"{key} must be an array of nonempty strings")
+    checks = review.get("claim_checks")
+    if not isinstance(checks, list) or len(checks) < 5:
+        errors.append("claim_checks must contain at least five concrete claim checks")
+    elif any(
+        not isinstance(check, dict)
+        or check.get("verdict") not in {"supported", "unsupported", "inference", "illustrative"}
+        or not isinstance(check.get("claim"), str)
+        or not isinstance(check.get("reason"), str)
+        or not isinstance(check.get("source_ids"), list)
+        for check in checks
+    ):
+        errors.append("each claim check requires claim, reason, source_ids, and a permitted verdict")
+    return errors
+
+
+def _revision_feedback(audit: dict) -> dict:
+    """Carry every current issue and every earlier blocker into the next revision."""
+    current = audit["attempts"][-1]
+    required_fixes = []
+    # Earlier blockers remain explicit regression obligations even if a later
+    # reviewer did not repeat them. Their presence alone does not lower scores.
+    for attempt in audit["attempts"]:
+        review = attempt.get("review", {})
+        groups = [("blocker", review.get("blockers", []))]
+        if attempt is current:
+            groups += [("structure", attempt["structure"].get("errors", [])),
+                       ("issue", review.get("issues", []))]
+        for kind, items in groups:
+            if not isinstance(items, list):
+                continue
+            for index, item in enumerate(items, 1):
+                required_fixes.append({"id": f"r{attempt['revision']}-{kind}-{index}",
+                    "kind": kind, "problem": str(item),
+                    "instruction": "修复并指出正文位置；如果上轮已修复，核对本轮仍保留该修复。"})
+    return {"failures": current.get("errors", []),
+            "scores": current.get("review", {}).get("scores"),
+            "claim_checks": current.get("review", {}).get("claim_checks", []),
+            "required_fixes": required_fixes,
+            "acceptance": "每维至少4且总分至少25/30；blockers为空；结构与事实门槛不变"}
+
+
+def _revision_response_errors(raw: dict, feedback: dict) -> list[str]:
+    """Require specific responses to all feedback; a fresh review verifies them."""
+    required = {item["id"] for item in feedback.get("required_fixes", [])}
+    if not required:
+        return []
+    responses = raw.get("revision_response")
+    if not isinstance(responses, list):
+        return ["Revision requires revision_response for every required_fixes ID."]
+    completed = set()
+    errors = []
+    for response in responses:
+        if not isinstance(response, dict):
+            errors.append("Each revision_response must be an object.")
+            continue
+        issue_id = response.get("issue_id")
+        if not isinstance(issue_id, str) or issue_id not in required:
+            errors.append("revision_response contains an unknown issue_id.")
+            continue
+        if issue_id in completed:
+            errors.append(f"revision_response repeats {issue_id}.")
+        if any(not isinstance(response.get(key), str) or len(response[key].strip()) < minimum
+               for key, minimum in (("change", 8), ("location", 3), ("verification", 8))):
+            errors.append(f"revision_response {issue_id} needs a specific change, location and verification.")
+            continue
+        completed.add(issue_id)
+    errors.extend(f"Revision did not address required fix {issue_id}." for issue_id in sorted(required - completed))
+    return errors
+
+
 def review_article(article: dict, sources: list[dict], api_key: str, lang: str, original: dict | None = None) -> dict:
     prompt = f"""请以独立主编身份审稿。你没有参与草稿，不要迁就作者或默认给高分。
 {REVIEW_RUBRIC}
 审查下文的真实论证，不能因为有表格、标题、引用标记而判定有深度。
 逐段核实数字、平台机制、外部案例是否确实由已读取来源支持，引用错位或事实无支持列为blockers。
+先判断论断类型，再判断是否需要外部证据，不要把作者明示的情景输入、条件式推论和建议
+试验值当作已发生的事实。自定时间表/预算/阈值若在出现处说明是建议或示意，且有工时、
+基线校准或敏感性逻辑，不因“没有文献给出同一个数值”就判虚构。应检查计算、单位、
+可测量性、选择是否随假设变化，以及作者是否把条件内的结果偷换为普遍有效的推荐。
+有明确假设的模型可以比较假设条件下的方案优劣；没有实测就不能声称现实中优于对照。
+如果标签仅出现在文末，而标题/摘要/结论仍冒充行业事实，或把描述性平台分数无依据
+地换算成成交/收入，仍属blocker。标注“推断”不能挽救不成立的因果链或口径错误。
+对于supported/inference/illustrative/unsupported分类，reason要引用本文的具体措辞
+及其成立边界；不要删去同句中的“假设”“若”等限定语后把剩余短句判成unsupported。
+只检查本轮正文，不把提纲、上轮稿或之前已删除的断言当成本文的现有错误。
+tradeoffs重点检查同一资源约束下的选项、放弃项、触发条件和情景反转；originality
+重点检查作者能否从证据推导新的条件规则并将其用于比较，而非是否创造术语或拥有
+未提供的访谈。具体指出哪张表/哪个变量未帮助选择，不能只要求“更有洞见”。
 对每个重要外部事实和数值给出 claim_checks: [{{"claim":"原文短句","source_ids":["S1"],
 "verdict":"supported|unsupported|inference|illustrative","reason":"判断依据与来源适用边界"}}]。
 至少检查5项；外推、情景假设不能冒充实测。纯概念重复、空泛建议、缺乏解释的表格也应扣分。
@@ -124,6 +252,35 @@ JSON字段 scores（六维）、issues（具体修改建议数组）、blockers�
 中文原文（仅翻译审稿时提供）：{json.dumps(original, ensure_ascii=False) if original else '无'}
 待审文章：{json.dumps(article, ensure_ascii=False)}"""
     review = request_json(prompt, api_key, stage=f"{lang}-review", max_tokens=16000)
+    format_errors = _review_contract_errors(review)
+    if format_errors:
+        original_review = json.loads(json.dumps(review))
+        original_format_errors = list(format_errors)
+        # A format-only retry is still a fresh factual review of the same article;
+        # no score, unsupported verdict or blocker is removed by application code.
+        review = request_json(
+            prompt + "\n上次审稿输出格式不合格，请重新完成同一篇文章的独立审稿。"
+            "只修正JSON契约，继续逐项核实同一证据；不得为格式通过提高分数、删除事实问题"
+            "或改低验收门槛。格式问题：" + json.dumps(format_errors, ensure_ascii=False)
+            + "\n上次审稿结果（保留具体事实问题）：" + json.dumps(original_review, ensure_ascii=False),
+            api_key, stage=f"{lang}-review-format-repair", max_tokens=16000,
+        )
+        format_errors = _review_contract_errors(review)
+        if not isinstance(review.get("blockers"), list):
+            review["blockers"] = ["editorial review blockers must be an array"]
+        # Repairing the schema cannot erase previously identified factual blockers.
+        if isinstance(original_review.get("blockers"), list):
+            review["blockers"].extend(item for item in original_review["blockers"] if isinstance(item, str) and item.strip())
+        if isinstance(original_review.get("claim_checks"), list):
+            review["blockers"].extend(
+                f"unsupported claim: {check['claim']}" for check in original_review["claim_checks"]
+                if isinstance(check, dict) and check.get("verdict") == "unsupported" and isinstance(check.get("claim"), str)
+            )
+        review["format_repair"] = {"errors": original_format_errors, "original_review": original_review}
+    if not isinstance(review.get("blockers"), list):
+        review["blockers"] = ["editorial review blockers must be an array"]
+    if format_errors:
+        review["blockers"].extend(f"invalid review response: {error}" for error in format_errors)
     if not isinstance(review.get("claim_checks"), list) or len(review["claim_checks"]) < 5:
         review.setdefault("blockers", []).append("review must check at least five substantive claims")
     else:
@@ -154,6 +311,7 @@ JSON字段 scores（六维）、issues（具体修改建议数组）、blockers�
             review.setdefault("blockers", []).append("review must check five distinct concrete claims")
         if len(supported_sources) < 2:
             review.setdefault("blockers", []).append("review must substantiate external claims against at least two sources")
+    review["blockers"] = list(dict.fromkeys(str(item) for item in review["blockers"]))
     return review
 
 
@@ -161,8 +319,9 @@ def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, la
                     original: dict | None = None, recent_posts: list[dict] | None = None,
                     audit_path: Path) -> dict:
     """Complete every acceptance gate before any caller can write public site files."""
-    audit = {"version": "insights-v2", "row": topic.idx, "language": lang,
-             "sources": public_sources(sources), "attempts": [], "passed": False}
+    audit = {"version": "insights-v3", "row": topic.idx, "language": lang,
+             "sources": public_sources(sources), "attempts": [], "passed": False,
+             "audit_scope": "Original editorial brief, drafts and reviews; source provenance only, no third-party source bodies."}
     write_audit(audit_path, audit)
     try:
         if lang == "zh":
@@ -172,13 +331,27 @@ def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, la
 segments_and_tradeoffs, counterargument, worked_example（透明公式与假设，不能捏造实测），
 exhibits（2个不同分析目的的表格）, management_actions（负责人/时点/指标/扩大或停止条件），
 unknowns, outline。核心判断必须能被反驳，不能只有趋势口号。
+{DECISION_ANALYSIS_REQUIREMENTS}
+提纲另附 decision_model：options（含暂缓）、shared_constraint、decision_variables
+（定义/单位/采集或校准方式/事实或示意）、switching_rule、reversal_scenarios、
+opportunity_costs、original_contribution（用一句话说明相比来源综述新增了什么可用规则）。
+输出自己的研究计划和归纳，不输出source.text、原始资料包或第三方原文段落；
+evidence_map只保留简短原创论断、来源ID与适用边界。
 不要把BCG的调研等同于中国本行业事实，不得把引用/提及/点击/成交等同。
 近30篇选题用于避免套路与重复：{json.dumps((recent_posts or [])[:30], ensure_ascii=False)}
 当前选题：{json.dumps(vars(topic), ensure_ascii=False)}
 已读取原始资料：{research_text(sources)}""", api_key, stage="research-brief", max_tokens=12000)
+            brief_fields = {"decision_question", "thesis", "causal_chain", "evidence_map",
+                "segments_and_tradeoffs", "counterargument", "worked_example", "exhibits",
+                "management_actions", "unknowns", "outline", "decision_model"}
+            # Do not persist an accidentally echoed research pack or source body.
+            brief = {key: value for key, value in brief.items() if key in brief_fields}
+            audit["brief"] = brief
+            write_audit(audit_path, audit)
             base_prompt = f"""按照下列研究提纲，写一篇有独立观点和证据链的中文行业洞察。
 目标质量参照顶级战略咨询的研究严谨度，不声称达到BCG审定标准，不模仿其文字。
 {DRAFT_REQUIREMENTS}
+{DECISION_ANALYSIS_REQUIREMENTS}
 自然使用品牌化GEO/AI搜索优化；品牌只在必要处出现，不凑关键词次数。
 题目应表达本篇核心判断，避免沿用弱选题标题。以读者的经营问题组织全文，不强塞今天新闻。
 没有实证就清楚写推论/假设，不要暗示采访、调研或客户实绩。禁止虚构算法权重或保证收录。
@@ -197,12 +370,27 @@ unknowns, outline。核心判断必须能被反驳，不能只有趋势口号。
 段落可以自然改写，但不能合并/删除章节、表格、脚注或限定条件，不能增加新事实。
 输出完整JSON title,excerpt,body_html,tags。title以Eco-GEO:开头。
 原文：{json.dumps(original, ensure_ascii=False)}"""
-        feedback = ""
+        feedback: dict = {}
         previous = None
         for revision in range(int(os.environ.get("INSIGHT_MAX_REVISIONS", "2")) + 1):
             prompt = base_prompt
             if feedback:
-                prompt += f"\n上稿未通过审查，必须实质修正，返回完整文章JSON。\n上稿：{json.dumps(previous, ensure_ascii=False)}\n审查意见：{feedback}"
+                prompt += f"""\n上稿未通过审查。逐项处理required_fixes的每一个ID，先解决全部blocker
+和结构问题，再重构低分维度对应的论证、表格或计算；不能只追加免责声明、增加篇幅，
+不能删除实质分析来躲避审查。保留过去已修正的事实边界，不得重新引入此前blocker。
+对无来源的行业断言，要么删掉，要么把整条建议（含标题/摘要/结论）收窄到明示条件；
+不能只在文末写“局限”。若tradeoffs或originality不足，必须让读者看见同一预算下
+选项间的放弃项、可观测触发规则、变量变化带来的推荐反转，以及本篇自己推导的
+比较框架。计算先核对单位、校准来源和假设范围，不得用更漂亮的任意系数凑结论。
+返回完整文章JSON title,excerpt,body_html,tags，另附revision_response数组：
+[{{"issue_id":"required_fixes中的原ID","change":"具体改了什么或怎样保留已完成的修复",
+"location":"本轮章节标题/表格行/段落位置","verification":"用本轮具体内容说明为何解决了该问题"}}]。
+每个ID恰好回应一次，不用“已优化”之类空话；不要把revision_response写进正文。
+作者的回应仅用于审计，最终仍由独立主编审稿，不能代替事实核查或改变分数门槛。
+上稿：{json.dumps(previous, ensure_ascii=False)}
+完整修订任务：{json.dumps(feedback, ensure_ascii=False)}"""
+                if lang != "zh":
+                    prompt += "\n当前是译稿修订：以上分析重构要求仅适用于中文创作。译稿只能依据中文原文修复忠实度、措辞和格式，不能新增或改动原文的方案、表格、数字、假设及结论；若问题来自中文原文自身，明确报告，不能在译稿中自行补造。"
             raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
                                max_tokens=int(os.environ.get("INSIGHT_MAX_TOKENS", "24000")))
             try:
@@ -210,15 +398,26 @@ unknowns, outline。核心判断必须能被反驳，不能只有趋势口号。
                 structural = validate_insight(article, sources, lang=lang, source_article=original)
             except ValueError as exc:
                 structural = {"passed": False, "errors": [str(exc)], "metrics": {}}
-                article = raw
+                article = {key: raw.get(key) for key in ("title", "excerpt", "body_html", "tags")}
+            if feedback:
+                structural["errors"].extend(_revision_response_errors(raw, feedback))
+                structural["passed"] = not structural["errors"]
             previous = article
-            attempt = {"revision": revision, "structure": structural}
+            attempt = {"revision": revision, "article": article, "structure": structural,
+                       "revision_response": raw.get("revision_response", []),
+                       "feedback_applied": feedback, "review_state": "not_started"}
             errors = list(structural["errors"])
+            audit["attempts"].append(attempt)
+            # Preserve each authored draft even if a later model request fails.
+            write_audit(audit_path, audit)
             if structural["passed"]:
+                attempt["review_state"] = "pending"
+                write_audit(audit_path, audit)
                 review = review_article(article, sources, api_key, lang, original)
                 attempt["review"] = review
                 errors.extend(review_errors(review))
-            audit["attempts"].append(attempt)
+                attempt["review_state"] = "completed"
+            attempt["errors"] = errors
             audit["passed"] = not errors
             write_audit(audit_path, audit)
             if not errors:
@@ -226,7 +425,7 @@ unknowns, outline。核心判断必须能被反驳，不能只有趋势口号。
                                       "scores": review["scores"], "revisions": revision,
                                       "review_type": "automated editorial review"}
                 return article
-            feedback = json.dumps({"failures": errors, "review": attempt.get("review")}, ensure_ascii=False)
+            feedback = _revision_feedback(audit)
             print(f"Insight {lang}: revision {revision} rejected: {json.dumps(errors, ensure_ascii=False)}", flush=True)
         raise RuntimeError(f"{lang} insight did not pass quality gates; inspect {audit_path}")
     except Exception as exc:
