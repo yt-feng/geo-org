@@ -1,5 +1,324 @@
 [
   {
+    "order": "707",
+    "row": "695",
+    "slug": "00695-geo-ade4e503",
+    "title": "Eco-GEO：إطار شرطي لاتخاذ قرارات موارد GEO: خفض معدل الخطأ أولاً إلى ما دون العتبة، ثم مقارنة التكلفة لكل اقتباس صحيح",
+    "excerpt": "عندما قد تقتبس إجابات الذكاء الاصطناعي محتوى العلامة التجارية، يكون معدل الخطأ الواقعي عتبة جدوى وليس عنصراً مرجحاً. تقترح هذه المقالة أولاً استبعاد الخطط غير المؤهلة باستخدام الحد الأقصى للاقتباسات الخاطئة، ثم مقارنة الإصلاح وتوسيع التغطية في ظل عدد الاقتباسات الصحيحة الموحد وتكلفة ساعات العمل. الإطار افتراضي ويتطلب معايرة خط أساس لمدة 2 أسابيع؛ ولا ينطبق على العلامات التجارية التي ثبت عدم تأثر أعمالها ببحث الذكاء الاصطناعي.",
+    "category": "GEO للعلامات التجارية",
+    "tags": "GEO, GEO للعلامات التجارية, GEO ذو القبعة البيضاء, بحث الذكاء الاصطناعي, التجارة الإلكترونية عبر البث المباشر, ترقية العلامة التجارية, فترة نمو المخزون, إطار القرار, Eco-GEO, تحسين محركات بحث الذكاء الاصطناعي, خدمات GEO",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-08",
+    "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/ar/blog/articles/00695-geo-ade4e503/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-08T04:55:05+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "直播电商监督管理办法",
+        "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
+        "publisher": "State Administration for Market Regulation",
+        "published": "2026-01-07",
+        "retrieved_at": "2026-09-08T04:55:08+00:00",
+        "evidence_kind": "regulatory_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 11552,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "samr.gov.cn",
+        "evidence_role": "industry_context",
+        "industries": [
+          "livestream_commerce"
+        ],
+        "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction.",
+        "text_sha256": "66f12a13fd10de196fbef32962cf7af0ea8f8130e0f0e2e2f744ea5dcd7603ab"
+      },
+      {
+        "id": "S3",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-08T04:55:08+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+        "url": "https://blogs.bing.com/webmaster/February-2026/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-08T04:55:08+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 6043,
+        "body_chars": 6043,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "f6687661960668704af65c098aeb036f60596547f40f6c6eae8d89cdd8b77c22"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-08T04:55:10+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "ar",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 11,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 6,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 9,
+            "cells": 27
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 1,
+          "S2": 1,
+          "S3": 1,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 12710,
+        "zh_character_count": 0,
+        "word_count": 2672,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 5,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "samr.gov.cn"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 11,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 6,
+                "cells": 18
+              },
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 9,
+                "cells": 27
+              }
+            ],
+            "role_counts": {
+              "assumptions": 1,
+              "executive-summary": 1
+            },
+            "citation_id_counts": {
+              "S1": 1,
+              "S2": 1,
+              "S3": 1,
+              "S4": 1,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {
+                "2": 1
+              },
+              "translated": {
+                "2": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0.03": 3,
+                "0.05": 3,
+                "0.1": 1,
+                "0.2": 7,
+                "0.5": 1,
+                "0.8": 1,
+                "0.9": 2,
+                "0.95": 1,
+                "0.97": 2,
+                "1": 19,
+                "1.5": 6,
+                "1.6": 2,
+                "10": 6,
+                "10%": 5,
+                "12": 4,
+                "2": 30,
+                "2.7": 2,
+                "2.8": 3,
+                "20": 3,
+                "20%": 4,
+                "28.5": 4,
+                "29.1": 2,
+                "3": 3,
+                "3%": 1,
+                "30": 10,
+                "4": 4,
+                "40": 4,
+                "48.5": 2,
+                "5": 8,
+                "5%": 5,
+                "50": 7,
+                "50%": 1,
+                "6": 3,
+                "60": 1,
+                "7": 2,
+                "70%": 3,
+                "8": 5,
+                "8%": 1,
+                "80": 14,
+                "9": 1
+              },
+              "translated": {
+                "0.03": 3,
+                "0.05": 3,
+                "0.1": 1,
+                "0.2": 7,
+                "0.5": 1,
+                "0.8": 1,
+                "0.9": 2,
+                "0.95": 1,
+                "0.97": 2,
+                "1": 19,
+                "1.5": 6,
+                "1.6": 2,
+                "10": 6,
+                "10%": 5,
+                "12": 4,
+                "2": 30,
+                "2.7": 2,
+                "2.8": 3,
+                "20": 3,
+                "20%": 4,
+                "28.5": 4,
+                "29.1": 2,
+                "3": 3,
+                "3%": 1,
+                "30": 10,
+                "4": 4,
+                "40": 4,
+                "48.5": 2,
+                "5": 8,
+                "5%": 5,
+                "50": 7,
+                "50%": 1,
+                "6": 3,
+                "60": 1,
+                "7": 2,
+                "70%": 3,
+                "8": 5,
+                "8%": 1,
+                "80": 14,
+                "9": 1
+              },
+              "missing": {},
+              "added": {}
+            }
+          }
+        }
+      },
+      "scores": {
+        "thesis": 5,
+        "evidence": 4,
+        "mechanism": 5,
+        "tradeoffs": 5,
+        "actionability": 5,
+        "originality": 4
+      },
+      "revisions": 2,
+      "review_type": "automated editorial review"
+    }
+  },
+  {
     "order": "706",
     "row": "694",
     "slug": "00694-geo-c197896f",
