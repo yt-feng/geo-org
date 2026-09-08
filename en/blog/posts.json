@@ -1,5 +1,326 @@
 [
   {
+    "order": "706",
+    "row": "694",
+    "slug": "00694-geo-c197896f",
+    "title": "Eco-GEO：AgTech Brand GEO Launch: Set the Fact Threshold First, Then Compare Evidence Refinement and Issue Coverage",
+    "excerpt": "AI search investment for agricultural technology brands should not start with traffic. This article uses the count of qualified answer observations Q from a fixed question set as a comparable metric, sets a suggested trial threshold of zero serious factual errors and baseline Q≥60, then compares refining applicability conditions (A) versus expanding issue coverage (B) under the same 80-work-hour constraint, and provides verifiable trigger reversal conditions and observations that could overturn the recommendation.",
+    "category": "Brand GEO",
+    "tags": "Branded GEO, Agricultural Technology, AI Search, Content Strategy, Evidence Management, Eco-GEO, GEO Services, AI Search Optimization",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-08",
+    "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/en/blog/articles/00694-geo-c197896f/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-08T03:58:57+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "针对农业的政策、立法和投资",
+        "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/national-strategies-agricultural-automation.html",
+        "publisher": "Food and Agriculture Organization of the United Nations",
+        "published": "",
+        "retrieved_at": "2026-09-08T03:58:58+00:00",
+        "evidence_kind": "institutional_research",
+        "excerpt_start": 0,
+        "excerpt_end": 9703,
+        "body_chars": 9703,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "fao.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "agriculture_technology"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "342a5aa67d3cb7c1eb3a99a4e991b4dac866c0ac104fa6282d5b83de6b8a6b4b"
+      },
+      {
+        "id": "S3",
+        "title": "Precision Agriculture in the Digital Era: Recent Adoption on U.S. Farms | Economic Research Service",
+        "url": "https://ers.usda.gov/publications/105893",
+        "publisher": "USDA Economic Research Service",
+        "published": "",
+        "retrieved_at": "2026-09-08T03:58:59+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 2349,
+        "body_chars": 2349,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "usda.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "agriculture_technology"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "597eb347fab975f910cc147a245707c28f018e9fc5a6e8ae09981fb71382130f"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/April-2025/Introducing-Copilot-Search-in-Bing",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-08T03:58:59+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5456,
+        "body_chars": 5456,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "7e984e78bcd9398f245c3a3a7e688836cd2829bde76a155f55f5d5c1874607e4"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-08T03:59:01+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "en",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 9,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 4,
+            "cells": 12
+          },
+          {
+            "captions": 1,
+            "rows": 8,
+            "headers": 7,
+            "cells": 49
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 3,
+          "S2": 1,
+          "S3": 1,
+          "S4": 2,
+          "S5": 1
+        },
+        "visible_character_count": 22078,
+        "zh_character_count": 0,
+        "word_count": 4020,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 8,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "ers.usda.gov",
+          "openknowledge.fao.org"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 9,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 4,
+                "cells": 12
+              },
+              {
+                "captions": 1,
+                "rows": 8,
+                "headers": 7,
+                "cells": 49
+              }
+            ],
+            "role_counts": {
+              "assumptions": 1,
+              "executive-summary": 1
+            },
+            "citation_id_counts": {
+              "S1": 3,
+              "S2": 1,
+              "S3": 1,
+              "S4": 2,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {
+                "60": 1,
+                "80": 1
+              },
+              "translated": {
+                "60": 1,
+                "80": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 14,
+                "0.075": 1,
+                "0.15": 2,
+                "0.3": 1,
+                "1": 5,
+                "102": 1,
+                "108": 1,
+                "12": 14,
+                "120": 9,
+                "16": 5,
+                "18": 2,
+                "1996": 1,
+                "2": 6,
+                "20": 3,
+                "2019": 1,
+                "2022": 1,
+                "2023": 1,
+                "2025": 2,
+                "2026": 1,
+                "24": 4,
+                "28": 1,
+                "3": 2,
+                "31": 1,
+                "36": 1,
+                "48": 2,
+                "480": 1,
+                "5": 1,
+                "6": 4,
+                "60": 11,
+                "66": 9,
+                "7": 2,
+                "72": 3,
+                "78": 8,
+                "8": 2,
+                "80": 25,
+                "80%": 1,
+                "9": 1,
+                "90": 4,
+                "96": 1
+              },
+              "translated": {
+                "0": 14,
+                "0.075": 1,
+                "0.15": 2,
+                "0.3": 1,
+                "1": 5,
+                "102": 1,
+                "108": 1,
+                "12": 14,
+                "120": 9,
+                "16": 5,
+                "18": 2,
+                "1996": 1,
+                "2": 6,
+                "20": 3,
+                "2019": 1,
+                "2022": 1,
+                "2023": 1,
+                "2025": 2,
+                "2026": 1,
+                "24": 4,
+                "28": 1,
+                "3": 2,
+                "31": 1,
+                "36": 1,
+                "48": 2,
+                "480": 1,
+                "5": 1,
+                "6": 4,
+                "60": 11,
+                "66": 9,
+                "7": 2,
+                "72": 3,
+                "78": 8,
+                "8": 2,
+                "80": 25,
+                "80%": 1,
+                "9": 1,
+                "90": 4,
+                "96": 1
+              },
+              "missing": {},
+              "added": {}
+            }
+          }
+        }
+      },
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 5,
+        "actionability": 5,
+        "originality": 5
+      },
+      "revisions": 1,
+      "review_type": "automated editorial review"
+    }
+  },
+  {
     "order": "705",
     "row": "693",
     "slug": "00693-pmf-geo-ai-ec7ab8a7",
