@@ -373,7 +373,7 @@ def site_footer(prefix: str, blog_href: Optional[str] = None) -> str:
 
 
 def bottom_cta() -> str:
-    return """<div class="bottom-cta" role="region" aria-label="Eco GEO contact"><div class="wrap bottom-cta-inner"><div class="bottom-cta-text"><strong>AIBE 初诊</strong><span>检查你的品牌在 AI 答案里的可见度与引用风险</span></div><a href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">邮件咨询</a></div></div>"""
+    return """<div class="bottom-cta" role="region" aria-label="Eco GEO contact"><div class="wrap bottom-cta-inner"><div class="bottom-cta-text"><strong>AIBE 初诊</strong><span>检查你的品牌在 AI 答案里的可见度与引用风险</span></div><a href="/contact/#inquiry">提交咨询</a></div></div>"""
 
 
 def article_html(topic: TopicRow, article: Dict[str, str], slug: str, author_name: str, initials: str) -> str:

@@ -42,7 +42,7 @@ HTML = r'''<!doctype html>
     <div class="empty" id="emptyState">没有找到匹配文章。试试清空搜索词或切换分类。</div>
     <div class="pager" id="pager" style="display:none"><button id="prevBtn">上一页</button><span class="page-info" id="pageInfo"></span><button id="nextBtn">下一页</button><input id="pageInput" type="number" min="1" value="1"/><button id="jumpBtn">跳转</button></div>
   </main>
-  <div class="bottom-cta" role="region" aria-label="Eco GEO contact"><div class="wrap bottom-cta-inner"><div class="bottom-cta-text"><strong>AIBE 初诊</strong><span>检查你的品牌在 AI 答案里的可见度与引用风险</span></div><a href="mailto:yt.feng@foxmail.com?subject=Eco%20GEO%20AIBE%20诊断咨询">邮件咨询</a></div></div>
+  <div class="bottom-cta" role="region" aria-label="Eco GEO contact"><div class="wrap bottom-cta-inner"><div class="bottom-cta-text"><strong>AIBE 初诊</strong><span>检查你的品牌在 AI 答案里的可见度与引用风险</span></div><a href="/contact/#inquiry">提交咨询</a></div></div>
   <footer class="footer site-footer"><div class="wrap">© 2026 Eco GEO · Brand-first GEO · <a href="../index.html">首页</a> · <a href="./">前沿观点</a> · <a href="../about/">关于</a> · <a href="../editorial-policy/">编辑政策</a> · <a href="../privacy/">隐私</a> · <a href="../terms/">条款</a> · <a href="../contact/">联系</a></div></footer>
   <script>
     const PAGE_SIZE = 24;

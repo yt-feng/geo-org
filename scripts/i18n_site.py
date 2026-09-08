@@ -14,7 +14,7 @@ from insight_styles import INSIGHT_CSS
 from string import Template
 from typing import Dict, Iterable, List, Mapping, Optional
 
-EMAIL = "yt.feng@foxmail.com"
+EMAIL = "info@eco-geo.com"
 SITE_URL = os.environ.get("SITE_URL", "https://eco-geo.org").rstrip("/")
 
 GLOBE_SVG = (
@@ -75,7 +75,7 @@ LANGS = {
         "footer_contact": "Contact",
         "cta_title": "AIBE quick check",
         "cta_body": "Check your brand visibility and citation risks in AI answers",
-        "cta_link": "Email us",
+        "cta_link": "Send inquiry",
         "home_title": "Make your brand understandable, citable, and recommendable in AI answers.",
         "home_lead": "Eco GEO is brand-first GEO consulting for teams that need AI search, generative answers, and multilingual discovery to describe the brand correctly.",
         "home_primary": "Open brand audit demo",
@@ -130,7 +130,7 @@ LANGS = {
         "footer_contact": "تواصل",
         "cta_title": "فحص AIBE أولي",
         "cta_body": "افحص ظهور علامتك ومخاطر الاقتباس داخل إجابات الذكاء الاصطناعي",
-        "cta_link": "راسلنا",
+        "cta_link": "إرسال استفسار",
         "home_title": "اجعل علامتك مفهومة وموثوقة وقابلة للاقتباس داخل إجابات الذكاء الاصطناعي.",
         "home_lead": "Eco GEO هي خدمة GEO تركز على العلامة للفرق التي تريد أن يصفها بحث الذكاء الاصطناعي والإجابات التوليدية بدقة عبر اللغات.",
         "home_primary": "افتح تجربة تقييم العلامة",
@@ -258,7 +258,7 @@ def bottom_cta(active: str) -> str:
         '<div class="bottom-cta" role="region" aria-label="Eco GEO contact">'
         '<div class="wrap bottom-cta-inner"><div class="bottom-cta-text">'
         f'<strong>{cfg["cta_title"]}</strong><span>{cfg["cta_body"]}</span></div>'
-        f'<a href="mailto:{EMAIL}?subject=Eco%20GEO%20AIBE%20Consultation">{cfg["cta_link"]}</a>'
+        f'<a href="/{active}/contact/#inquiry">{cfg["cta_link"]}</a>'
         "</div></div>"
     )
 

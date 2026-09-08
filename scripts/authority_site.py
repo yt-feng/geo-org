@@ -11,9 +11,10 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Mapping
 
 import i18n_site
+from contact_form import contact_form_html
 
 SITE_URL = os.environ.get("SITE_URL", "https://eco-geo.org").rstrip("/")
-EMAIL = "yt.feng@foxmail.com"
+EMAIL = "info@eco-geo.com"
 AUTHOR_NAME = "Eco GEO Editorial Team"
 AUTHOR_INITIALS = "EGE"
 REVIEWER_NAME = "Eco GEO Research Desk"
@@ -38,7 +39,7 @@ LANG = {
         "trust": "可信标准",
         "cta_title": "AIBE 初诊",
         "cta_body": "检查你的品牌在 AI 答案里的可见度与引用风险",
-        "cta_link": "邮件咨询",
+        "cta_link": "提交咨询",
     },
     "en": {
         "html_lang": "en",
@@ -57,7 +58,7 @@ LANG = {
         "trust": "Trust standard",
         "cta_title": "AIBE quick check",
         "cta_body": "Check your brand visibility and citation risks in AI answers",
-        "cta_link": "Email us",
+        "cta_link": "Send inquiry",
     },
     "ar": {
         "html_lang": "ar",
@@ -76,7 +77,7 @@ LANG = {
         "trust": "معيار الثقة",
         "cta_title": "فحص AIBE أولي",
         "cta_body": "افحص ظهور علامتك ومخاطر الاقتباس داخل إجابات الذكاء الاصطناعي",
-        "cta_link": "راسلنا",
+        "cta_link": "إرسال استفسار",
     },
 }
 
@@ -143,9 +144,9 @@ TRUST_PAGES = {
         },
     },
     "privacy": {
-        "zh": {"title": "隐私政策", "lead": "Eco GEO 当前是静态展示站点，不主动收集表单数据。", "sections": [("数据收集", ["品牌评测 Demo 在浏览器端运行，不上传输入内容。邮件咨询会通过你的邮件客户端发送给我们。"]), ("第三方资源", ["站点可能加载 Unsplash 图片和 GitHub Pages 托管资源；这些第三方可能依据自身政策处理访问日志。"]), ("联系", [f"隐私相关问题请联系 {EMAIL}。"])]},
-        "en": {"title": "Privacy Policy", "lead": "Eco GEO is currently a static site and does not submit audit-demo inputs to a server.", "sections": [("Data Collection", ["The brand audit demo runs in the browser. Email consultation is sent through your email client."]), ("Third Parties", ["The site may load Unsplash images and GitHub Pages assets; those services may process access logs under their own policies."]), ("Contact", [f"Privacy questions: {EMAIL}."])]},
-        "ar": {"title": "سياسة الخصوصية", "lead": "Eco GEO موقع ثابت حاليا ولا يرسل مدخلات تجربة التقييم إلى خادم.", "sections": [("جمع البيانات", ["تعمل تجربة تقييم العلامة داخل المتصفح. يتم إرسال الاستشارة عبر عميل البريد الخاص بك."]), ("أطراف ثالثة", ["قد يحمل الموقع صور Unsplash وموارد GitHub Pages، وقد تعالج تلك الخدمات سجلات الوصول وفق سياساتها."]), ("التواصل", [f"أسئلة الخصوصية: {EMAIL}."])]},
+        "zh": {"title": "隐私政策", "lead": "我们仅使用你主动提交的信息来处理和回复咨询，不出售这些信息。", "sections": [("你提交的信息", ["咨询表单接收你主动填写的姓名、邮箱、公司或品牌、网站和咨询内容，其中公司或品牌和网站为选填。", "品牌评测 Demo 在浏览器端运行，不上传评测输入。"]), ("处理与保存", ["表单通过 Cloudflare 处理并发送邮件通知。我们通过邮件处理和回复咨询，不将咨询内容存入网站咨询数据库。", "你的联系方式和咨询内容仅用于回应此次咨询，不出售给第三方。邮件服务会为收件和回复保存邮件。"]), ("第三方资源", ["站点可能加载 Unsplash 图片和 Vercel 托管资源；Cloudflare、邮件服务及其他第三方可能依据自身政策处理提供服务所需的数据与访问日志。"]), ("联系", [f"隐私相关问题请联系 {EMAIL}。"])]},
+        "en": {"title": "Privacy Policy", "lead": "We use the information you choose to submit only to handle and respond to your inquiry. We do not sell it.", "sections": [("Information You Submit", ["The inquiry form receives the name, email address, company or brand, website, and message you provide. Company or brand and website are optional.", "The brand audit demo runs in your browser and does not upload audit inputs."]), ("Processing and Storage", ["Cloudflare processes form submissions and sends email notifications. We handle and reply to inquiries by email and do not store inquiry content in a website inquiry database.", "Your contact details and message are used only to respond to your inquiry and are not sold to third parties. Email services retain messages for receiving and replying to inquiries."]), ("Third Parties", ["The site may load Unsplash images and Vercel-hosted resources. Cloudflare, email services, and other providers may process service data and access logs under their own policies."]), ("Contact", [f"Privacy questions: {EMAIL}."])]},
+        "ar": {"title": "سياسة الخصوصية", "lead": "نستخدم المعلومات التي تختار إرسالها فقط لمعالجة استفسارك والرد عليه، ولا نبيعها.", "sections": [("المعلومات التي ترسلها", ["يستقبل نموذج الاستفسار الاسم والبريد الإلكتروني واسم الشركة أو العلامة والموقع الإلكتروني والرسالة التي تقدمها. اسم الشركة أو العلامة والموقع الإلكتروني اختياريان.", "تعمل تجربة تقييم العلامة داخل متصفحك ولا ترفع مدخلات التقييم إلى الخادم."]), ("المعالجة والحفظ", ["تعالج Cloudflare بيانات النموذج وترسل إشعارات بالبريد الإلكتروني. نعالج الاستفسارات ونرد عليها عبر البريد، ولا نخزن محتواها في قاعدة بيانات للاستفسارات على الموقع.", "تستخدم بيانات الاتصال ورسالتك فقط للرد على استفسارك ولا تباع لأطراف ثالثة. تحتفظ خدمات البريد بالرسائل لاستلام الاستفسارات والرد عليها."]), ("أطراف ثالثة", ["قد يحمل الموقع صور Unsplash وموارد مستضافة على Vercel. وقد تعالج Cloudflare وخدمات البريد ومقدمو الخدمات الآخرون البيانات اللازمة للخدمة وسجلات الوصول وفق سياساتهم."]), ("التواصل", [f"لأسئلة الخصوصية: {EMAIL}."])]},
     },
     "terms": {
         "zh": {"title": "使用条款与免责声明", "lead": "Eco GEO 内容用于品牌化 GEO、AI 搜索和内容策略参考，不构成法律、财务、医疗或投资建议。", "sections": [("内容边界", ["文章和工具输出是研究与咨询视角下的建议，正式决策应结合你的行业、法务和业务上下文。"]), ("商业关系披露", ["如未来出现赞助、联盟或付费推荐内容，Eco GEO 会在相关页面清楚披露。"]), ("责任限制", ["我们会努力维护内容准确性，但不保证所有第三方信息永远最新。"])]},
@@ -153,9 +154,9 @@ TRUST_PAGES = {
         "ar": {"title": "الشروط وإخلاء المسؤولية", "lead": "محتوى Eco GEO مرجع لاستراتيجية Brand GEO وبحث الذكاء الاصطناعي والمحتوى، وليس نصيحة قانونية أو مالية أو طبية أو استثمارية.", "sections": [("النطاق", ["المقالات ومخرجات الأدوات مراجع بحثية واستشارية. يجب اتخاذ القرارات وفق سياقك القانوني والصناعي والتجاري."]), ("الإفصاح التجاري", ["إذا ظهر محتوى ممول أو روابط عمولة أو توصيات مدفوعة فسيتم الإفصاح عنها بوضوح."]), ("الحدود", ["نسعى إلى دقة المحتوى لكن لا نضمن بقاء معلومات الطرف الثالث محدثة دائما."])]},
     },
     "contact": {
-        "zh": {"title": "联系 Eco GEO", "lead": "如果你希望做 AIBE 初诊、品牌化 GEO 路线图、AI 搜索可见性复盘或内容资产审计，可以通过邮件联系。", "sections": [("邮件", [EMAIL]), ("适合发送的信息", ["品牌名、官网、目标市场、你关心的 AI 搜索问题、希望优化的语言版本。"]), ("纠错与来源补充", ["如果你发现文章事实错误、来源失效或需要更新，也请通过邮件说明具体 URL 和证据。"])]},
-        "en": {"title": "Contact Eco GEO", "lead": "For AIBE diagnosis, Brand GEO roadmaps, AI search visibility reviews, or content audits, email us.", "sections": [("Email", [EMAIL]), ("Useful Context", ["Brand name, website, target market, AI search questions, and target languages."]), ("Corrections", ["For factual corrections or source updates, include the URL and evidence."])]},
-        "ar": {"title": "تواصل مع Eco GEO", "lead": "للتشخيص الأولي AIBE أو خارطة Brand GEO أو مراجعة الظهور في بحث الذكاء الاصطناعي أو تدقيق أصول المحتوى، راسلنا.", "sections": [("البريد", [EMAIL]), ("معلومات مفيدة", ["اسم العلامة، الموقع، السوق المستهدف، أسئلة بحث الذكاء الاصطناعي، واللغات المطلوبة."]), ("التصحيحات", ["للتصحيح أو تحديث المصادر، أرسل الرابط والدليل."])]},
+        "zh": {"title": "联系 Eco GEO", "lead": "提交你的品牌背景和业务问题，开始 AIBE 初诊、品牌化 GEO 路线图、AI 搜索可见性复盘或内容资产审计。也可以直接发送邮件。", "sections": [("邮件", [EMAIL]), ("适合提供的信息", ["品牌名、官网、目标市场、你关心的 AI 搜索问题、希望优化的语言版本。"]), ("纠错与来源补充", ["如果你发现文章事实错误、来源失效或需要更新，请在表单或邮件中说明具体 URL 和证据。"])]},
+        "en": {"title": "Contact Eco GEO", "lead": "Tell us about your brand and business questions to start an AIBE diagnosis, Brand GEO roadmap, AI search visibility review, or content audit. You can also email us directly.", "sections": [("Email", [EMAIL]), ("Useful Context", ["Brand name, website, target market, AI search questions, and target languages."]), ("Corrections", ["For factual corrections or source updates, include the URL and evidence in the form or your email."])]},
+        "ar": {"title": "تواصل مع Eco GEO", "lead": "أخبرنا عن علامتك وأسئلتك التجارية لبدء تشخيص AIBE أو إعداد خارطة Brand GEO أو مراجعة الظهور في بحث الذكاء الاصطناعي أو تدقيق المحتوى. يمكنك أيضا مراسلتنا مباشرة بالبريد الإلكتروني.", "sections": [("البريد الإلكتروني", [EMAIL]), ("معلومات مفيدة", ["اسم العلامة، الموقع، السوق المستهدف، أسئلة بحث الذكاء الاصطناعي، واللغات المطلوبة."]), ("التصحيحات", ["للتصحيح أو تحديث المصادر، أدرج الرابط والدليل في النموذج أو رسالتك الإلكترونية."])]},
     },
 }
 
@@ -256,11 +257,12 @@ def footer(prefix: str, lang: str) -> str:
 
 def bottom_cta(lang: str) -> str:
     cfg = LANG[lang]
+    inquiry_url = "/contact/#inquiry" if lang == "zh" else f"/{lang}/contact/#inquiry"
     return (
         '<div class="bottom-cta" role="region" aria-label="Eco GEO contact">'
         '<div class="wrap bottom-cta-inner"><div class="bottom-cta-text">'
         f'<strong>{cfg["cta_title"]}</strong><span>{cfg["cta_body"]}</span></div>'
-        f'<a href="mailto:{EMAIL}?subject=Eco%20GEO%20AIBE%20Consultation">{cfg["cta_link"]}</a>'
+        f'<a href="{inquiry_url}">{cfg["cta_link"]}</a>'
         "</div></div>"
     )
 
@@ -325,16 +327,24 @@ def render_static_page(lang: str, slug: str, data: Mapping[str, object]) -> str:
     section_html = "".join(
         "<section><h2>{}</h2>{}</section>".format(
             esc(heading),
-            "".join(f"<p>{esc(paragraph)}</p>" for paragraph in paragraphs),
+            "".join(
+                f'<p><a href="mailto:{EMAIL}" dir="ltr">{EMAIL}</a></p>'
+                if paragraph == EMAIL else f"<p>{esc(paragraph)}</p>"
+                for paragraph in paragraphs
+            ),
         )
         for heading, paragraphs in sections
     )
+    if slug == "contact":
+        section_html = contact_form_html(lang, endpoint="https://forms.eco-geo.org/api/contact") + section_html
+    eyebrow = LANG[lang]["contact"] if slug == "contact" else LANG[lang]["trust"]
+    facts_html = "" if slug == "contact" else f'<div class="facts"><div class="fact"><strong>Eco GEO</strong><span>Brand-first GEO</span></div><div class="fact"><strong>{esc(AUTHOR_NAME)}</strong><span>Editorial owner</span></div><div class="fact"><strong>{esc(REVIEWER_NAME)}</strong><span>Review desk</span></div></div>'
     canonical = canonical_for(lang, f"{slug}/")
     return f"""<!doctype html>
 <html lang="{LANG[lang]['html_lang']}" dir="{LANG[lang]['dir']}"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="description" content="{esc(lead)}"/><link rel="icon" href="{prefix}logo.svg" type="image/svg+xml"/><link rel="canonical" href="{canonical}"/>
 <title>{esc(title)}｜Eco GEO</title><style>{css()}</style><script id="schema-page" type="application/ld+json">{page_schema(canonical, title, lead, lang)}</script></head>
-<body>{header(prefix, lang, f"{slug}/")}<main class="wrap prose"><div class="eyebrow">{esc(LANG[lang]['trust'])}</div><h1>{esc(title)}</h1><p class="lead">{esc(lead)}</p><div class="facts"><div class="fact"><strong>Eco GEO</strong><span>Brand-first GEO</span></div><div class="fact"><strong>{esc(AUTHOR_NAME)}</strong><span>Editorial owner</span></div><div class="fact"><strong>{esc(REVIEWER_NAME)}</strong><span>Review desk</span></div></div>{section_html}</main>{bottom_cta(lang)}{footer(prefix, lang)}</body></html>"""
+<body>{header(prefix, lang, f"{slug}/")}<main class="wrap prose"><div class="eyebrow">{esc(eyebrow)}</div><h1>{esc(title)}</h1><p class="lead">{esc(lead)}</p>{facts_html}{section_html}</main>{bottom_cta(lang)}{footer(prefix, lang)}</body></html>"""
 
 
 def select_posts(posts: Iterable[Mapping[str, str]], terms: Iterable[str], limit: int = 12) -> List[Mapping[str, str]]:
