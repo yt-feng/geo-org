@@ -9,6 +9,10 @@ on:
         description: "Generate reviewed previews without publishing"
         type: boolean
         default: false
+      resume_run_id:
+        description: "Optional failed run ID whose saved Chinese draft should be revised"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -59,6 +63,8 @@ jobs:
           INSIGHT_MIN_ZH_CHARS: "2600"
           INSIGHT_API_TIMEOUT: "300"
           PREVIEW_ONLY: ${{ inputs.preview }}
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+          GH_TOKEN: ${{ github.token }}
           NEWS_MAX_ITEMS: "3"
           TAVILY_MAX_QUERIES: "3"
           TAVILY_MAX_RESULTS: "3"
@@ -67,6 +73,12 @@ jobs:
           args=()
           if [ "$PREVIEW_ONLY" = "true" ]; then
             args+=(--preview-dir .artifacts/preview)
+          fi
+          if [ -n "$RESUME_RUN_ID" ]; then
+            [[ "$RESUME_RUN_ID" =~ ^[0-9]+$ ]] || { echo "Resume run ID must contain digits only"; exit 1; }
+            gh run view "$RESUME_RUN_ID" --json workflowName,conclusion --jq '.workflowName == "Generate Daily Blog Article" and .conclusion == "failure"' | grep -qx true
+            gh run download "$RESUME_RUN_ID" --name "daily-insight-review-$RESUME_RUN_ID" --dir "$RUNNER_TEMP/insight-resume"
+            args+=(--resume-dir "$RUNNER_TEMP/insight-resume/insights")
           fi
           python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog "${args[@]}"
 

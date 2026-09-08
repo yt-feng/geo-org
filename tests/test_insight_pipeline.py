@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import io
 import json
 import os
@@ -166,6 +167,301 @@ class StreamingTests(unittest.TestCase):
                 ip._completion_attempt(None, "test-deadline", 300, 0.03)
         self.assertLess(time.monotonic() - started, 0.5)
         self.assertTrue(closed.wait(0.2))
+
+
+class RevisionMetadataTests(unittest.TestCase):
+    def setUp(self):
+        self.sources = [{"id": "S1", "url": "https://example.com/a", "title": "A", "text": "Source A"},
+                        {"id": "S2", "url": "https://example.org/b", "title": "B", "text": "Source B"}]
+        self.article = {"title": "条件式决策", "excerpt": "比较条件与投入", "body_html": "<p>当前正文只保留条件式建议。</p>", "tags": ["GEO"]}
+        self.feedback = {"required_fixes": [{"id": "r0-blocker-1", "kind": "blocker", "problem": "删除无来源的行业断言"}]}
+
+    def good_review(self):
+        return {"scores": {**dict.fromkeys(ip.SCORE_KEYS, 4), "originality": 5}, "issues": [], "blockers": [],
+                "claim_checks": [{"claim": f"Concrete current article observation number {number}", "reason": "This supplied source contains the scoped observation.",
+                                  "source_ids": ["S1" if number % 2 else "S2"], "verdict": "supported"} for number in range(5)]}
+
+    def resolved_check(self):
+        return {"issue_id": "r0-blocker-1", "status": "resolved", "location": "表2",
+                "finding": "旧行业断言已删除，当前表2仅保留明示假设下的条件式选择。"}
+
+    def response(self):
+        return {"revision_response": [{"issue_id": "r0-blocker-1", "change": "删除行业断言", "location": "表2", "verification": "已核对新表述"}]}
+
+    def test_short_but_valid_chinese_response_fields_are_accepted(self):
+        self.assertEqual(ip._revision_response_errors(self.response(), self.feedback), [])
+
+    def test_blank_fields_missing_duplicate_and_unknown_ids_remain_invalid(self):
+        for responses in ([], [self.response()["revision_response"][0]] * 2,
+                          [{**self.response()["revision_response"][0], "location": " "}],
+                          [{**self.response()["revision_response"][0], "issue_id": "unknown"}]):
+            with self.subTest(responses=responses):
+                self.assertTrue(ip._revision_response_errors({"revision_response": responses}, self.feedback))
+
+    def test_missing_historical_check_uses_review_format_repair(self):
+        missing = self.good_review()
+        repaired = {**self.good_review(), "blocker_checks": [self.resolved_check()]}
+        with patch.object(ip, "request_json", side_effect=[missing, repaired]) as request:
+            review = ip.review_article(self.article, self.sources, "test", "zh", required_fixes=self.feedback["required_fixes"])
+        self.assertEqual(request.call_count, 2)
+        self.assertEqual(request.call_args.kwargs["stage"], "zh-review-format-repair")
+        self.assertEqual(ip.review_errors(review), [])
+        self.assertIn("旧断言若已删除", request.call_args.args[0])
+        self.assertIn("不要把被删旧claim列入当前claim_checks", request.call_args.args[0])
+
+    def test_missing_historical_check_after_format_repair_cannot_pass(self):
+        with patch.object(ip, "request_json", side_effect=[self.good_review(), self.good_review()]) as request:
+            review = ip.review_article(self.article, self.sources, "test", "zh", required_fixes=self.feedback["required_fixes"])
+        self.assertEqual(request.call_count, 2)
+        self.assertTrue(ip.review_errors(review))
+        self.assertTrue(any("blocker_checks" in blocker for blocker in review["blockers"]))
+
+    def test_unresolved_or_unverifiable_history_cannot_be_cleared_by_author(self):
+        for status in ("unresolved", "unverifiable"):
+            value = {**self.good_review(), "blocker_checks": [{**self.resolved_check(), "status": status}]}
+            with self.subTest(status=status), patch.object(ip, "request_json", return_value=value):
+                review = ip.review_article({**self.article, **self.response()}, self.sources, "test", "zh", required_fixes=self.feedback["required_fixes"])
+            self.assertTrue(ip.review_errors(review))
+            self.assertTrue(any(f"remains {status}" in blocker for blocker in review["blockers"]))
+
+    def test_format_repair_cannot_erase_explicit_unresolved_finding(self):
+        original = {**self.good_review(), "issues": "wrong format",
+                    "blocker_checks": [{**self.resolved_check(), "status": "unresolved", "finding": "旧断言仍存在于摘要中。"}]}
+        repaired = {**self.good_review(), "blocker_checks": [self.resolved_check()]}
+        with patch.object(ip, "request_json", side_effect=[original, repaired]):
+            review = ip.review_article(self.article, self.sources, "test", "zh", required_fixes=self.feedback["required_fixes"])
+        self.assertTrue(ip.review_errors(review))
+        self.assertTrue(any("remains unresolved" in blocker for blocker in review["blockers"]))
+
+    def run_two_drafts(self, metadata_result, *, final_review=None, expect_failure=False):
+        first_review = {**self.good_review(), "blockers": [self.feedback["required_fixes"][0]["problem"]]}
+        last_review = final_review or {**self.good_review(), "blocker_checks": [self.resolved_check()]}
+        stages = []
+        reviewed = []
+
+        def request(prompt, api_key, *, stage, **kwargs):
+            stages.append(stage)
+            if stage == "research-brief":
+                return {"decision_question": "资源应该如何分配"}
+            if "draft" in stage:
+                return copy.deepcopy(self.article)  # Deliberately omit author metadata.
+            if stage == "zh-review":
+                reviewed.append(prompt)
+                return copy.deepcopy(first_review if len(reviewed) == 1 else last_review)
+            if stage == "zh-revision-metadata-repair":
+                if isinstance(metadata_result, Exception):
+                    raise metadata_result
+                return copy.deepcopy(metadata_result)
+            raise AssertionError(f"Unexpected stage {stage}")
+
+        topic = ip.gb.TopicRow(2, "条件式资源配置", {}, "Brand", "GEO")
+        with tempfile.TemporaryDirectory() as directory:
+            audit_path = Path(directory) / "audit.json"
+            with patch.object(ip, "request_json", side_effect=request), patch.object(ip, "validate_insight", side_effect=lambda *a, **k: {"passed": True, "errors": [], "metrics": {}}), patch.dict(os.environ, {"INSIGHT_MAX_REVISIONS": "1"}):
+                if expect_failure:
+                    with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
+                        ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
+                    result = None
+                else:
+                    result = ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
+            audit = json.loads(audit_path.read_text())
+        return result, audit, stages, reviewed
+
+    def test_metadata_repair_does_not_skip_review_rewrite_article_or_consume_draft_round(self):
+        result, audit, stages, reviewed = self.run_two_drafts(self.response())
+        self.assertEqual(sum("draft" in stage for stage in stages), 2)
+        self.assertEqual(len(reviewed), 2)
+        self.assertEqual(stages[-2:], ["zh-review", "zh-revision-metadata-repair"])
+        self.assertEqual(result["body_html"], self.article["body_html"])
+        self.assertEqual(result["quality"]["revisions"], 1)
+        attempt = audit["attempts"][1]
+        self.assertTrue(attempt["structure"]["passed"])
+        self.assertEqual(attempt["structure"]["errors"], [])
+        self.assertEqual(attempt["review_state"], "completed")
+        self.assertEqual(attempt["metadata_state"], "repaired")
+        frozen = json.dumps(attempt["article"], ensure_ascii=False, sort_keys=True)
+        self.assertEqual(attempt["metadata_repair"]["article_sha256"], ip.hashlib.sha256(frozen.encode()).hexdigest())
+
+    def test_failed_auxiliary_repair_is_audited_after_independent_blocker_clearance(self):
+        for metadata in ({}, RuntimeError("provider unavailable"), {**self.response(), "body_html": "ATTEMPTED_REPLACEMENT"}):
+            with self.subTest(metadata=metadata):
+                result, audit, stages, reviewed = self.run_two_drafts(metadata)
+            self.assertTrue(audit["passed"])
+            self.assertEqual(len(reviewed), 2)
+            self.assertEqual(result["body_html"], self.article["body_html"])
+            self.assertEqual(audit["attempts"][1]["metadata_state"], "warning")
+            self.assertNotIn("ATTEMPTED_REPLACEMENT", json.dumps(audit))
+            self.assertEqual(sum("draft" in stage for stage in stages), 2)
+
+    def test_bad_metadata_never_bypasses_current_review_or_old_blockers(self):
+        final_review = {**self.good_review(), "blocker_checks": [{**self.resolved_check(), "status": "unresolved"}]}
+        _, audit, stages, reviewed = self.run_two_drafts(self.response(), final_review=final_review, expect_failure=True)
+        self.assertFalse(audit["passed"])
+        self.assertEqual(len(reviewed), 2)
+        self.assertNotIn("zh-revision-metadata-repair", stages)
+        self.assertEqual(audit["attempts"][1]["review_state"], "completed")
+
+    def test_low_score_still_requires_substantive_revision_despite_metadata(self):
+        final_review = {**self.good_review(), "scores": {**self.good_review()["scores"], "tradeoffs": 3}, "blocker_checks": [self.resolved_check()]}
+        _, audit, stages, reviewed = self.run_two_drafts(self.response(), final_review=final_review, expect_failure=True)
+        self.assertFalse(audit["passed"])
+        self.assertEqual(len(reviewed), 2)
+        self.assertTrue(any("tradeoffs: 3/5" in error for error in audit["attempts"][1]["errors"]))
+
+
+class ResumeTests(unittest.TestCase):
+    def setUp(self):
+        self.topic = ip.gb.TopicRow(694, "条件式资源配置", {}, "Brand", "GEO")
+        self.sources = [{"id": "S1", "url": "https://example.com/a", "title": "A", "text": "Unpublished source A body"},
+                        {"id": "S2", "url": "https://example.org/b", "title": "B", "text": "Unpublished source B body"}]
+        self.article = {"title": "当前比较框架", "excerpt": "同口径的条件式示例", "body_html": "<p>原计数与资源投入的当前正文。</p>", "tags": ["GEO"]}
+        self.audit = {"version": "insights-v3", "row": 694, "language": "zh", "passed": False,
+                      "error": "previous quality failure", "sources": ip.public_sources(self.sources),
+                      "brief": {"decision_question": "应该如何分配同一预算", "decision_model": {"old_model": "discard invalid model"}},
+                      "attempts": [{"revision": revision, "article": {**self.article, "body_html": f"<p>第{revision}轮旧稿</p>"},
+                                    "structure": {"passed": True, "errors": [], "metrics": {}},
+                                    "review": {"scores": dict.fromkeys(ip.SCORE_KEYS, 3),
+                                               "blockers": ["不得编造行业事实"] if revision == 0 else ["统一增量和存量口径"] if revision == 2 else [],
+                                               "issues": ["重新代入反转阈值"] if revision == 2 else []},
+                                    "errors": ["prior editorial failure"]} for revision in range(3)]}
+
+    def good_review(self, fixes):
+        return {"scores": {**dict.fromkeys(ip.SCORE_KEYS, 4), "originality": 5}, "issues": [], "blockers": [],
+                "claim_checks": [{"claim": f"Concrete current article observation number {number}",
+                                  "reason": "The supplied source supports this scoped observation.",
+                                  "source_ids": ["S1" if number % 2 else "S2"], "verdict": "supported"} for number in range(5)],
+                "blocker_checks": [{"issue_id": fix["id"], "status": "resolved", "location": "表2",
+                                    "finding": "当前正文已删除旧断言并统一指标口径，表2的新公式计算正确。"}
+                                   for fix in fixes if fix["kind"] == "blocker"]}
+
+    def run_resume(self, *, mode="good", audit=None, env=None):
+        stages, prompts, fixes = [], {}, []
+
+        def request(prompt, api_key, *, stage, **kwargs):
+            nonlocal fixes
+            stages.append(stage)
+            prompts.setdefault(stage, []).append(prompt)
+            if "draft" in stage:
+                fixes = json.loads(prompt.split("完整修订任务：", 1)[1])["required_fixes"]
+                return {**self.article, "revision_response": [{"issue_id": fix["id"], "change": "重建计算", "location": "全文",
+                                                              "verification": "当前公式已代回核验"} for fix in fixes]}
+            if stage in ("zh-review", "zh-review-format-repair"):
+                review = self.good_review(fixes)
+                if mode == "low_score":
+                    review["scores"]["tradeoffs"] = 3
+                elif mode == "unresolved":
+                    review["blocker_checks"][0]["status"] = "unresolved"
+                elif mode == "missing_checks":
+                    review.pop("blocker_checks")
+                elif mode == "unsupported":
+                    review["claim_checks"][0]["verdict"] = "unsupported"
+                return review
+            raise AssertionError(f"Unexpected stage {stage}")
+
+        with tempfile.TemporaryDirectory() as directory:
+            audit_path = Path(directory) / "resumed.json"
+            with patch.object(ip, "request_json", side_effect=request), \
+                 patch.object(ip, "validate_insight", return_value={"passed": mode != "bad_structure", "errors": ["structure rejected"] if mode == "bad_structure" else [], "metrics": {}}), \
+                 patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": "3", **(env or {})}), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                if mode == "good":
+                    article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
+                                                 resume_audit=self.audit if audit is None else audit)
+                else:
+                    with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
+                        ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
+                                           resume_audit=self.audit if audit is None else audit)
+                    article = None
+            saved = json.loads(audit_path.read_text())
+        return article, saved, stages, prompts
+
+    def test_resume_preserves_authored_history_and_skips_brief_but_reviews_new_draft(self):
+        original = copy.deepcopy(self.audit)
+        article, saved, stages, prompts = self.run_resume()
+        self.assertEqual(self.audit, original)
+        self.assertEqual(saved["brief"], original["brief"])
+        self.assertEqual(saved["attempts"][:3], original["attempts"])
+        self.assertEqual(stages, ["zh-draft-3", "zh-review"])
+        self.assertIn("第2轮旧稿", prompts["zh-draft-3"][0])
+        self.assertEqual(article["quality"]["revisions"], 3)
+        checks = saved["attempts"][-1]["review"]["blocker_checks"]
+        self.assertEqual({check["issue_id"] for check in checks}, {"r0-blocker-1", "r2-blocker-1"})
+        self.assertTrue(saved["passed"])
+        self.assertNotIn("error", saved)
+        self.assertEqual(saved["resume_history"][-1]["after_revision"], 2)
+        self.assertTrue(saved["resume_history"][-1]["source_fingerprints_verified"])
+        self.assertEqual(saved["attempts"][-1]["metadata_errors"], [])
+        for source in self.sources:
+            self.assertNotIn(source["text"], json.dumps(saved))
+
+    def test_old_pass_never_skips_new_draft_and_independent_review(self):
+        previously_passed = {**self.audit, "passed": True}
+        _, saved, stages, _ = self.run_resume(audit=previously_passed)
+        self.assertEqual(stages, ["zh-draft-3", "zh-review"])
+        self.assertTrue(saved["resume_history"][-1]["previous_passed"])
+
+    def test_source_mismatch_rejected_before_request_or_destination_write(self):
+        mutations = [lambda s: s[0].update(id="S99"), lambda s: s[0].update(url="https://example.com/changed"),
+                     lambda s: s[0].update(text="Changed source body", text_sha256=self.audit["sources"][0]["text_sha256"]),
+                     lambda s: s.pop(), lambda s: s.append({**s[0], "id": "S3"}), lambda s: s.append(dict(s[0]))]
+        for mutate in mutations:
+            sources = copy.deepcopy(self.sources)
+            mutate(sources)
+            with self.subTest(sources=sources), tempfile.TemporaryDirectory() as directory:
+                destination = Path(directory) / "audit.json"
+                destination.write_text("existing audit must survive")
+                with patch.object(ip, "request_json") as request, self.assertRaises(ValueError):
+                    ip.produce_article(self.topic, sources, "test", audit_path=destination, resume_audit=self.audit)
+                request.assert_not_called()
+                self.assertEqual(destination.read_text(), "existing audit must survive")
+
+    def test_incomplete_or_other_topic_resume_rejected(self):
+        mutations = [lambda a: a.update(row=695), lambda a: a.update(language="en"), lambda a: a.update(brief={}),
+                     lambda a: a.update(attempts=[]), lambda a: a["attempts"][-1].pop("article"),
+                     lambda a: a["attempts"][-1].update(revision=0), lambda a: a["sources"][0].pop("text_sha256")]
+        for mutate in mutations:
+            audit = copy.deepcopy(self.audit)
+            mutate(audit)
+            with self.subTest(audit=audit), tempfile.TemporaryDirectory() as directory:
+                destination = Path(directory) / "audit.json"
+                with patch.object(ip, "request_json") as request, self.assertRaises(ValueError):
+                    ip.produce_article(self.topic, self.sources, "test", audit_path=destination, resume_audit=audit)
+                request.assert_not_called()
+                self.assertFalse(destination.exists())
+        with self.assertRaisesRegex(ValueError, "Chinese"):
+            ip._resume_article_audit({**self.audit, "language": "en"}, self.topic, self.sources, "en")
+
+    def test_resume_is_capped_at_three_new_attempts_independent_of_normal_budget(self):
+        _, saved, stages, _ = self.run_resume(mode="low_score", env={"INSIGHT_MAX_REVISIONS": "99"})
+        self.assertEqual([stage for stage in stages if "draft" in stage], ["zh-draft-3", "zh-draft-4", "zh-draft-5"])
+        self.assertEqual([attempt["revision"] for attempt in saved["attempts"]], list(range(6)))
+        self.assertFalse(saved["passed"])
+        self.assertIn("tradeoffs: 3/5", " ".join(saved["attempts"][-1]["errors"]))
+
+    def test_resume_budget_may_be_lower_but_never_exceed_three(self):
+        _, saved, stages, _ = self.run_resume(mode="low_score", env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
+        self.assertEqual([stage for stage in stages if "draft" in stage], ["zh-draft-3"])
+        self.assertEqual(len(saved["attempts"]), 4)
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": "4"}), \
+             patch.object(ip, "request_json") as request, self.assertRaisesRegex(ValueError, "between 1 and 3"):
+            ip.produce_article(self.topic, self.sources, "test", audit_path=Path(directory) / "audit.json", resume_audit=self.audit)
+        request.assert_not_called()
+
+    def test_resume_cannot_erase_historical_blockers_or_current_fact_failures(self):
+        for mode in ("unresolved", "missing_checks", "unsupported"):
+            with self.subTest(mode=mode):
+                _, saved, stages, _ = self.run_resume(mode=mode, env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
+                self.assertFalse(saved["passed"])
+                self.assertTrue(saved["attempts"][-1]["review"]["blockers"])
+                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
+                if mode == "missing_checks":
+                    self.assertEqual(stages[-1], "zh-review-format-repair")
+
+    def test_resume_still_rejects_invalid_structure(self):
+        _, saved, stages, _ = self.run_resume(mode="bad_structure", env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
+        self.assertFalse(saved["passed"])
+        self.assertEqual(saved["attempts"][-1]["errors"], ["structure rejected"])
+        self.assertNotIn("zh-review", stages)
 
 
 class PipelineTests(unittest.TestCase):

@@ -23,7 +23,7 @@ import authority_site
 import generate_blog as gb
 import i18n_site
 import insight_pipeline
-from insight_research import build_research_pack, industry_search_plan
+from insight_research import build_research_pack, industry_search_plan, reread_research_pack
 
 
 GEO_EDITORIAL_STRATEGY = """
@@ -390,8 +390,24 @@ def localize_reviewed_article(topic, sources, api_key, original, audit_dir):
         return {lang: result.result() for lang, result in pending.items()}
 
 
+def load_resume_audit(resume_dir: Path, topic: gb.TopicRow) -> dict:
+    """Load only the selected backlog topic's failed Chinese editorial audit."""
+    audit_path = resume_dir / gb.slugify(topic.title, topic.idx) / "zh.json"
+    if not audit_path.is_file():
+        raise ValueError(f"No resume audit for selected topic: {audit_path}")
+    if audit_path.stat().st_size > 10_000_000:
+        raise ValueError("Resume audit exceeds 10 MB")
+    audit = json.loads(audit_path.read_text(encoding="utf-8"))
+    if not isinstance(audit, dict) or audit.get("row") != topic.idx or audit.get("language") != "zh":
+        raise ValueError("Resume audit must match selected row and Chinese language")
+    if audit.get("passed") is not False or not audit.get("attempts") or not audit.get("sources"):
+        raise ValueError("Resume requires a failed audit with saved drafts and source provenance")
+    return audit
+
+
 def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_run: bool,
-                           preview_dir: Optional[Path] = None) -> bool:
+                           preview_dir: Optional[Path] = None,
+                           resume_dir: Optional[Path] = None) -> bool:
     topics = gb.read_topics(excel_path, start_row=start_row, limit=0)
     posts = load_posts(out_dir)
     topic = select_next_topic(topics, posts, out_dir)
@@ -406,15 +422,20 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     if not api_key:
         raise RuntimeError("DEEPSEEK_API_KEY is required in repository secrets")
 
-    # Discovery summaries are leads only; the research pack contains retrieved originals.
-    leads = [*fetch_news_items(topic), *fetch_tavily_market_items(topic)]
-    sources = build_research_pack(topic, leads)
+    resume_audit = load_resume_audit(resume_dir, topic) if resume_dir is not None else None
+    if resume_audit is not None:
+        sources = reread_research_pack(resume_audit["sources"])
+        print(f"Resuming saved Chinese draft after revalidating {len(sources)} source bodies.", flush=True)
+    else:
+        # Discovery summaries are leads only; the research pack contains retrieved originals.
+        leads = [*fetch_news_items(topic), *fetch_tavily_market_items(topic)]
+        sources = build_research_pack(topic, leads)
     metadata = insight_pipeline.public_sources(sources)
     audit_dir = Path(os.environ.get("INSIGHT_AUDIT_DIR", ".artifacts/insights")) / slug
     recent = [{key: post.get(key, "") for key in ("title", "category", "excerpt")} for post in posts[:30]]
     articles = {}
     articles["zh"] = insight_pipeline.produce_article(topic, sources, api_key, recent_posts=recent,
-                                                       audit_path=audit_dir / "zh.json")
+                                                       audit_path=audit_dir / "zh.json", resume_audit=resume_audit)
     articles.update(localize_reviewed_article(topic, sources, api_key, articles["zh"], audit_dir))
     author, initials = gb.deterministic_author(topic.title)
     publish_date = gb.today_publish_date()
@@ -467,12 +488,13 @@ def main() -> None:
     parser.add_argument("--start-row", type=int, default=2)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--preview-dir", type=Path, help="Write reviewed preview only; do not update the site")
+    parser.add_argument("--resume-dir", type=Path, help="Resume a failed Chinese audit after exact source revalidation")
     args = parser.parse_args()
 
     excel_path = Path(args.excel)
     if not excel_path.exists():
         raise FileNotFoundError(excel_path)
-    generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run, args.preview_dir)
+    generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run, args.preview_dir, args.resume_dir)
 
 
 if __name__ == "__main__":

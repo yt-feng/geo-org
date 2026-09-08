@@ -855,3 +855,118 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
     for index, item in enumerate(pack, 1):
         item["id"] = f"S{index}"
     return pack
+
+
+def reread_research_pack(audit_sources: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Restore an audited pack by reading the same public sources again.
+
+    The audit's text_sha256 hashes the UTF-8 excerpt, not an unread document
+    tail. Preserve that exact [excerpt_start, excerpt_end) window, its hash,
+    source ID, URL and order. Also require the original normalized body length.
+    No replacement sources, local fixtures or stored text are used on resume.
+    Any drift or incomplete provenance requires fresh research before drafting.
+    """
+    minimum = _integer("RESEARCH_MIN_SOURCES", 3, 3, 8)
+    domains_min = _integer("RESEARCH_MIN_DOMAINS", 2, 2, 5)
+    maximum = _integer("RESEARCH_MAX_SOURCES", 5, minimum, 8)
+    min_chars = _integer("RESEARCH_MIN_BODY_CHARS", 900, 300, 10000)
+    max_chars = _integer("RESEARCH_MAX_SOURCE_CHARS", 10000, min_chars, 10000)
+    timeout = _integer("RESEARCH_FETCH_TIMEOUT", 20, 1, 45)
+    max_bytes = _integer("RESEARCH_MAX_RESPONSE_BYTES", 2500000, 10000, 4000000)
+
+    def invalid(message: str) -> ResearchError:
+        return ResearchError(f"Cannot resume research: {message}. Fresh research is required.")
+
+    if not isinstance(audit_sources, (list, tuple)) or not minimum <= len(audit_sources) <= maximum:
+        raise invalid(f"audit must contain {minimum}–{maximum} source records")
+    seen_ids, seen_urls, seen_hashes, domains = set(), set(), set(), set()
+    # Validate the entire audit before any fetch, including each recorded URL.
+    for source in audit_sources:
+        if not isinstance(source, Mapping):
+            raise invalid("source audit is not an object")
+        source_id, url, digest = (source.get(key) for key in ("id", "url", "text_sha256"))
+        if not isinstance(source_id, str) or not re.fullmatch(r"S[1-9][0-9]*", source_id) or source_id in seen_ids:
+            raise invalid("source IDs must be unique original S-number identifiers")
+        try:
+            if not isinstance(url, str) or validate_source_url(url) != url:
+                raise invalid(f"{source_id} has no canonical audited source URL")
+            if source.get("requested_url"):
+                validate_source_url(source["requested_url"])
+        except (ResearchError, ValueError, TypeError) as exc:
+            raise invalid(f"{source_id} has an invalid source URL: {exc}") from exc
+        if url in seen_urls:
+            raise invalid(f"{source_id} duplicates an audited source URL")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest) or digest in seen_hashes:
+            raise invalid(f"{source_id} has a missing, invalid or duplicate excerpt hash")
+        start, end, body_chars = (source.get(key) for key in ("excerpt_start", "excerpt_end", "body_chars"))
+        if any(type(value) is not int for value in (start, end, body_chars)):
+            raise invalid(f"{source_id} has missing or non-integer excerpt window metadata")
+        if not (0 <= start < end <= body_chars and min_chars <= end - start <= max_chars):
+            raise invalid(f"{source_id} excerpt window violates the recorded body or current size limits")
+        truncated = start > 0 or end < body_chars
+        if "excerpt_truncated" in source and source["excerpt_truncated"] is not truncated:
+            raise invalid(f"{source_id} has inconsistent excerpt_truncated metadata")
+        industries = source.get("industries", [])
+        if not isinstance(industries, list) or any(not isinstance(item, str) or not item.strip() for item in industries):
+            raise invalid(f"{source_id} has invalid industry provenance")
+        expected_role = "industry_context" if industries else "general_context"
+        if source.get("evidence_role", expected_role) != expected_role:
+            raise invalid(f"{source_id} has inconsistent industry provenance")
+        domain = TRUSTED_HOSTS[urllib.parse.urlsplit(url).hostname][0]
+        if source.get("publisher_domain", domain) != domain:
+            raise invalid(f"{source_id} publisher domain does not match the audited URL")
+        seen_ids.add(source_id)
+        seen_urls.add(url)
+        seen_hashes.add(digest)
+        domains.add(domain)
+    if len(domains) < domains_min:
+        raise invalid(f"audit has only {len(domains)}/{domains_min} publisher domains")
+
+    pack = []
+    for source in audit_sources:
+        source_id, url = source["id"], source["url"]
+        try:
+            # Pass only the validated URL; ignore any text or fixture path in
+            # the audit, and use the regular bounded HTTPS fetching path.
+            body, fetched_url, metadata, method = _fetch_source({"url": url}, max_bytes, timeout)
+            if fetched_url != url:
+                raise invalid(f"{source_id} source URL drifted after redirect")
+            if len(body) != source["body_chars"]:
+                raise invalid(f"{source_id} normalized source body length drifted")
+            if re.search(r"access denied|just a moment|verify (?:you are|you're) human|robot check|page not found", metadata.get("title", ""), re.I):
+                raise invalid(f"{source_id} returned an error or access-check page")
+            start, end = source["excerpt_start"], source["excerpt_end"]
+            excerpt = body[start:end]
+            digest = hashlib.sha256(excerpt.encode("utf-8")).hexdigest()
+            if digest != source["text_sha256"]:
+                raise invalid(f"{source_id} excerpt content drifted (SHA-256 mismatch)")
+            industries = set(source.get("industries", []))
+            if _industry_mentions(excerpt, industries) != industries:
+                raise invalid(f"{source_id} read excerpt no longer confirms its audited industry")
+            domain, publisher, evidence_kind = TRUSTED_HOSTS[urllib.parse.urlsplit(url).hostname]
+            pack.append({
+                "id": source_id,
+                "title": source.get("title") or metadata.get("title") or urllib.parse.urlsplit(url).path,
+                "url": url,
+                "requested_url": source.get("requested_url") or url,
+                "publisher": publisher,
+                "publisher_domain": domain,
+                "published": source.get("published", ""),
+                "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "text": excerpt,
+                "evidence_kind": evidence_kind,
+                "evidence_role": "industry_context" if industries else "general_context",
+                "industries": list(source.get("industries", [])),
+                "scope_notes": source.get("scope_notes", ""),
+                "retrieval_method": method,
+                "excerpt_start": start,
+                "excerpt_end": end,
+                "body_chars": source["body_chars"],
+                "excerpt_truncated": start > 0 or end < len(body),
+                "text_sha256": source["text_sha256"],
+            })
+        except (OSError, ValueError, LookupError, ResearchError) as exc:
+            if isinstance(exc, ResearchError) and str(exc).startswith("Cannot resume research:"):
+                raise
+            raise invalid(f"{source_id} source could not be reread: {type(exc).__name__}: {exc}") from exc
+    return pack

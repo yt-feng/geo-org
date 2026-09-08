@@ -1,5 +1,6 @@
 """Synthetic, offline fixtures: no third-party source bodies are persisted."""
 import io
+import hashlib
 import json
 import os
 import sys
@@ -416,6 +417,119 @@ class ResearchTests(unittest.TestCase):
         with mock.patch.object(research.urllib.request, "build_opener", return_value=opener):
             with self.assertRaisesRegex(research.ResearchError, "content type"):
                 research._fetch_source({"url": "https://www.bcg.com/paper.pdf"}, 10000, 7)
+
+
+class ResumeResearchTests(unittest.TestCase):
+    def setUp(self):
+        self.env = mock.patch.dict(os.environ, {}, clear=True)
+        self.env.start()
+        self.addCleanup(self.env.stop)
+        self.urls = ["https://developers.google.com/original", "https://www.bcg.com/original", "https://www.oecd.org/original"]
+        self.bodies = {url: (f"Synthetic evidence {index}: 仅供测试的正文, with explicit population and method. " * 70)
+                       for index, url in enumerate(self.urls)}
+        self.sources = []
+        for source_id, url in zip(("S9", "S2", "S11"), self.urls):
+            body = self.bodies[url]
+            start, end = 137, 1137
+            domain, publisher, kind = research.TRUSTED_HOSTS[research.urllib.parse.urlsplit(url).hostname]
+            self.sources.append({"id": source_id, "url": url, "title": "Original audited title", "publisher": publisher,
+                "publisher_domain": domain, "evidence_kind": kind, "evidence_role": "general_context", "industries": [],
+                "published": "2025-01-02", "retrieved_at": "2000-01-01T00:00:00+00:00", "retrieval_method": "https_fetch",
+                "scope_notes": "Use only this exact read window.", "excerpt_start": start, "excerpt_end": end,
+                "body_chars": len(body), "excerpt_truncated": True,
+                "text_sha256": hashlib.sha256(body[start:end].encode("utf-8")).hexdigest()})
+
+    def fetch(self, source, max_bytes, timeout):
+        self.assertEqual(set(source), {"url"})
+        return self.bodies[source["url"]], source["url"], {"title": "New page metadata"}, "https_fetch"
+
+    def test_reread_preserves_original_order_ids_urls_windows_hashes_and_metadata(self):
+        before = json.dumps(self.sources, sort_keys=True)
+        with mock.patch.object(research, "_fetch_source", side_effect=self.fetch) as fetch:
+            pack = research.reread_research_pack(self.sources)
+        self.assertEqual(json.dumps(self.sources, sort_keys=True), before)
+        self.assertEqual([item["id"] for item in pack], ["S9", "S2", "S11"])
+        self.assertEqual([call.args[0]["url"] for call in fetch.call_args_list], self.urls)
+        for actual, audited in zip(pack, self.sources):
+            for key in ("id", "url", "title", "published", "scope_notes", "text_sha256", "excerpt_start", "excerpt_end", "body_chars"):
+                self.assertEqual(actual[key], audited[key])
+            self.assertEqual(actual["text"], self.bodies[audited["url"]][137:1137])
+            self.assertEqual(actual["requested_url"], audited["url"])
+            self.assertEqual(actual["retrieval_method"], "https_fetch")
+            self.assertNotEqual(actual["retrieved_at"], audited["retrieved_at"])
+        self.assertEqual(fetch.call_args_list[0].args[1:], (2500000, 20))
+
+    def test_reread_rejects_same_length_excerpt_drift_without_substituting_sources(self):
+        url = self.urls[1]
+        body = self.bodies[url]
+        self.bodies[url] = body[:200] + "X" + body[201:]
+        with mock.patch.object(research, "_fetch_source", side_effect=self.fetch) as fetch:
+            with self.assertRaisesRegex(research.ResearchError, "S2 excerpt content drifted.*Fresh research"):
+                research.reread_research_pack(self.sources)
+        self.assertEqual(fetch.call_count, 2)
+
+    def test_reread_does_not_relocate_an_old_excerpt_after_body_shift(self):
+        url = self.urls[0]
+        self.bodies[url] = "X" + self.bodies[url][:-1]
+        with mock.patch.object(research, "_fetch_source", side_effect=self.fetch):
+            with self.assertRaisesRegex(research.ResearchError, "SHA-256 mismatch"):
+                research.reread_research_pack(self.sources)
+
+    def test_reread_rejects_body_length_drift_and_redirect(self):
+        url = self.urls[0]
+        with mock.patch.object(research, "_fetch_source", return_value=(self.bodies[url][:-1], url, {}, "https_fetch")):
+            with self.assertRaisesRegex(research.ResearchError, "body length drifted"):
+                research.reread_research_pack(self.sources)
+        with mock.patch.object(research, "_fetch_source", return_value=(self.bodies[url], "https://developers.google.com/replacement", {}, "https_fetch")):
+            with self.assertRaisesRegex(research.ResearchError, "URL drifted.*Fresh research"):
+                research.reread_research_pack(self.sources)
+
+    def test_reread_validates_all_audit_windows_and_identity_before_fetching(self):
+        changes = [
+            {"excerpt_start": -1}, {"excerpt_start": True}, {"excerpt_end": "1137"},
+            {"excerpt_end": 137}, {"body_chars": 1136}, {"excerpt_end": 138},
+            {"excerpt_truncated": False}, {"text_sha256": None}, {"text_sha256": "not-a-hash"},
+            {"id": "S9"}, {"id": "invented"}, {"url": self.urls[0]},
+            {"url": "https://127.0.0.1/private"}, {"url": "https://news.google.com/rss/articles/leads"},
+            {"publisher_domain": "google.com"}, {"evidence_role": "industry_context"},
+            {"text_sha256": self.sources[0]["text_sha256"]},
+        ]
+        for change in changes:
+            with self.subTest(change=change):
+                sources = json.loads(json.dumps(self.sources))
+                sources[1].update(change)
+                with mock.patch.object(research, "_fetch_source") as fetch:
+                    with self.assertRaisesRegex(research.ResearchError, "Fresh research"):
+                        research.reread_research_pack(sources)
+                    fetch.assert_not_called()
+
+    def test_reread_enforces_current_source_domain_and_excerpt_limits(self):
+        for setting in ({"RESEARCH_MIN_BODY_CHARS": "1100"}, {"RESEARCH_MAX_SOURCE_CHARS": "900"},
+                        {"RESEARCH_MIN_SOURCES": "4"}, {"RESEARCH_MIN_DOMAINS": "4"}):
+            with self.subTest(setting=setting), mock.patch.dict(os.environ, setting), mock.patch.object(research, "_fetch_source") as fetch:
+                with self.assertRaisesRegex(research.ResearchError, "Fresh research"):
+                    research.reread_research_pack(self.sources)
+                fetch.assert_not_called()
+        with mock.patch.object(research, "_fetch_source") as fetch:
+            with self.assertRaisesRegex(research.ResearchError, "Fresh research"):
+                research.reread_research_pack(self.sources[:2])
+            fetch.assert_not_called()
+
+    def test_reread_uses_bounded_http_path_ignoring_audited_text_and_fixtures(self):
+        self.sources[0].update({"text": "Audited text must not be reused", "_fixture_path": "/never/read", "text_file": "/never/read"})
+        with mock.patch.dict(os.environ, {"RESEARCH_MAX_RESPONSE_BYTES": "20000", "RESEARCH_FETCH_TIMEOUT": "7"}), mock.patch.object(research, "_fetch_source", side_effect=self.fetch) as fetch:
+            pack = research.reread_research_pack(self.sources)
+        self.assertNotIn("Audited text", pack[0]["text"])
+        self.assertEqual(fetch.call_args_list[0].args, ({"url": self.urls[0]}, 20000, 7))
+
+    def test_reread_rechecks_declared_industry_and_reports_fetch_failures(self):
+        self.sources[0].update({"industries": ["insurance"], "evidence_role": "industry_context"})
+        with mock.patch.object(research, "_fetch_source", side_effect=self.fetch):
+            with self.assertRaisesRegex(research.ResearchError, "no longer confirms its audited industry"):
+                research.reread_research_pack(self.sources)
+        with mock.patch.object(research, "_fetch_source", side_effect=OSError("public source unavailable")):
+            with self.assertRaisesRegex(research.ResearchError, "S9 source could not be reread.*Fresh research"):
+                research.reread_research_pack(self.sources)
 
 
 if __name__ == "__main__":
