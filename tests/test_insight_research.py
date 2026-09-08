@@ -418,6 +418,93 @@ class ResearchTests(unittest.TestCase):
             with self.assertRaisesRegex(research.ResearchError, "content type"):
                 research._fetch_source({"url": "https://www.bcg.com/paper.pdf"}, 10000, 7)
 
+    def test_publication_conflict_is_empty_and_scope_note_survives_build(self):
+        sources = self.sources()
+        original = (self.root / sources[0]["text_file"]).read_text(encoding="utf-8")
+        sources[0].update({"text_file": "dated-source.html", "published": "2025-07-28", "scope_notes": "Original industry boundary."})
+        (self.root / "dated-source.html").write_text(PublicationDateTests.bcg_html(original), encoding="utf-8")
+        self.configure(sources)
+        pack = research.build_research_pack(self.topic, [])
+        source = next(item for item in pack if item["url"] == sources[0]["url"])
+        self.assertEqual(source["published"], "")
+        self.assertTrue(source["scope_notes"].startswith("Original industry boundary."))
+        self.assertIn("conflicting publication fields", source["scope_notes"])
+        self.assertEqual(source["text"], original.strip())
+
+
+class PublicationDateTests(unittest.TestCase):
+    @staticmethod
+    def bcg_html(body="Synthetic article evidence. " * 60):
+        # Simplified structure observed on the live BCG page, with synthetic
+        # article prose only. Both date fields call themselves publication.
+        return f'''<html><head>
+          <meta property="article:published_time" content="2025-07-28T10:04:52.295">
+          <meta property="article:modified_time" content="2025-07-31T04:52:03.832">
+          </head><body><main><div class="ArticleHeader-datePublished">
+          <span class="ArticleHeader-pageType">Blog Post</span>
+          <time datetime="2025-07-31T10:01:00Z" itemprop="datePublished">July 31, 2025</time>
+          </div><div class="RichTextBody"><p>{body}</p></div></main></body></html>'''
+
+    def test_actual_bcg_structure_conflict_does_not_change_body_or_hash(self):
+        expected = ("Synthetic article evidence. " * 60).strip()
+        body, metadata = research.extract_body(self.bcg_html())
+        self.assertEqual(body, expected)
+        self.assertEqual(hashlib.sha256(body.encode("utf-8")).hexdigest(), hashlib.sha256(expected.encode("utf-8")).hexdigest())
+        self.assertEqual(metadata["article:published_time"], "2025-07-28T10:04:52.295")
+        self.assertEqual(metadata["publication_date"], "")
+        self.assertEqual(metadata["publication_date_status"], "conflict")
+        self.assertIn("article:published_time=2025-07-28", metadata["publication_date_note"])
+        self.assertIn("visible datePublished=2025-07-31", metadata["publication_date_note"])
+        self.assertEqual(research._publication_metadata(metadata, {"published": "2025-07-31"})[0], "")
+
+    def test_publication_fields_can_agree_while_creation_and_modification_differ(self):
+        document = '''<head><meta name="dateCreated" content="2025-07-28">
+          <meta property="article:published_time" content="2025-07-31T04:00:00Z">
+          <meta property="article:modified_time" content="2025-08-01"></head>
+          <article><time itemprop="datePublished" datetime="2025-07-31T10:00:00Z">July 31, 2025</time></article>'''
+        _, metadata = research.extract_body(document)
+        self.assertEqual(metadata["publication_date"], "2025-07-31")
+        self.assertEqual(metadata["publication_date_status"], "confirmed")
+        self.assertEqual(metadata["publication_date_note"], "")
+
+    def test_creation_modification_and_generic_dates_are_not_publication(self):
+        for key in ("dateCreated", "dateModified", "article:modified_time", "date"):
+            with self.subTest(key=key):
+                _, metadata = research.extract_body(f'<head><meta name="{key}" content="2025-07-28"></head><article>Body</article>')
+                self.assertEqual(metadata["publication_date"], "")
+                self.assertEqual(metadata["publication_date_status"], "unconfirmed")
+                self.assertTrue(metadata["publication_date_note"])
+
+    def test_duplicate_publication_fields_and_visible_datetime_disagreement_fail_closed(self):
+        documents = [
+            '<head><meta property="article:published_time" content="2025-07-28"><meta property="article:published_time" content="2025-07-31"></head>',
+            '<article><time itemprop="datePublished" datetime="2025-07-28">July 31, 2025</time></article>',
+        ]
+        for document in documents:
+            with self.subTest(document=document):
+                _, metadata = research.extract_body(document)
+                self.assertEqual(metadata["publication_date"], "")
+                self.assertEqual(metadata["publication_date_status"], "conflict")
+
+    def test_body_related_footer_hidden_and_unlabelled_times_do_not_supply_publication(self):
+        document = '''<article><p>Trial occurred July 31, 2025.</p><time datetime="2025-07-31">July 31, 2025</time>
+          <div class="related-content"><time itemprop="datePublished" datetime="2024-01-01">January 1, 2024</time></div>
+          <time hidden itemprop="datePublished" datetime="2025-01-01">January 1, 2025</time></article>
+          <footer><time itemprop="datePublished" datetime="2020-01-01">January 1, 2020</time></footer>'''
+        _, metadata = research.extract_body(document)
+        self.assertEqual(metadata["publication_date"], "")
+        self.assertEqual(metadata["publication_date_status"], "absent")
+
+    def test_uninterpretable_publication_field_is_not_guessed(self):
+        _, metadata = research.extract_body('<head><meta name="datePublished" content="07/08/25"></head>')
+        self.assertEqual(metadata["publication_date"], "")
+        self.assertEqual(metadata["publication_date_status"], "unconfirmed")
+        self.assertEqual(research._publication_metadata(metadata, {"published": "2025-07-08"})[0], "")
+
+    def test_explicit_chinese_publication_date_is_parsed_without_scanning_prose(self):
+        _, metadata = research.extract_body('<main><time itemprop="datePublished">2025年7月31日</time><p>2026年9月8日的事实</p></main>')
+        self.assertEqual(metadata["publication_date"], "2025-07-31")
+
 
 class ResumeResearchTests(unittest.TestCase):
     def setUp(self):
@@ -441,7 +528,7 @@ class ResumeResearchTests(unittest.TestCase):
 
     def fetch(self, source, max_bytes, timeout):
         self.assertEqual(set(source), {"url"})
-        return self.bodies[source["url"]], source["url"], {"title": "New page metadata"}, "https_fetch"
+        return self.bodies[source["url"]], source["url"], {"title": "New page metadata", "publication_date": "2025-01-02", "publication_date_status": "confirmed"}, "https_fetch"
 
     def test_reread_preserves_original_order_ids_urls_windows_hashes_and_metadata(self):
         before = json.dumps(self.sources, sort_keys=True)
@@ -530,6 +617,20 @@ class ResumeResearchTests(unittest.TestCase):
         with mock.patch.object(research, "_fetch_source", side_effect=OSError("public source unavailable")):
             with self.assertRaisesRegex(research.ResearchError, "S9 source could not be reread.*Fresh research"):
                 research.reread_research_pack(self.sources)
+
+    def test_reread_reaudits_publication_conflict_without_changing_evidence_identity(self):
+        _, metadata = research.extract_body(PublicationDateTests.bcg_html())
+        before = json.dumps(self.sources, sort_keys=True)
+        with mock.patch.object(research, "_fetch_source", side_effect=lambda source, *_: (self.bodies[source["url"]], source["url"], metadata, "https_fetch")):
+            pack = research.reread_research_pack(self.sources)
+        self.assertEqual(json.dumps(self.sources, sort_keys=True), before)
+        for source, restored in zip(self.sources, pack):
+            self.assertEqual(restored["published"], "")
+            self.assertTrue(restored["scope_notes"].startswith(source["scope_notes"]))
+            self.assertIn("conflicting publication fields", restored["scope_notes"])
+            for key in ("id", "url", "excerpt_start", "excerpt_end", "text_sha256", "body_chars"):
+                self.assertEqual(restored[key], source[key])
+            self.assertEqual(hashlib.sha256(restored["text"].encode("utf-8")).hexdigest(), source["text_sha256"])
 
 
 if __name__ == "__main__":

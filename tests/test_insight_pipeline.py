@@ -309,6 +309,108 @@ class RevisionMetadataTests(unittest.TestCase):
         self.assertTrue(any("tradeoffs: 3/5" in error for error in audit["attempts"][1]["errors"]))
 
 
+class ArticleNormalizationTests(unittest.TestCase):
+    def article(self, body):
+        return {"title": "当前分析", "excerpt": "同口径的条件式示例", "body_html": body, "tags": ["GEO"]}
+
+    def test_hidden_style_is_removed_without_removing_its_visible_content(self):
+        raw = self.article('<p>基线5%，<span style="display:none">假设成本1,200元；阈值7.5%</span>，30天。</p>')
+        before = copy.deepcopy(raw)
+        report = {}
+        result = ip.normalize_article(raw, "zh", normalization=report)
+        self.assertEqual(result["body_html"], '<p>基线5%，<span>假设成本1,200元；阈值7.5%</span>，30天。</p>')
+        self.assertEqual(raw, before)
+        self.assertEqual(report["inline_style_attributes_removed"], 1)
+        self.assertEqual(report["raw_body_sha256"], ip.hashlib.sha256(raw["body_html"].encode()).hexdigest())
+        self.assertEqual(report["normalized_body_sha256"], ip.hashlib.sha256(result["body_html"].encode()).hexdigest())
+        self.assertNotEqual(report["raw_body_sha256"], report["normalized_body_sha256"])
+
+    def test_quoted_style_and_attribute_entities_preserve_values_and_numbers(self):
+        from insight_quality import _parse
+        body = '''<p>α ١٢٫٥% &amp; 1,200.00</p>\n<span STYLE='font-family: "A > B"; color:red' title="A &quot; B > C" style=display:none>5 &lt; 7</span>'''
+        report = {}
+        normalized = ip.normalize_article(self.article(body), "zh", normalization=report)["body_html"]
+        self.assertEqual(report["inline_style_attributes_removed"], 2)
+        self.assertEqual(_parse(body).root.text(), _parse(normalized).root.text())
+        self.assertIn('<p>α ١٢٫٥% &amp; 1,200.00</p>\n', normalized)
+        self.assertIn('>5 &lt; 7</span>', normalized)
+        self.assertEqual(_parse(normalized).root.descendants("span")[0].attrs["title"], 'A " B > C')
+        self.assertNotIn("style", _parse(normalized).root.descendants("span")[0].attrs)
+
+    def test_unstyled_body_is_byte_identical_and_only_tag_spans_are_rebuilt(self):
+        body = '''<p title='keep "quotes"'>数值 5% &amp; ١٢</p>\r\n<!-- keep this -->\n<br/>'''
+        report = {}
+        result = ip.normalize_article(self.article(body), "zh", normalization=report)
+        self.assertEqual(result["body_html"], body)
+        self.assertEqual(report["inline_style_attributes_removed"], 0)
+        self.assertEqual(report["raw_body_sha256"], report["normalized_body_sha256"])
+        styled = body.replace("<br/>", '<br style="line-height:2"/>')
+        self.assertEqual(ip.normalize_article(self.article(styled), "zh")["body_html"], body.replace("<br/>", "<br />"))
+
+    def test_tables_citations_assumptions_and_numeric_metrics_survive_normalization(self):
+        from test_insight_quality import SOURCES, valid_article
+        from insight_quality import _parse
+        original = valid_article()
+        styled = copy.deepcopy(original)
+        styled["body_html"] = styled["body_html"].replace("<table>", '<table style="width:100%">').replace(
+            '<a href=', '<a style="text-decoration:underline" href=').replace(
+            '<section data-role="assumptions">', '<section style="display:none" data-role="assumptions">')
+        normalized = ip.normalize_article(styled, "zh")
+        before = ip.validate_insight(original, SOURCES)
+        after = ip.validate_insight(normalized, SOURCES)
+        self.assertTrue(after["passed"], after["errors"])
+        self.assertEqual(after["metrics"], before["metrics"])
+        self.assertEqual(_parse(original["body_html"]).root.text(), _parse(normalized["body_html"]).root.text())
+        for source in SOURCES:
+            self.assertIn(f'href="{source["url"]}" data-source-id="{source["id"]}"', normalized["body_html"])
+
+    def test_script_event_handlers_and_unsafe_links_remain_rejected(self):
+        from test_insight_quality import SOURCES, valid_article
+        cases = [('<span style="color:red" onerror="alert(1)">bad</span>', "forbidden attribute 'onerror'"),
+                 ('<p style="color:red" onclick="alert(1)">bad</p>', "forbidden attribute 'onclick'"),
+                 ('<script style="color:red">alert(1)</script>', "unsupported tag <script>"),
+                 ('<iframe style="display:none" src="https://example.com"></iframe>', "unsupported tag <iframe>"),
+                 ('<a style="color:red" href="java&#10;script:alert(1)">bad</a>', "unsafe href"),
+                 ('<a style="color:red" href="https://safe.example" href="javascript:alert(1)">bad</a>', "Duplicate HTML attribute")]
+        for fragment, error in cases:
+            with self.subTest(fragment=fragment):
+                raw = valid_article()
+                raw["body_html"] += fragment
+                normalized = ip.normalize_article(raw, "zh")
+                result = ip.validate_insight(normalized, SOURCES)
+                self.assertFalse(result["passed"])
+                self.assertTrue(any(error in issue for issue in result["errors"]), result["errors"])
+
+    def test_incomplete_markup_is_not_repaired_into_accepted_content(self):
+        from test_insight_quality import SOURCES, valid_article
+        raw = valid_article()
+        raw["body_html"] += '<span style="color:red">unclosed'
+        result = ip.validate_insight(ip.normalize_article(raw, "zh"), SOURCES)
+        self.assertFalse(result["passed"])
+        self.assertTrue(any("unclosed" in error for error in result["errors"]))
+
+    def test_produce_audits_normalization_and_reviews_exact_body_to_be_published(self):
+        from test_insight_quality import SOURCES, valid_article
+        raw = valid_article()
+        raw["body_html"] += '<p><span style="display:none">额外明示假设：成本1,200元，30天。</span></p>'
+        sources = [{**source, "text": f"Source observation {source['id']}"} for source in SOURCES]
+        good_review = RevisionMetadataTests().good_review()
+        with tempfile.TemporaryDirectory() as directory:
+            audit_path = Path(directory) / "audit.json"
+            with patch.object(ip, "request_json", side_effect=[{"decision_question": "如何投入"}, raw]), \
+                 patch.object(ip, "review_article", return_value=good_review) as review:
+                article = ip.produce_article(ip.gb.TopicRow(694, "投入决策", {}, "Brand", "GEO"), sources, "test", audit_path=audit_path)
+            saved = json.loads(audit_path.read_text())
+        attempt = saved["attempts"][0]
+        self.assertTrue(saved["passed"])
+        self.assertEqual(attempt["normalization"]["inline_style_attributes_removed"], 1)
+        self.assertEqual(attempt["normalization"]["raw_body_sha256"], ip.hashlib.sha256(raw["body_html"].encode()).hexdigest())
+        self.assertEqual(attempt["article"]["body_html"], article["body_html"])
+        self.assertEqual(review.call_args.args[0]["body_html"], article["body_html"])
+        self.assertNotIn("style=", article["body_html"])
+        self.assertIn("额外明示假设：成本1,200元，30天。", article["body_html"])
+
+
 class ResumeTests(unittest.TestCase):
     def setUp(self):
         self.topic = ip.gb.TopicRow(694, "条件式资源配置", {}, "Brand", "GEO")
@@ -462,6 +564,133 @@ class ResumeTests(unittest.TestCase):
         self.assertFalse(saved["passed"])
         self.assertEqual(saved["attempts"][-1]["errors"], ["structure rejected"])
         self.assertNotIn("zh-review", stages)
+
+
+class EditorialRevisionTests(unittest.TestCase):
+    def setUp(self):
+        from test_insight_quality import SOURCES, valid_article
+        ResumeTests.setUp(self)
+        self.article = valid_article()
+        self.sources = [{**source, "text": f"Scoped source body {source['id']}"} for source in SOURCES]
+        self.audit["sources"] = ip.public_sources(self.sources)
+        self.fixes = ip._revision_feedback(self.audit)["required_fixes"]
+        self.candidate = {**copy.deepcopy(self.article), "revision_response": self.responses(self.fixes),
+                          "passed": True, "quality": {"untrusted": "DO_NOT_ACCEPT_FROM_CANDIDATE"},
+                          "review": {"scores": dict.fromkeys(ip.SCORE_KEYS, 5), "blockers": []}}
+
+    good_review = ResumeTests.good_review
+
+    def responses(self, fixes):
+        return [{"issue_id": fix["id"], "change": "重建同口径计算", "location": "全文",
+                 "verification": "正文限定条件与公式已核对"} for fix in fixes]
+
+    def run_editorial(self, *, candidate=None, mode="good", attempts=3, expect_failure=False):
+        stages, prompts = [], {}
+        review_count = 0
+
+        def request(prompt, api_key, *, stage, **kwargs):
+            nonlocal review_count
+            stages.append(stage)
+            prompts.setdefault(stage, []).append(prompt)
+            if "draft" in stage:
+                fixes = json.loads(prompt.split("完整修订任务：", 1)[1])["required_fixes"]
+                return {**copy.deepcopy(self.article), "revision_response": self.responses(fixes)}
+            if stage == "zh-review":
+                review_count += 1
+                blockers = json.loads(prompt.split("待核历史blocker：", 1)[1].split("\n语言：", 1)[0])
+                review = self.good_review(blockers)
+                if mode == "unsupported" or (mode == "first_unsupported" and review_count == 1):
+                    review["claim_checks"][0]["verdict"] = "unsupported"
+                elif mode == "unresolved":
+                    review["blocker_checks"][0]["status"] = "unresolved"
+                elif mode == "low_score":
+                    review["scores"]["evidence"] = 3
+                return review
+            raise AssertionError(f"Unexpected stage {stage}")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            public = root / "blog"
+            public.mkdir()
+            (public / "posts.json").write_text("[]")
+            (public / "existing.html").write_text("untouched public article")
+            before = {path.name: path.read_bytes() for path in public.iterdir()}
+            audit_path = root / "audit" / "zh.json"
+            with patch.object(ip, "request_json", side_effect=request), \
+                 patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": str(attempts)}), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                if expect_failure:
+                    with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
+                        ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path, resume_audit=self.audit,
+                                           editorial_revision=self.candidate if candidate is None else candidate)
+                    article = None
+                else:
+                    article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path, resume_audit=self.audit,
+                                                 editorial_revision=self.candidate if candidate is None else candidate)
+            self.assertEqual({path.name: path.read_bytes() for path in public.iterdir()}, before)
+            saved = json.loads(audit_path.read_text())
+        return article, saved, stages, prompts
+
+    def test_supplied_candidate_gets_independent_review_without_first_draft_request(self):
+        original_audit, original_candidate = copy.deepcopy(self.audit), copy.deepcopy(self.candidate)
+        article, saved, stages, prompts = self.run_editorial()
+        self.assertEqual(stages, ["zh-review"])
+        self.assertEqual(article["quality"]["revisions"], 3)
+        self.assertEqual(article["body_html"], self.candidate["body_html"])
+        self.assertEqual(saved["attempts"][-1]["draft_origin"], "editorial_revision")
+        self.assertEqual(saved["attempts"][:3], original_audit["attempts"])
+        self.assertEqual(saved["brief"], original_audit["brief"])
+        self.assertEqual(self.audit, original_audit)
+        self.assertEqual(self.candidate, original_candidate)
+        self.assertNotIn("DO_NOT_ACCEPT_FROM_CANDIDATE", json.dumps(saved))
+        self.assertNotIn("DO_NOT_ACCEPT_FROM_CANDIDATE", prompts["zh-review"][0])
+        self.assertEqual({check["issue_id"] for check in saved["attempts"][-1]["review"]["blocker_checks"]},
+                         {"r0-blocker-1", "r2-blocker-1"})
+
+    def test_invalid_candidate_contract_rejected_before_model_or_audit_write(self):
+        cases = [(None, "zh", self.candidate), (self.audit, "en", self.candidate),
+                 (self.audit, "zh", []), (self.audit, "zh", "{}"), (self.audit, "zh", False)]
+        for resume, lang, candidate in cases:
+            with self.subTest(lang=lang, candidate=candidate), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "audit.json"
+                with patch.object(ip, "request_json") as request, self.assertRaises(ValueError):
+                    ip.produce_article(self.topic, self.sources, "test", lang=lang, audit_path=path,
+                                       resume_audit=resume, editorial_revision=candidate)
+                request.assert_not_called()
+                self.assertFalse(path.exists())
+
+    def test_candidate_with_forged_pass_is_still_blocked_by_real_structure(self):
+        candidate = {**self.candidate, "body_html": '<p>简短正文<script>bad()</script></p>'}
+        _, saved, stages, _ = self.run_editorial(candidate=candidate, attempts=1, expect_failure=True)
+        self.assertEqual(stages, [])
+        self.assertFalse(saved["passed"])
+        self.assertFalse(saved["attempts"][-1]["structure"]["passed"])
+        self.assertTrue(any("script" in error for error in saved["attempts"][-1]["errors"]))
+
+    def test_candidate_cannot_override_factual_blockers_historical_checks_or_scores(self):
+        for mode in ("unsupported", "unresolved", "low_score"):
+            with self.subTest(mode=mode):
+                _, saved, stages, _ = self.run_editorial(mode=mode, attempts=1, expect_failure=True)
+                self.assertEqual(stages, ["zh-review"])
+                self.assertFalse(saved["passed"])
+                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
+                self.assertTrue(saved["attempts"][-1]["errors"])
+
+    def test_candidate_failure_continues_from_its_feedback_to_model_revision(self):
+        article, saved, stages, prompts = self.run_editorial(mode="first_unsupported")
+        self.assertEqual(stages, ["zh-review", "zh-draft-4", "zh-review"])
+        self.assertEqual(article["quality"]["revisions"], 4)
+        self.assertEqual([attempt["draft_origin"] for attempt in saved["attempts"][3:]], ["editorial_revision", "model"])
+        self.assertIn("r3-blocker-1", prompts["zh-draft-4"][0])
+        self.assertIn("r3-blocker-1", prompts["zh-review"][-1])
+        self.assertTrue(saved["passed"])
+
+    def test_candidate_counts_as_one_of_three_attempts_not_an_extra_free_round(self):
+        _, saved, stages, _ = self.run_editorial(mode="low_score", expect_failure=True)
+        self.assertEqual([stage for stage in stages if "draft" in stage], ["zh-draft-4", "zh-draft-5"])
+        self.assertEqual(stages.count("zh-review"), 3)
+        self.assertEqual([attempt["revision"] for attempt in saved["attempts"][3:]], [3, 4, 5])
+        self.assertFalse(saved["passed"])
 
 
 class PipelineTests(unittest.TestCase):

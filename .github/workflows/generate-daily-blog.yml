@@ -13,6 +13,10 @@ on:
         description: "Optional failed run ID whose saved Chinese draft should be revised"
         type: string
         default: ""
+      editorial_revision_json:
+        description: "Optional authored repair of a resumed Chinese draft; all reviews still apply"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -64,6 +68,7 @@ jobs:
           INSIGHT_API_TIMEOUT: "300"
           PREVIEW_ONLY: ${{ inputs.preview }}
           RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+          EDITORIAL_REVISION_JSON: ${{ inputs.editorial_revision_json }}
           GH_TOKEN: ${{ github.token }}
           NEWS_MAX_ITEMS: "3"
           TAVILY_MAX_QUERIES: "3"
@@ -79,6 +84,11 @@ jobs:
             gh run view "$RESUME_RUN_ID" --json workflowName,conclusion --jq '.workflowName == "Generate Daily Blog Article" and .conclusion == "failure"' | grep -qx true
             gh run download "$RESUME_RUN_ID" --name "daily-insight-review-$RESUME_RUN_ID" --dir "$RUNNER_TEMP/insight-resume"
             args+=(--resume-dir "$RUNNER_TEMP/insight-resume/insights")
+          fi
+          if [ -n "$EDITORIAL_REVISION_JSON" ]; then
+            [ -n "$RESUME_RUN_ID" ] || { echo "An authored repair requires a resume run"; exit 1; }
+            python -c 'import json,os,pathlib; raw=os.environ["EDITORIAL_REVISION_JSON"]; assert len(raw.encode()) <= 60000, "Revision exceeds 60 KB"; assert isinstance(json.loads(raw),dict), "Revision must be JSON object"; pathlib.Path(os.environ["RUNNER_TEMP"],"editorial-revision.json").write_text(raw,encoding="utf-8")'
+            args+=(--editorial-revision "$RUNNER_TEMP/editorial-revision.json")
           fi
           python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog "${args[@]}"
 

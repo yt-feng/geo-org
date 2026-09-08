@@ -10,6 +10,8 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from html import escape
+from html.parser import HTMLParser
 from pathlib import Path
 
 import generate_blog as gb
@@ -321,11 +323,58 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 240
     raise RuntimeError(f"Insight {stage} failed: {error}")
 
 
-def normalize_article(raw: dict, lang: str) -> dict:
+class _InlineStyleNormalizer(HTMLParser):
+    """Remove only parsed style attributes; leave all other HTML for validation."""
+
+    def __init__(self, body: str):
+        super().__init__(convert_charrefs=False)
+        self.body = body
+        self.line_starts = [0] + [index + 1 for index, char in enumerate(body) if char == "\n"]
+        self.edits: list[tuple[int, int, str]] = []
+        self.removed = 0
+
+    def _start_tag(self, tag: str, attrs: list[tuple[str, str | None]], *, closed: bool) -> None:
+        style_count = sum(name == "style" for name, _ in attrs)
+        if not style_count:
+            return
+        # HTMLParser handles quoted '>' and quoted/entity-encoded attribute
+        # values. Re-escape retained values without dropping duplicate, event or
+        # unsafe URL attributes: the existing strict validator must see them.
+        kept = "".join(f" {name}" if value is None else f' {name}="{escape(value, quote=True)}"'
+                       for name, value in attrs if name != "style")
+        replacement = f"<{tag}{kept}{' /' if closed else ''}>"
+        line, column = self.getpos()
+        start = self.line_starts[line - 1] + column
+        self.edits.append((start, start + len(self.get_starttag_text()), replacement))
+        self.removed += style_count
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._start_tag(tag, attrs, closed=False)
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._start_tag(tag, attrs, closed=True)
+
+    def normalized(self) -> str:
+        try:
+            self.feed(self.body)
+            self.close()
+        except (ValueError, AssertionError):
+            raise ValueError("article HTML could not be parsed for inline style normalization") from None
+        result, position = [], 0
+        for start, end, replacement in self.edits:
+            result.extend((self.body[position:start], replacement))
+            position = end
+        result.append(self.body[position:])
+        return "".join(result)
+
+
+def normalize_article(raw: dict, lang: str, *, normalization: dict | None = None) -> dict:
     for name in ("title", "excerpt", "body_html"):
         if not isinstance(raw.get(name), str) or not raw[name].strip():
             raise ValueError(f"missing article field: {name}")
     article = {key: raw[key].strip() for key in ("title", "excerpt", "body_html")}
+    parser = _InlineStyleNormalizer(raw["body_html"])
+    article["body_html"] = parser.normalized().strip()
     title = re.sub(r"^Eco[- ]GEO[：:]\s*", "", article["title"], flags=re.I)
     article["title"] = ("Eco-GEO：" if lang == "zh" else "Eco-GEO: ") + title
     tags = raw.get("tags", [])
@@ -334,6 +383,12 @@ def normalize_article(raw: dict, lang: str) -> dict:
     article["tags"] = ", ".join(str(t) for t in tags) if isinstance(tags, list) else tags
     if lang == "zh":
         article["tags"] = gb.ensure_required_tags(article["tags"])
+    if normalization is not None:
+        normalization.update({"inline_style_attributes_removed": parser.removed,
+            "raw_body_sha256": hashlib.sha256(raw["body_html"].encode()).hexdigest(),
+            "normalized_body_sha256": hashlib.sha256(article["body_html"].encode()).hexdigest(),
+            "outer_whitespace_trimmed": raw["body_html"] != raw["body_html"].strip(),
+            "policy": "Remove inline style attributes; site CSS controls presentation. All other HTML requires the existing safety and content checks."})
     return article
 
 
@@ -685,8 +740,19 @@ def _resume_article_audit(resume_audit: dict, topic: gb.TopicRow, sources: list[
 
 def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, lang: str = "zh",
                     original: dict | None = None, recent_posts: list[dict] | None = None,
-                    audit_path: Path, resume_audit: dict | None = None) -> dict:
+                    audit_path: Path, resume_audit: dict | None = None,
+                    editorial_revision: dict | None = None) -> dict:
     """Complete every acceptance gate before any caller can write public site files."""
+    if editorial_revision is not None:
+        if not isinstance(editorial_revision, dict):
+            raise ValueError("editorial_revision must be an article JSON object")
+        if resume_audit is None or lang != "zh":
+            raise ValueError("editorial_revision requires resume_audit and Chinese language")
+        # A supplied candidate carries content only, never an acceptance result.
+        # Detach it from the caller and discard quality/review/passed metadata.
+        editorial_revision = json.loads(json.dumps({key: editorial_revision[key]
+            for key in ("title", "excerpt", "body_html", "tags", "revision_response")
+            if key in editorial_revision}, ensure_ascii=False))
     audit = {"version": "insights-v3", "row": topic.idx, "language": lang,
              "sources": public_sources(sources), "attempts": [], "passed": False,
              "audit_scope": "Original editorial brief, drafts and reviews; source provenance only, no third-party source bodies."}
@@ -782,17 +848,24 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 完整修订任务：{json.dumps(feedback, ensure_ascii=False)}"""
                 if lang != "zh":
                     prompt += "\n当前是译稿修订：以上分析重构要求仅适用于中文创作。译稿只能依据中文原文修复忠实度、措辞和格式，不能新增或改动原文的方案、表格、数字、假设及结论；若问题来自中文原文自身，明确报告，不能在译稿中自行补造。"
-            raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
-                               max_tokens=int(os.environ.get("INSIGHT_MAX_TOKENS", "24000")))
+            draft_origin = "editorial_revision" if editorial_revision is not None and revision == start_revision else "model"
+            if draft_origin == "editorial_revision":
+                raw = editorial_revision
+            else:
+                raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
+                                   max_tokens=int(os.environ.get("INSIGHT_MAX_TOKENS", "24000")))
+            normalization = {}
             try:
-                article = normalize_article(raw, lang)
+                article = normalize_article(raw, lang, normalization=normalization)
                 structural = validate_insight(article, sources, lang=lang, source_article=original)
             except ValueError as exc:
                 structural = {"passed": False, "errors": [str(exc)], "metrics": {}}
                 article = {key: raw.get(key) for key in ("title", "excerpt", "body_html", "tags")}
             metadata_errors = _revision_response_errors(raw, feedback) if feedback else []
             previous = article
-            attempt = {"revision": revision, "article": article, "structure": structural,
+            attempt = {"revision": revision, "draft_origin": draft_origin,
+                       "article": article, "structure": structural,
+                       "normalization": normalization,
                        "revision_response": raw.get("revision_response", []),
                        "metadata_errors": metadata_errors,
                        "metadata_state": "warning" if metadata_errors else "valid",

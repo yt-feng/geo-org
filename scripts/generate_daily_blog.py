@@ -407,7 +407,8 @@ def load_resume_audit(resume_dir: Path, topic: gb.TopicRow) -> dict:
 
 def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_run: bool,
                            preview_dir: Optional[Path] = None,
-                           resume_dir: Optional[Path] = None) -> bool:
+                           resume_dir: Optional[Path] = None,
+                           editorial_revision_path: Optional[Path] = None) -> bool:
     topics = gb.read_topics(excel_path, start_row=start_row, limit=0)
     posts = load_posts(out_dir)
     topic = select_next_topic(topics, posts, out_dir)
@@ -423,6 +424,15 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         raise RuntimeError("DEEPSEEK_API_KEY is required in repository secrets")
 
     resume_audit = load_resume_audit(resume_dir, topic) if resume_dir is not None else None
+    editorial_revision = None
+    if editorial_revision_path is not None:
+        if resume_audit is None:
+            raise ValueError("An editorial revision requires a failed resume audit")
+        if editorial_revision_path.stat().st_size > 60_000:
+            raise ValueError("Editorial revision exceeds 60 KB")
+        editorial_revision = json.loads(editorial_revision_path.read_text(encoding="utf-8"))
+        if not isinstance(editorial_revision, dict):
+            raise ValueError("Editorial revision must be an article JSON object")
     if resume_audit is not None:
         sources = reread_research_pack(resume_audit["sources"])
         print(f"Resuming saved Chinese draft after revalidating {len(sources)} source bodies.", flush=True)
@@ -435,7 +445,8 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     recent = [{key: post.get(key, "") for key in ("title", "category", "excerpt")} for post in posts[:30]]
     articles = {}
     articles["zh"] = insight_pipeline.produce_article(topic, sources, api_key, recent_posts=recent,
-                                                       audit_path=audit_dir / "zh.json", resume_audit=resume_audit)
+                                                       audit_path=audit_dir / "zh.json", resume_audit=resume_audit,
+                                                       editorial_revision=editorial_revision)
     articles.update(localize_reviewed_article(topic, sources, api_key, articles["zh"], audit_dir))
     author, initials = gb.deterministic_author(topic.title)
     publish_date = gb.today_publish_date()
@@ -489,12 +500,14 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--preview-dir", type=Path, help="Write reviewed preview only; do not update the site")
     parser.add_argument("--resume-dir", type=Path, help="Resume a failed Chinese audit after exact source revalidation")
+    parser.add_argument("--editorial-revision", type=Path, help="Review an authored repair of the resumed Chinese draft")
     args = parser.parse_args()
 
     excel_path = Path(args.excel)
     if not excel_path.exists():
         raise FileNotFoundError(excel_path)
-    generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run, args.preview_dir, args.resume_dir)
+    generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run, args.preview_dir, args.resume_dir,
+                           args.editorial_revision)
 
 
 if __name__ == "__main__":

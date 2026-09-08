@@ -487,12 +487,134 @@ class _BodyParser(HTMLParser):
         return self.normalize(self.fallback)
 
 
+def _publication_day(value: str) -> str:
+    """Parse a date value from an explicit date field, never scan body prose."""
+    value = re.sub(r"\s+", " ", value.strip())
+    if len(value) > 100:
+        return ""
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}(?:[Tt ][0-9:.]+(?:[Zz]|[+-]\d{2}:?\d{2})?)?", value):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00").replace("z", "+00:00")).date().isoformat()
+        except ValueError:
+            return ""
+    for pattern in ("%B %d, %Y", "%b %d, %Y", "%d %B %Y", "%d %b %Y", "%Y年%m月%d日"):
+        try:
+            return datetime.strptime(value, pattern).date().isoformat()
+        except ValueError:
+            pass
+    return ""
+
+
+class _PublicationDateParser(HTMLParser):
+    """Collect semantic date fields independently of the evidence body parser."""
+
+    PUBLISHED_META = {"article:published_time", "datepublished", "citation_publication_date", "dc.date.issued", "dcterms.issued"}
+    OTHER_DATE_META = {"date", "datecreated", "datemodified", "article:modified_time", "article:created_time", "dc.date.created", "dcterms.created"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.stack: list[tuple[str, bool, bool, int | None]] = []
+        self.records: list[dict[str, Any]] = []
+        self.other_dates = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        marker = f"{attributes.get('class') or ''} {attributes.get('id') or ''}"
+        skip = (tag in _BodyParser.SKIP or (tag not in {"html", "body"} and bool(_BodyParser.UI.search(marker)))
+                or "hidden" in attributes or attributes.get("aria-hidden", "").lower() == "true"
+                or bool(re.search(r"display\s*:\s*none|visibility\s*:\s*hidden", attributes.get("style") or "", re.I)))
+        skipped = skip or any(frame[1] for frame in self.stack)
+        in_article = tag in {"main", "article"} or attributes.get("role") == "main" or any(frame[2] for frame in self.stack)
+        in_head = any(frame[0] == "head" for frame in self.stack)
+        if tag == "meta" and not skipped and (in_head or in_article or not self.stack):
+            key = (attributes.get("property") or attributes.get("name") or attributes.get("itemprop") or "").lower()
+            value = attributes.get("content") or ""
+            if key in self.PUBLISHED_META and value:
+                self.records.append({"origin": key, "values": [value], "parts": []})
+            elif key in self.OTHER_DATE_META and value:
+                self.other_dates = True
+        index = None
+        # A date in arbitrary prose, excluded UI or an unlabelled <time> is not
+        # evidence of the current article's publication date.
+        if (not skipped and not in_head and in_article and tag != "meta"
+                and "datepublished" in (attributes.get("itemprop") or "").lower().split()):
+            index = len(self.records)
+            self.records.append({"origin": "visible datePublished", "values": [attributes.get("datetime") or attributes.get("content") or ""], "parts": []})
+        elif not skipped and in_article and set((attributes.get("itemprop") or "").lower().split()) & {"datecreated", "datemodified"}:
+            self.other_dates = True
+        if tag not in _BodyParser.VOID:
+            self.stack.append((tag, skipped, in_article, index))
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        if tag not in _BodyParser.VOID:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                break
+
+    def handle_data(self, data: str) -> None:
+        if not any(frame[1] for frame in self.stack):
+            for _, _, _, index in self.stack:
+                if index is not None:
+                    self.records[index]["parts"].append(data)
+
+    def result(self) -> dict[str, str]:
+        evidence = []
+        unreadable = False
+        for record in self.records:
+            values = record["values"] + ["".join(record["parts"]).strip()]
+            for value in filter(None, values):
+                day = _publication_day(value)
+                if day:
+                    evidence.append((record["origin"], day))
+                else:
+                    unreadable = True
+        days = {day for _, day in evidence}
+        note, status, published = "", "absent", ""
+        if len(days) > 1:
+            detail = "; ".join(dict.fromkeys(f"{origin}={day}" for origin, day in evidence))
+            note = f"Publication date unconfirmed: conflicting publication fields ({detail}). Neither date is assumed to be a creation timestamp."
+            status = "conflict"
+        elif unreadable:
+            note = "Publication date unconfirmed: an explicit publication field could not be interpreted consistently."
+            status = "unconfirmed"
+        elif days:
+            published, status = next(iter(days)), "confirmed"
+        elif self.other_dates:
+            note = "Publication date unconfirmed: only creation, modification or unspecified date metadata was found; these dates are not substituted for publication."
+            status = "unconfirmed"
+        return {"publication_date": published, "publication_date_status": status, "publication_date_note": note}
+
+
+def _publication_metadata(metadata: Mapping[str, str], candidate: Mapping[str, Any] | None = None) -> tuple[str, str]:
+    published = metadata.get("publication_date", "")
+    note = metadata.get("publication_date_note", "")
+    # Curated dates may fill absent page metadata on new research, but must not
+    # override conflicting or uninterpretable publication fields. Resume never
+    # treats the old audit's potentially incorrect date as a curated fallback.
+    if not published and metadata.get("publication_date_status", "absent") == "absent" and candidate:
+        published = str(candidate.get("published") or "")
+    return published, note
+
+
+def _with_publication_note(scope_notes: str, note: str) -> str:
+    return scope_notes if not note or note in scope_notes else f"{scope_notes} {note}".strip()
+
+
 def extract_body(document: str) -> tuple[str, dict[str, str]]:
     parser = _BodyParser()
     parser.feed(document)
     parser.close()
     metadata = dict(parser.meta)
     metadata["title"] = metadata.get("og:title") or " ".join(parser.title).strip()
+    dates = _PublicationDateParser()
+    dates.feed(document)
+    dates.close()
+    metadata.update(dates.result())
     return parser.body(), metadata
 
 
@@ -746,7 +868,8 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
 
     text contains only [excerpt_start, excerpt_end) of the normalized body. The
     model must not infer anything outside that exact window. published is empty
-    when no publication metadata was present; retrieval time is not publication.
+    when publication metadata is absent or ambiguous; retrieval time is not
+    publication. Date conflicts are retained in the source's scope notes.
     """
     minimum = _integer("RESEARCH_MIN_SOURCES", 3, 3, 8)
     domains_min = _integer("RESEARCH_MIN_DOMAINS", 2, 2, 5)
@@ -790,6 +913,7 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
             if digest in seen_bodies:
                 continue
             domain, publisher, evidence_kind = TRUSTED_HOSTS[urllib.parse.urlsplit(url).hostname]
+            published, publication_note = _publication_metadata(metadata, candidate)
             if len(pack) >= maximum:
                 if domain in publisher_domains and not new_industries:
                     continue
@@ -816,19 +940,18 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                 "requested_url": requested_url,
                 "publisher": publisher,
                 "publisher_domain": domain,
-                "published": metadata.get("article:published_time") or metadata.get("datepublished")
-                    or metadata.get("date") or str(candidate.get("published") or ""),
+                "published": published,
                 "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "text": excerpt,
                 "evidence_kind": evidence_kind,
                 "evidence_role": "industry_context" if matched_industries else "general_context",
                 "industries": sorted(matched_industries),
-                "scope_notes": str(candidate.get("scope_notes") or (
+                "scope_notes": _with_publication_note(str(candidate.get("scope_notes") or (
                     "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness."
                     if matched_industries else
                     "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion."
                 )) + " ".join(" Sector boundary: " + INDUSTRY_SCOPE_NOTES[industry]
-                              for industry in sorted(matched_industries) if industry in INDUSTRY_SCOPE_NOTES),
+                              for industry in sorted(matched_industries) if industry in INDUSTRY_SCOPE_NOTES), publication_note),
                 "retrieval_method": method,
                 "excerpt_start": excerpt_start,
                 "excerpt_end": excerpt_start + len(excerpt),
@@ -865,6 +988,8 @@ def reread_research_pack(audit_sources: Sequence[Mapping[str, Any]]) -> list[dic
     source ID, URL and order. Also require the original normalized body length.
     No replacement sources, local fixtures or stored text are used on resume.
     Any drift or incomplete provenance requires fresh research before drafting.
+    Publication metadata is re-audited independently; correcting that metadata
+    never changes the original evidence text, window, source ID, URL or hash.
     """
     minimum = _integer("RESEARCH_MIN_SOURCES", 3, 3, 8)
     domains_min = _integer("RESEARCH_MIN_DOMAINS", 2, 2, 5)
@@ -944,6 +1069,9 @@ def reread_research_pack(audit_sources: Sequence[Mapping[str, Any]]) -> list[dic
             if _industry_mentions(excerpt, industries) != industries:
                 raise invalid(f"{source_id} read excerpt no longer confirms its audited industry")
             domain, publisher, evidence_kind = TRUSTED_HOSTS[urllib.parse.urlsplit(url).hostname]
+            published, publication_note = _publication_metadata(metadata)
+            if not published and not publication_note and source.get("published"):
+                publication_note = "Publication date unconfirmed on reread; the previous audit date was not carried forward without current publication evidence."
             pack.append({
                 "id": source_id,
                 "title": source.get("title") or metadata.get("title") or urllib.parse.urlsplit(url).path,
@@ -951,13 +1079,13 @@ def reread_research_pack(audit_sources: Sequence[Mapping[str, Any]]) -> list[dic
                 "requested_url": source.get("requested_url") or url,
                 "publisher": publisher,
                 "publisher_domain": domain,
-                "published": source.get("published", ""),
+                "published": published,
                 "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "text": excerpt,
                 "evidence_kind": evidence_kind,
                 "evidence_role": "industry_context" if industries else "general_context",
                 "industries": list(source.get("industries", [])),
-                "scope_notes": source.get("scope_notes", ""),
+                "scope_notes": _with_publication_note(str(source.get("scope_notes", "")), publication_note),
                 "retrieval_method": method,
                 "excerpt_start": start,
                 "excerpt_end": end,
