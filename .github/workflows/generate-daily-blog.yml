@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
       resume_run_id:
-        description: "Optional failed run ID whose saved Chinese draft should be revised"
+        description: "Optional failed or cancelled run ID whose saved article should be resumed"
         type: string
         default: ""
       editorial_revision_json:
@@ -61,6 +61,7 @@ jobs:
           DEEPSEEK_MODEL: deepseek-v4-pro
           INSIGHT_THINKING: "enabled"
           INSIGHT_MAX_TOKENS: "24000"
+          INSIGHT_TRANSLATION_MAX_TOKENS: "48000"
           DEEPSEEK_REQUEST_DELAY: "0.2"
           DEEPSEEK_RETRIES: "3"
           INSIGHT_MAX_REVISIONS: "2"
@@ -81,7 +82,7 @@ jobs:
           fi
           if [ -n "$RESUME_RUN_ID" ]; then
             [[ "$RESUME_RUN_ID" =~ ^[0-9]+$ ]] || { echo "Resume run ID must contain digits only"; exit 1; }
-            gh run view "$RESUME_RUN_ID" --json workflowName,conclusion --jq '.workflowName == "Generate Daily Blog Article" and .conclusion == "failure"' | grep -qx true
+            gh run view "$RESUME_RUN_ID" --json workflowName,conclusion --jq '.workflowName == "Generate Daily Blog Article" and (.conclusion == "failure" or .conclusion == "cancelled")' | grep -qx true
             gh run download "$RESUME_RUN_ID" --name "daily-insight-review-$RESUME_RUN_ID" --dir "$RUNNER_TEMP/insight-resume"
             args+=(--resume-dir "$RUNNER_TEMP/insight-resume/insights")
           fi

@@ -397,17 +397,36 @@ def localize_reviewed_article(topic, sources, api_key, original, audit_dir):
 
 
 def load_resume_audit(resume_dir: Path, topic: gb.TopicRow) -> dict:
-    """Load only the selected backlog topic's failed Chinese editorial audit."""
+    """Load only an internal audit for this selected topic, never a user repair."""
+    resume_dir = resume_dir.resolve()
     audit_path = resume_dir / gb.slugify(topic.title, topic.idx) / "zh.json"
+    if not audit_path.resolve().is_relative_to(resume_dir):
+        raise ValueError("Resume audit must remain inside the downloaded audit directory")
     if not audit_path.is_file():
         raise ValueError(f"No resume audit for selected topic: {audit_path}")
     if audit_path.stat().st_size > 10_000_000:
         raise ValueError("Resume audit exceeds 10 MB")
-    audit = json.loads(audit_path.read_text(encoding="utf-8"))
-    if not isinstance(audit, dict) or audit.get("row") != topic.idx or audit.get("language") != "zh":
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"Resume audit contains duplicate JSON field: {key}")
+            result[key] = value
+        return result
+
+    def reject_constant(value):
+        raise ValueError(f"Resume audit contains invalid JSON constant: {value}")
+
+    audit = json.loads(audit_path.read_text(encoding="utf-8"), object_pairs_hook=unique_object, parse_constant=reject_constant)
+    if not isinstance(audit, dict) or type(audit.get("row")) is not int or audit["row"] != topic.idx or audit.get("language") != "zh":
         raise ValueError("Resume audit must match selected row and Chinese language")
-    if audit.get("passed") is not False or not audit.get("attempts") or not audit.get("sources"):
-        raise ValueError("Resume requires a failed audit with saved drafts and source provenance")
+    if type(audit.get("passed")) is not bool or not audit.get("attempts") or not audit.get("sources"):
+        raise ValueError("Resume requires a complete passed audit or a failed audit with saved drafts and source provenance")
+    if audit["passed"]:
+        try:
+            insight_pipeline.validate_passed_chinese_audit(audit, topic)
+        except (TypeError, KeyError, ValueError) as exc:
+            raise ValueError(f"Resume requires a complete passed audit or a failed audit: {exc}") from exc
     return audit
 
 
@@ -433,7 +452,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     editorial_revision = None
     if editorial_revision_path is not None:
         if resume_audit is None:
-            raise ValueError("An editorial revision requires a failed resume audit")
+            raise ValueError("An editorial revision requires a resume audit")
         if editorial_revision_path.stat().st_size > 60_000:
             raise ValueError("Editorial revision exceeds 60 KB")
         editorial_revision = json.loads(editorial_revision_path.read_text(encoding="utf-8"))
@@ -441,7 +460,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
             raise ValueError("Editorial revision must be an article JSON object")
     if resume_audit is not None:
         sources = reread_research_pack(resume_audit["sources"])
-        print(f"Resuming saved Chinese draft after revalidating {len(sources)} source bodies.", flush=True)
+        print(f"Resuming saved Chinese audit after revalidating {len(sources)} source bodies.", flush=True)
     else:
         # Discovery summaries are leads only; the research pack contains retrieved originals.
         leads = [*fetch_news_items(topic), *fetch_tavily_market_items(topic)]
@@ -450,10 +469,15 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     audit_dir = Path(os.environ.get("INSIGHT_AUDIT_DIR", ".artifacts/insights")) / slug
     recent = [{key: post.get(key, "") for key in ("title", "category", "excerpt")} for post in posts[:30]]
     articles = {}
-    articles["zh"] = insight_pipeline.produce_article(topic, sources, api_key, recent_posts=recent,
-                                                       audit_path=audit_dir / "zh.json", resume_audit=resume_audit,
-                                                       editorial_revision=editorial_revision)
+    if resume_audit is not None and resume_audit["passed"] is True and editorial_revision is None:
+        articles["zh"] = insight_pipeline.reuse_passed_chinese_audit(topic, sources, api_key,
+            audit_path=audit_dir / "zh.json", resume_audit=resume_audit)
+    else:
+        articles["zh"] = insight_pipeline.produce_article(topic, sources, api_key, recent_posts=recent,
+            audit_path=audit_dir / "zh.json", resume_audit=resume_audit, editorial_revision=editorial_revision)
     articles.update(localize_reviewed_article(topic, sources, api_key, articles["zh"], audit_dir))
+    if set(articles) != {"zh", "en", "ar"}:
+        raise RuntimeError("All three reviewed languages are required before writing output")
     author, initials = gb.deterministic_author(topic.title)
     publish_date = gb.today_publish_date()
     image = gb.image_url(topic)
@@ -505,7 +529,7 @@ def main() -> None:
     parser.add_argument("--start-row", type=int, default=2)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--preview-dir", type=Path, help="Write reviewed preview only; do not update the site")
-    parser.add_argument("--resume-dir", type=Path, help="Resume a failed Chinese audit after exact source revalidation")
+    parser.add_argument("--resume-dir", type=Path, help="Resume the selected Chinese audit after source revalidation; verified passes continue to translation")
     parser.add_argument("--editorial-revision", type=Path, help="Review an authored repair of the resumed Chinese draft")
     args = parser.parse_args()
 

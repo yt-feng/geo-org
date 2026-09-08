@@ -231,7 +231,16 @@ def _numbers(text: str) -> Counter[str]:
     Citation IDs are excluded. This detects loss/change of stated numeric values;
     it cannot establish correct calculations, units, or faithful prose translation.
     """
-    normalized = unicodedata.normalize("NFKC", text)
+    # ALM only controls bidirectional display; it is not a numeric separator.
+    # Normalize explicit nonbreaking thousands groups before NFKC turns their
+    # separators into ordinary spaces. Do not join arbitrary spaced numbers.
+    normalized = text.replace("\u061c", "")
+    normalized = re.sub(
+        r"(?<!\d)\d{1,3}(?:[\u00a0\u202f]\d{3})+(?!\d)",
+        lambda match: match.group().replace("\u00a0", ",").replace("\u202f", ","),
+        normalized,
+    )
+    normalized = unicodedata.normalize("NFKC", normalized)
     normalized = "".join(str(unicodedata.digit(char)) if char.isdecimal() else char for char in normalized)
     normalized = normalized.replace("\u066b", ".").replace("\u066c", ",").replace("\u066a", "%")
     normalized = re.sub(r"\[S\d+\]", "", normalized)
@@ -243,7 +252,9 @@ def _numbers(text: str) -> Counter[str]:
         "ملايين": Decimal(1000000), "مليار": Decimal(1000000000),
     }
     unit_re = "|".join(re.escape(value) for value in magnitude)
-    pattern = rf"(?<![A-Za-z\d])([+-]?(?:\d{{1,3}}(?:[,\u202f\u00a0]\d{{3}})+(?:\.\d+)?|\d+(?:\.\d+)?))(?:\s*({unit_re}))?(\s*%)?"
+    # These written forms mean percent, not a new value or percentage points.
+    percent_re = r"%|percent\b|per\s+cent\b|في\s+(?:المئة|المائة)(?!\w)"
+    pattern = rf"(?<![A-Za-z\d])([+-]?(?:\d{{1,3}}(?:[,\u202f\u00a0]\d{{3}})+(?:\.\d+)?|\d+(?:\.\d+)?))(?:\s*({unit_re}))?(?:\s*({percent_re}))?"
     result: Counter[str] = Counter()
     for match in re.finditer(pattern, normalized, flags=re.IGNORECASE):
         raw, unit, percent = match.groups()

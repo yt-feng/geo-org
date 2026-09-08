@@ -218,6 +218,69 @@ class InsightQualityTests(unittest.TestCase):
         result = self.validate(article, lang="ar", source_article=source)
         self.assertTrue(result["passed"], result["errors"])
 
+    def test_arabic_letter_mark_does_not_split_percentage_or_decimal(self):
+        source = valid_article()
+        source["body_html"] += "<p>示意变化为0.30%。</p>"
+        article = translated_article(source, "ar")
+        article["body_html"] = article["body_html"].replace("5%", "\u061c٥\u061c٪").replace("0.30%", "٠٫٣٠\u061c٪")
+        before = deepcopy(article)
+        result = self.validate(article, lang="ar", source_article=source)
+        self.assertTrue(result["passed"], result["errors"])
+        self.assertEqual(article, before)  # Numeric comparison never rewrites the published text.
+
+    def test_nonbreaking_thousands_groups_survive_nfkc_normalization(self):
+        for separator in ("\u00a0", "\u202f"):
+            for lang, replacement in (("en", f"1{separator}200"), ("ar", f"١{separator}٢٠٠")):
+                with self.subTest(separator=repr(separator), lang=lang):
+                    source = valid_article()
+                    article = translated_article(source, lang)
+                    article["body_html"] = article["body_html"].replace("1,200", replacement)
+                    result = self.validate(article, lang=lang, source_article=source)
+                    self.assertTrue(result["passed"], result["errors"])
+                    # A nonbreaking group in the Chinese source is equivalent too.
+                    source["body_html"] = source["body_html"].replace("1,200", f"1{separator}200")
+                    self.assertTrue(self.validate(article, lang=lang, source_article=source)["passed"])
+
+    def test_multiple_thousands_groups_and_decimal_values_remain_exact(self):
+        from insight_quality import _numbers
+        for spelling in ("-1\u202f234\u202f567.50", "-١\u00a0٢٣٤\u00a0٥٦٧٫٥٠", "-1\u00a0234\u202f567.50"):
+            with self.subTest(spelling=spelling):
+                self.assertEqual(_numbers(spelling), _numbers("-1,234,567.50"))
+        self.assertNotEqual(_numbers("1 200"), _numbers("1,200"))
+        self.assertNotEqual(_numbers("1\u202f200"), _numbers("1,201"))
+
+    def test_explicit_written_percentages_preserve_percent_unit(self):
+        for lang, spelling in (("en", "5 percent"), ("en", "5 per cent"),
+                               ("ar", "٥ في المئة"), ("ar", "5 في المائة")):
+            with self.subTest(lang=lang, spelling=spelling):
+                source = valid_article()
+                article = translated_article(source, lang)
+                article["body_html"] = article["body_html"].replace("5%", spelling)
+                result = self.validate(article, lang=lang, source_article=source)
+                self.assertTrue(result["passed"], result["errors"])
+
+    def test_normalized_forms_do_not_hide_changed_values_counts_or_percent_units(self):
+        source = valid_article()
+        for old, new in (("5%", "٥٫٥\u061c٪"), ("5%", "٥\u061c"),
+                         ("5%", "٥ في المئة و٥ في المئة"), ("5%", "5 percentage points"),
+                         ("1,200", "1\u202f201"), ("1,200", "1\u00a0200.5"), ("1,200", "1 200")):
+            with self.subTest(new=new):
+                article = translated_article(source, "ar")
+                article["body_html"] = article["body_html"].replace(old, new)
+                result = self.assert_rejected(article, "numeric values", lang="ar", source_article=source)
+                changes = result["metrics"]["translation"]["numeric_changes"]["body_html"]
+                self.assertTrue(changes["missing"] or changes["added"])
+
+    def test_chinese_written_numbers_keep_word_form_without_relaxing_digit_comparison(self):
+        source = valid_article()
+        article = translated_article(source)
+        source["body_html"] += "<p>试验为四周，期间比较两轮。</p>"
+        article["body_html"] += "<p>The trial lasts four weeks and compares two rounds.</p>"
+        self.assertTrue(self.validate(article, lang="en", source_article=source)["passed"])
+        article["body_html"] = article["body_html"].replace("four weeks", "4 weeks")
+        result = self.assert_rejected(article, "numeric values", lang="en", source_article=source)
+        self.assertEqual(result["metrics"]["translation"]["numeric_changes"]["body_html"]["added"], {"4": 1})
+
     def test_translation_requires_original(self):
         self.assert_rejected(translated_article(valid_article()), "requires source_article", lang="en")
 

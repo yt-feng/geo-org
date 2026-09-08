@@ -498,9 +498,48 @@ def _review_contract_errors(review: dict, required_blockers: list[dict] | None =
     return errors
 
 
+def _claim_review_errors(review: dict, allowed_source_ids: set[str]) -> list[str]:
+    """The factual review gate, shared by new reviews and saved-pass validation."""
+    errors = []
+    checks = review.get("claim_checks")
+    if not isinstance(checks, list) or len(checks) < 5:
+        return ["review must check at least five substantive claims"]
+    seen_claims, supported_sources = set(), set()
+    for check in checks:
+        if not isinstance(check, dict) or check.get("verdict") not in {"supported", "unsupported", "inference", "illustrative"}:
+            errors.append("invalid claim review")
+            continue
+        claim, reason, source_ids = check.get("claim"), check.get("reason"), check.get("source_ids")
+        if not isinstance(claim, str) or len(claim.strip()) < 8 or not isinstance(reason, str) or len(reason.strip()) < 8:
+            errors.append("claim review needs a concrete claim and explanation")
+        else:
+            seen_claims.add(re.sub(r"\s+", "", claim))
+        if not isinstance(source_ids, list) or any(not isinstance(sid, str) or sid not in allowed_source_ids for sid in source_ids):
+            errors.append("claim review source_ids must be a list of known IDs")
+            continue
+        if check["verdict"] == "unsupported":
+            errors.append(f"unsupported claim: {check.get('claim', '')}")
+        elif check["verdict"] == "supported":
+            if not source_ids:
+                errors.append("supported claim requires source IDs")
+            supported_sources.update(source_ids)
+    if len(seen_claims) < 5:
+        errors.append("review must check five distinct concrete claims")
+    if len(supported_sources) < 2:
+        errors.append("review must substantiate external claims against at least two sources")
+    return errors
+
+
+def _article_sha256(article: dict) -> str:
+    """Bind the complete normalized article, including title/excerpt/tags."""
+    core = {key: article[key] for key in ("title", "excerpt", "body_html", "tags")}
+    return hashlib.sha256(json.dumps(core, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+
 def _revision_feedback(audit: dict) -> dict:
     """Carry every current issue and every earlier blocker into the next revision."""
     current = audit["attempts"][-1]
+    metrics = current["structure"].get("metrics", {})
     required_fixes = []
     # Earlier blockers remain explicit regression obligations even if a later
     # reviewer did not repeat them. Their presence alone does not lower scores.
@@ -518,6 +557,7 @@ def _revision_feedback(audit: dict) -> dict:
                     "kind": kind, "problem": str(item),
                     "instruction": "修复并指出正文位置；如果上轮已修复，核对本轮仍保留该修复。"})
     return {"failures": current.get("errors", []),
+            "numeric_changes": metrics.get("translation", {}).get("numeric_changes", metrics.get("numeric_changes", {})),
             "scores": current.get("review", {}).get("scores"),
             "claim_checks": current.get("review", {}).get("claim_checks", []),
             "required_fixes": required_fixes,
@@ -668,36 +708,7 @@ JSON字段 scores（六维）、issues（具体修改建议数组）、blockers�
         review["blockers"] = ["editorial review blockers must be an array"]
     if format_errors:
         review["blockers"].extend(f"invalid review response: {error}" for error in format_errors)
-    if not isinstance(review.get("claim_checks"), list) or len(review["claim_checks"]) < 5:
-        review.setdefault("blockers", []).append("review must check at least five substantive claims")
-    else:
-        allowed = allowed_source_ids
-        seen_claims = set()
-        supported_sources = set()
-        for check in review["claim_checks"]:
-            if not isinstance(check, dict) or check.get("verdict") not in {"supported", "unsupported", "inference", "illustrative"}:
-                review.setdefault("blockers", []).append("invalid claim review")
-                continue
-            claim = check.get("claim")
-            reason = check.get("reason")
-            source_ids = check.get("source_ids")
-            if not isinstance(claim, str) or len(claim.strip()) < 8 or not isinstance(reason, str) or len(reason.strip()) < 8:
-                review.setdefault("blockers", []).append("claim review needs a concrete claim and explanation")
-            else:
-                seen_claims.add(re.sub(r"\s+", "", claim))
-            if not isinstance(source_ids, list) or any(not isinstance(sid, str) or sid not in allowed for sid in source_ids):
-                review.setdefault("blockers", []).append("claim review source_ids must be a list of known IDs")
-                continue
-            if check["verdict"] == "unsupported":
-                review.setdefault("blockers", []).append(f"unsupported claim: {check.get('claim', '')}")
-            elif check["verdict"] == "supported":
-                if not source_ids:
-                    review.setdefault("blockers", []).append("supported claim requires source IDs")
-                supported_sources.update(source_ids)
-        if len(seen_claims) < 5:
-            review.setdefault("blockers", []).append("review must check five distinct concrete claims")
-        if len(supported_sources) < 2:
-            review.setdefault("blockers", []).append("review must substantiate external claims against at least two sources")
+    review.setdefault("blockers", []).extend(_claim_review_errors(review, allowed_source_ids))
     review["blockers"].extend(_blocker_check_errors(review, required_blockers))
     review["blockers"] = list(dict.fromkeys(str(item) for item in review["blockers"]))
     return review
@@ -754,6 +765,192 @@ def _resume_article_audit(resume_audit: dict, topic: gb.TopicRow, sources: list[
     audit["passed"] = False  # An old pass is never authority to skip a new review.
     audit.pop("error", None)
     return audit
+
+
+def _format_repair_fact_failures(review: dict) -> list[str]:
+    repair = review.get("format_repair")
+    if repair is None:
+        return []
+    if not isinstance(repair, dict) or not isinstance(repair.get("original_review"), dict):
+        raise ValueError("Passed Chinese audit has an incomplete review format-repair record")
+    original = repair["original_review"]
+    failures = [item for item in original.get("blockers", []) if isinstance(item, str)] if isinstance(original.get("blockers"), list) else []
+    checks = original.get("claim_checks", [])
+    if isinstance(checks, list):
+        failures.extend(f"unsupported claim: {check.get('claim', '')}" for check in checks
+                        if isinstance(check, dict) and check.get("verdict") == "unsupported")
+    checks = original.get("blocker_checks", [])
+    if isinstance(checks, list):
+        failures.extend(f"historical blocker {check.get('issue_id', '')} remains {check['status']}: {check.get('finding', '')}"
+                        for check in checks if isinstance(check, dict) and check.get("status") in ("unresolved", "unverifiable"))
+    return failures
+
+
+def _saved_pass_review_errors(review: dict, sources: list[dict], required: list[dict]) -> list[str]:
+    if not isinstance(review, dict):
+        return ["saved pass requires a complete independent review"]
+    allowed = {source["id"] for source in sources}
+    return list(dict.fromkeys(
+        _review_contract_errors(review, required, allowed_source_ids=allowed)
+        + _claim_review_errors(review, allowed) + _blocker_check_errors(review, required)
+        + review_errors(review) + _format_repair_fact_failures(review)
+    ))
+
+
+def validate_passed_chinese_audit(audit: dict, topic: gb.TopicRow) -> dict:
+    """Validate an internal saved pass; no network, model calls, or trust in flags.
+
+    Missing legacy full-article fingerprints require a new review of the exact
+    saved article. A present but mismatching fingerprint is never recoverable by
+    silently replacing it. Source rereading is performed before actual reuse.
+    """
+    def invalid(message: str) -> ValueError:
+        return ValueError("Passed Chinese audit: " + message)
+
+    if not isinstance(audit, dict) or audit.get("version") != "insights-v3" or type(audit.get("row")) is not int or audit["row"] != topic.idx or audit.get("language") != "zh":
+        raise invalid("version, selected topic and language must match")
+    if audit.get("passed") is not True or "error" in audit:
+        raise invalid("requires a completed pass without an audit error")
+    if not isinstance(audit.get("brief"), dict) or not audit["brief"]:
+        raise invalid("requires the complete original brief")
+    sources = audit.get("sources")
+    if not isinstance(sources, list) or not sources:
+        raise invalid("requires source provenance")
+    ids = []
+    for source in sources:
+        if not isinstance(source, dict) or any(not isinstance(source.get(key), str) or not source[key] for key in ("id", "url", "text_sha256")) or not re.fullmatch(r"[0-9a-f]{64}", source["text_sha256"]):
+            raise invalid("requires complete source identities and hashes")
+        ids.append(source["id"])
+    if len(ids) != len(set(ids)):
+        raise invalid("duplicate source IDs")
+    attempts = audit.get("attempts")
+    if not isinstance(attempts, list) or not attempts:
+        raise invalid("requires authored draft history")
+    last_revision = -1
+    required = []
+    for attempt in attempts:
+        if not isinstance(attempt, dict) or type(attempt.get("revision")) is not int or attempt["revision"] <= last_revision:
+            raise invalid("revisions must be increasing nonnegative integers")
+        last_revision = attempt["revision"]
+        if not isinstance(attempt.get("article"), dict) or not isinstance(attempt.get("structure"), dict):
+            raise invalid("draft history requires article and structure records")
+        review = attempt.get("review", {})
+        if not isinstance(review, dict):
+            raise invalid("draft history contains an invalid review")
+        if review:
+            blockers = review.get("blockers")
+            if not isinstance(blockers, list) or any(not isinstance(item, str) or not item.strip() for item in blockers):
+                raise invalid("historical blockers must be complete string arrays")
+            if any(item not in blockers for item in _format_repair_fact_failures(review)):
+                raise invalid("a format repair erased factual blockers")
+            if attempt is not attempts[-1]:
+                required.extend({"id": f"r{last_revision}-blocker-{index}", "kind": "blocker", "problem": blocker}
+                                for index, blocker in enumerate(blockers, 1))
+    last = attempts[-1]
+    if last.get("errors") != [] or last.get("review_state") != "completed":
+        raise invalid("last attempt must have empty errors and a completed review")
+    old_structure = last["structure"]
+    if old_structure.get("passed") is not True or old_structure.get("errors") != [] or not isinstance(old_structure.get("metrics"), dict):
+        raise invalid("last structure must have passed with complete metrics")
+    article = normalize_article(last["article"], "zh")
+    if article != {key: last["article"].get(key) for key in ("title", "excerpt", "body_html", "tags")}:
+        raise invalid("saved article is not identical after normalization")
+    normalization = last.get("normalization")
+    if not isinstance(normalization, dict) or any(not isinstance(normalization.get(key), str) or not re.fullmatch(r"[0-9a-f]{64}", normalization[key])
+                                                 for key in ("raw_body_sha256", "normalized_body_sha256")):
+        raise invalid("requires the original normalization hashes")
+    body_hash = hashlib.sha256(article["body_html"].encode()).hexdigest()
+    if normalization["normalized_body_sha256"] != body_hash:
+        raise invalid("normalized body SHA256 does not match the saved article")
+    removed, trimmed = normalization.get("inline_style_attributes_removed"), normalization.get("outer_whitespace_trimmed")
+    if type(removed) is not int or removed < 0 or type(trimmed) is not bool:
+        raise invalid("normalization changes must be explicitly recorded")
+    if (normalization["raw_body_sha256"] != body_hash) != bool(removed or trimmed):
+        raise invalid("raw/normalized hashes contradict recorded normalization changes")
+    digest = _article_sha256(article)
+    fingerprints = []
+    if "article_sha256" in last:
+        fingerprints.append(last["article_sha256"])
+    repair = last.get("metadata_repair")
+    if isinstance(repair, dict) and "article_sha256" in repair:
+        fingerprints.append(repair["article_sha256"])
+    if any(value != digest for value in fingerprints):
+        raise invalid("complete article SHA256 does not match title, excerpt, body and tags")
+    structural = validate_insight(article, sources, lang="zh")
+    if structural["passed"] is not True or structural["errors"]:
+        raise invalid("current structure gate failed: " + "; ".join(structural["errors"]))
+    shape_keys = ("h2_count", "table_count", "table_shapes", "role_counts", "citation_id_counts", "visible_character_count", "zh_character_count")
+    if any(key not in old_structure["metrics"] or old_structure["metrics"][key] != structural["metrics"].get(key) for key in shape_keys):
+        raise invalid("saved structural signature does not match the current article")
+    errors = _saved_pass_review_errors(last.get("review"), sources, required)
+    if errors:
+        raise invalid("independent review rejected: " + "; ".join(errors))
+    return {"article": article, "article_sha256": digest, "structure": structural,
+            "required_blockers": required, "full_fingerprint_verified": bool(fingerprints)}
+
+
+def reuse_passed_chinese_audit(topic: gb.TopicRow, sources: list[dict], api_key: str, *,
+                              resume_audit: dict, audit_path: Path) -> dict:
+    """Reuse an internally loaded pass, or review an unsigned legacy pass once.
+
+    Callers must first reread the audited sources. This helper does not accept an
+    editorial_revision: supplied repairs always go through produce_article.
+    """
+    validated = validate_passed_chinese_audit(resume_audit, topic)
+    audit = _resume_article_audit(resume_audit, topic, sources, "zh")
+    old_sources, current_sources = resume_audit["sources"], audit["sources"]
+    if [item["id"] for item in old_sources] != [item["id"] for item in current_sources]:
+        raise ValueError("Passed Chinese audit: source order changed")
+    for old, current in zip(old_sources, current_sources):
+        for key in ("excerpt_start", "excerpt_end", "body_chars", "excerpt_truncated"):
+            if key not in old or old[key] != current.get(key):
+                raise ValueError(f"Passed Chinese audit: source {old['id']} {key} changed")
+    semantic_keys = ("title", "published", "evidence_kind", "evidence_role", "industries", "scope_notes")
+    metadata_changed = any(old.get(key) != current.get(key) for old, current in zip(old_sources, current_sources) for key in semantic_keys)
+    article, structural = validated["article"], validated["structure"]
+    # Validate against current provenance as well as the original stored record.
+    current_structure = validate_insight(article, sources, lang="zh")
+    if not current_structure["passed"]:
+        raise ValueError("Passed Chinese audit: current source structure validation failed: " + "; ".join(current_structure["errors"]))
+    structural = current_structure
+    record = audit["resume_history"][-1]
+    record.update({"mode": "validated_passed_chinese", "article_sha256": validated["article_sha256"],
+                   "full_fingerprint_verified": validated["full_fingerprint_verified"],
+                   "source_metadata_changed": metadata_changed, "structure_revalidated": True})
+    last = audit["attempts"][-1]
+    if not validated["full_fingerprint_verified"] or metadata_changed:
+        record["mode"] = "saved_chinese_fresh_review"
+        normalization = {}
+        article = normalize_article(article, "zh", normalization=normalization)
+        feedback = _revision_feedback(audit)
+        last = {"revision": last["revision"] + 1, "draft_origin": "saved_chinese_fresh_review",
+                "article": article, "article_sha256": validated["article_sha256"], "structure": structural,
+                "normalization": normalization, "feedback_applied": feedback, "review_state": "pending",
+                "revision_response": [], "metadata_errors": [], "metadata_state": "not_applicable", "errors": []}
+        audit["attempts"].append(last)
+        write_audit(audit_path, audit)
+        try:
+            review = review_article(article, sources, api_key, "zh", None,
+                                    required_fixes=feedback["required_fixes"])
+            last["review"] = review
+            last["review_state"] = "completed"
+            last["errors"] = _saved_pass_review_errors(review, sources, validated["required_blockers"])
+            if last["errors"]:
+                raise RuntimeError("Saved Chinese fresh review did not pass: " + "; ".join(last["errors"]))
+        except Exception as exc:
+            audit["error"] = str(exc)
+            write_audit(audit_path, audit)
+            raise
+    audit["passed"] = True
+    write_audit(audit_path, audit)
+    # Construct quality from verified gates; ignore any caller-supplied quality.
+    article = dict(article)
+    article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
+                          "scores": last["review"]["scores"], "revisions": last["revision"],
+                          "review_type": "automated editorial review"}
+    mode = "reused" if record["mode"] == "validated_passed_chinese" else "fresh_review"
+    print(f"Insight zh: {mode} passed; revision={last['revision']}; scores={json.dumps(last['review']['scores'])}", flush=True)
+    return article
 
 
 def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, lang: str = "zh",
@@ -847,7 +1044,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             base_prompt = f"""将下方深度洞察完整本地化为{'English' if lang == 'en' else 'Modern Standard Arabic'}。
 保持所有分析、因果关系、例子、反论点、局限、数字、表格、公式及行动条件，不缩写为摘要。
 保留所有HTML标签结构、data-role属性、data-source-id属性、引用URL与[S1]格式ID。
-仅翻译人类可见的内容；保留所有数字原样（使用ASCII数字），不要改成拼写数词，不做币种换算。
+仅翻译人类可见的内容。原文以数字字符写的数值保持数字形式并使用ASCII（含0、1），保留百分号与公式，不改成zero、one等拼写数词；原文以中文文字写的数词保持文字形式，译为目标语言对应数词（如“四周”译为“four weeks”），不要改为数字4；数量、单位、范围、序数和币种均不得改变。
 段落可以自然改写，但不能合并/删除章节、表格、脚注或限定条件，不能增加新事实。
 输出完整JSON title,excerpt,body_html,tags。title以Eco-GEO:开头。
 原文：{json.dumps(original, ensure_ascii=False)}"""
@@ -887,7 +1084,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 raw = editorial_revision
             else:
                 raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
-                                   max_tokens=int(os.environ.get("INSIGHT_MAX_TOKENS", "24000")))
+                                   max_tokens=int(os.environ.get("INSIGHT_MAX_TOKENS", "24000") if lang == "zh" else os.environ.get("INSIGHT_TRANSLATION_MAX_TOKENS", "48000")))
             normalization = {}
             try:
                 article = normalize_article(raw, lang, normalization=normalization)
@@ -899,6 +1096,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             previous = article
             attempt = {"revision": revision, "draft_origin": draft_origin,
                        "article": article, "structure": structural,
+                       "article_sha256": _article_sha256(article),
                        "normalization": normalization,
                        "revision_response": raw.get("revision_response", []),
                        "metadata_errors": metadata_errors,

@@ -8,7 +8,8 @@ INSIGHT_CSS = """
 .content [data-role="assumptions"] h2{margin-top:0;font-size:25px}
 .content table{display:block;width:100%;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:28px 0 32px;font-size:15px;line-height:1.65;border:1px solid var(--line);border-radius:12px}
 .content caption{display:table-caption;text-align:start;color:var(--green);font-size:17px;font-weight:750;padding:16px;background:rgba(140,233,154,.06)}
-.content th,.content td{min-width:135px;text-align:start;padding:13px 16px;vertical-align:top;border-bottom:1px solid var(--line)}
+.content th,.content td{min-width:90px;text-align:start;padding:13px 16px;vertical-align:top;border-bottom:1px solid var(--line)}
+.content th:first-child,.content td:first-child,.content th:last-child,.content td:last-child{min-width:160px}
 .content th{color:var(--text);background:rgba(255,255,255,.07);font-weight:750}
 .content tr:last-child td{border-bottom:0}
 .content a[data-source-id]{font-size:.78em;color:var(--green);text-decoration:none;white-space:nowrap}
