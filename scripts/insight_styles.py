@@ -1,6 +1,7 @@
 """Shared reading styles for long-form analytical exhibits in all locales."""
 
 INSIGHT_CSS = """
+html[lang="en"] article>h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08}
 .content{overflow-wrap:anywhere}
 .content [data-role="executive-summary"]{border-inline-start:4px solid var(--green);padding:20px 24px;margin:28px 0 38px;background:rgba(140,233,154,.07);border-radius:0 14px 14px 0}
 .content [data-role="executive-summary"] h2{margin-top:0;font-size:24px}
