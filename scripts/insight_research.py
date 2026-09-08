@@ -48,6 +48,23 @@ TRUSTED_HOSTS = {
     "www.oecd.org": ("oecd.org", "OECD", "institutional_analysis"),
     "ers.usda.gov": ("usda.gov", "USDA Economic Research Service", "government_research"),
     "www.ers.usda.gov": ("usda.gov", "USDA Economic Research Service", "government_research"),
+    "www.samr.gov.cn": ("samr.gov.cn", "State Administration for Market Regulation", "regulatory_documentation"),
+    "www.gov.cn": ("gov.cn", "State Council of the People's Republic of China", "government_documentation"),
+    "www.stats.gov.cn": ("stats.gov.cn", "National Bureau of Statistics of China", "government_research"),
+    "www.mofcom.gov.cn": ("mofcom.gov.cn", "Ministry of Commerce of China", "government_documentation"),
+    "www.trade.gov": ("trade.gov", "International Trade Administration", "government_documentation"),
+    "www.fda.gov": ("fda.gov", "US Food and Drug Administration", "regulatory_documentation"),
+    "www.iais.org": ("iais.org", "International Association of Insurance Supervisors", "institutional_analysis"),
+    "www.mca.org.uk": ("mca.org.uk", "Management Consultancies Association", "industry_association_research"),
+    "www.wipo.int": ("wipo.int", "World Intellectual Property Organization", "institutional_research"),
+    "www.nist.gov": ("nist.gov", "National Institute of Standards and Technology", "government_research"),
+    "ai-challenges.nist.gov": ("nist.gov", "National Institute of Standards and Technology", "government_research"),
+    "single-market-economy.ec.europa.eu": ("europa.eu", "European Commission", "regulatory_documentation"),
+    "www.ilo.org": ("ilo.org", "International Labour Organization", "institutional_research"),
+    "www.unesco.org": ("unesco.org", "UNESCO", "institutional_research"),
+    "www.iea.org": ("iea.org", "International Energy Agency", "institutional_research"),
+    "www.unep.org": ("unep.org", "United Nations Environment Programme", "institutional_research"),
+    "www.who.int": ("who.int", "World Health Organization", "institutional_research"),
 }
 
 DEFAULT_SOURCES = [
@@ -127,7 +144,196 @@ DEFAULT_SOURCES = [
 
 INDUSTRY_ALIASES = {
     "agriculture_technology": ("农业科技", "农科", "农业技术", "智慧农业", "数字农业", "精准农业", "农业", "agriculture technology", "agricultural technology", "agriculture", "agricultural", "agritech", "agri-tech", "agtech", "digital farming", "precision farming"),
+    "livestream_commerce": ("直播电商", "直播带货", "直播营销", "live commerce", "livestream commerce", "live-streaming commerce", "live shopping", "livestream shopping", "live-streaming e-commerce"),
+    "local_services": ("本地生活", "本地服务", "local services", "local businesses", "local business", "local ranking", "service-area business", "service-area businesses"),
+    "medical_aesthetics": ("医美", "医疗美容", "medical aesthetics", "cosmetic procedures", "cosmetic surgery", "cosmetic surgeons", "dermal fillers", "aesthetic medicine", "aesthetic procedures", "plastic surgery"),
+    "insurance": ("保险", "insurance", "insurers", "insurance companies"),
+    "management_consulting": ("管理咨询", "管理顾问", "management consulting", "management consultancy", "management consultancies", "consulting services", "consultancy services", "consulting firms", "consultancies"),
+    "cosmetics_personal_care": ("美妆个护", "化妆品", "美容个护", "cosmetics", "cosmetic products", "personal care products", "beauty products"),
+    "b2b_export": ("b2b外贸", "b2b外贸出口", "b2b exports", "b2b export", "b2b ecommerce", "b2b e-commerce", "b2b trade", "business-to-business", "b2b"),
+    "physical_retail": ("线下门店", "实体门店", "实体零售", "实体店", "physical retail", "physical stores", "brick-and-mortar", "retail store", "retail stores", "in-store products"),
+    "intellectual_property": ("知识产权", "intellectual property", "patents", "trademarks", "ip offices"),
+    "ai_tools": ("ai工具", "人工智能工具", "ai tools", "artificial intelligence tools", "generative ai", "ai systems", "generative artificial intelligence", "ai agents", "agentic ai", "ai models"),
 }
+
+INDUSTRY_SEARCH_PROFILES = {
+    "agriculture_technology": {"zh": ["农业科技", "数字农业"], "en": ["agricultural technology", "precision agriculture"],
+        "domains": ["www.fao.org", "www.oecd.org", "ers.usda.gov", "www.ers.usda.gov"], "focus": "adoption costs farmer evidence trust"},
+    "livestream_commerce": {"zh": ["直播电商", "直播营销"], "en": ["livestream commerce", "live shopping"],
+        "domains": ["www.samr.gov.cn", "www.mofcom.gov.cn", "www.gov.cn", "www.bcg.com"], "focus": "consumer trust advertising claims disclosure research"},
+    "local_services": {"zh": ["本地生活", "本地服务"], "en": ["local business", "local services"],
+        "domains": ["support.google.com", "developers.google.com", "www.samr.gov.cn", "www.bcg.com"], "focus": "customer discovery reviews business information measurement"},
+    "medical_aesthetics": {"zh": ["医疗美容", "医美"], "en": ["medical aesthetics", "cosmetic procedures"],
+        "domains": ["www.fda.gov", "www.samr.gov.cn", "www.gov.cn", "www.bcg.com"], "focus": "patient information advertising claims evidence outcomes"},
+    "insurance": {"zh": ["保险"], "en": ["insurance", "insurers"],
+        "domains": ["www.iais.org", "www.oecd.org", "www.bcg.com"], "focus": "consumer distribution digitalisation evidence survey"},
+    "management_consulting": {"zh": ["管理咨询"], "en": ["management consulting", "consultancy services"],
+        "domains": ["www.mca.org.uk", "www.bcg.com", "www.oecd.org"], "focus": "client survey procurement value outcomes evidence"},
+    "cosmetics_personal_care": {"zh": ["化妆品", "美妆个护"], "en": ["cosmetics", "personal care products"],
+        "domains": ["www.fda.gov", "single-market-economy.ec.europa.eu", "www.samr.gov.cn", "www.bcg.com"], "focus": "product claims consumer trust evidence research"},
+    "b2b_export": {"zh": ["B2B外贸", "B2B出口"], "en": ["B2B exports", "B2B cross-border ecommerce"],
+        "domains": ["www.trade.gov", "www.mofcom.gov.cn", "www.oecd.org", "www.bcg.com"], "focus": "international buyer supplier digital strategy trust research"},
+    "physical_retail": {"zh": ["线下门店", "实体零售"], "en": ["physical retail", "brick-and-mortar stores"],
+        "domains": ["support.google.com", "www.bcg.com", "www.stats.gov.cn", "www.mofcom.gov.cn"], "focus": "customer discovery reviews store information survey"},
+    "intellectual_property": {"zh": ["知识产权"], "en": ["intellectual property", "patents trademarks"],
+        "domains": ["www.wipo.int", "www.gov.cn", "www.bcg.com"], "focus": "business evidence international markets statistics"},
+    "ai_tools": {"zh": ["AI工具", "生成式人工智能"], "en": ["AI tools", "generative artificial intelligence"],
+        "domains": ["www.nist.gov", "ai-challenges.nist.gov", "www.oecd.org", "www.bcg.com", "developers.google.com"], "focus": "evaluation measurement reliability adoption evidence"},
+}
+
+# Every actual industry label in assets/blog_articles.xlsx has its own canonical
+# identity, English discovery terms and scope. Domains below were verified as
+# official publishers with relevant sector research; a domain alone never proves
+# that a result belongs to a sector. Source bodies still need exact term matches.
+INDUSTRY_DOMAIN_GROUPS = {
+    "digital": ["www.nist.gov", "www.oecd.org", "www.bcg.com", "www.gov.cn"],
+    "commercial_services": ["www.oecd.org", "www.mca.org.uk", "www.bcg.com", "www.mofcom.gov.cn"],
+    "workforce": ["www.ilo.org", "www.oecd.org", "www.bcg.com", "www.gov.cn"],
+    "education": ["www.unesco.org", "www.ilo.org", "www.oecd.org", "www.gov.cn"],
+    "creative": ["www.unesco.org", "www.wipo.int", "www.oecd.org", "www.bcg.com"],
+    "consumer": ["www.samr.gov.cn", "www.mofcom.gov.cn", "www.stats.gov.cn", "www.bcg.com"],
+    "health": ["www.who.int", "www.fda.gov", "www.oecd.org", "www.gov.cn"],
+    "industrial": ["www.nist.gov", "www.oecd.org", "www.trade.gov", "www.bcg.com"],
+    "energy": ["www.iea.org", "www.unep.org", "www.oecd.org", "www.bcg.com"],
+    "built_environment": ["www.unep.org", "www.iea.org", "www.oecd.org", "www.stats.gov.cn"],
+    "trade": ["www.trade.gov", "www.mofcom.gov.cn", "www.oecd.org", "www.bcg.com"],
+    "professional": ["www.oecd.org", "www.gov.cn", "www.mca.org.uk", "www.bcg.com"],
+    "financial": ["www.oecd.org", "www.iais.org", "www.bcg.com", "www.gov.cn"],
+    "travel": ["www.oecd.org", "www.trade.gov", "www.mofcom.gov.cn", "www.bcg.com"],
+}
+
+ADDITIONAL_INDUSTRY_PROFILES = [
+    ("direct_to_consumer", "DTC品牌", ("direct-to-consumer brands", "DTC brands", "direct-to-consumer businesses"), "consumer", "customer acquisition retention direct sales evidence"),
+    ("software_as_a_service", "SaaS", ("software as a service", "SaaS", "software-as-a-service"), "digital", "enterprise buying subscription retention evaluation evidence"),
+    ("cloud_computing", "云计算", ("cloud computing", "cloud services", "cloud service providers"), "digital", "service procurement cost reliability adoption evidence"),
+    ("human_resources", "人力资源", ("human resources", "human resource management", "HR services"), "workforce", "workforce skills service procurement evidence"),
+    ("enterprise_services", "企业服务", ("enterprise services", "business support services", "B2B services"), "commercial_services", "business customer procurement service quality evidence"),
+    ("exhibition_services", "会展服务", ("exhibition services", "trade show services", "business event services"), "trade", "exhibitor buyer lead qualification expenditure evidence"),
+    ("low_code", "低代码", ("low-code development", "low-code platforms", "low-code application platforms"), "digital", "software evaluation adoption development cost evidence"),
+    ("supply_chain", "供应链", ("supply chains", "supply chain management", "supply chain services"), "trade", "supplier selection visibility resilience costs evidence"),
+    ("public_relations", "公关传播", ("public relations", "strategic communications", "corporate communications"), "creative", "reputation media credibility measurement evidence"),
+    ("elderly_care", "养老服务", ("elderly care services", "long-term care", "aged care services"), "health", "service quality needs care providers evidence"),
+    ("content_platforms", "内容平台", ("digital content platforms", "content publishing platforms", "creator platforms"), "creative", "creators distribution discovery monetisation evidence"),
+    ("manufacturing", "制造业", ("manufacturing", "manufacturing industry", "manufacturers"), "industrial", "supplier purchasing quality productivity evidence"),
+    ("healthcare", "医疗健康", ("healthcare", "health care services", "medical services"), "health", "patient information service quality trust evidence"),
+    ("brand_consulting", "品牌咨询", ("brand consulting", "brand consultancy", "brand strategy consulting"), "commercial_services", "client selection positioning brand architecture evidence"),
+    ("laboratory_equipment", "实验室设备", ("laboratory equipment", "laboratory instruments", "analytical instruments"), "industrial", "instrument procurement validation specifications evidence"),
+    ("pet_products_services", "宠物", ("pet products", "pet care", "pet food"), "consumer", "product claims consumer purchasing veterinary evidence"),
+    ("home_improvement", "家居家装", ("home improvement", "home furnishings", "home renovation"), "consumer", "customer selection installation service quality evidence"),
+    ("industrial_products", "工业品", ("industrial products", "industrial supplies", "MRO supplies"), "industrial", "technical procurement supplier specifications evidence"),
+    ("construction_engineering", "工程建筑", ("construction industry", "building construction", "construction engineering"), "built_environment", "procurement building performance project costs evidence"),
+    ("advertising_marketing", "广告营销", ("advertising industry", "marketing services", "advertising agencies"), "commercial_services", "advertiser agency selection attribution effectiveness evidence"),
+    ("film_entertainment", "影视文娱", ("film industry", "audiovisual industry", "entertainment industry"), "creative", "audience discovery distribution production evidence"),
+    ("real_estate", "房地产", ("real estate", "property market", "housing market"), "built_environment", "buyer search property information transaction evidence"),
+    ("recruitment_platforms", "招聘平台", ("online recruitment platforms", "job boards", "recruitment marketplaces"), "workforce", "job matching employer applicant trust evidence"),
+    ("education_training", "教育培训", ("education and training", "education providers", "training providers"), "education", "learner choice learning outcomes quality evidence"),
+    ("data_services", "数据服务", ("data services", "data-as-a-service", "data analytics services"), "digital", "data provider quality provenance licensing evidence"),
+    ("clean_energy", "新能源", ("clean energy", "renewable energy", "new energy technologies"), "energy", "technology investment adoption lifetime costs evidence"),
+    ("smart_hardware", "智能硬件", ("smart hardware", "connected devices", "smart devices"), "digital", "device evaluation interoperability reliability evidence"),
+    ("apparel_footwear_accessories", "服装鞋包", ("apparel and footwear", "fashion industry", "clothing and accessories"), "consumer", "consumer product discovery fit sourcing evidence"),
+    ("maternal_infant", "母婴", ("maternal and infant products", "baby care products", "mother and baby products"), "consumer", "product information infant care consumer trust evidence"),
+    ("automotive", "汽车", ("automotive industry", "car buyers", "automobile industry"), "industrial", "vehicle buying dealer information ownership costs evidence"),
+    ("legal_services", "法律服务", ("legal services", "law firms", "legal service providers"), "professional", "client choice service quality access evidence"),
+    ("consumer_electronics", "消费电子", ("consumer electronics", "electronic consumer products", "consumer electronic devices"), "consumer", "buyer comparison technical specifications ownership evidence"),
+    ("gaming", "游戏", ("video games", "gaming industry", "game developers"), "creative", "player discovery distribution engagement evidence"),
+    ("logistics", "物流", ("logistics", "logistics services", "freight services"), "trade", "shipper carrier selection delivery reliability costs evidence"),
+    ("environmental_technology", "环保科技", ("environmental technology", "environmental technologies", "pollution control technology"), "energy", "verified environmental performance adoption procurement evidence"),
+    ("study_abroad_services", "留学服务", ("study abroad services", "international student recruitment", "education agents"), "education", "student advice provider choice service quality evidence"),
+    ("paid_knowledge", "知识付费", ("paid knowledge products", "knowledge commerce", "paid educational content"), "creative", "content subscriptions learner willingness to pay evidence"),
+    ("community_platforms", "社群平台", ("online community platforms", "community software", "community management platforms"), "digital", "community engagement moderation platform adoption evidence"),
+    ("owned_customer_channels", "私域运营", ("private-domain marketing", "owned-channel marketing", "customer community operations"), "commercial_services", "customer retention owned channels measurement evidence"),
+    ("cybersecurity", "网络安全", ("cybersecurity", "cyber security", "information security services"), "digital", "buyer evaluation assurance security control evidence"),
+    ("vocational_education", "职业教育", ("vocational education", "vocational training", "technical and vocational education"), "education", "skills employment outcomes training quality evidence"),
+    ("tax_accounting", "财税服务", ("tax and accounting services", "bookkeeping services", "tax advisory"), "professional", "client compliance provider quality digitalisation evidence"),
+    ("cross_border_ecommerce", "跨境电商", ("cross-border ecommerce", "cross-border e-commerce", "cross border e-commerce"), "trade", "international online buyers trust market access evidence"),
+    ("software_outsourcing", "软件外包", ("software outsourcing", "outsourced software development", "software development outsourcing"), "digital", "vendor selection delivery quality development costs evidence"),
+    ("sports_outdoors", "运动户外", ("sporting goods", "sports and outdoor equipment", "outdoor recreation products"), "consumer", "consumer selection equipment performance product evidence"),
+    ("franchising", "连锁加盟", ("franchising", "franchise networks", "franchise businesses"), "trade", "franchisee selection disclosure support economics evidence"),
+    ("hospitality_tourism", "酒店旅游", ("hospitality and tourism", "hotel industry", "tourism businesses"), "travel", "traveller booking reviews accommodation demand evidence"),
+    ("fintech", "金融科技", ("fintech", "financial technology", "digital financial services"), "financial", "customer adoption financial service trust evidence"),
+    ("restaurant_chains", "餐饮连锁", ("restaurant chains", "chain restaurants", "chain foodservice"), "consumer", "diner choice menus locations franchise evidence"),
+]
+
+for _key, _zh, _en, _group, _focus in ADDITIONAL_INDUSTRY_PROFILES:
+    INDUSTRY_ALIASES[_key] = tuple(dict.fromkeys((_zh.lower(), *(value.lower() for value in _en))))
+    INDUSTRY_SEARCH_PROFILES[_key] = {"zh": [_zh], "en": list(_en),
+        "domains": INDUSTRY_DOMAIN_GROUPS[_group], "focus": _focus}
+
+# Discovery language must also be recognised in the body that discovery finds.
+for _key, _profile in INDUSTRY_SEARCH_PROFILES.items():
+    INDUSTRY_ALIASES[_key] = tuple(dict.fromkeys((*INDUSTRY_ALIASES[_key],
+        *(term.lower() for term in _profile["zh"] + _profile["en"]))))
+
+INDUSTRY_SCOPE_NOTES = {
+    "direct_to_consumer": "DTC is direct brand-to-consumer selling; general ecommerce or retail statistics do not establish DTC outcomes.",
+    "enterprise_services": "The source must concern suppliers or buyers of business services, not merely mention a business using any service.",
+    "content_platforms": "Require a content-hosting/distribution or creator-platform context; general content marketing is a different activity.",
+    "brand_consulting": "Brand positioning, architecture and strategy consultancy is distinct from ad buying, design and management consulting.",
+    "public_relations": "Organisational reputation, media relations and corporate communications are distinct from all advertising activity.",
+    "recruitment_platforms": "Online recruitment marketplaces differ from HR software, staffing agencies and general gig-economy platforms.",
+    "paid_knowledge": "Paid knowledge is a business-model category without one global statistical definition. Do not equate it to all edtech or news subscriptions.",
+    "community_platforms": "Community-platform software differs from general social media and a company's own community-operations activity.",
+    "owned_customer_channels": "Owned-channel/private-domain marketing is a scoped analogy, not a standard global industry. CRM, membership or social-media totals are not private-domain market size.",
+    "study_abroad_services": "Study-abroad recruitment/advice services differ from total international-student numbers or university tuition revenue.",
+    "software_outsourcing": "Outsourced software development differs from all IT outsourcing, including infrastructure and operations.",
+    "sports_outdoors": "Sporting/outdoor products differ from sports participation, fitness services, events and outdoor tourism.",
+    "franchising": "Franchise relationships differ from all chains, including company-owned stores.",
+    "maternal_infant": "Maternal/infant consumer products differ from maternity medical services, education and general household spending.",
+    "industrial_products": "MRO supplies are a subset of industrial products, not all manufactured output.",
+    "smart_hardware": "Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+    "data_services": "Data provision/processing/analytics services differ from all cloud storage, data centres or AI tools.",
+    "low_code": "Low-code and no-code are adjacent categories; if a study combines them, retain that scope explicitly.",
+    "b2b_export": "Business-to-business international trade differs from all cross-border consumer ecommerce; use shared planning guidance only within its stated B2B/B2C scope.",
+    "cross_border_ecommerce": "Cross-border online transactions differ from all domestic ecommerce and total merchandise exports; keep B2B/B2C coverage explicit.",
+}
+
+DEFAULT_SOURCES.extend([
+    {"url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
+     "title": "直播电商监督管理办法", "tags": ["直播", "信任", "内容", "治理"], "industries": ["livestream_commerce"], "published": "2026-01-07",
+     "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction."},
+    {"url": "https://support.google.com/business/answer/7091?hl=en",
+     "title": "Tips to improve your local ranking on Google", "tags": ["搜索", "信息", "品牌", "评价"], "industries": ["local_services", "physical_retail"],
+     "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift."},
+    {"url": "https://www.trade.gov/ecommerce-digital-strategy",
+     "title": "eCommerce Digital Strategy", "tags": ["跨境", "品牌", "预算", "指标"], "industries": ["cross_border_ecommerce"],
+     "scope_notes": "US International Trade Administration guidance for cross-border ecommerce. It offers a planning framework, not a measured B2B-only purchasing cycle or a forecast of Chinese exporters' GEO returns."},
+    {"url": "https://www.trade.gov/european-b2b-ecommerce-markets-forecast",
+     "title": "European B2B eCommerce Markets Forecast", "tags": ["B2B", "外贸", "跨境", "采购", "证据"], "industries": ["b2b_export"],
+     "scope_notes": "ITA's European B2B ecommerce outlook, including cross-border transactions and digital purchasing. Preserve its European geography, base years and forecast horizon; distinguish cited projections from observed outcomes. It does not measure Chinese exporters' buying cycles or GEO returns."},
+    {"url": "https://www.fda.gov/medical-devices/aesthetic-cosmetic-devices/dermal-fillers-soft-tissue-fillers",
+     "title": "Dermal Fillers (Soft Tissue Fillers)", "tags": ["证据", "信息", "医美", "信任"], "industries": ["medical_aesthetics"],
+     "scope_notes": "US FDA information about dermal-filler uses, evidence and patient/professional information. Does not measure Chinese medical-aesthetics demand, lead conversion or clinical outcomes for all procedures; US product approval is not a clinic endorsement."},
+    {"url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
+     "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告", "tags": ["医美", "信息", "品牌", "广告", "证据"], "industries": ["medical_aesthetics"], "published": "2021-11-02",
+     "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data."},
+    {"url": "https://www.iais.org/2026/07/iais-mid-year-global-insurance-market-report-2026-reflects-insurance-sector-stability-amid-global-uncertainty/",
+     "title": "IAIS mid-year Global Insurance Market Report 2026 reflects insurance sector stability amid global uncertainty",
+     "tags": ["保险", "指标", "证据", "趋势"], "industries": ["insurance"], "published": "2026-07-09",
+     "scope_notes": "IAIS interim 2026 monitoring release describing global insurance-sector conditions primarily at end-2025. This is the release body, not the full report, and does not measure any individual Chinese insurer, product, distribution channel or GEO ROI."},
+    {"url": "https://www.mca.org.uk/press-releases/uk-businesses-grapple-with-cost-pressures-cyber-risks-and-stalled-economic-growth-according-to-new-mca-research",
+     "title": "UK businesses grapple with cost pressures, cyber risks and stalled economic growth according to new MCA research",
+     "tags": ["咨询", "客户", "证据", "成果", "预算"], "industries": ["management_consulting"], "published": "2026-05-06",
+     "scope_notes": "MCA/Savanta Client Survey 2026 of more than 350 senior users of consulting services in the UK, including private/public sectors. Self-reported client priorities and assessments are not representative of Chinese buyers and do not measure GEO attribution."},
+    {"url": "https://www.fda.gov/cosmetics/registration-listing-cosmetic-product-facilities-and-products",
+     "title": "Registration & Listing of Cosmetic Product Facilities and Products",
+     "tags": ["化妆品", "品牌", "证据", "信息"], "industries": ["cosmetics_personal_care"],
+     "scope_notes": "US MoCRA facility-registration and product-listing information. Registration/listing does not mean FDA approval or a promotional certification; counts are not sales or unique brands. Do not treat US requirements as Chinese rules."},
+    {"url": "https://single-market-economy.ec.europa.eu/sectors/cosmetics/legislation_en",
+     "title": "Cosmetics legislation", "tags": ["化妆品", "信息", "证据", "品牌"], "industries": ["cosmetics_personal_care"],
+     "scope_notes": "European Commission description of the EU finished-cosmetics framework, responsible persons, assessment, notification and product claims. Applicable to the EU context; not Chinese rules, market-demand estimates, or proof of a brand's sales and GEO returns."},
+    {"url": "https://www.wipo.int/web-publications/ip-facts-and-figures-2025/en/global-intellectual-property-applications-and-active-ip-rights.html",
+     "title": "IP Facts and Figures 2025 — Global intellectual property applications and active IP rights",
+     "tags": ["知识产权", "国际", "市场", "指标"], "industries": ["intellectual_property"],
+     "scope_notes": "WIPO compilation of 2024 IP filings and active rights. Patent applications, trademark class counts and rights in force are distinct units. None measures IP-service revenue, client leads, agency market share or GEO effectiveness."},
+    {"url": "https://ai-challenges.nist.gov/genai",
+     "title": "Evaluating Generative AI Technologies",
+     "tags": ["AI", "评估", "证据", "可靠性"], "industries": ["ai_tools"],
+     "scope_notes": "NIST evaluation-program design and bounded findings for generators, discriminators and prompting systems. Supports testing concepts and their limits; it is not a commercial tool ranking, universal benchmark, product endorsement or proof of customer ROI."},
+    {"url": "https://www.nist.gov/programs-projects/building-evaluation-probes-agentic-ai",
+     "title": "Building Evaluation Probes into Agentic AI",
+     "tags": ["AI", "评估", "证据", "可靠性"], "industries": ["ai_tools"], "published": "2026-05-01",
+     "scope_notes": "An ongoing NIST research project on evaluating agent responses against trusted documents. It is not a universal industry standard, guarantee against hallucinations, or demonstration of every commercial AI tool's performance."},
+])
 INDUSTRY_FIELDS = {"行业", "行业类别", "所属行业", "industry", "sector", "industry category"}
 GENERIC_CATEGORIES = {"", "brand geo", "geo", "seo", "品牌化geo", "内容", "阶段路线图", "营销", "marketing"}
 
@@ -235,7 +441,7 @@ class _BodyParser(HTMLParser):
             if key and value:
                 self.meta[key.lower()] = value.strip()
         marker = f"{attributes.get('class') or ''} {attributes.get('id') or ''}"
-        skip = (tag in self.SKIP or bool(self.UI.search(marker)) or "hidden" in attributes
+        skip = (tag in self.SKIP or (tag not in {"html", "body"} and bool(self.UI.search(marker))) or "hidden" in attributes
                 or attributes.get("aria-hidden", "").lower() == "true"
                 or bool(re.search(r"display\s*:\s*none|visibility\s*:\s*hidden", attributes.get("style") or "", re.I)))
         inherited_skip = skip or any(frame[1] for frame in self.stack)
@@ -344,8 +550,10 @@ def _matches(term: str, text: str) -> bool:
 
 
 def _industry_name(value: str) -> str:
-    value = re.sub(r"\s+", " ", value.strip().lower())
-    return next((key for key, aliases in INDUSTRY_ALIASES.items() if value == key or value in aliases), value)
+    original = re.sub(r"\s+", " ", value.strip())
+    normalised = original.lower()
+    return next((key for key, aliases in INDUSTRY_ALIASES.items()
+                 if normalised == key or normalised in aliases), original)
 
 
 def _industry_values(value: Any) -> set[str]:
@@ -364,16 +572,62 @@ def topic_industries(topic: Any) -> set[str]:
     context = getattr(topic, "context", {})
     explicit = [str(value) for key, value in context.items() if key.strip().lower() in INDUSTRY_FIELDS and value]
     if explicit:
-        return set().union(*(_industry_values(value) for value in explicit)) - GENERIC_CATEGORIES
+        return {value for value in set().union(*(_industry_values(value) for value in explicit))
+                if value.lower() not in GENERIC_CATEGORIES}
     category = str(getattr(topic, "category", "")).strip().lower()
     name = _industry_name(category)
     return {name} if name in INDUSTRY_ALIASES else set()
 
 
+def industry_search_plan(topic: Any) -> dict[str, Any]:
+    """Build independent industry research queries for the daily search caller.
+
+    Search the industry itself, without requiring a GEO/AI-search intersection.
+    Exact publisher domains are discovery filters only: every result must still
+    pass URL validation, body extraction and industry matching before use.
+    Unknown industries retain their exact original name and use general official
+    research publishers; they never borrow evidence from a different industry.
+    """
+    industries = sorted(topic_industries(topic))
+    terms: dict[str, list[str]] = {"zh": [], "en": []}
+    domains: list[str] = []
+    queries: list[str] = []
+    for industry in industries:
+        profile = INDUSTRY_SEARCH_PROFILES.get(industry)
+        if profile is None:
+            chinese = bool(re.search(r"[\u4e00-\u9fff]", industry))
+            profile = {"zh": [industry] if chinese else [], "en": [] if chinese else [industry],
+                       "domains": ["www.gov.cn", "www.stats.gov.cn", "www.samr.gov.cn", "www.mofcom.gov.cn", "www.oecd.org", "www.bcg.com"],
+                       "focus": "industry customers adoption evidence official research"}
+        for lang in terms:
+            for value in profile[lang]:
+                if value not in terms[lang]:
+                    terms[lang].append(value)
+        for domain in profile["domains"]:
+            if domain not in TRUSTED_HOSTS:
+                raise ResearchError(f"Industry search domain is not allowlisted: {domain}")
+            if domain not in domains:
+                domains.append(domain)
+        english = profile["en"] or profile["zh"]
+        chinese = profile["zh"] or profile["en"]
+        english_terms = " OR ".join(f'"{value}"' for value in english[:2])
+        chinese_terms = " OR ".join(f'"{value}"' for value in chinese[:2])
+        queries.extend([
+            f"({english_terms}) {profile['focus']} official research",
+            f"({chinese_terms}) 行业 客户需求 证据 调查 官方研究",
+        ])
+    return {"industries": industries, "terms": terms, "domains": domains,
+            "queries": queries, "source_role": "industry_context"}
+
+
 def _industry_mentions(text: str, industries: set[str]) -> set[str]:
     text = text.lower()
-    return {industry for industry in industries
-            if any(_matches(alias, text) for alias in INDUSTRY_ALIASES.get(industry, (industry,)))}
+    matches = {industry for industry in industries
+               if any(_matches(alias, text) for alias in INDUSTRY_ALIASES.get(industry, (industry,)))}
+    if "b2b_export" in matches and not any(_matches(term, text) for term in
+            ("export", "exports", "exporting", "overseas", "cross-border", "cross border", "international trade", "外贸", "跨境", "出口")):
+        matches.remove("b2b_export")
+    return matches
 
 
 def _excerpt(body: str, candidate: Mapping[str, Any], max_chars: int) -> tuple[str, int]:
@@ -456,6 +710,11 @@ def _load_candidates(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> lis
             title = str(item.get("title", ""))
             score = _lead_relevance(title, topic_text)
             matched = _industry_mentions(title, industries)
+            if item.get("discovery_role") == "industry_context":
+                # The query role can justify fetching a generically titled page;
+                # it does not constitute evidence. The actual read excerpt below
+                # must still contain the selected industry's terms.
+                matched |= industries & _industry_values(item.get("industries", []))
             if not score and not matched:
                 continue
             candidates.append({"url": url, "title": title, "_relevance": (150 if matched else 50) + score,
@@ -568,7 +827,8 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                     "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness."
                     if matched_industries else
                     "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion."
-                )),
+                )) + " ".join(" Sector boundary: " + INDUSTRY_SCOPE_NOTES[industry]
+                              for industry in sorted(matched_industries) if industry in INDUSTRY_SCOPE_NOTES),
                 "retrieval_method": method,
                 "excerpt_start": excerpt_start,
                 "excerpt_end": excerpt_start + len(excerpt),

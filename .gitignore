@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.artifacts/
+.wrangler/
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+api_key/
+contact-service/wrangler.jsonc
+contact-service/wrangler.local.jsonc

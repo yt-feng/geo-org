@@ -6,10 +6,12 @@ import sys
 import tempfile
 import unittest
 import urllib.request
+import xml.etree.ElementTree as ET
 from email.message import Message
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
+from zipfile import ZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import insight_research as research
@@ -81,7 +83,7 @@ class ResearchTests(unittest.TestCase):
 
     def test_explicit_excel_industry_overrides_incidental_mentions_and_category(self):
         topic = SimpleNamespace(title="农业科技用户如何选择云服务", category="农业科技", keywords="GEO", context={"行业": "云计算"})
-        self.assertEqual(research.topic_industries(topic), {"云计算"})
+        self.assertEqual(research.topic_industries(topic), {"cloud_computing"})
         urls = [item["url"] for item in research._load_candidates(topic, [])]
         self.assertFalse(any("fao.org" in url or "oecd.org" in url or "usda.gov" in url for url in urls))
         topic.category, topic.context = "非农业科技", {}
@@ -142,6 +144,122 @@ class ResearchTests(unittest.TestCase):
         self.assertEqual(lead["_matched_industries"], ["agriculture_technology"])
         self.assertEqual(candidates[1]["url"], url)
 
+    def test_next_ten_industries_have_bilingual_independent_search_and_specific_sources(self):
+        industries = ["直播电商", "本地生活", "医美", "保险", "管理咨询", "美妆个护", "B2B外贸", "线下门店", "知识产权", "AI工具"]
+        for industry in industries:
+            with self.subTest(industry=industry):
+                self.topic.context = {"行业": industry}
+                self.topic.category = "阶段路线图"
+                plan = research.industry_search_plan(self.topic)
+                self.assertEqual(len(plan["industries"]), 1)
+                self.assertEqual(len(plan["queries"]), 2)
+                self.assertTrue(plan["terms"]["zh"])
+                self.assertTrue(plan["terms"]["en"])
+                self.assertTrue(all(domain in research.TRUSTED_HOSTS for domain in plan["domains"]))
+                self.assertNotIn("阶段路线图", " ".join(plan["queries"]))
+                self.assertNotIn("GEO", " ".join(plan["queries"]))
+                candidates = research._load_candidates(self.topic, [])
+                self.assertTrue(any(candidate.get("_matched_industries") == plan["industries"] for candidate in candidates))
+
+    def test_all_sixty_actual_excel_industries_have_distinct_bilingual_official_search(self):
+        ns = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+        workbook = Path(__file__).resolve().parents[1] / "assets" / "blog_articles.xlsx"
+        with ZipFile(workbook) as archive:
+            shared = ["".join(item.itertext()) for item in ET.fromstring(archive.read("xl/sharedStrings.xml"))] if "xl/sharedStrings.xml" in archive.namelist() else []
+            rows = ET.fromstring(archive.read("xl/worksheets/sheet1.xml")).findall(".//m:row", ns)
+
+            def values(row):
+                result = {}
+                for cell in row:
+                    reference = cell.attrib.get("r", "")
+                    column = "".join(char for char in reference if char.isalpha())
+                    raw = cell.find("m:v", ns)
+                    result[column] = (shared[int(raw.text)] if cell.attrib.get("t") == "s" else raw.text) if raw is not None else "".join(cell.itertext())
+                return result
+
+            industry_column = next(column for column, name in values(rows[0]).items() if name == "行业")
+            industries = {values(row).get(industry_column, "") for row in rows[1:]} - {""}
+        self.assertEqual(len(industries), 60)
+        canonical = set()
+        for industry in industries:
+            with self.subTest(industry=industry):
+                self.topic.context = {"行业": industry}
+                self.topic.category = "阶段路线图"
+                plan = research.industry_search_plan(self.topic)
+                key, = plan["industries"]
+                self.assertNotIn(key, canonical)
+                canonical.add(key)
+                self.assertIn(key, research.INDUSTRY_SEARCH_PROFILES)
+                self.assertTrue(plan["terms"]["en"])
+                self.assertTrue(all(any(char.isascii() and char.isalpha() for char in term) for term in plan["terms"]["en"]))
+                self.assertTrue(all(research._industry_name(alias) == key for alias in research.INDUSTRY_ALIASES[key]))
+                self.assertTrue(all(research._industry_name(term) == key for term in plan["terms"]["zh"] + plan["terms"]["en"]))
+                self.assertIn(plan["terms"]["en"][0], plan["queries"][0])
+                self.assertNotIn("GEO", " ".join(plan["queries"]))
+                self.assertNotIn("阶段路线图", " ".join(plan["queries"]))
+                self.assertTrue(all(domain in research.TRUSTED_HOSTS for domain in plan["domains"]))
+                self.assertTrue(any(domain not in {"www.bcg.com", "arxiv.org"} for domain in plan["domains"]))
+                body = f"This source studies {plan['terms']['en'][0]} in its stated market. " * 40
+                self.assertIn(key, research._industry_mentions(body, {key}))
+        self.assertEqual(len(canonical), 60)
+
+    def test_adjacent_sectors_do_not_share_industry_identity_or_generic_matches(self):
+        pairs = [("B2B外贸", "跨境电商"), ("招聘平台", "人力资源"), ("品牌咨询", "管理咨询"),
+                 ("知识付费", "教育培训"), ("社群平台", "私域运营"), ("工业品", "制造业")]
+        for first, second in pairs:
+            with self.subTest(first=first, second=second):
+                self.assertNotEqual(research._industry_name(first), research._industry_name(second))
+        key = research._industry_name("B2B外贸")
+        self.assertEqual(research._industry_mentions("Domestic B2B purchasing research.", {key}), set())
+        self.assertEqual(research._industry_mentions("Cross-border ecommerce for retail consumers.", {key}), set())
+        self.assertEqual(research._industry_mentions("B2B exports and overseas buyers.", {key}), {key})
+        self.topic.context = {"行业": "B2B外贸"}
+        plan = research.industry_search_plan(self.topic)
+        self.assertTrue(all("B2B" in query for query in plan["queries"]))
+        urls = {item["url"] for item in research._load_candidates(self.topic, [])}
+        self.assertIn("https://www.trade.gov/european-b2b-ecommerce-markets-forecast", urls)
+        self.assertNotIn("https://www.trade.gov/ecommerce-digital-strategy", urls)
+        for industry in ("企业服务", "内容平台", "品牌咨询", "社群平台", "数据服务"):
+            key = research._industry_name(industry)
+            self.assertEqual(research._industry_mentions("Brands use platforms, services and data.", {key}), set())
+
+    def test_no_industry_has_no_invented_industry_plan(self):
+        plan = research.industry_search_plan(self.topic)
+        self.assertEqual(plan["industries"], [])
+        self.assertEqual(plan["queries"], [])
+        self.assertEqual(plan["domains"], [])
+
+    def test_unknown_industry_keeps_exact_name_without_borrowing_known_sector(self):
+        self.topic.context = {"行业": "工业胶粘剂"}
+        plan = research.industry_search_plan(self.topic)
+        self.assertEqual(plan["industries"], ["工业胶粘剂"])
+        self.assertTrue(all("工业胶粘剂" in query for query in plan["queries"]))
+        self.assertNotIn("agriculture", " ".join(plan["queries"]))
+        self.assertFalse(any(item.get("_matched_industries") for item in research._load_candidates(self.topic, [])))
+        self.topic.context = {"industry": "Industrial Adhesives"}
+        plan = research.industry_search_plan(self.topic)
+        self.assertEqual(plan["industries"], ["Industrial Adhesives"])
+        self.assertTrue(all('"Industrial Adhesives"' in query for query in plan["queries"]))
+        self.assertEqual(research._industry_mentions("Industrial adhesives supplier evidence", {"Industrial Adhesives"}), {"Industrial Adhesives"})
+        self.assertEqual(research._industry_mentions("Industrial products supplier evidence", {"Industrial Adhesives"}), set())
+
+    def test_cosmetic_products_are_not_substituted_for_medical_aesthetic_procedures(self):
+        self.topic.context = {"行业": "医美"}
+        candidates = research._load_candidates(self.topic, [])
+        self.assertTrue(any("dermal-fillers" in item["url"] for item in candidates))
+        self.assertFalse(any("/cosmetics/" in item["url"] for item in candidates))
+
+    def test_query_role_allows_retrieval_but_cannot_turn_unrelated_body_into_evidence(self):
+        self.topic.context = {"行业": "保险"}
+        lead = {"url": "https://www.iais.org/news/new-analysis", "title": "New analysis",
+                "discovery_role": "industry_context", "industries": ["insurance"]}
+        with mock.patch.object(research, "DEFAULT_SOURCES", []):
+            candidates = research._load_candidates(self.topic, [lead])
+            self.assertEqual(candidates[0]["_matched_industries"], ["insurance"])
+            with mock.patch.object(research, "_fetch_source", return_value=("Unrelated agriculture data. " * 100, lead["url"], {}, "https_fetch")):
+                with self.assertRaisesRegex(research.ResearchError, "does not contain the declared industry"):
+                    research.build_research_pack(self.topic, [lead])
+
     def test_selected_report_passage_records_absolute_excerpt_offsets(self):
         sources = self.sources()
         prefix = "Introductory context. " * 100
@@ -166,6 +284,11 @@ class ResearchTests(unittest.TestCase):
     def test_fao_news_body_excludes_page_chrome(self):
         body = "Agricultural automation evidence and local conditions. " * 40
         text, _ = research.extract_body(f'<div>Menu irrelevant text</div><div class="news-detail__body">{body}</div><div>Other footer content</div>')
+        self.assertEqual(text, body.strip())
+
+    def test_body_theme_footer_class_does_not_hide_the_entire_article(self):
+        body = "Insurance research source body with a clearly defined population. " * 30
+        text, _ = research.extract_body(f'<body class="theme-default-footer-width"><article>{body}</article><footer>Remove this menu</footer></body>')
         self.assertEqual(text, body.strip())
 
     def test_minimum_cannot_be_silently_lowered(self):

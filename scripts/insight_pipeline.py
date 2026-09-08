@@ -4,7 +4,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import queue
 import re
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -54,37 +56,255 @@ DECISION_ANALYSIS_REQUIREMENTS = """把分析写成读者能够使用的条件�
 """
 
 
+class _CompletionError(ValueError):
+    """A fixed, safe diagnostic; never constructed from provider response text."""
+
+    def __init__(self, message: str, *, retryable: bool = True):
+        super().__init__(message)
+        self.retryable = retryable
+
+
+def _safe_usage(value: object) -> dict:
+    if not isinstance(value, dict):
+        return {}
+    allowed = ("prompt_tokens", "completion_tokens", "total_tokens", "prompt_cache_hit_tokens", "prompt_cache_miss_tokens")
+    usage = {key: value[key] for key in allowed if type(value.get(key)) is int and value[key] >= 0}
+    for key, fields in (("completion_tokens_details", ("reasoning_tokens",)), ("prompt_tokens_details", ("cached_tokens",))):
+        detail = value.get(key)
+        if isinstance(detail, dict):
+            safe = {name: detail[name] for name in fields if type(detail.get(name)) is int and detail[name] >= 0}
+            if safe:
+                usage[key] = safe
+    return usage
+
+
+def _require_stopped(reason: object) -> None:
+    if reason == "length":
+        raise _CompletionError(
+            "incomplete output (length); increase this stage's max_tokens or shorten the requested output; identical-budget retry disabled",
+            retryable=False,
+        )
+    if reason != "stop":
+        label = reason if reason in {"length", "content_filter", "tool_calls", "insufficient_system_resource"} else "missing_or_unknown_finish_reason"
+        raise _CompletionError(f"incomplete output ({label})")
+
+
+def _read_completion(response: object, progress: dict, cancelled: threading.Event) -> tuple[str, dict]:
+    """Consume official SSE (including older usage-only chunks) or a JSON reply.
+
+    Only delta.content is accumulated. Reasoning deltas are discarded immediately
+    after parsing; neither chunks nor provider error bodies are retained in audits.
+    """
+    content_type = response.headers.get("Content-Type", "") if hasattr(response, "headers") else ""
+    streaming = isinstance(content_type, str) and "text/event-stream" in content_type.lower()
+    limit = 8 * 1024 * 1024
+    if not streaming:
+        raw = response.read(limit + 1)
+        if not isinstance(raw, (str, bytes)) or len(raw) > limit:
+            raise _CompletionError("invalid or oversized JSON response")
+        try:
+            data = json.loads(raw)
+        except (ValueError, UnicodeError):
+            raise _CompletionError("malformed JSON response") from None
+        if not isinstance(data, dict) or "error" in data:
+            raise _CompletionError("provider returned an error response")
+        choices = data.get("choices")
+        if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
+            raise _CompletionError("invalid completion choices")
+        _require_stopped(choices[0].get("finish_reason"))
+        message = choices[0].get("message")
+        content = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(content, str):
+            raise _CompletionError("missing completion content")
+        progress["content_chars"] = len(content)
+        return content, _safe_usage(data.get("usage"))
+
+    parts = []
+    usage = {}
+    finish_reason = None
+    seen_done = False
+    received = 0
+    while not cancelled.is_set():
+        raw = response.readline(limit + 1)
+        if not raw:
+            break
+        if not isinstance(raw, bytes):
+            raise _CompletionError("invalid SSE frame")
+        received += len(raw)
+        # SSE repeats IDs and metadata for each token; count its wire overhead
+        # separately from the bounded JSON response / individual frame size.
+        if received > 64 * 1024 * 1024:
+            raise _CompletionError("stream exceeded response byte limit")
+        try:
+            line = raw.decode("utf-8").strip()
+        except UnicodeError:
+            raise _CompletionError("invalid SSE encoding") from None
+        if not line or line.startswith(":") or line.startswith(("event:", "id:", "retry:")):
+            continue
+        if not line.startswith("data:"):
+            raise _CompletionError("invalid SSE frame")
+        payload = line[5:].strip()
+        if payload == "[DONE]":
+            seen_done = True
+            break
+        try:
+            chunk = json.loads(payload)
+        except ValueError:
+            raise _CompletionError("malformed SSE JSON chunk") from None
+        if not isinstance(chunk, dict) or "error" in chunk:
+            raise _CompletionError("provider returned an error chunk")
+        usage.update(_safe_usage(chunk.get("usage")))
+        choices = chunk.get("choices")
+        if not isinstance(choices, list) or len(choices) > 1:
+            raise _CompletionError("invalid SSE choices")
+        if not choices:
+            if not isinstance(chunk.get("usage"), dict):
+                raise _CompletionError("empty SSE choices without usage")
+            continue
+        choice = choices[0]
+        if not isinstance(choice, dict) or choice.get("index", 0) != 0:
+            raise _CompletionError("unexpected SSE choice index")
+        delta = choice.get("delta")
+        if not isinstance(delta, dict):
+            raise _CompletionError("invalid SSE delta")
+        content = delta.get("content")
+        if content is not None and not isinstance(content, str):
+            raise _CompletionError("invalid SSE content")
+        if content:
+            if finish_reason is not None:
+                raise _CompletionError("content received after completion finished")
+            parts.append(content)
+            progress["content_chars"] += len(content)
+        # Do not collect, print, enqueue or return delta.reasoning_content.
+        if choice.get("finish_reason") is not None:
+            _require_stopped(choice["finish_reason"])
+            if finish_reason is not None:
+                raise _CompletionError("duplicate SSE finish marker")
+            finish_reason = choice["finish_reason"]
+    if cancelled.is_set():
+        raise _CompletionError("request exceeded overall deadline")
+    if not seen_done:
+        raise _CompletionError("incomplete stream (missing [DONE])")
+    _require_stopped(finish_reason)
+    return "".join(parts), usage
+
+
+def _provider_failure(exc: Exception) -> tuple[str, bool]:
+    """Return safe reason and whether retrying is appropriate, without raw text."""
+    if isinstance(exc, urllib.error.HTTPError):
+        code = exc.code
+        # HTTPError is also a response handle. Close without reading its body so
+        # resource warnings cannot later print the provider's raw error message.
+        try:
+            exc.close()
+        except Exception:
+            pass
+        return f"provider HTTP {code}", code not in {400, 401, 403, 404, 422}
+    if isinstance(exc, _CompletionError):
+        return str(exc), exc.retryable
+    if isinstance(exc, TimeoutError) or isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, TimeoutError):
+        return "provider idle read timeout", True
+    if isinstance(exc, (OSError, urllib.error.URLError)):
+        return "provider transport failure", True
+    return "invalid provider response", True
+
+
+def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeout: int, total_timeout: int) -> tuple[str, dict]:
+    """Monitor one owned HTTP request without a silent 300-second read stall.
+
+    urllib retains its normal idle-read timeout. The caller also has an absolute
+    deadline, including connection time, and a 60-second heartbeat independent of
+    arriving chunks. Cancellation closes only this response; no transport or local
+    network settings are changed. Cleanup cannot hold the caller past its deadline.
+    """
+    completed = queue.Queue(maxsize=1)
+    cancelled = threading.Event()
+    progress = {"content_chars": 0}
+    active = {}
+    started = time.monotonic()
+
+    def receive() -> None:
+        try:
+            with urllib.request.urlopen(request, timeout=idle_timeout) as response:
+                active["response"] = response
+                if cancelled.is_set():
+                    return
+                result = _read_completion(response, progress, cancelled)
+            completed.put((True, result))
+        except Exception as exc:
+            completed.put((False, _provider_failure(exc)))
+
+    threading.Thread(target=receive, name="insight-http-reader", daemon=True).start()
+    next_report = started + 60
+    try:
+        while True:
+            now = time.monotonic()
+            if now - started >= total_timeout:
+                raise _CompletionError("request exceeded overall deadline")
+            try:
+                success, value = completed.get(timeout=max(0.01, min(started + total_timeout - now, next_report - now)))
+                if time.monotonic() - started >= total_timeout:
+                    raise _CompletionError("request exceeded overall deadline")
+                if success:
+                    return value
+                reason, retryable = value
+                if not retryable:
+                    raise RuntimeError(reason)
+                raise _CompletionError(reason)
+            except queue.Empty:
+                now = time.monotonic()
+                if now >= next_report:
+                    print(f"Insight {stage}: progress content_chars={progress['content_chars']} elapsed={int(now - started)}s", flush=True)
+                    next_report = now + 60
+    finally:
+        cancelled.set()
+        response = active.get("response")
+        if response is not None:
+            # HTTPResponse.close may wait for its reader lock. Keep cancellation
+            # off the caller's deadline path; the reader also has idle_timeout.
+            def close_response() -> None:
+                try:
+                    response.close()
+                except Exception:
+                    pass
+            threading.Thread(target=close_response, name="insight-http-close", daemon=True).start()
+
+
 def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 24000) -> dict:
-    """Reject truncated/malformed responses; never turn a failed response into an article."""
+    """Read complete streamed JSON, with bounded retries and safe progress logs."""
     payload = {
         "model": os.environ.get("INSIGHT_REVIEW_MODEL", gb.MODEL) if "review" in stage else gb.MODEL,
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
         "thinking": {"type": os.environ.get("INSIGHT_THINKING", "enabled")},
         "response_format": {"type": "json_object"},
+        "stream": True,
+        "stream_options": {"include_usage": True},
     }
     request = urllib.request.Request(gb.DEEPSEEK_URL, data=json.dumps(payload, ensure_ascii=False).encode(),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "Accept": "text/event-stream"}, method="POST")
+    idle_timeout = int(os.environ.get("INSIGHT_API_TIMEOUT", "300"))
+    total_timeout = int(os.environ.get("INSIGHT_API_DEADLINE", "1200"))
+    if idle_timeout <= 0 or total_timeout <= 0:
+        raise ValueError("Insight API timeouts must be positive seconds")
     for attempt in range(1, gb.RETRIES + 1):
         print(f"Insight {stage}: request {attempt}/{gb.RETRIES}", flush=True)
         try:
-            with urllib.request.urlopen(request, timeout=int(os.environ.get("INSIGHT_API_TIMEOUT", "300"))) as response:
-                data = json.load(response)
-            choice = data["choices"][0]
-            if choice.get("finish_reason") != "stop":
-                raise ValueError(f"incomplete output ({choice.get('finish_reason')})")
-            result = json.loads(choice["message"]["content"])
+            content, usage = _completion_attempt(request, stage, idle_timeout, total_timeout)
+            try:
+                result = json.loads(content)
+            except ValueError:
+                raise _CompletionError("completion content is not valid JSON") from None
             if not isinstance(result, dict):
-                raise ValueError("response must be a JSON object")
-            print(f"Insight {stage}: completed; usage={json.dumps(data.get('usage', {}))}", flush=True)
+                raise _CompletionError("response must be a JSON object")
+            print(f"Insight {stage}: completed; usage={json.dumps(usage)}", flush=True)
             return result
-        except urllib.error.HTTPError as exc:
-            # Authentication and invalid configuration need correction, not repeated requests.
-            if exc.code in {400, 401, 403, 404, 422}:
-                raise RuntimeError(f"Insight {stage}: provider HTTP {exc.code}") from None
-            error = f"provider HTTP {exc.code}"
-        except (ValueError, KeyError, IndexError, OSError) as exc:
-            error = f"{type(exc).__name__}: {str(exc)[:200]}"
+        except RuntimeError as exc:
+            print(f"Insight {stage}: request {attempt}/{gb.RETRIES} failed: {exc}", flush=True)
+            raise RuntimeError(f"Insight {stage}: {exc}") from None
+        except _CompletionError as exc:
+            error = str(exc)
+        print(f"Insight {stage}: request {attempt}/{gb.RETRIES} failed: {error}", flush=True)
         if attempt < gb.RETRIES:
             time.sleep(min(15, attempt * 4))
     raise RuntimeError(f"Insight {stage} failed: {error}")
@@ -327,6 +547,8 @@ def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, la
         if lang == "zh":
             brief = request_json(f"""为Eco-GEO撰写深度行业洞察的研究提纲；先研究，再写作。
 面向品牌或增长决策者，挑选一个具体决策矛盾，不泛讲GEO基础。
+提纲目标约1500–2200汉字，简洁但完整；保留所有决策和证据字段，表格只给结构、
+关键比较关系和假设，不提前写文章全文，不用重复解释填充字段。
 返回JSON: decision_question, thesis, causal_chain, evidence_map（claim/source_ids/边界），
 segments_and_tradeoffs, counterargument, worked_example（透明公式与假设，不能捏造实测），
 exhibits（2个不同分析目的的表格）, management_actions（负责人/时点/指标/扩大或停止条件），
@@ -340,7 +562,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 不要把BCG的调研等同于中国本行业事实，不得把引用/提及/点击/成交等同。
 近30篇选题用于避免套路与重复：{json.dumps((recent_posts or [])[:30], ensure_ascii=False)}
 当前选题：{json.dumps(vars(topic), ensure_ascii=False)}
-已读取原始资料：{research_text(sources)}""", api_key, stage="research-brief", max_tokens=12000)
+已读取原始资料：{research_text(sources)}""", api_key, stage="research-brief", max_tokens=24000)
             brief_fields = {"decision_question", "thesis", "causal_chain", "evidence_map",
                 "segments_and_tradeoffs", "counterargument", "worked_example", "exhibits",
                 "management_actions", "unknowns", "outline", "decision_model"}

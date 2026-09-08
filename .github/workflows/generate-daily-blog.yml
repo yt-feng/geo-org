@@ -41,7 +41,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: Verify insight pipeline
-        run: python -m unittest discover -s tests -p "test_insight*.py" -v
+        run: |
+          python -m unittest discover -s tests -p "test_insight*.py" -v
+          python -m unittest discover -s tests -p "test_daily_*.py" -v
 
       - name: Generate one researched insight
         env:

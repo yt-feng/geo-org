@@ -14,6 +14,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Mapping, Optional
 
@@ -22,7 +23,7 @@ import authority_site
 import generate_blog as gb
 import i18n_site
 import insight_pipeline
-from insight_research import build_research_pack
+from insight_research import build_research_pack, industry_search_plan
 
 
 GEO_EDITORIAL_STRATEGY = """
@@ -124,22 +125,63 @@ def fetch_news_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
     return items
 
 
-def tavily_queries(topic: gb.TopicRow) -> List[str]:
+def tavily_search_plan(topic: gb.TopicRow) -> List[dict]:
+    """Reserve discovery slots for the actual industry, with its own publishers.
+
+    Queries only discover candidate URLs. A search result, industry tag or
+    summary never substitutes for the research pack's retrieved-body checks.
+    """
+    industry_plan = industry_search_plan(topic)
+    industry_entries = []
+    if industry_plan["industries"]:
+        if not industry_plan["queries"] or not industry_plan["domains"]:
+            raise ValueError("Industry search plan requires independent queries and official source domains")
+        industry_entries = [
+            {"query": query, "include_domains": list(industry_plan["domains"]),
+             "discovery_role": industry_plan["source_role"],
+             "industries": list(industry_plan["industries"])}
+            for query in industry_plan["queries"][:2]
+        ]
     configured = os.environ.get("TAVILY_QUERIES", "").strip()
     if configured:
         queries = [line.strip() for line in re.split(r"\n|\|\|", configured) if line.strip()]
     else:
         topic_bits = gb.clean_text(" ".join(bit for bit in [topic.category, topic.keywords, topic.title] if bit))[:220]
+        platform_query = "AI search citations indexing measurement official documentation Google Bing"
         queries = [
             f"{topic_bits} AI search brand discovery evidence research",
-            f"{topic.category} AI search customer journey resource allocation measurement research",
-            "AI search citations indexing measurement official documentation Google Bing",
+            f"{topic_bits} AI search customer journey resource allocation measurement research",
+            platform_query,
         ]
+        if industry_entries:
+            queries = [platform_query, *queries[:-1]]
     max_queries = int(os.environ.get("TAVILY_MAX_QUERIES", "3"))
-    return queries[:max_queries]
+    if not 1 <= max_queries <= 6:
+        raise ValueError("TAVILY_MAX_QUERIES must be between 1 and 6; use TAVILY_CONTEXT_DISABLED to disable discovery")
+    generic_entries = [
+        {"query": query, "include_domains": ["bcg.com", "developers.google.com", "blogs.bing.com", "arxiv.org"],
+         "discovery_role": "general_context", "industries": []}
+        for query in queries
+    ]
+    plan = []
+    seen_queries = set()
+    for entry in [*industry_entries, *generic_entries]:
+        normalized_query = entry["query"].strip().casefold()
+        if not normalized_query or normalized_query in seen_queries:
+            continue
+        seen_queries.add(normalized_query)
+        plan.append(entry)
+        if len(plan) == max_queries:
+            break
+    return plan
 
 
-def fetch_tavily_market_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
+def tavily_queries(topic: gb.TopicRow) -> List[str]:
+    """Compatibility view of the bounded, industry-aware discovery plan."""
+    return [entry["query"] for entry in tavily_search_plan(topic)]
+
+
+def fetch_tavily_market_items(topic: gb.TopicRow) -> List[Dict[str, object]]:
     api_key = os.environ.get("TAVILY_API_KEY", "").strip()
     if not api_key or os.environ.get("TAVILY_CONTEXT_DISABLED", "").lower() in {"1", "true", "yes"}:
         return []
@@ -147,15 +189,16 @@ def fetch_tavily_market_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
     max_results = int(os.environ.get("TAVILY_MAX_RESULTS", "3"))
     search_depth = os.environ.get("TAVILY_SEARCH_DEPTH", "advanced")
     seen_urls = set()
-    items: List[Dict[str, str]] = []
+    items: List[Dict[str, object]] = []
 
-    for query in tavily_queries(topic):
+    for search in tavily_search_plan(topic):
+        query = search["query"]
         payload = {
             "api_key": api_key,
             "query": query,
             "search_depth": search_depth,
             "max_results": max_results,
-            "include_domains": ["bcg.com", "developers.google.com", "blogs.bing.com", "arxiv.org"],
+            "include_domains": search["include_domains"],
             "include_answer": False,
             "include_raw_content": False,
         }
@@ -173,20 +216,8 @@ def fetch_tavily_market_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
             print(f"Tavily market context unavailable for query '{query[:80]}': {gb.format_api_error(exc)}", flush=True)
             continue
 
-        answer = gb.clean_text(obj.get("answer"))
-        if answer:
-            items.append(
-                {
-                    "kind": "market_synthesis",
-                    "title": f"Tavily market synthesis: {query[:110]}",
-                    "url": "",
-                    "publisher": "Tavily",
-                    "published": "",
-                    "summary": answer[:520],
-                    "query": query,
-                }
-            )
-
+        # Ignore provider-generated answers even if unexpectedly returned. Only
+        # original-page discovery leads proceed to independent body retrieval.
         for result in obj.get("results", []):
             url = gb.clean_text(result.get("url"))
             title = gb.clean_text(result.get("title"))
@@ -202,6 +233,8 @@ def fetch_tavily_market_items(topic: gb.TopicRow) -> List[Dict[str, str]]:
                     "published": "",
                     "summary": strip_html(result.get("content") or "")[:520],
                     "query": query,
+                    "discovery_role": search["discovery_role"],
+                    "industries": search["industries"],
                 }
             )
         time.sleep(0.2)
@@ -348,6 +381,15 @@ def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
     enhance_blog_index.main()
 
 
+def localize_reviewed_article(topic, sources, api_key, original, audit_dir):
+    """Review independent translations concurrently; return only a complete pair."""
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="insight-locale") as executor:
+        pending = {lang: executor.submit(insight_pipeline.produce_article,
+            topic, sources, api_key, lang=lang, original=original,
+            audit_path=audit_dir / f"{lang}.json") for lang in ("en", "ar")}
+        return {lang: result.result() for lang, result in pending.items()}
+
+
 def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_run: bool,
                            preview_dir: Optional[Path] = None) -> bool:
     topics = gb.read_topics(excel_path, start_row=start_row, limit=0)
@@ -373,9 +415,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     articles = {}
     articles["zh"] = insight_pipeline.produce_article(topic, sources, api_key, recent_posts=recent,
                                                        audit_path=audit_dir / "zh.json")
-    for lang in ("en", "ar"):
-        articles[lang] = insight_pipeline.produce_article(topic, sources, api_key, lang=lang,
-                          original=articles["zh"], audit_path=audit_dir / f"{lang}.json")
+    articles.update(localize_reviewed_article(topic, sources, api_key, articles["zh"], audit_dir))
     author, initials = gb.deterministic_author(topic.title)
     publish_date = gb.today_publish_date()
     image = gb.image_url(topic)
