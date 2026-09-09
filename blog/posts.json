@@ -145,8 +145,8 @@
           "S4": 1,
           "S5": 1
         },
-        "visible_character_count": 5334,
-        "zh_character_count": 4175,
+        "visible_character_count": 5332,
+        "zh_character_count": 4172,
         "word_count": 660,
         "minimum_zh_characters": 2600,
         "executive_summary_takeaways": 3,
@@ -178,7 +178,15 @@
         "originality": 5
       },
       "revisions": 3,
-      "review_type": "automated editorial review"
+      "review_type": "automated editorial review followed by documented editorial correction",
+      "editorial_correction": {
+        "automated_review_article_sha256": "eeb22961f12ef888cd73c2a7506ccfe4c37b826499fabc65044e71910bfbb082",
+        "corrected_article_sha256": "8e7ca53944df141cbf09153689fd7185a2ff6c19ae1507f5cda1cb9365fbe6b1",
+        "date": "2026-09-09",
+        "record": "docs/editorial-corrections/00696-geo-d069b269.json",
+        "automated_review_run_id": "34318213139",
+        "note": "Scores describe the preceding automated review; the two boundary corrections were reviewed separately without assigning new scores."
+      }
     }
   },
   {

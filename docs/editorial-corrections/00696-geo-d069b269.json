@@ -1,0 +1,492 @@
+{
+  "slug": "00696-geo-d069b269",
+  "date": "2026-09-09",
+  "original_automated_review_run_id": "34318213139",
+  "original_publication_commit": "f01380be67bba5674ea0698509890f691a494076",
+  "review_method": "Independent Codex editorial review plus structural and cross-language numeric validation; no new model scores assigned.",
+  "reason": "Remove a boundary label from the tau=8% row where E=10% exceeds the limit. Apply E<=tau consistently to measured results while retaining the data and positive-increment conditions.",
+  "languages": {
+    "zh": {
+      "automated_review_article_sha256": "eeb22961f12ef888cd73c2a7506ccfe4c37b826499fabc65044e71910bfbb082",
+      "corrected_article_sha256": "8e7ca53944df141cbf09153689fd7185a2ff6c19ae1507f5cda1cb9365fbe6b1",
+      "replacements": [
+        {
+          "old": "A：B超出上限（E=10%为边界值，对测量误差敏感，需保留逐题明细）",
+          "new": "A：B超出上限"
+        },
+        {
+          "old": "当任一方案的错误率恰好等于τ时，该方案仅在无测量误差的理想化比较中合格；实测中应保留该组逐题明细，并在复核时确认是否因个别题目判定差异而跨过边界。",
+          "new": "当任一方案的实测错误率恰好等于τ时，它满足E≤τ这一错误率条件；是否进入排序仍须同时满足数据可核验且可比较、ΔQ&gt;0。应保留逐题明细，并在复核判定后用同一规则重新计算，不额外改变等号处的准入条件。"
+        }
+      ],
+      "structural_validation": {
+        "passed": true,
+        "metrics": {
+          "language": "zh",
+          "gate_version": 1,
+          "semantic_review_required": true,
+          "h2_count": 8,
+          "table_count": 2,
+          "table_shapes": [
+            {
+              "captions": 1,
+              "rows": 4,
+              "headers": 6,
+              "cells": 18
+            },
+            {
+              "captions": 1,
+              "rows": 6,
+              "headers": 6,
+              "cells": 30
+            }
+          ],
+          "role_counts": {
+            "assumptions": 1,
+            "executive-summary": 1
+          },
+          "citation_id_counts": {
+            "S1": 2,
+            "S3": 1,
+            "S4": 1,
+            "S5": 1
+          },
+          "visible_character_count": 5332,
+          "zh_character_count": 4172,
+          "word_count": 660,
+          "minimum_zh_characters": 2600,
+          "executive_summary_takeaways": 3,
+          "tables_meeting_structure": 2,
+          "valid_citation_count": 5,
+          "cited_source_ids": [
+            "S1",
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "cited_domains": [
+            "arxiv.org",
+            "bcg.com",
+            "developers.google.com",
+            "support.google.com"
+          ],
+          "unique_cited_sources": 4,
+          "unique_cited_domains": 4,
+          "duplicate_paragraph_count": 0,
+          "duplicate_paragraph_samples": []
+        }
+      },
+      "corrected_page_sha256": "5aa2665e2c9cc8bd20157f0fef716271e911dbd5a138538cfa8ffa3ee2978dd8"
+    },
+    "en": {
+      "automated_review_article_sha256": "a454a3c2f8d4e37a945e63ce72866e07a508b09c38b67bc0d1f4bc670a4f92f6",
+      "corrected_article_sha256": "49bed619e42a4c89aede354aeffd95223048d4981964832af910d48bbd434a5f",
+      "replacements": [
+        {
+          "old": "A: B exceeds upper bound (E=10% is boundary value, sensitive to measurement error, need to retain per-question detail)",
+          "new": "A: B exceeds upper bound"
+        },
+        {
+          "old": "When the error rate of either option is exactly equal to τ, that option qualifies only in an idealized comparison without measurement error; in actual measurement, retain the per-question detail for that group and confirm during review whether individual question judgment differences cause it to cross the boundary.",
+          "new": "When an option’s measured error rate is exactly equal to τ, it satisfies the error-rate condition E≤τ; entering the ranking still also requires verifiable and comparable data and ΔQ&gt;0. Retain per-question details and recompute under the same rule after reviewing the judgments, without changing eligibility at equality."
+        }
+      ],
+      "structural_validation": {
+        "passed": true,
+        "metrics": {
+          "language": "en",
+          "gate_version": 1,
+          "semantic_review_required": true,
+          "h2_count": 8,
+          "table_count": 2,
+          "table_shapes": [
+            {
+              "captions": 1,
+              "rows": 4,
+              "headers": 6,
+              "cells": 18
+            },
+            {
+              "captions": 1,
+              "rows": 6,
+              "headers": 6,
+              "cells": 30
+            }
+          ],
+          "role_counts": {
+            "assumptions": 1,
+            "executive-summary": 1
+          },
+          "citation_id_counts": {
+            "S1": 2,
+            "S3": 1,
+            "S4": 1,
+            "S5": 1
+          },
+          "visible_character_count": 16740,
+          "zh_character_count": 0,
+          "word_count": 3309,
+          "executive_summary_takeaways": 3,
+          "tables_meeting_structure": 2,
+          "valid_citation_count": 5,
+          "cited_source_ids": [
+            "S1",
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "cited_domains": [
+            "arxiv.org",
+            "bcg.com",
+            "developers.google.com",
+            "support.google.com"
+          ],
+          "unique_cited_sources": 4,
+          "unique_cited_domains": 4,
+          "duplicate_paragraph_count": 0,
+          "duplicate_paragraph_samples": [],
+          "translation": {
+            "source_shape": {
+              "h2_count": 8,
+              "table_count": 2,
+              "table_shapes": [
+                {
+                  "captions": 1,
+                  "rows": 4,
+                  "headers": 6,
+                  "cells": 18
+                },
+                {
+                  "captions": 1,
+                  "rows": 6,
+                  "headers": 6,
+                  "cells": 30
+                }
+              ],
+              "role_counts": {
+                "assumptions": 1,
+                "executive-summary": 1
+              },
+              "citation_id_counts": {
+                "S1": 2,
+                "S3": 1,
+                "S4": 1,
+                "S5": 1
+              }
+            },
+            "numeric_changes": {
+              "title": {
+                "source": {
+                  "80": 1
+                },
+                "translated": {
+                  "80": 1
+                },
+                "missing": {},
+                "added": {}
+              },
+              "excerpt": {
+                "source": {
+                  "25": 1,
+                  "80": 1
+                },
+                "translated": {
+                  "25": 1,
+                  "80": 1
+                },
+                "missing": {},
+                "added": {}
+              },
+              "body_html": {
+                "source": {
+                  "0": 6,
+                  "0%": 1,
+                  "1": 9,
+                  "10": 4,
+                  "10%": 15,
+                  "100": 2,
+                  "11": 5,
+                  "12": 1,
+                  "13": 3,
+                  "14": 1,
+                  "15%": 1,
+                  "16": 4,
+                  "17": 1,
+                  "18": 4,
+                  "19": 1,
+                  "2": 7,
+                  "20": 5,
+                  "25": 11,
+                  "3": 1,
+                  "3.08": 2,
+                  "3.57": 1,
+                  "3.64": 4,
+                  "30": 3,
+                  "30%": 1,
+                  "4": 4,
+                  "4.17": 1,
+                  "40": 14,
+                  "5": 8,
+                  "5%": 6,
+                  "50": 5,
+                  "6": 1,
+                  "60": 1,
+                  "8": 1,
+                  "8%": 3,
+                  "80": 12,
+                  "90%": 1
+                },
+                "translated": {
+                  "0": 6,
+                  "0%": 1,
+                  "1": 9,
+                  "10": 4,
+                  "10%": 15,
+                  "100": 2,
+                  "11": 5,
+                  "12": 1,
+                  "13": 3,
+                  "14": 1,
+                  "15%": 1,
+                  "16": 4,
+                  "17": 1,
+                  "18": 4,
+                  "19": 1,
+                  "2": 7,
+                  "20": 5,
+                  "25": 11,
+                  "3": 1,
+                  "3.08": 2,
+                  "3.57": 1,
+                  "3.64": 4,
+                  "30": 3,
+                  "30%": 1,
+                  "4": 4,
+                  "4.17": 1,
+                  "40": 14,
+                  "5": 8,
+                  "5%": 6,
+                  "50": 5,
+                  "6": 1,
+                  "60": 1,
+                  "8": 1,
+                  "8%": 3,
+                  "80": 12,
+                  "90%": 1
+                },
+                "missing": {},
+                "added": {}
+              }
+            }
+          }
+        }
+      },
+      "corrected_page_sha256": "93e86d2fa71776cc8cec3081c3394e9bb1f81c78fb06e868f96ae8a0071d19ab"
+    },
+    "ar": {
+      "automated_review_article_sha256": "6768a469a4b77a03713e87e042d5cf279be023f2752bba205f7e18ab60cf367c",
+      "corrected_article_sha256": "a446d9f58c4c0dbd00bc61a2fa897c5da9923589c081b4e42a97eb6327ffed31",
+      "replacements": [
+        {
+          "old": "A: B تتجاوز السقف (E=10% قيمة حدية حساسة لخطأ القياس، ويلزم الاحتفاظ بتفاصيل الأسئلة)",
+          "new": "A: B تتجاوز السقف"
+        },
+        {
+          "old": "عندما يساوي معدل الخطأ في أي خطة τ تماماً، تكون الخطة مؤهلة فقط في مقارنة مثالية دون أخطاء قياس؛ وفي القياس الفعلي يجب حفظ تفاصيل أسئلة تلك المجموعة، والتأكد أثناء التدقيق مما إذا كانت تتجاوز الحد بسبب اختلاف في تقييم سؤال واحد.",
+          "new": "عندما يساوي معدل الخطأ المقاس لأي خطة τ تماماً، فإنها تحقق شرط معدل الخطأ E≤τ؛ ولا تدخل الترتيب إلا إذا كانت البيانات قابلة للتحقق والمقارنة وكانت ΔQ&gt;0. يجب الاحتفاظ بتفاصيل كل سؤال وإعادة الحساب وفق القاعدة نفسها بعد مراجعة التقييمات، دون تغيير شرط القبول عند المساواة."
+        }
+      ],
+      "structural_validation": {
+        "passed": true,
+        "metrics": {
+          "language": "ar",
+          "gate_version": 1,
+          "semantic_review_required": true,
+          "h2_count": 8,
+          "table_count": 2,
+          "table_shapes": [
+            {
+              "captions": 1,
+              "rows": 4,
+              "headers": 6,
+              "cells": 18
+            },
+            {
+              "captions": 1,
+              "rows": 6,
+              "headers": 6,
+              "cells": 30
+            }
+          ],
+          "role_counts": {
+            "assumptions": 1,
+            "executive-summary": 1
+          },
+          "citation_id_counts": {
+            "S1": 2,
+            "S3": 1,
+            "S4": 1,
+            "S5": 1
+          },
+          "visible_character_count": 13909,
+          "zh_character_count": 0,
+          "word_count": 2974,
+          "executive_summary_takeaways": 3,
+          "tables_meeting_structure": 2,
+          "valid_citation_count": 5,
+          "cited_source_ids": [
+            "S1",
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "cited_domains": [
+            "arxiv.org",
+            "bcg.com",
+            "developers.google.com",
+            "support.google.com"
+          ],
+          "unique_cited_sources": 4,
+          "unique_cited_domains": 4,
+          "duplicate_paragraph_count": 0,
+          "duplicate_paragraph_samples": [],
+          "translation": {
+            "source_shape": {
+              "h2_count": 8,
+              "table_count": 2,
+              "table_shapes": [
+                {
+                  "captions": 1,
+                  "rows": 4,
+                  "headers": 6,
+                  "cells": 18
+                },
+                {
+                  "captions": 1,
+                  "rows": 6,
+                  "headers": 6,
+                  "cells": 30
+                }
+              ],
+              "role_counts": {
+                "assumptions": 1,
+                "executive-summary": 1
+              },
+              "citation_id_counts": {
+                "S1": 2,
+                "S3": 1,
+                "S4": 1,
+                "S5": 1
+              }
+            },
+            "numeric_changes": {
+              "title": {
+                "source": {
+                  "80": 1
+                },
+                "translated": {
+                  "80": 1
+                },
+                "missing": {},
+                "added": {}
+              },
+              "excerpt": {
+                "source": {
+                  "25": 1,
+                  "80": 1
+                },
+                "translated": {
+                  "25": 1,
+                  "80": 1
+                },
+                "missing": {},
+                "added": {}
+              },
+              "body_html": {
+                "source": {
+                  "0": 6,
+                  "0%": 1,
+                  "1": 9,
+                  "10": 4,
+                  "10%": 15,
+                  "100": 2,
+                  "11": 5,
+                  "12": 1,
+                  "13": 3,
+                  "14": 1,
+                  "15%": 1,
+                  "16": 4,
+                  "17": 1,
+                  "18": 4,
+                  "19": 1,
+                  "2": 7,
+                  "20": 5,
+                  "25": 11,
+                  "3": 1,
+                  "3.08": 2,
+                  "3.57": 1,
+                  "3.64": 4,
+                  "30": 3,
+                  "30%": 1,
+                  "4": 4,
+                  "4.17": 1,
+                  "40": 14,
+                  "5": 8,
+                  "5%": 6,
+                  "50": 5,
+                  "6": 1,
+                  "60": 1,
+                  "8": 1,
+                  "8%": 3,
+                  "80": 12,
+                  "90%": 1
+                },
+                "translated": {
+                  "0": 6,
+                  "0%": 1,
+                  "1": 9,
+                  "10": 4,
+                  "10%": 15,
+                  "100": 2,
+                  "11": 5,
+                  "12": 1,
+                  "13": 3,
+                  "14": 1,
+                  "15%": 1,
+                  "16": 4,
+                  "17": 1,
+                  "18": 4,
+                  "19": 1,
+                  "2": 7,
+                  "20": 5,
+                  "25": 11,
+                  "3": 1,
+                  "3.08": 2,
+                  "3.57": 1,
+                  "3.64": 4,
+                  "30": 3,
+                  "30%": 1,
+                  "4": 4,
+                  "4.17": 1,
+                  "40": 14,
+                  "5": 8,
+                  "5%": 6,
+                  "50": 5,
+                  "6": 1,
+                  "60": 1,
+                  "8": 1,
+                  "8%": 3,
+                  "80": 12,
+                  "90%": 1
+                },
+                "missing": {},
+                "added": {}
+              }
+            }
+          }
+        }
+      },
+      "corrected_page_sha256": "676a02a7208785be64d77b2cbf5db90e6753f1ff07082d820948c72c81aede32"
+    }
+  }
+}
