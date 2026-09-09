@@ -417,7 +417,14 @@ def load_resume_audit(resume_dir: Path, topic: gb.TopicRow) -> dict:
     def reject_constant(value):
         raise ValueError(f"Resume audit contains invalid JSON constant: {value}")
 
-    audit = json.loads(audit_path.read_text(encoding="utf-8"), object_pairs_hook=unique_object, parse_constant=reject_constant)
+    def read_audit(path):
+        if not path.resolve().is_relative_to(resume_dir):
+            raise ValueError("Resume audit must remain inside the downloaded audit directory")
+        if path.stat().st_size > 10_000_000:
+            raise ValueError("Resume audit exceeds 10 MB")
+        return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_object, parse_constant=reject_constant)
+
+    audit = read_audit(audit_path)
     if not isinstance(audit, dict) or type(audit.get("row")) is not int or audit["row"] != topic.idx or audit.get("language") != "zh":
         raise ValueError("Resume audit must match selected row and Chinese language")
     if type(audit.get("passed")) is not bool or not audit.get("attempts") or not audit.get("sources"):
@@ -427,6 +434,15 @@ def load_resume_audit(resume_dir: Path, topic: gb.TopicRow) -> dict:
             insight_pipeline.validate_passed_chinese_audit(audit, topic)
         except (TypeError, KeyError, ValueError) as exc:
             raise ValueError(f"Resume requires a complete passed audit or a failed audit: {exc}") from exc
+    for lang in ("en", "ar"):
+        translation_path = audit_path.with_name(f"{lang}.json")
+        if not translation_path.is_file():
+            continue
+        translation = read_audit(translation_path)
+        if not isinstance(translation, dict) or type(translation.get("passed")) is not bool:
+            raise ValueError("Resume translation requires an explicit passed or failed audit")
+        if translation["passed"] is False:
+            audit = insight_pipeline.attach_cross_language_feedback(audit, translation, lang)
     return audit
 
 
@@ -469,7 +485,8 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     audit_dir = Path(os.environ.get("INSIGHT_AUDIT_DIR", ".artifacts/insights")) / slug
     recent = [{key: post.get(key, "") for key in ("title", "category", "excerpt")} for post in posts[:30]]
     articles = {}
-    if resume_audit is not None and resume_audit["passed"] is True and editorial_revision is None:
+    if (resume_audit is not None and resume_audit["passed"] is True and editorial_revision is None
+            and not insight_pipeline.has_pending_cross_language_feedback(resume_audit)):
         articles["zh"] = insight_pipeline.reuse_passed_chinese_audit(topic, sources, api_key,
             audit_path=audit_dir / "zh.json", resume_audit=resume_audit)
     else:

@@ -430,7 +430,7 @@ def write_audit(path: Path, audit: dict) -> None:
 
 def _blocker_check_errors(review: dict, required_blockers: list[dict], *, format_only: bool = False) -> list[str]:
     """Require an independent current-draft finding for every historical blocker."""
-    required = {item["id"] for item in required_blockers}
+    required = {item["id"]: item for item in required_blockers}
     if not required:
         return []
     checks = review.get("blocker_checks")
@@ -449,13 +449,15 @@ def _blocker_check_errors(review: dict, required_blockers: list[dict], *, format
         if issue_id in seen:
             errors.append(f"blocker_checks repeats {issue_id}")
         seen.add(issue_id)
+        if required[issue_id].get("origin_language") and check.get("scope") not in ("source_article", "translation_only"):
+            errors.append(f"blocker_check {issue_id} must distinguish source_article from translation_only")
         if check.get("status") not in ("resolved", "unresolved", "unverifiable") or any(
             not isinstance(check.get(key), str) or not check[key].strip() for key in ("location", "finding")
         ):
             errors.append(f"blocker_check {issue_id} needs status, current location and finding")
         elif not format_only and check["status"] != "resolved":
             errors.append(f"historical blocker {issue_id} remains {check['status']}: {check['finding']}")
-    errors.extend(f"blocker_checks omitted {issue_id}" for issue_id in sorted(required - seen))
+    errors.extend(f"blocker_checks omitted {issue_id}" for issue_id in sorted(required.keys() - seen))
     return errors
 
 
@@ -536,6 +538,113 @@ def _article_sha256(article: dict) -> str:
     return hashlib.sha256(json.dumps(core, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 
+def _source_fingerprints(entries: object) -> dict:
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("resume_audit requires complete source fingerprints")
+    mapped = {}
+    for item in entries:
+        if not isinstance(item, dict) or any(not isinstance(item.get(key), str) or not item[key] for key in ("id", "url", "text_sha256")):
+            raise ValueError("resume_audit requires source ID, URL and SHA256 for every source")
+        if item["id"] in mapped or not re.fullmatch(r"[0-9a-f]{64}", item["text_sha256"]):
+            raise ValueError("resume_audit contains duplicate source IDs or invalid source hashes")
+        mapped[item["id"]] = (item["url"], item["text_sha256"])
+    return mapped
+
+
+def _audit_sha256(audit: dict) -> str:
+    return hashlib.sha256(json.dumps(audit, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+
+def cross_language_required_fixes(audit: dict) -> list[dict]:
+    """Validate linked failed translation history and extract questions, never scores."""
+    records = audit.get("cross_language_feedback", [])
+    if not isinstance(records, list):
+        raise ValueError("cross_language_feedback must be an array")
+    fixes, seen = [], set()
+    if not records:
+        return fixes
+    chinese_hashes = set()
+    for attempt in audit["attempts"]:
+        try:
+            chinese_hashes.add(_article_sha256(normalize_article(attempt.get("article"), "zh")))
+        except (ValueError, TypeError, KeyError, AttributeError):
+            # Earlier malformed drafts stay in history but cannot identify the
+            # complete source article from which a translation was produced.
+            continue
+    for record in records:
+        if not isinstance(record, dict) or not isinstance(record.get("audit"), dict):
+            raise ValueError("cross_language_feedback requires its complete translation audit")
+        translation, lang = record["audit"], record.get("origin_language")
+        if lang not in ("en", "ar") or translation.get("language") != lang or type(translation.get("row")) is not int or translation["row"] != audit["row"]:
+            raise ValueError("Cross-language audit must match selected row and translation language")
+        if translation.get("passed") is not False:
+            raise ValueError("Cross-language feedback requires a failed translation audit")
+        if _source_fingerprints(translation.get("sources")) != _source_fingerprints(audit.get("sources")):
+            raise ValueError("Cross-language sources must exactly match Chinese source fingerprints")
+        digest = _audit_sha256(translation)
+        if record.get("audit_sha256") != digest or digest in seen:
+            raise ValueError("Cross-language translation audit hash must match and be unique")
+        seen.add(digest)
+        original_hash = record.get("source_article_sha256")
+        if original_hash not in chinese_hashes:
+            raise ValueError("Cross-language source article must match Chinese draft history")
+        signed = translation.get("source_article_sha256")
+        association = "source_article_sha256" if signed is not None else "same_directory_row_and_sources_legacy"
+        if record.get("association") != association or (signed is not None and signed != original_hash):
+            raise ValueError("Cross-language source article association does not match")
+        attempts = translation.get("attempts")
+        if not isinstance(attempts, list):
+            raise ValueError("Cross-language audit requires a translation attempts array")
+        last_revision = -1
+        for attempt in attempts:
+            if not isinstance(attempt, dict) or type(attempt.get("revision")) is not int or attempt["revision"] <= last_revision:
+                raise ValueError("Cross-language draft revisions must be increasing nonnegative integers")
+            last_revision = attempt["revision"]
+            review = attempt.get("review", {})
+            if not isinstance(review, dict):
+                raise ValueError("Cross-language audit requires valid review records")
+            blockers = review.get("blockers", [])
+            if not isinstance(blockers, list) or any(not isinstance(item, str) or not item.strip() for item in blockers):
+                raise ValueError("Cross-language blockers must be complete string arrays")
+            if not blockers:
+                continue
+            article = normalize_article(attempt.get("article"), lang)
+            article_hash = _article_sha256(article)
+            if "article_sha256" in attempt and attempt["article_sha256"] != article_hash:
+                raise ValueError("Cross-language translation article SHA256 does not match")
+            for index, problem in enumerate(blockers, 1):
+                fixes.append({"id": f"x-{lang}-{digest[:16]}-r{last_revision}-blocker-{index}",
+                    "kind": "blocker", "problem": problem, "origin_language": lang,
+                    "translation_revision": last_revision, "translation_article_sha256": article_hash,
+                    "source_article_sha256": original_hash, "association": association,
+                    "instruction": "译稿提出的待核问题，尚非中文稿定论；独立核对当前中文与来源，区分原文问题和仅译稿问题，说明正文位置与发现。"})
+    return fixes
+
+
+def attach_cross_language_feedback(audit: dict, translation: dict, lang: str) -> dict:
+    """Attach a same-bundle failed audit while keeping both original records intact."""
+    result = json.loads(json.dumps(audit, ensure_ascii=False))
+    digest = _audit_sha256(translation)
+    if not any(item.get("audit_sha256") == digest for item in result.get("cross_language_feedback", [])):
+        result.setdefault("cross_language_feedback", []).append({"origin_language": lang,
+            "source_article_sha256": _article_sha256(normalize_article(audit["attempts"][-1]["article"], "zh")),
+            "association": "source_article_sha256" if "source_article_sha256" in translation else "same_directory_row_and_sources_legacy",
+            "audit_sha256": digest, "audit": json.loads(json.dumps(translation, ensure_ascii=False))})
+    cross_language_required_fixes(result)
+    return result
+
+
+def has_pending_cross_language_feedback(audit: dict) -> bool:
+    fixes = cross_language_required_fixes(audit)
+    if not fixes:
+        return False
+    ids = {item["id"] for item in fixes}
+    review = audit["attempts"][-1].get("review", {})
+    checks = review.get("blocker_checks", [])
+    selected = [item for item in checks if isinstance(item, dict) and item.get("issue_id") in ids] if isinstance(checks, list) else []
+    return bool(_blocker_check_errors({"blocker_checks": selected}, fixes))
+
+
 def _revision_feedback(audit: dict) -> dict:
     """Carry every current issue and every earlier blocker into the next revision."""
     current = audit["attempts"][-1]
@@ -556,6 +665,7 @@ def _revision_feedback(audit: dict) -> dict:
                 required_fixes.append({"id": f"r{attempt['revision']}-{kind}-{index}",
                     "kind": kind, "problem": str(item),
                     "instruction": "修复并指出正文位置；如果上轮已修复，核对本轮仍保留该修复。"})
+    required_fixes.extend(cross_language_required_fixes(audit))
     return {"failures": current.get("errors", []),
             "numeric_changes": metrics.get("translation", {}).get("numeric_changes", metrics.get("numeric_changes", {})),
             "scores": current.get("review", {}).get("scores"),
@@ -631,6 +741,10 @@ def review_article(article: dict, sources: list[dict], api_key: str, lang: str, 
 {REVIEW_RUBRIC}
 审查下文的真实论证，不能因为有表格、标题、引用标记而判定有深度。
 逐段核实数字、平台机制、外部案例是否确实由已读取来源支持，引用错位或事实无支持列为blockers。
+所有百分比必须逐项代回整数计数和分母；检查离散样本能否达到所写门槛，阈值处的
+严格或非严格不等号须与摘要、表格和行动建议一致，不能只复述作者的演算结论。
+区分平台文档中的有益做法（worthwhile）与必要条件（prerequisites），不能把建议
+升级为平台准入要求；受控实验中的odds/odds ratio不能直接当概率或自然检索效果。
 先判断论断类型，再判断是否需要外部证据，不要把作者明示的情景输入、条件式推论和建议
 试验值当作已发生的事实。自定时间表/预算/阈值若在出现处说明是建议或示意，且有工时、
 基线校准或敏感性逻辑，不因“没有文献给出同一个数值”就判虚构。应检查计算、单位、
@@ -660,6 +774,10 @@ JSON字段 scores（六维）、issues（具体修改建议数组）、blockers�
 新表述的位置。不要把被删旧claim列入当前claim_checks后再判unsupported。
 如果问题仍存在或无法确认修复，分别标unresolved或unverifiable并放入blockers。
 作者的辅助回应不作为修复证据；resolved必须由你独立核查当前正文与来源后作出。
+带origin_language的历史问题来自失败译稿，并不证明中文也错。对每项另返回
+scope="source_article"或"translation_only"：前者核验本轮中文是否解决原文问题；
+后者须说明当前中文原本如何正确、错误仅出在译稿的具体依据，可记resolved。
+两类都必须有独立finding和正文location，无法判断则unverifiable；不要移用译稿评分。
 审稿输出保持紧凑：每项claim和finding各用一到两句，保留具体依据与限定条件；不要重复整段正文。
 待核历史blocker：{json.dumps(required_blockers, ensure_ascii=False)}
 语言：{lang}
@@ -721,20 +839,8 @@ def _resume_article_audit(resume_audit: dict, topic: gb.TopicRow, sources: list[
     if not isinstance(resume_audit, dict) or resume_audit.get("row") != topic.idx or resume_audit.get("language") != lang:
         raise ValueError("resume_audit row and language must match the current topic")
 
-    def fingerprints(entries: object) -> dict:
-        if not isinstance(entries, list) or not entries:
-            raise ValueError("resume_audit requires complete source fingerprints")
-        mapped = {}
-        for item in entries:
-            if not isinstance(item, dict) or any(not isinstance(item.get(key), str) or not item[key] for key in ("id", "url", "text_sha256")):
-                raise ValueError("resume_audit requires source ID, URL and SHA256 for every source")
-            if item["id"] in mapped or not re.fullmatch(r"[0-9a-f]{64}", item["text_sha256"]):
-                raise ValueError("resume_audit contains duplicate source IDs or invalid source hashes")
-            mapped[item["id"]] = (item["url"], item["text_sha256"])
-        return mapped
-
     current_sources = public_sources(sources)
-    if fingerprints(resume_audit.get("sources")) != fingerprints(current_sources):
+    if _source_fingerprints(resume_audit.get("sources")) != _source_fingerprints(current_sources):
         raise ValueError("resume_audit sources must exactly match current source IDs, URLs and body SHA256 hashes")
     if not isinstance(resume_audit.get("brief"), dict) or not resume_audit["brief"]:
         raise ValueError("resume_audit requires the original editorial brief")
@@ -751,6 +857,7 @@ def _resume_article_audit(resume_audit: dict, topic: gb.TopicRow, sources: list[
     if not isinstance(attempts[-1].get("article"), dict):
         raise ValueError("resume_audit requires the complete last article")
     normalize_article(attempts[-1]["article"], lang)
+    cross_language_required_fixes(resume_audit)
 
     # Detach the resumed history so callers' input objects remain unchanged.
     audit = json.loads(json.dumps(resume_audit, ensure_ascii=False))
@@ -882,6 +989,7 @@ def validate_passed_chinese_audit(audit: dict, topic: gb.TopicRow) -> dict:
     shape_keys = ("h2_count", "table_count", "table_shapes", "role_counts", "citation_id_counts", "visible_character_count", "zh_character_count")
     if any(key not in old_structure["metrics"] or old_structure["metrics"][key] != structural["metrics"].get(key) for key in shape_keys):
         raise invalid("saved structural signature does not match the current article")
+    required.extend(cross_language_required_fixes(audit))
     errors = _saved_pass_review_errors(last.get("review"), sources, required)
     if errors:
         raise invalid("independent review rejected: " + "; ".join(errors))
@@ -971,6 +1079,8 @@ def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, la
     audit = {"version": "insights-v3", "row": topic.idx, "language": lang,
              "sources": public_sources(sources), "attempts": [], "passed": False,
              "audit_scope": "Original editorial brief, drafts and reviews; source provenance only, no third-party source bodies."}
+    if lang != "zh" and original:
+        audit["source_article_sha256"] = _article_sha256(normalize_article(original, "zh"))
     if resume_audit is not None:
         # Validate before writing the destination audit or making a model call.
         audit = _resume_article_audit(resume_audit, topic, sources, lang)
