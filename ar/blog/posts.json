@@ -1,5 +1,320 @@
 [
   {
+    "order": "708",
+    "row": "696",
+    "slug": "00696-geo-d069b269",
+    "title": "Eco-GEO：قرار 80 ساعة لـGEO في الخدمات المحلية أثناء التوسع الدولي: هل نصلح الحقائق أولاً أم نوسّع التغطية؟",
+    "excerpt": "تعامل مع معدل الخطأ كقيد محدد مسبقًا، ثم قسّم إجمالي الساعات على الزيادة في الاقتباسات الصحيحة المؤهلة لمقارنة الإصلاح بالتوسع. يستخدم هذا المقال تجربة افتراضية بميزانية مشتركة قدرها 80 ساعة ومجموعتين كل منهما 25 سؤالًا، مع خط أساس موحد ومقام واحد وحقول كاملة وشروط للتأجيل، ليوضح متى تختار A أو B أو C.",
+    "category": "GEO للعلامات التجارية",
+    "tags": "Eco-GEO, الخدمات المحلية, التوسع الدولي, البحث التوليدي, إدارة المحتوى, GEO للعلامة التجارية, خدمات GEO, تحسين البحث بالذكاء الاصطناعي",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-09",
+    "image": "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/ar/blog/articles/00696-geo-d069b269/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-09T06:15:02+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Google Maps Platform 安全性及合规性概览  |  Google for Developers",
+        "url": "https://developers.google.com/maps/security/compliance/security-compliance?hl=zh-cn",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-09T06:15:03+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 17286,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "local_services"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "7670943c06a4466318727ff9dd06ef990233b9ce802b4c64c36f2382fae74c1b"
+      },
+      {
+        "id": "S3",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-09T06:15:03+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S4",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-09T06:15:04+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      },
+      {
+        "id": "S5",
+        "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+        "url": "https://support.google.com/business/answer/7091?hl=en",
+        "publisher": "Google",
+        "published": "",
+        "retrieved_at": "2026-09-09T06:15:05+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 3585,
+        "body_chars": 3585,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "local_services"
+        ],
+        "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+        "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "ar",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 8,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 6,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 6,
+            "headers": 6,
+            "cells": 30
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S3": 1,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 13929,
+        "zh_character_count": 0,
+        "word_count": 2979,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 5,
+        "cited_source_ids": [
+          "S1",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "developers.google.com",
+          "support.google.com"
+        ],
+        "unique_cited_sources": 4,
+        "unique_cited_domains": 4,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 8,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 6,
+                "cells": 18
+              },
+              {
+                "captions": 1,
+                "rows": 6,
+                "headers": 6,
+                "cells": 30
+              }
+            ],
+            "role_counts": {
+              "assumptions": 1,
+              "executive-summary": 1
+            },
+            "citation_id_counts": {
+              "S1": 2,
+              "S3": 1,
+              "S4": 1,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {
+                "80": 1
+              },
+              "translated": {
+                "80": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {
+                "25": 1,
+                "80": 1
+              },
+              "translated": {
+                "25": 1,
+                "80": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 5,
+                "0%": 1,
+                "1": 9,
+                "10": 4,
+                "10%": 16,
+                "100": 2,
+                "11": 5,
+                "12": 1,
+                "13": 3,
+                "14": 1,
+                "15%": 1,
+                "16": 4,
+                "17": 1,
+                "18": 4,
+                "19": 1,
+                "2": 7,
+                "20": 5,
+                "25": 11,
+                "3": 1,
+                "3.08": 2,
+                "3.57": 1,
+                "3.64": 4,
+                "30": 3,
+                "30%": 1,
+                "4": 4,
+                "4.17": 1,
+                "40": 14,
+                "5": 8,
+                "5%": 6,
+                "50": 5,
+                "6": 1,
+                "60": 1,
+                "8": 1,
+                "8%": 3,
+                "80": 12,
+                "90%": 1
+              },
+              "translated": {
+                "0": 5,
+                "0%": 1,
+                "1": 9,
+                "10": 4,
+                "10%": 16,
+                "100": 2,
+                "11": 5,
+                "12": 1,
+                "13": 3,
+                "14": 1,
+                "15%": 1,
+                "16": 4,
+                "17": 1,
+                "18": 4,
+                "19": 1,
+                "2": 7,
+                "20": 5,
+                "25": 11,
+                "3": 1,
+                "3.08": 2,
+                "3.57": 1,
+                "3.64": 4,
+                "30": 3,
+                "30%": 1,
+                "4": 4,
+                "4.17": 1,
+                "40": 14,
+                "5": 8,
+                "5%": 6,
+                "50": 5,
+                "6": 1,
+                "60": 1,
+                "8": 1,
+                "8%": 3,
+                "80": 12,
+                "90%": 1
+              },
+              "missing": {},
+              "added": {}
+            }
+          }
+        }
+      },
+      "scores": {
+        "thesis": 5,
+        "evidence": 5,
+        "mechanism": 5,
+        "tradeoffs": 5,
+        "actionability": 5,
+        "originality": 5
+      },
+      "revisions": 1,
+      "review_type": "automated editorial review"
+    }
+  },
+  {
     "order": "707",
     "row": "695",
     "slug": "00695-geo-ade4e503",
