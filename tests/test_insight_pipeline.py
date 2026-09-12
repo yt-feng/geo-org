@@ -201,9 +201,11 @@ class RevisionMetadataTests(unittest.TestCase):
     def test_missing_historical_check_uses_review_format_repair(self):
         missing = self.good_review()
         repaired = {**self.good_review(), "blocker_checks": [self.resolved_check()]}
-        with patch.object(ip, "request_json", side_effect=[missing, repaired]) as request:
+        with patch.dict(os.environ, {"INSIGHT_REVIEW_MAX_TOKENS": "36000"}), \
+                patch.object(ip, "request_json", side_effect=[missing, repaired]) as request:
             review = ip.review_article(self.article, self.sources, "test", "zh", required_fixes=self.feedback["required_fixes"])
         self.assertEqual(request.call_count, 2)
+        self.assertEqual([call.kwargs["max_tokens"] for call in request.call_args_list], [36000, 36000])
         self.assertEqual(request.call_args.kwargs["stage"], "zh-review-format-repair")
         self.assertEqual(ip.review_errors(review), [])
         self.assertIn("旧断言若已删除", request.call_args.args[0])
@@ -215,6 +217,12 @@ class RevisionMetadataTests(unittest.TestCase):
         self.assertEqual(request.call_count, 2)
         self.assertTrue(ip.review_errors(review))
         self.assertTrue(any("blocker_checks" in blocker for blocker in review["blockers"]))
+
+    def test_review_budget_rejects_invalid_configuration(self):
+        for value in ("0", "-1", "not-an-integer"):
+            with self.subTest(value=value), patch.dict(os.environ, {"INSIGHT_REVIEW_MAX_TOKENS": value}):
+                with self.assertRaisesRegex(ValueError, "INSIGHT_REVIEW_MAX_TOKENS"):
+                    ip.review_article(self.article, self.sources, "test", "zh")
 
     def test_missing_or_unknown_claim_source_ids_get_one_review_format_repair(self):
         for ids in ([], ["S99"], ["S1", 42], "S1", None):

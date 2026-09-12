@@ -323,6 +323,18 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 240
     raise RuntimeError(f"Insight {stage} failed: {error}")
 
 
+def review_max_tokens() -> int:
+    """Return the completion budget for independent editorial reviews."""
+    raw = os.environ.get("INSIGHT_REVIEW_MAX_TOKENS", "48000")
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ValueError("INSIGHT_REVIEW_MAX_TOKENS must be a positive integer") from None
+    if value <= 0:
+        raise ValueError("INSIGHT_REVIEW_MAX_TOKENS must be a positive integer")
+    return value
+
+
 class _InlineStyleNormalizer(HTMLParser):
     """Remove only parsed style attributes; leave all other HTML for validation."""
 
@@ -785,7 +797,8 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
 中文原文（仅翻译审稿时提供）：{json.dumps(original, ensure_ascii=False) if original else '无'}
 待审文章：{json.dumps(article, ensure_ascii=False)}"""
     allowed_source_ids = {source["id"] for source in sources}
-    review = request_json(prompt, api_key, stage=f"{lang}-review", max_tokens=24000)
+    max_tokens = review_max_tokens()
+    review = request_json(prompt, api_key, stage=f"{lang}-review", max_tokens=max_tokens)
     format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
     if format_errors:
         original_review = json.loads(json.dumps(review))
@@ -799,7 +812,7 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
             "不得编造ID或机械绑定无关来源；无支持的外部事实必须unsupported并保留为blocker。"
             "格式问题：" + json.dumps(format_errors, ensure_ascii=False)
             + "\n上次审稿结果（保留具体事实问题）：" + json.dumps(original_review, ensure_ascii=False),
-            api_key, stage=f"{lang}-review-format-repair", max_tokens=24000,
+            api_key, stage=f"{lang}-review-format-repair", max_tokens=max_tokens,
         )
         format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
         if not isinstance(review.get("blockers"), list):
