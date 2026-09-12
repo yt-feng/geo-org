@@ -16,7 +16,7 @@
 
 ## 工作流与维护
 
-日更计划于每天北京时间 08:30 触发（GitHub 排队可能延迟），沿用 Excel 未生成选题和三语输出。生产使用 DeepSeek V4 Pro thinking，中文稿和提纲输出预算 24,000 tokens，译稿预算 48,000 tokens，审稿及格式复核预算 24,000 tokens；提纲要求精简为 1,500–2,200 汉字。流程：选题 → 原文检索/读取 → 研究提纲 → 写作/审稿/修订 → 英阿本地化与审稿 → 保存 → 提交 main → Vercel Git 集成部署主站；另行触发仓库的 Pages 发布链路。
+日更计划于每天北京时间 08:30 触发（GitHub 排队可能延迟），沿用 Excel 未生成选题和三语输出。生产使用 DeepSeek V4 Pro thinking，中文稿和提纲输出预算 24,000 tokens，独立审稿和格式复核预算由 `INSIGHT_REVIEW_MAX_TOKENS` 控制，生产默认为 48,000 tokens，译稿预算 48,000 tokens；提纲要求精简为 1,500–2,200 汉字。流程：选题 → 原文检索/读取 → 研究提纲 → 写作/审稿/修订 → 英阿本地化与审稿 → 保存 → 提交 main → Vercel Git 集成部署主站；另行触发仓库的 Pages 发布链路。
 
 `generate_daily_blog.py --preview-dir .artifacts/preview` 或 GitHub workflow 的 `preview=true` 生成样稿、保持网站不变。审稿记录在 `.artifacts/insights/<slug>/<lang>.json`，GitHub artifact 保留 14 天；记录原创研究提纲、各轮草稿、审稿与修订回应，以及来源读取边界与正文哈希；网站只保存来源元数据，不保存第三方正文。
 

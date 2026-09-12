@@ -61,6 +61,7 @@ jobs:
           DEEPSEEK_MODEL: deepseek-v4-pro
           INSIGHT_THINKING: "enabled"
           INSIGHT_MAX_TOKENS: "24000"
+          INSIGHT_REVIEW_MAX_TOKENS: "48000"
           INSIGHT_TRANSLATION_MAX_TOKENS: "48000"
           DEEPSEEK_REQUEST_DELAY: "0.2"
           DEEPSEEK_RETRIES: "3"
