@@ -1,5 +1,282 @@
 [
   {
+    "order": "709",
+    "row": "697",
+    "slug": "00697-geo-ai-23b600f4",
+    "title": "Eco-GEO：Medical Aesthetics Branded GEO: Clear Errors First, Then Compare Unit Correct Citation Incremental Cost",
+    "excerpt": "Under an 80-hour product team workload constraint, medical aesthetics brands should not treat AI mention counts as the goal. This article proposes: first set zero severe factual error rate as a hard threshold, then compare the unit incremental cost of \"qualified correct citation question count\" within the same intervention workload. When the number of citable third-party evidence items is below the threshold, monitoring and factual correction take priority; when above the threshold, content expansion takes priority; if correct mentions are near zero and monitoring is unstable, GEO investment should be postponed.",
+    "category": "Brand GEO",
+    "tags": "GEO, Branded GEO, White-hat GEO, AI search, medical aesthetics, AI mention monitoring, channel transition period, Eco-GEO, GEO service, AI search optimization",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-13",
+    "image": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/en/blog/articles/00697-geo-ai-23b600f4/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-13T05:03:13+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Dermal Fillers (Soft Tissue Fillers)",
+        "url": "https://www.fda.gov/medical-devices/aesthetic-cosmetic-devices/dermal-fillers-soft-tissue-fillers",
+        "publisher": "US Food and Drug Administration",
+        "published": "",
+        "retrieved_at": "2026-09-13T05:03:13+00:00",
+        "evidence_kind": "regulatory_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 13051,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "fda.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "medical_aesthetics"
+        ],
+        "scope_notes": "US FDA information about dermal-filler uses, evidence and patient/professional information. Does not measure Chinese medical-aesthetics demand, lead conversion or clinical outcomes for all procedures; US product approval is not a clinic endorsement. Publication date unconfirmed: an explicit publication field could not be interpreted consistently.",
+        "text_sha256": "9e39ed6f8b39e08d6abc0c949d3730337955ceab0b93aa8f543d2eeaa79e4db5"
+      },
+      {
+        "id": "S3",
+        "title": "Don’t Measure Once: Measuring Visibility in AI Search (GEO)",
+        "url": "https://arxiv.org/html/2604.07585v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-13T05:03:13+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 58218,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "8bbe60e34e93f4eb24e519ebc40ee06f17e9a98f3847451164a3c35de606e3c0"
+      },
+      {
+        "id": "S4",
+        "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
+        "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
+        "publisher": "State Administration for Market Regulation",
+        "published": "2021-11-02",
+        "retrieved_at": "2026-09-13T05:03:16+00:00",
+        "evidence_kind": "regulatory_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 2038,
+        "body_chars": 2038,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "samr.gov.cn",
+        "evidence_role": "industry_context",
+        "industries": [
+          "medical_aesthetics"
+        ],
+        "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
+        "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+        "url": "https://blogs.bing.com/webmaster/February-2026/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-13T05:03:16+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 6043,
+        "body_chars": 6043,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "f6687661960668704af65c098aeb036f60596547f40f6c6eae8d89cdd8b77c22"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "en",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 8,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 6,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 5,
+            "headers": 8,
+            "cells": 32
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 1,
+          "S2": 1,
+          "S3": 1,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 16755,
+        "zh_character_count": 0,
+        "word_count": 3090,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 5,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "blogs.bing.com",
+          "developers.google.com",
+          "fda.gov",
+          "samr.gov.cn"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 8,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 6,
+                "cells": 18
+              },
+              {
+                "captions": 1,
+                "rows": 5,
+                "headers": 8,
+                "cells": 32
+              }
+            ],
+            "role_counts": {
+              "assumptions": 1,
+              "executive-summary": 1
+            },
+            "citation_id_counts": {
+              "S1": 1,
+              "S2": 1,
+              "S3": 1,
+              "S4": 1,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {
+                "80": 1
+              },
+              "translated": {
+                "80": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 24,
+                "1": 4,
+                "12": 3,
+                "12.8": 3,
+                "16": 5,
+                "2": 12,
+                "20": 13,
+                "21.3": 4,
+                "3": 10,
+                "4": 4,
+                "5": 15,
+                "64": 14,
+                "7": 6,
+                "7.1": 2,
+                "8": 26,
+                "80": 5,
+                "9": 3,
+                "9.1": 2
+              },
+              "translated": {
+                "0": 24,
+                "1": 4,
+                "12": 3,
+                "12.8": 3,
+                "16": 5,
+                "2": 12,
+                "20": 13,
+                "21.3": 4,
+                "3": 10,
+                "4": 4,
+                "5": 15,
+                "64": 14,
+                "7": 6,
+                "7.1": 2,
+                "8": 26,
+                "80": 5,
+                "9": 3,
+                "9.1": 2
+              },
+              "missing": {},
+              "added": {}
+            }
+          }
+        }
+      },
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 5,
+        "actionability": 4,
+        "originality": 4
+      },
+      "revisions": 0,
+      "review_type": "automated editorial review"
+    }
+  },
+  {
     "order": "708",
     "row": "696",
     "slug": "00696-geo-d069b269",
