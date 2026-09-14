@@ -58,6 +58,14 @@ DECISION_ANALYSIS_REQUIREMENTS = """把分析写成读者能够使用的条件�
    每个反转阈值必须代回原公式逐项复核：写清固定哪些变量、改变哪一个变量，
    阈值两侧以及阈值处的A/B结果，确认不等号方向。不能用同时暗改多个输入
    制造反转；所有联动假设必须显式列出，摘要/表格/正文的口径必须完全一致。
+   预算须逐项闭合：基线采样、监测、审核、共同前置修复、后续行动和未使用工时
+   都要交代；共同前置工作的成本和产出须同时计入A/B。若修复空间耗尽，明确
+   剩余工时如何分配，不能一边按全部工时计成本，一边无解释地丢弃剩余产能。
+   公式中的每一项须对应实际行动；不能把“不产生增量”的监测又算成修复收益。
+   实测整数计数与模型期望值要分开：期望增量可为小数，但不能冒充已观测计数。
+   用整数计数执行时直接求出可行计数及边界，不得先四舍五入百分比再决定行动。
+   行动规则按先后顺序覆盖全部情境：先检查不可行/停止条件，再比较可行选项；
+   明确相等时、零增量、零错误、预算耗尽的处理，摘要、两张表和执行路径一致。
 5. 对每个关键指标给出分子/分母、抽样单位、采集者、时间窗口和偏差控制。
    如用人工评估AI答案，说明目标问题如何选、同一组问题如何按平台重复采样、
    如何处理结果波动、独立复核和分歧裁决；不要凭空承诺统计显著性。
@@ -658,18 +666,19 @@ def has_pending_cross_language_feedback(audit: dict) -> bool:
 
 
 def _revision_feedback(audit: dict) -> dict:
-    """Carry every current issue and every earlier blocker into the next revision."""
+    """Carry every authored revision's repair obligations into the next draft."""
     current = audit["attempts"][-1]
     metrics = current["structure"].get("metrics", {})
     required_fixes = []
-    # Earlier blockers remain explicit regression obligations even if a later
-    # reviewer did not repeat them. Their presence alone does not lower scores.
+    # An omitted finding is not evidence that its repair is still present.
+    # Preserve each original ID across normal retries and resumed runs, including
+    # editorial issues and structural fixes. Only blockers require independent
+    # historical blocker checks; these obligations alone do not lower scores.
     for attempt in audit["attempts"]:
         review = attempt.get("review", {})
-        groups = [("blocker", review.get("blockers", []))]
-        if attempt is current:
-            groups += [("structure", attempt["structure"].get("errors", [])),
-                       ("issue", review.get("issues", []))]
+        groups = [("blocker", review.get("blockers", [])),
+                  ("structure", attempt["structure"].get("errors", [])),
+                  ("issue", review.get("issues", []))]
         for kind, items in groups:
             if not isinstance(items, list):
                 continue
@@ -755,6 +764,10 @@ def review_article(article: dict, sources: list[dict], api_key: str, lang: str, 
 逐段核实数字、平台机制、外部案例是否确实由已读取来源支持，引用错位或事实无支持列为blockers。
 涉及离散样本的百分比必须逐项代回整数计数和分母；检查样本能否达到所写门槛，阈值处的
 严格或非严格不等号须与摘要、表格和行动建议一致，不能只复述作者的演算结论。
+独立复算完整工时账、共同前置工作的成本和产出、修复空间耗尽后的剩余工时；逐项核对
+公式是否对应正文所述行动。区分模型期望值与实测整数，期望小数本身不是错误；检查
+实际计数规则是否可执行。按顺序逐个代入零值、相等、超预算情境，确认停止条件优先、
+选项互斥且无遗漏，并同步核对摘要、表格和执行路径。
 区分平台文档中的有益做法（worthwhile）与必要条件（prerequisites），不能把建议
 升级为平台准入要求；受控实验中的odds/odds ratio不能直接当概率或自然检索效果。
 先判断论断类型，再判断是否需要外部证据，不要把作者明示的情景输入、条件式推论和建议
@@ -1127,10 +1140,8 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 brief = {key: value for key, value in brief.items() if key in brief_fields}
                 audit["brief"] = brief
                 write_audit(audit_path, audit)
-            draft_instruction = ("依据本次编辑稿和独立审稿意见，续修一篇有独立观点和证据链的中文行业洞察。"
-                                 if editorial_revision is not None else
-                                 "按照下列研究提纲，写一篇有独立观点和证据链的中文行业洞察。")
-            brief_label = "历史提纲（仅供来源脉络参考，不作为当前方案与数字基准）" if editorial_revision is not None else "提纲"
+            draft_instruction = "结合研究脉络、当前草稿和独立审稿意见，写一篇有独立观点和证据链的中文行业洞察。"
+            brief_label = "历史提纲（未独立验证，仅供研究脉络参考，不作为修订时的方案与数字基准）"
             base_prompt = f"""{draft_instruction}
 目标质量参照顶级战略咨询的研究严谨度，不声称达到BCG审定标准，不模仿其文字。
 {DRAFT_REQUIREMENTS}
@@ -1189,6 +1200,9 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 prompt += f"""\n上稿未通过审查。逐项处理required_fixes的每一个ID，先解决全部blocker
 和结构问题，再重构低分维度对应的论证、表格或计算；不能只追加免责声明、增加篇幅，
 不能删除实质分析来躲避审查。保留过去已修正的事实边界，不得重新引入此前blocker。
+上稿和完整历史修订任务是本轮修订起点；原始提纲中的公式、预算、阈值若已被修正，
+不得为贴合提纲恢复旧值。每次改动模型后须从原始定义重算全部情境，并同步更新标题、
+摘要、两张表和执行路径；历轮issue与结构问题也要核对，不能只处理最后一轮blocker。
 对无来源的行业断言，要么删掉，要么把整条建议（含标题/摘要/结论）收窄到明示条件；
 不能只在文末写“局限”。若tradeoffs或originality不足，必须让读者看见同一预算下
 选项间的放弃项、可观测触发规则、变量变化带来的推荐反转，以及本篇自己推导的
