@@ -1,5 +1,346 @@
 [
   {
+    "order": "710",
+    "row": "698",
+    "slug": "00698-geo-roi-2f7dbe49",
+    "title": "Eco-GEO：فريق محتوى التأمين لديه 80 ساعة فقط، كيف تتم المفاضلة المشروطة بين إصلاح الحقائق وتوسيع الأسئلة الشائعة",
+    "excerpt": "ينطبق على فرق التأمين التي لديها بنود رسمية وقدرة على مراجعة الإجابات: ادفع أولاً تكلفة القياس، ثم قارن بين الإصلاح والتوسيع. يستخدم هذا المقال دفتر 80 ساعة كاملاً وملاحظات بأعداد صحيحة لاشتقاق انعكاس توضيحي، ويؤجل توسيع نطاق GEO عند غياب أساس المعايرة.",
+    "category": "GEO للعلامات التجارية",
+    "tags": "GEO, GEO للعلامة التجارية, البحث بالذكاء الاصطناعي, التأمين, استراتيجية المحتوى, الاستشهاد الصحيح, ميزانية ساعات العمل, Eco-GEO, خدمات GEO, تحسين البحث بالذكاء الاصطناعي",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-14",
+    "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/ar/blog/articles/00698-geo-roi-2f7dbe49/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-14T05:56:57+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "News Source Citing Patterns in AI Search Systems",
+        "url": "https://arxiv.org/html/2507.05301v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-14T05:56:57+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 67505,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "2954b2456bddbed69e47a2509e8307a10b9842e7c602e27b4cc8d63c4b32d31a"
+      },
+      {
+        "id": "S3",
+        "title": "The Latest Purchasing Trends in Global Insurance",
+        "url": "https://www.bcg.com/publications/2023/purchasing-trends-in-global-insurance",
+        "publisher": "BCG",
+        "published": "2023-11-28",
+        "retrieved_at": "2026-09-14T05:56:59+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 12670,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "insurance"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "35c410c4ebaea92e79dc30427c2c43b2c12365ea790f7590f9d7d0fa27ace8b3"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/April-2025/Introducing-Copilot-Search-in-Bing",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-14T05:56:59+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5456,
+        "body_chars": 5456,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "7e984e78bcd9398f245c3a3a7e688836cd2829bde76a155f55f5d5c1874607e4"
+      },
+      {
+        "id": "S5",
+        "title": "IAIS mid-year Global Insurance Market Report 2026 reflects insurance sector stability amid global uncertainty",
+        "url": "https://www.iais.org/2026/07/iais-mid-year-global-insurance-market-report-2026-reflects-insurance-sector-stability-amid-global-uncertainty/",
+        "publisher": "International Association of Insurance Supervisors",
+        "published": "2026-07-09",
+        "retrieved_at": "2026-09-14T05:57:01+00:00",
+        "evidence_kind": "institutional_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 5820,
+        "body_chars": 5820,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "iais.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "insurance"
+        ],
+        "scope_notes": "IAIS interim 2026 monitoring release describing global insurance-sector conditions primarily at end-2025. This is the release body, not the full report, and does not measure any individual Chinese insurer, product, distribution channel or GEO ROI.",
+        "text_sha256": "683b6fa0dbdc3a504f75ec67f89b64b0a5031b211c1f6e85ac80d1fe52dd5b2f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "ar",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 9,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 6,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 13,
+            "headers": 5,
+            "cells": 60
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "economics": 1,
+          "executive-summary": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 1,
+          "S2": 1,
+          "S3": 2,
+          "S4": 1
+        },
+        "visible_character_count": 15050,
+        "zh_character_count": 0,
+        "word_count": 3245,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 5,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com"
+        ],
+        "unique_cited_sources": 4,
+        "unique_cited_domains": 4,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 9,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 6,
+                "cells": 18
+              },
+              {
+                "captions": 1,
+                "rows": 13,
+                "headers": 5,
+                "cells": 60
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 1,
+              "S2": 1,
+              "S3": 2,
+              "S4": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {
+                "80": 1
+              },
+              "translated": {
+                "80": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {
+                "80": 1
+              },
+              "translated": {
+                "80": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 9,
+                "1": 2,
+                "10": 6,
+                "100": 11,
+                "12": 1,
+                "122": 1,
+                "126": 1,
+                "128": 2,
+                "13": 1,
+                "130": 1,
+                "13000": 1,
+                "134": 1,
+                "16": 8,
+                "2": 13,
+                "2.35": 1,
+                "2.67": 1,
+                "2.86": 2,
+                "200": 8,
+                "2022": 1,
+                "22": 1,
+                "24": 27,
+                "24000": 1,
+                "25": 1,
+                "26": 1,
+                "27": 1,
+                "28": 5,
+                "29": 1,
+                "3": 13,
+                "3.08": 1,
+                "3.64": 1,
+                "30": 1,
+                "31": 1,
+                "32": 2,
+                "34": 1,
+                "38": 1,
+                "4": 24,
+                "48": 2,
+                "5": 1,
+                "5%": 4,
+                "50": 3,
+                "56": 4,
+                "6": 6,
+                "7": 2,
+                "76": 1,
+                "8": 14,
+                "80": 22
+              },
+              "translated": {
+                "0": 9,
+                "1": 2,
+                "10": 6,
+                "100": 11,
+                "12": 1,
+                "122": 1,
+                "126": 1,
+                "128": 2,
+                "13": 1,
+                "130": 1,
+                "13000": 1,
+                "134": 1,
+                "16": 8,
+                "2": 13,
+                "2.35": 1,
+                "2.67": 1,
+                "2.86": 2,
+                "200": 8,
+                "2022": 1,
+                "22": 1,
+                "24": 27,
+                "24000": 1,
+                "25": 1,
+                "26": 1,
+                "27": 1,
+                "28": 5,
+                "29": 1,
+                "3": 13,
+                "3.08": 1,
+                "3.64": 1,
+                "30": 1,
+                "31": 1,
+                "32": 2,
+                "34": 1,
+                "38": 1,
+                "4": 24,
+                "48": 2,
+                "5": 1,
+                "5%": 4,
+                "50": 3,
+                "56": 4,
+                "6": 6,
+                "7": 2,
+                "76": 1,
+                "8": 14,
+                "80": 22
+              },
+              "missing": {},
+              "added": {}
+            }
+          }
+        }
+      },
+      "scores": {
+        "thesis": 5,
+        "evidence": 5,
+        "mechanism": 5,
+        "tradeoffs": 5,
+        "actionability": 5,
+        "originality": 5
+      },
+      "revisions": 2,
+      "review_type": "automated editorial review"
+    }
+  },
+  {
     "order": "709",
     "row": "697",
     "slug": "00697-geo-ai-23b600f4",
