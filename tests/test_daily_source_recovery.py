@@ -54,6 +54,55 @@ class SourceRecoveryTests(unittest.TestCase):
         self.assertEqual(localize.call_count, 2)
         self.assertEqual(produce.call_count, 1)
 
+    def test_existing_archive_is_preserved_and_next_unused_ordinal_is_allocated(self):
+        folder = self.stage()
+        previous = folder / 'localization-history/round-0'
+        previous.mkdir(parents=True)
+        (previous / 'zh.json').write_text('previous archive')
+        original_audit = (folder / 'zh.json').read_bytes()
+        with mock.patch.object(daily, 'localize_reviewed_article', side_effect=[
+                ip.InsightQualityError('rejected'), {'en': {}, 'ar': {}}]), \
+                mock.patch.object(ip, 'produce_article', return_value=self.article) as produce:
+            daily.localize_with_source_recovery(self.topic, self.sources, 'test', self.article, folder)
+        self.assertEqual(produce.call_count, 1)
+        self.assertEqual((previous / 'zh.json').read_text(), 'previous archive')
+        self.assertEqual((folder / 'localization-history/round-1/zh.json').read_bytes(), original_audit)
+        self.assertTrue((folder / 'localization-history/round-1/ar.json').is_file())
+
+    def test_interruption_after_locale_removal_keeps_pending_source_feedback_resumable(self):
+        folder = self.stage()
+        original_attempts = self.audit['attempts']
+        with mock.patch.object(daily, 'localize_reviewed_article', side_effect=ip.InsightQualityError('rejected')), \
+                mock.patch.object(ip, 'produce_article', side_effect=KeyboardInterrupt('cancelled before new draft')):
+            with self.assertRaises(KeyboardInterrupt):
+                daily.localize_with_source_recovery(self.topic, self.sources, 'test', self.article, folder)
+        self.assertFalse((folder / 'ar.json').exists())
+        resumed = daily.load_resume_audit(folder.parent, self.topic)
+        self.assertIs(resumed['passed'], False)
+        self.assertEqual(resumed['attempts'], original_attempts)
+        self.assertTrue(ip.has_pending_cross_language_feedback(resumed))
+        self.assertEqual(resumed['cross_language_feedback'][0]['origin_language'], 'ar')
+        self.assertFalse((folder / 'zh.recovery.json').exists())
+
+    def test_failed_checkpoint_write_keeps_original_and_locale_audits_intact(self):
+        folder = self.stage()
+        originals = {lang: (folder / f'{lang}.json').read_bytes() for lang in ('zh', 'ar')}
+        def fail_checkpoint(path, audit):
+            self.assertIs(audit['passed'], False)
+            self.assertTrue(ip.has_pending_cross_language_feedback(audit))
+            path.write_text('{partial')
+            raise OSError('checkpoint write interrupted')
+
+        with mock.patch.object(daily, 'localize_reviewed_article', side_effect=ip.InsightQualityError('rejected')), \
+                mock.patch.object(ip, 'write_audit', side_effect=fail_checkpoint), \
+                mock.patch.object(ip, 'produce_article') as produce:
+            with self.assertRaisesRegex(OSError, 'checkpoint write interrupted'):
+                daily.localize_with_source_recovery(self.topic, self.sources, 'test', self.article, folder)
+        produce.assert_not_called()
+        for lang, original in originals.items():
+            self.assertEqual((folder / f'{lang}.json').read_bytes(), original)
+        self.assertTrue(ip.has_pending_cross_language_feedback(daily.load_resume_audit(folder.parent, self.topic)))
+
     def test_numeric_only_or_provider_failure_never_rewrites_source(self):
         folder = self.stage(blocker=False)
         for error in (ip.InsightQualityError('numeric mismatch'), RuntimeError('provider failure'), ValueError('invalid response')):

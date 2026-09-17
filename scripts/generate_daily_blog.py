@@ -428,12 +428,25 @@ def localize_with_source_recovery(topic, sources, api_key, original, audit_dir):
             resume_audit = load_resume_audit(audit_dir.parent, topic)
             if not insight_pipeline.has_pending_cross_language_feedback(resume_audit):
                 raise
-            history_dir = audit_dir / "localization-history" / f"round-{round_index}"
-            history_dir.mkdir(parents=True, exist_ok=False)
+            archive_index = 0
+            while True:
+                history_dir = audit_dir / "localization-history" / f"round-{archive_index}"
+                try:
+                    history_dir.mkdir(parents=True, exist_ok=False)
+                    break
+                except FileExistsError:
+                    archive_index += 1
             for lang in ("zh", "en", "ar"):
                 path = audit_dir / f"{lang}.json"
                 if path.is_file():
                     shutil.copy2(path, history_dir / path.name)
+            # Persist the validated pending questions before removing their
+            # locale files. A cancellation at any later point must not leave a
+            # reusable old pass that has forgotten the new source obligations.
+            resume_audit["passed"] = False
+            checkpoint_path = audit_dir / "zh.recovery.json"
+            insight_pipeline.write_audit(checkpoint_path, resume_audit)
+            checkpoint_path.replace(audit_dir / "zh.json")
             # Once the source changes, neither previous translation can supply
             # approval or be attached to the new source if a later run stops.
             for lang in ("en", "ar"):
