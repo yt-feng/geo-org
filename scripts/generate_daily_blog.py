@@ -10,6 +10,7 @@ import html
 import json
 import os
 import re
+import shutil
 import time
 import urllib.parse
 import urllib.request
@@ -393,7 +394,66 @@ def localize_reviewed_article(topic, sources, api_key, original, audit_dir):
         pending = {lang: executor.submit(insight_pipeline.produce_article,
             topic, sources, api_key, lang=lang, original=original,
             audit_path=audit_dir / f"{lang}.json") for lang in ("en", "ar")}
-        return {lang: result.result() for lang, result in pending.items()}
+        results, failures = {}, []
+        for lang, future in pending.items():
+            try:
+                results[lang] = future.result()
+            except Exception as exc:
+                failures.append(exc)
+        # A completed content rejection must not hide a sibling's provider,
+        # credential, or programming failure and send it into editorial retries.
+        for failure in failures:
+            if not isinstance(failure, insight_pipeline.InsightQualityError):
+                raise failure
+        if failures:
+            raise failures[0]
+        return results
+
+
+def localize_with_source_recovery(topic, sources, api_key, original, audit_dir):
+    """Allow one independently reviewed source repair after factual locale findings."""
+    budget = int(os.environ.get("INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS", "1"))
+    if budget not in (0, 1):
+        raise ValueError("INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS must be 0 or 1")
+    for round_index in range(budget + 1):
+        try:
+            translations = localize_reviewed_article(topic, sources, api_key, original, audit_dir)
+            return {"zh": original, **translations}
+        except insight_pipeline.InsightQualityError:
+            if round_index == budget:
+                raise
+            # Reuse the same strict row/source/full-article associations used by
+            # explicit artifact resume. Numeric/format-only failures do not
+            # invent source defects or start a new Chinese draft.
+            resume_audit = load_resume_audit(audit_dir.parent, topic)
+            if not insight_pipeline.has_pending_cross_language_feedback(resume_audit):
+                raise
+            archive_index = 0
+            while True:
+                history_dir = audit_dir / "localization-history" / f"round-{archive_index}"
+                try:
+                    history_dir.mkdir(parents=True, exist_ok=False)
+                    break
+                except FileExistsError:
+                    archive_index += 1
+            for lang in ("zh", "en", "ar"):
+                path = audit_dir / f"{lang}.json"
+                if path.is_file():
+                    shutil.copy2(path, history_dir / path.name)
+            # Persist the validated pending questions before removing their
+            # locale files. A cancellation at any later point must not leave a
+            # reusable old pass that has forgotten the new source obligations.
+            resume_audit["passed"] = False
+            checkpoint_path = audit_dir / "zh.recovery.json"
+            insight_pipeline.write_audit(checkpoint_path, resume_audit)
+            checkpoint_path.replace(audit_dir / "zh.json")
+            # Once the source changes, neither previous translation can supply
+            # approval or be attached to the new source if a later run stops.
+            for lang in ("en", "ar"):
+                (audit_dir / f"{lang}.json").unlink(missing_ok=True)
+            print("Translation review found source questions; correcting Chinese once before retranslating both languages.", flush=True)
+            original = insight_pipeline.produce_article(topic, sources, api_key,
+                audit_path=audit_dir / "zh.json", resume_audit=resume_audit)
 
 
 def load_resume_audit(resume_dir: Path, topic: gb.TopicRow) -> dict:
@@ -492,7 +552,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     else:
         articles["zh"] = insight_pipeline.produce_article(topic, sources, api_key, recent_posts=recent,
             audit_path=audit_dir / "zh.json", resume_audit=resume_audit, editorial_revision=editorial_revision)
-    articles.update(localize_reviewed_article(topic, sources, api_key, articles["zh"], audit_dir))
+    articles = localize_with_source_recovery(topic, sources, api_key, articles["zh"], audit_dir)
     if set(articles) != {"zh", "en", "ar"}:
         raise RuntimeError("All three reviewed languages are required before writing output")
     author, initials = gb.deterministic_author(topic.title)
