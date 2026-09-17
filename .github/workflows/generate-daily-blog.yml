@@ -66,6 +66,7 @@ jobs:
           DEEPSEEK_REQUEST_DELAY: "0.2"
           DEEPSEEK_RETRIES: "3"
           INSIGHT_MAX_REVISIONS: "2"
+          INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS: "1"
           INSIGHT_MIN_ZH_CHARS: "2600"
           INSIGHT_API_TIMEOUT: "300"
           PREVIEW_ONLY: ${{ inputs.preview }}

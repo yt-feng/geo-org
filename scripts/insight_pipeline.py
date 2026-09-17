@@ -58,6 +58,8 @@ DECISION_ANALYSIS_REQUIREMENTS = """把分析写成读者能够使用的条件�
    每个反转阈值必须代回原公式逐项复核：写清固定哪些变量、改变哪一个变量，
    阈值两侧以及阈值处的A/B结果，确认不等号方向。不能用同时暗改多个输入
    制造反转；所有联动假设必须显式列出，摘要/表格/正文的口径必须完全一致。
+   接受边界必须明确包含或排除等号；逐项核验恰好等于阈值、零/负增量和方案相等
+   的情况。HTML正文中的比较符号使用 &lt;、&gt; 或 ≤、≥，不能将公式写成伪标签。
    预算须逐项闭合：基线采样、监测、审核、共同前置修复、后续行动和未使用工时
    都要交代；共同前置工作的成本和产出须同时计入A/B。若修复空间耗尽，明确
    剩余工时如何分配，不能一边按全部工时计成本，一边无解释地丢弃剩余产能。
@@ -73,8 +75,14 @@ DECISION_ANALYSIS_REQUIREMENTS = """把分析写成读者能够使用的条件�
 6. 把通用来源迁移到本场景时逐步说明：来源观察→可能机制→本场景满足的条件→
    如何验证→什么结果将推翻建议。缺少垂直证据时收窄为条件式试验，不重复加上
    “无证据”就继续肯定外推。至少回应一个会改变资源分配的反方解释。
+   读取窗口未保留显著性标记时，只能说“本窗口无法确认显著性”，不能据此断言
+   “无统计显著性”，也不能用比值比大小替代显著性检验。
 优先重构论点、表格和计算，删去低价值复述；不要靠多写段落解决低分。
 """
+
+
+class InsightQualityError(RuntimeError):
+    """All bounded draft attempts completed but content gates still rejected them."""
 
 
 class _CompletionError(ValueError):
@@ -1178,6 +1186,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             base_prompt = f"""将下方深度洞察完整本地化为{'English' if lang == 'en' else 'Modern Standard Arabic'}。
 保持所有分析、因果关系、例子、反论点、局限、数字、表格、公式及行动条件，不缩写为摘要。
 保留所有HTML标签结构、data-role属性、data-source-id属性、引用URL与[S1]格式ID。
+保留每个文本块的位置与数字的重复次数；HTML文本中的比较符号使用 &lt;、&gt; 或 ≤、≥，不能变成伪标签。
 仅翻译人类可见的内容。原文以数字字符写的数值保持数字形式并使用ASCII（含0、1），保留百分号与公式，不改成zero、one等拼写数词；原文以中文文字写的数词保持文字形式，译为目标语言对应数词（如“四周”译为“four weeks”），不要改为数字4；数量、单位、范围、序数和币种均不得改变。
 段落可以自然改写，但不能合并/删除章节、表格、脚注或限定条件，不能增加新事实。
 输出完整JSON title,excerpt,body_html,tags。title以Eco-GEO:开头。
@@ -1216,6 +1225,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 完整修订任务：{json.dumps(feedback, ensure_ascii=False)}"""
                 if lang != "zh":
                     prompt += "\n当前是译稿修订：以上分析重构要求仅适用于中文创作。译稿只能依据中文原文修复忠实度、措辞和格式，不能新增或改动原文的方案、表格、数字、假设及结论；若问题来自中文原文自身，明确报告，不能在译稿中自行补造。"
+                    prompt += "\n数值差异按 numeric_changes 各字段的 block_differences 定位原文与译稿。公式和阈值中的数字字符须原样保留，例如 ΔQ=0 不能译为 ΔQ is zero。修复对应段落，不能在无关位置追加数字凑齐次数；unpaired_candidates 仅为线索，须先核对完整原文位置。"
             draft_origin = "editorial_revision" if editorial_revision is not None and revision == start_revision else "model"
             if draft_origin == "editorial_revision":
                 raw = editorial_revision
@@ -1280,7 +1290,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 visible_issues = [issue[:500] for issue in issues[:8] if isinstance(issue, str)]
                 if visible_issues:
                     print(f"Insight {lang}: revision {revision} review issues: {json.dumps(visible_issues, ensure_ascii=False)}", flush=True)
-        raise RuntimeError(f"{lang} insight did not pass quality gates; inspect {audit_path}")
+        raise InsightQualityError(f"{lang} insight did not pass quality gates; inspect {audit_path}")
     except Exception as exc:
         audit["error"] = str(exc)
         write_audit(audit_path, audit)

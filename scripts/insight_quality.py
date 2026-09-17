@@ -271,6 +271,122 @@ def _numbers(text: str) -> Counter[str]:
     return result
 
 
+def _numeric_blocks(parser: _FragmentParser) -> list[dict[str, Any]]:
+    """Collect non-overlapping visible text blocks for diagnostic alignment.
+
+    Inline markup stays within its paragraph or cell. Container text surrounding
+    nested blocks is emitted separately, so no number is counted twice. Paths and
+    indices identify structural positions, not verified semantic correspondence.
+    """
+    blocks: list[dict[str, Any]] = []
+    fragments: list[str] = []
+    context = ("root", "/")
+    path_fragments: Counter[str] = Counter()
+    block_tags = _TEXT_BLOCKS - {"br", "hr"} | {"pre"}
+
+    def flush() -> None:
+        value = "".join(fragments).strip()
+        fragments.clear()
+        if not value:
+            return
+        tag, path = context
+        path_fragments[path] += 1
+        blocks.append({
+            "block_index": len(blocks) + 1,
+            "path": path,
+            "fragment_index": path_fragments[path],
+            "tag": tag,
+            "text": value,
+            "numbers": dict(sorted(_numbers(value).items())),
+        })
+
+    def visit(node: _Node, path: str) -> None:
+        nonlocal context
+        previous = context
+        boundary = node.tag in block_tags
+        if boundary:
+            flush()
+            context = (node.tag, path)
+        siblings: Counter[str] = Counter()
+        for child in node.children:
+            if isinstance(child, _Node):
+                siblings[child.tag] += 1
+                child_path = path.rstrip("/") + f"/{child.tag}[{siblings[child.tag]}]"
+                visit(child, child_path)
+                if child.tag in {"br", "hr"}:
+                    fragments.append("\n")
+            else:
+                fragments.append(child)
+        if boundary:
+            flush()
+            context = previous
+
+    visit(parser.root, "/")
+    flush()
+    return blocks
+
+
+def _numeric_block_feedback(
+    source_blocks: list[dict[str, Any]],
+    translated_blocks: list[dict[str, Any]],
+    missing: Counter[str],
+    added: Counter[str],
+) -> dict[str, Any]:
+    """Add bounded repair evidence without changing the numeric acceptance gate."""
+    # At most 9,600 characters of body text, even for malformed or changed HTML.
+    # Full input text remains in the article audit; feedback is only an excerpt.
+    limit, text_limit = 4, 1200
+
+    def record(block: dict[str, Any] | None) -> dict[str, Any] | None:
+        if block is None:
+            return None
+        return {
+            **block,
+            "text": block["text"][:text_limit],
+            "text_truncated": len(block["text"]) > text_limit,
+        }
+
+    signature = lambda blocks: [
+        (block["path"], block["tag"], block["fragment_index"]) for block in blocks
+    ]
+    aligned = signature(source_blocks) == signature(translated_blocks)
+    differences = []
+    if aligned:
+        for source, translated in zip(source_blocks, translated_blocks):
+            source_numbers = Counter(source["numbers"])
+            translated_numbers = Counter(translated["numbers"])
+            block_missing = source_numbers - translated_numbers
+            block_added = translated_numbers - source_numbers
+            if block_missing or block_added:
+                differences.append({
+                    "source": record(source), "translated": record(translated),
+                    "missing": dict(sorted(block_missing.items())),
+                    "added": dict(sorted(block_added.items())),
+                })
+    else:
+        # When blocks have been inserted/deleted, do not invent paragraph pairs.
+        # These are candidate locations for the aggregate delta, not per-block
+        # assertions that a translation is missing or has added that value.
+        for side, blocks, relevant in (
+            ("source", source_blocks, missing),
+            ("translated", translated_blocks, added),
+        ):
+            for block in blocks:
+                candidates = Counter(block["numbers"]) & relevant
+                if candidates:
+                    differences.append({
+                        "source": record(block) if side == "source" else None,
+                        "translated": record(block) if side == "translated" else None,
+                        "candidate_tokens": dict(sorted(candidates.items())),
+                    })
+    return {
+        "block_alignment": "structural_position" if aligned else "unpaired_candidates",
+        "block_differences": differences[:limit],
+        "block_differences_total": len(differences),
+        "block_differences_truncated": len(differences) > limit,
+    }
+
+
 def _shape(parser: _FragmentParser) -> dict[str, Any]:
     nodes = parser.root.descendants()
     tables = parser.root.descendants("table")
@@ -447,6 +563,21 @@ def validate_insight(
                     "missing": dict(sorted(missing.items())), "added": dict(sorted(added.items())),
                 }
                 if missing or added:
+                    if key == "body_html":
+                        source_blocks = _numeric_blocks(original)
+                        translated_blocks = _numeric_blocks(parser)
+                    else:
+                        def field_block(text: str) -> list[dict[str, Any]]:
+                            return [{
+                                "block_index": 1, "path": key, "fragment_index": 1,
+                                "tag": key, "text": text,
+                                "numbers": dict(sorted(_numbers(text).items())),
+                            }]
+                        source_blocks = field_block(original_text)
+                        translated_blocks = field_block(translated_text)
+                    translation_metrics["numeric_changes"][key].update(
+                        _numeric_block_feedback(source_blocks, translated_blocks, missing, added)
+                    )
                     errors.append(f"Translation changes numeric values in {key}; inspect numeric_changes metrics.")
             metrics["translation"] = translation_metrics
     # Preserve order while avoiding repeated diagnostics from repeated unsafe HTML.
