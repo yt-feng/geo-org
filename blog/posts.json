@@ -1,5 +1,188 @@
 [
   {
+    "order": "711",
+    "row": "699",
+    "slug": "00699-ai-geo-4a6a30df",
+    "title": "Eco-GEO：事实纠偏期，管理咨询品牌如何分配80小时AI搜索投入",
+    "excerpt": "面向已发现AI事实错误的管理咨询品牌，本文提出一项待校准的试验政策：先处理已核实严重错误；样本无已知错误且监测稳定后，再比较证据完善与覆盖扩展的完整工时和合格引用净增量。80小时预算、20小时单位成本及相等时暂缓均是示意设定，不是行业事实。",
+    "category": "管理咨询",
+    "tags": "品牌化GEO, AI搜索, 管理咨询, 预算决策, 危机修复, 事实错误率, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-17",
+    "image": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00699-ai-geo-4a6a30df/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-17T07:46:48+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "UK BUSINESSES GRAPPLE WITH COST PRESSURES, CYBER RISKS AND STALLED ECONOMIC GROWTH ACCORDING TO NEW MCA RESEARCH",
+        "url": "https://www.mca.org.uk/press-releases/uk-businesses-grapple-with-cost-pressures-cyber-risks-and-stalled-economic-growth-according-to-new-mca-research",
+        "publisher": "Management Consultancies Association",
+        "published": "2026-05-06",
+        "retrieved_at": "2026-09-17T07:46:50+00:00",
+        "evidence_kind": "industry_association_research",
+        "excerpt_start": 0,
+        "excerpt_end": 9392,
+        "body_chars": 9392,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "mca.org.uk",
+        "evidence_role": "industry_context",
+        "industries": [
+          "management_consulting"
+        ],
+        "scope_notes": "MCA/Savanta Client Survey 2026 of more than 350 senior users of consulting services in the UK, including private/public sectors. Self-reported client priorities and assessments are not representative of Chinese buyers and do not measure GEO attribution.",
+        "text_sha256": "e3fda5310009099c076e03670d73f34ad93ea8ba6d619386079bd9cb1c0b883a"
+      },
+      {
+        "id": "S3",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-17T07:46:50+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+        "url": "https://blogs.bing.com/webmaster/February-2026/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-17T07:46:50+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 6043,
+        "body_chars": 6043,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "f6687661960668704af65c098aeb036f60596547f40f6c6eae8d89cdd8b77c22"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-17T07:46:51+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 7,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 5,
+            "cells": 15
+          },
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 6,
+            "cells": 18
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S2": 3,
+          "S3": 2,
+          "S4": 2,
+          "S5": 2
+        },
+        "visible_character_count": 6406,
+        "zh_character_count": 4595,
+        "word_count": 798,
+        "minimum_zh_characters": 2600,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 11,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "mca.org.uk"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 5,
+        "actionability": 4,
+        "originality": 4
+      },
+      "revisions": 4,
+      "review_type": "automated editorial review"
+    }
+  },
+  {
     "order": "710",
     "row": "698",
     "slug": "00698-geo-roi-2f7dbe49",
