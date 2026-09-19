@@ -58,7 +58,7 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           SITE_URL: https://eco-geo.org
-          DEEPSEEK_MODEL: deepseek-v4-pro
+          DEEPSEEK_MODEL: deepseek-flash
           INSIGHT_THINKING: "enabled"
           INSIGHT_MAX_TOKENS: "24000"
           INSIGHT_REVIEW_MAX_TOKENS: "48000"

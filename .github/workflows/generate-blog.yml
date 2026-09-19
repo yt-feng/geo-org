@@ -50,7 +50,7 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           SITE_URL: https://eco-geo.org
           DEEPSEEK_MODEL: deepseek-v4-flash
-          DEEPSEEK_FALLBACK_MODELS: deepseek-v4-pro
+          DEEPSEEK_FALLBACK_MODELS: deepseek-flash
           DEEPSEEK_THINKING: "disabled"
           DEEPSEEK_MAX_TOKENS: "2200"
           DEEPSEEK_TEMPERATURE: "0.72"
