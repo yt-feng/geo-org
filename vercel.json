@@ -105,5 +105,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/jianong",
+      "destination": "https://jianong.eco-geo.org/",
+      "permanent": false
+    },
+    {
+      "source": "/jianong/:path*",
+      "destination": "https://jianong.eco-geo.org/:path*",
+      "permanent": false
+    }
   ]
 }
