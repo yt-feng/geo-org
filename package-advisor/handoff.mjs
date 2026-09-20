@@ -1,4 +1,4 @@
-import { getOptionalServices, LANGUAGE_LABELS } from './catalog.mjs';
+import { getOptionalServices, LANGUAGE_LABELS, ESTIMATE_NOTICE, PLATFORM_LABELS } from './catalog.mjs';
 
 export const HANDOFF_KEY = 'eco-geo-advisor-contact-v1';
 export const HANDOFF_TTL = 30 * 60 * 1000;
@@ -8,21 +8,24 @@ const text = (value) => String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\
 
 export function buildContactSummary(input, plan, recommendation = {}) {
   const languages = input.languages || [input.market === 'cn' ? 'zh' : 'en'];
-  const mixedLanguages = input.market !== 'cn' && languages.includes('en') && languages.some(language => language !== 'en');
   const scope = input.scope || { productLines: 1, scenarios: 3, audiences: 3, intents: 30 };
   const lines = [
-    'Eco GEO · 待确认的服务方案',
+    'Eco GEO · 初步服务方案',
     `市场：${input.market === 'cn' ? '中文 GEO / 按季度' : '境外 GEO / 按项目范围'}`,
     `服务语种：${languages.map(language => LANGUAGE_LABELS[language] || text(language)).join('、')}`,
     `预算参考：${input.budgetMode === 'discuss' || input.budget === null ? '另行讨论' : money(input.budget)}`,
     `范围：${scope.productLines} 条产品线；每条 ${scope.scenarios} 个场景、${scope.audiences} 类客群；全项目 ${scope.intents} 个去重意图主题`,
     `选择：${text(plan.name)}`,
     `来源：${recommendation.source === 'deepseek' ? 'AI 建议及当前手动配置' : '当前配置预览'}`,
-    plan.items?.length ? `${mixedLanguages ? '英语部分服务费小计' : '已定价部分'}：${money(plan.total)}${input.market === 'cn' ? ' / 季度基础包及已定价项' : ''}` : '已定价部分：尚未形成报价',
-    plan.quoteRequired ? '另有待报价范围；以上小计不是完整报价。' : '金额为参考服务费，按确认范围与排期签约。',
+    plan.items?.length ? `初步服务费合计：${money(plan.total)}${input.market === 'cn' ? ' / 季度基包及所选增项' : ''}` : '尚未形成报价，请先选择所需服务。',
+    ESTIMATE_NOTICE,
+    '金额为人民币未税服务费，媒体采购、广告、差旅及外部数据采购等费用单列。',
     '', '已选交付：',
   ];
-  for (const item of plan.items || []) lines.push(`- ${text(item.name)} × ${item.quantity} ${text(item.unit)}：${money(item.total)}`);
+  for (const item of plan.items || []) {
+    lines.push(`- ${text(item.name)} × ${item.quantity} ${text(item.unit)}：${money(item.total)}`);
+    if (item.pricingDetails?.length > 1) lines.push(`  ${item.pricingDetails.map(part => `${text(part.label)} ${money(part.amount)}`).join('；')}`);
+  }
   const names = new Map(getOptionalServices(input.market || 'overseas').map(item => [item.id, item.name]));
   const removed = Object.entries(input.modules || {}).filter(([id, quantity]) => quantity === 0 && names.has(id)).map(([id]) => names.get(id));
   if (removed.length) lines.push('', `本次明确不选：${removed.join('、')}`);
@@ -30,13 +33,13 @@ export function buildContactSummary(input, plan, recommendation = {}) {
     lines.push('', '待报价范围：');
     for (const item of plan.pendingItems) lines.push(`- ${text(item.name)} × ${item.quantity || 1}：${text(item.reason)}；${(item.details || []).map(text).join('；')}`);
   }
-  if (input.listening?.enabled) {
+  if (plan.items?.some(item => item.id === 'SOCIAL_LISTENING')) {
     const listening = input.listening;
     const depth = { mentions: '提及与趋势', insights: '分析与洞察', strategy: '战略与专项研究' };
     const cadence = { monthly: '月度', weekly: '每周', daily: '每日', realtime: '实时告警' };
-    lines.push('', `Social listening：${(listening.platforms || []).map(text).join('、')}；${depth[listening.depth] || ''}；${cadence[listening.cadence] || ''}；${listening.markets} 个市场 / ${listening.languages} 种语言；历史数据及响应安排待确认。`);
+    lines.push('', `Social listening：${(listening.platforms || []).map(platform => text(PLATFORM_LABELS[platform] || platform)).join('、')}；${depth[listening.depth] || ''}；${cadence[listening.cadence] || ''}；${listening.markets} 个市场 / ${listening.languages} 种语言；历史数据及响应安排待确认。`);
   }
-  lines.push('', '希望确认：最终服务范围、待报价项目、资料前提、排期与验收方式。');
+  lines.push('', '希望确认：正式报价、最终服务范围、资料前提、排期与验收方式。');
   if (input.notes) lines.push('', `我的补充：${text(input.notes)}`);
   let summary = lines.join('\n');
   const encoder = new TextEncoder();

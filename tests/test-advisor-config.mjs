@@ -73,10 +73,12 @@ test('amount budgets above one million stay exact while discussion budgets stay 
   for (const budget of [1000001, 25000000, Number.MAX_SAFE_INTEGER]) {
     const result = planner.createRecommendation({ ...INPUT, market: 'overseas', budget });
     for (const plan of result.plans) {
-      assert.equal(plan.quoteRequired, true);
-      assert.equal(plan.withinBudget, null);
-      assert.equal(plan.remainingBudget, null);
-      assert.ok(plan.pendingItems.length > 0);
+      assert.equal(plan.quoteRequired, false);
+      assert.equal(plan.pricingStatus, 'estimate');
+      assert.ok(plan.total > 0);
+      assert.equal(plan.withinBudget, plan.total <= budget);
+      assert.equal(plan.remainingBudget, budget - plan.total);
+      assert.deepEqual(plan.pendingItems, []);
       assertSubtotal(plan);
     }
   }
@@ -95,20 +97,21 @@ test('amount budgets above one million stay exact while discussion budgets stay 
   ]) assert.throws(() => planner.validateInput({ ...INPUT, ...fields }));
 });
 
-test('social listening keeps configured scope visible and unpriced rather than treating it as a free inclusion', () => {
+test('social listening keeps its own configured quarterly estimate and adds it exactly once', () => {
   for (const market of ['cn', 'overseas']) {
     const input = { ...INPUT, budget: 100000, market, listening: LISTENING };
     for (const plan of planner.createRecommendation(input).plans) {
-      const pending = plan.pendingItems.filter(item => item.id === 'SOCIAL_LISTENING');
-      assert.equal(pending.length, 1);
-      assert.deepEqual(pending[0].parameters, planner.validateInput(input).listening);
-      assert.equal(pending[0].unitPrice, null);
-      assert.equal(pending[0].total, null);
-      assert.ok(pending[0].details.length > 0);
-      assert.equal(plan.quoteRequired, true);
-      assert.ok(['partial', 'quote_required'].includes(plan.pricingStatus));
-      assert.equal(plan.withinBudget, null);
-      assert.equal(plan.remainingBudget, null);
+      const listening = plan.items.filter(item => item.id === 'SOCIAL_LISTENING');
+      assert.equal(listening.length, 1);
+      assert.deepEqual(listening[0].parameters, planner.validateInput(input).listening);
+      assert.equal(listening[0].unitPrice, 180000);
+      assert.equal(listening[0].total, 180000);
+      assert.ok(listening[0].details.length > 0);
+      assert.equal(plan.quoteRequired, false);
+      assert.equal(plan.pricingStatus, 'estimate');
+      assert.equal(plan.estimated, true);
+      assert.equal(plan.withinBudget, plan.total <= input.budget);
+      assert.equal(plan.remainingBudget, input.budget - plan.total);
       assertSubtotal(plan);
     }
   }
@@ -131,9 +134,9 @@ test('social-listening parameters are bounded, deduplicated and reject embedded 
   }
   const unspecified = planner.createRecommendation({ ...INPUT, listening: { ...LISTENING, platforms: [] } });
   for (const plan of unspecified.plans) {
-    const pending = plan.pendingItems.find(item => item.id === 'SOCIAL_LISTENING');
-    assert.ok(pending.details.some(detail => /平台.*待确认/.test(detail)));
-    assert.equal(plan.withinBudget, null);
+    const listening = plan.items.find(item => item.id === 'SOCIAL_LISTENING');
+    assert.equal(listening.total, 90000, 'unspecified platforms use one platform as the explicit preliminary basis');
+    assert.equal(plan.pricingStatus, 'estimate');
   }
 });
 
@@ -176,7 +179,7 @@ test('the Chinese quarterly base is exactly one 50000 unit and never borrows ove
     assert.equal(core.total, 50000);
     assert.equal(core.required, true);
     assert.equal(plan.total, 50000);
-    assert.equal(plan.pricingStatus, 'priced');
+    assert.equal(plan.pricingStatus, 'estimate');
     assert.deepEqual(plan.pendingItems, [], 'unselected Chinese extras must not become default paid scope');
     assert.ok(plan.items.every(item => item.id.startsWith('CN_')));
     assertSubtotal(plan);
@@ -218,21 +221,22 @@ test('intent scope is explicitly deduplicated and is not inflated by alternative
   }
 });
 
-test('expanded overseas scope stays pending while confirmed Chinese standard units are priced', () => {
+test('expanded overseas scope receives a numeric preliminary estimate while Chinese standard units keep confirmed arithmetic', () => {
   const scope = { ...INPUT.scope, productLines: 2 };
   const overseas = planner.createRecommendation({ ...INPUT, market: 'overseas', budget: 150000, scope });
   for (const plan of overseas.plans) {
-    const expansion = plan.pendingItems.find(item => item.id === 'OVERSEAS_SCOPE');
+    const expansion = plan.items.find(item => item.id === 'OVERSEAS_SCOPE');
     assert.ok(expansion);
     assert.equal(expansion.required, true);
-    assert.equal(plan.quoteRequired, true);
-    assert.equal(plan.withinBudget, null);
-    assert.equal(plan.remainingBudget, null);
+    assert.ok(expansion.total > 0);
+    assert.equal(plan.quoteRequired, false);
+    assert.equal(plan.withinBudget, plan.total <= 150000);
+    assert.equal(plan.remainingBudget, 150000 - plan.total);
     assertSubtotal(plan);
   }
   const chinese = planner.createRecommendation({ ...INPUT, budget: 150000, scope }).plans[0];
   assert.equal(chinese.total, 100000);
-  assert.equal(chinese.pricingStatus, 'priced');
+  assert.equal(chinese.pricingStatus, 'estimate');
   assert.ok(!chinese.pendingItems.some(item => item.id === 'OVERSEAS_SCOPE'));
 });
 
@@ -247,24 +251,23 @@ test('the largest valid Chinese scope keeps its exact core quantity beyond optio
   }
 });
 
-test('Chinese extras stay pending instead of inheriting a numeric overseas tariff', () => {
+test('Chinese extras use their independent numeric reference catalog and preserve the confirmed base', () => {
   const options = pricing.getOptionalServices('cn');
   const addon = options.find(item => item.id.startsWith('CN_W'));
   assert.ok(addon, 'Chinese add-ons must have their own identifiers');
-  assert.ok(options.filter(item => item.id.startsWith('CN_W')).every(item => item.price === null));
+  assert.ok(options.filter(item => item.optional && item.id.startsWith('CN_W')).every(item => Number.isSafeInteger(item.price) && item.price > 0));
   const input = { ...INPUT, budget: 100000, modules: { [addon.id]: 2 } };
   for (const plan of planner.createRecommendation(input).plans) {
-    assert.equal(plan.total, 50000);
-    assert.equal(plan.pricingStatus, 'partial');
-    assert.equal(plan.quoteRequired, true);
-    assert.equal(plan.withinBudget, null, 'unknown add-on prices cannot be declared within budget');
-    assert.equal(plan.remainingBudget, null);
-    assert.equal(plan.pricedSubtotalWithinBudget, true);
-    const pending = plan.pendingItems.find(item => item.id === addon.id);
-    assert.ok(pending);
-    assert.equal(pending.quantity, 2);
-    assert.equal(pending.unitPrice, null);
-    assert.equal(pending.total, null);
+    assert.equal(plan.total, 50000 + addon.price * 2);
+    assert.equal(plan.pricingStatus, 'estimate');
+    assert.equal(plan.quoteRequired, false);
+    assert.equal(plan.withinBudget, plan.total <= input.budget);
+    assert.equal(plan.remainingBudget, input.budget - plan.total);
+    const extra = plan.items.find(item => item.id === addon.id);
+    assert.ok(extra);
+    assert.equal(extra.quantity, 2);
+    assert.equal(extra.unitPrice, addon.price);
+    assert.equal(extra.total, addon.price * 2);
     assertSubtotal(plan);
   }
 });
@@ -356,7 +359,7 @@ test('new structured fields pass through the worker validator and unknown fields
     for (const plan of (await response.json()).plans) assertSubtotal(plan);
   }
   for (const fields of [
-    { unknown: true }, { scope: { ...INPUT.scope, total: 1 } }, { budget: null, budgetMode: 'amount' }, { market: 'invalid' },
+    { unknown: true }, { scopeExclusions: ['W05'] }, { scope: { ...INPUT.scope, total: 1 } }, { budget: null, budgetMode: 'amount' }, { market: 'invalid' },
     { market: null }, { budgetMode: null }, { scope: null },
     { listening: { ...LISTENING, price: 1 } }, { modules: { CN_W08: { quantity: 1, unitPrice: 1 } } },
     { modules: { UNKNOWN: 1 } }, { modules: { CN_W08: 101 } },

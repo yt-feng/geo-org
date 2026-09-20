@@ -586,3 +586,14 @@
   .item-controls a.remove-module { display: inline-flex; align-items: center; min-height: 44px; padding: 7px 4px; font-size: 16px; line-height: 1.75; color: #644620; text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
   .item-controls a.remove-module:focus-visible { outline: 3px solid #806323; outline-offset: 4px; border-radius: 4px; }
 }
+
+/* Visible language options and a consistent preliminary quotation label. */
+.language-expanded { border: 0; margin: 20px 0 0; padding: 0; min-width: 0; }
+.language-expanded legend { color: #e5eedf; font-size: 18px; font-weight: 600; padding: 0; margin-bottom: 14px; }
+.language-expanded .language-checks { padding-top: 0; }
+.estimate-notice { margin: 16px 0 22px; padding: 14px 17px; border-left: 3px solid #769350; background: #f0f4e8; color: #354837; font-size: 16px; line-height: 1.65; }
+.item-estimate-details { margin-top: 14px; color: #425644; font-size: 16px; }
+.item-estimate-details summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.item-estimate-details ul { padding-left: 20px; margin: 8px 0; }
+.item-estimate-details li { margin-bottom: 7px; }
+#export-button[disabled] { cursor: wait; opacity: .6; }
