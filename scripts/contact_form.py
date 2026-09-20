@@ -1,8 +1,9 @@
 """Reusable, localized consultation form for the existing Eco GEO website.
 
 Insert contact_form_html(lang, endpoint) as one HTML block. CSS is scoped to the
-component; each inline script binds only its preceding section. No customer data
-is kept in browser storage, and an acknowledged request ID is required for success.
+component; each inline script binds only its preceding section. Form values are
+not persisted. An explicit advisor handoff may populate a short-lived session
+draft; an acknowledged request ID is required for submission success.
 """
 from __future__ import annotations
 
@@ -231,4 +232,5 @@ def contact_form_html(lang: str = "zh", endpoint: str = "/api/contact") -> str:
         f'<p class="ecf-email">{esc(copy["alternative"])} '
         f'<a href="mailto:{PUBLIC_EMAIL}" rel="noopener" dir="ltr">{PUBLIC_EMAIL}</a></p>'
         f'</section><script>{contact_form_script(lang)}</script>'
+        '<script type="module" src="/contact/advisor-handoff.mjs"></script>'
     )

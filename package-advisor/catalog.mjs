@@ -52,7 +52,7 @@ export const catalog = [
   },
   {
     "id": "W03",
-    "name": "竞品与Social Listening研究",
+    "name": "竞品与精选公开讨论研究",
     "unit": "批",
     "price": 12500,
     "deliverables": [
@@ -1103,7 +1103,7 @@ export const advisorConfig = {
   "taxBasis": "未税",
   "priceLabel": "参考服务价",
   "budgetMin": 5000,
-  "budgetMax": 1000000,
+  "budgetMax": null,
   "budgetStep": 5000,
   "defaultBudget": 80000,
   "periodDays": 90,
@@ -1173,3 +1173,95 @@ export const pricingPrinciples = [
 ];
 
 export default catalog;
+
+
+export const INTENT_DEFINITION = '意图是独立、去重的采购或消费决策主题；同义问法、语句改写不重复计数。意图数是全项目总量，不是平台回答条数或文章数量。';
+export const CN_UNIT_PRICE = 50000;
+export const CN_UNIT_SCOPE = { productLines: 1, scenarios: 3, audiences: 3, intents: 30 };
+
+const cnQuarter = {
+  id: 'CN_QUARTER', name: '中文 GEO 季度标准单元', unit: '季度标准单元', price: CN_UNIT_PRICE,
+  deliverables: [
+    '每单元覆盖1条产品线、最多3个场景、最多3类客群的季度服务范围',
+    '每单元按30个去重决策主题规划；全项目意图总量与范围单元取较大值，不重复叠加收费',
+    '去重决策主题与问法清单，以及场景、客群和决策阶段映射',
+    '品牌事实与证据缺口、内容行动清单，形成后续可复用资料',
+    '季度执行记录与复盘，以及下一季度优先级',
+    '原创篇数、发布数量、观测平台和轮次在启动清单中确认；范围矩阵不等于文章或发布数量',
+  ],
+  prerequisites: ['客户确认产品线、场景、客群及去重意图范围，提供可核验资料与审校负责人'],
+  category: '中文季度服务', priority: 1, goals: ['visibility', 'content', 'authority'], stages: ['starting', 'growing', 'established'],
+  market: 'cn', pricingStatus: 'priced', optional: false, maxQuantity: 115600,
+};
+
+// Chinese extensions have independently confirmed scopes and quotations.
+// Overseas unit prices never determine a Chinese extension's price.
+const cnScopeDescriptions = {
+  W01: '整理品牌与产品事实、主张证据、资料缺口和公开范围。',
+  W02: '围绕业务与客户决策进行访谈、记录整理和主题编码。',
+  W03: '研究竞品及精选公开讨论，核对来源并形成有限范围洞察。',
+  W04: '建立去重决策主题与问题框架，映射场景、客群、阶段和证据。',
+  W05: '结合现有事实与研究，形成定位、内容方向和阶段优先级。',
+  W06: '按现有网站条件确定可读正文、索引、内链和知识架构修复清单。',
+  W07: '制作企业、产品或场景页面，组织事实、证据、问答与行动入口。',
+  W08: '制作研究型内容，完成来源核对、结构编辑与客户事实审校。',
+  W09: '基于真实材料制作案例或选型比较，核对证据与公开权限。',
+  W10: '将已有合格母稿适配到确认的渠道，按增量制作与提交范围交付。',
+  W11: '将已有技术资料整理为可阅读和可检索的网页内容。',
+  W12: '按所选渠道建设企业资料主页、品牌信息和联络入口。',
+  W13: '优化现有视频的标题、字幕、转录和说明，拍摄另行确定。',
+  W14: '以真实身份开展专业社区答复或客户反馈流程建设，记录审核状态。',
+  W15: '整合经核准证据与访谈材料，完成白皮书的结构、编辑和审校。',
+  W16: '解读客户获准使用的数据或测试结果，形成方法、图表和研究结论。',
+  W17: '基于真实伙伴合作组织联合内容、审校协调与约定发布。',
+  W18: '更新或提交真实有效的行业目录、协会或门店资料。',
+  W19: '核对产品资料、可售状态及购买或询盘路径，确定事件验证方式。',
+  W20: '按确认的语种和审校条件开展内容本地化，原文及新增研究分开确认。',
+  W21: '根据参训对象配置课程、案例、审核规范与交接内容。',
+  W22: '仅针对超出季度基包范围的额外团队、额外审批链或专项协作配置统筹；基础排期与季度复盘不重复收费。',
+  W23: '根据已有数据与组件配置知识中心页面或观测看板。',
+  W24: '按明确接口、数据权限和验收用例制作小型系统原型。',
+  W25: '核验并修订已有内容中的事实，记录来源、版本和变更。',
+  W26: '围绕现有讲者与素材策划活动、资料、彩排和问答复用。',
+  W27: '按客户确认的选型规则或公式配置产品工具及结果展示。',
+  W28: '人工深审已取得的AI引用来源，核对证据、品牌提及和内容机会。',
+  W29: '使用获准工具归档公开来源正文、元数据、时间与获取状态。',
+  W30: '按确认的竞品、产品与渠道范围核对规格、价格和可售状态。',
+  W31: '按获准门店与触点范围观察消费者旅程，记录问题证据与优先级。',
+  PITCH_SETUP: '确认事实、发言人、资料包、媒体匹配规则和沟通流程。',
+  PITCH: '进行新闻角度研究、媒体匹配、个性化沟通和过程复盘；刊登由编辑决定。',
+};
+
+export const cnCatalog = [cnQuarter, ...catalog.filter(item => !item.sampling && item.id !== 'W04').map(item => ({
+  id: `CN_${item.id}`, name: item.id === 'W22' ? '中文 · 超出基包的多团队项目统筹' : `中文 · ${item.name}`, unit: item.unit,
+  price: null, deliverables: [cnScopeDescriptions[item.id], '具体数量、平台、研究深度与审校轮次随中文增项范围确认', '交付对应成果、来源或执行记录，并完成约定交接'],
+  prerequisites: ['客户提供真实资料、所需权限及审校负责人', '与中文季度基包核对重叠范围，增量服务单独核价，不套用境外单价'],
+  category: item.category, priority: item.priority, goals: [...item.goals], stages: [...item.stages],
+  market: 'cn', pricingStatus: 'quote_required', optional: true,
+  maxQuantity: item.id === 'PITCH_SETUP' ? 1 : 100,
+})), {
+  id: 'CN_AI_OBSERVATION', name: '中文 · AI回答观测与分析增项', unit: '增项范围', price: null,
+  deliverables: ['按中文增项需求确认实际平台、去重题库、采样协议、基线与复测安排', '交付约定的原回答证据、引用、缺失状态和分析', '具体题数、平台数、轮次与观察量另行确认；此项不是社交聆听'],
+  prerequisites: ['先核对中文季度基包中已约定的观测范围，避免重复收费', '客户确认题库和可核验品牌事实'],
+  category: 'AI观测与复盘', priority: 2, goals: ['visibility', 'content', 'authority'], stages: ['starting', 'growing', 'established'],
+  market: 'cn', pricingStatus: 'quote_required', optional: true, maxQuantity: 100,
+}];
+
+export const socialListeningService = {
+  id: 'SOCIAL_LISTENING', name: '定制 Social Listening 社交聆听', unit: '定制项目', price: null,
+  deliverables: ['按平台、研究深度、监测频率、市场与语种确定采集和分析范围', '另行确认历史覆盖、可取得的数据、主题或品牌识别口径与报告交付', '告警规则、响应安排及外部数据费用按实际需求核价'],
+  prerequisites: ['平台授权与数据可取得性需要确认', 'AI回答采样和一次性精选讨论研究均不替代持续社交聆听'],
+  category: '定制社交聆听', priority: 2, goals: ['visibility', 'content', 'authority'], stages: ['starting', 'growing', 'established'],
+  market: 'all', pricingStatus: 'quote_required', optional: true, maxQuantity: 1,
+};
+
+export const optionalServices = [
+  ...catalog.map(item => ({ ...item, market: 'overseas', pricingStatus: 'priced', optional: true, maxQuantity: item.sampling || item.id === 'PITCH_SETUP' ? 1 : 100 })),
+  ...cnCatalog,
+  socialListeningService,
+];
+
+export function getOptionalServices(market = 'overseas') {
+  if (!['cn', 'overseas'].includes(market)) throw new Error('invalid_market');
+  return optionalServices.filter(item => item.market === market || item.market === 'all').map(item => ({ ...item, deliverables: [...item.deliverables], prerequisites: [...item.prerequisites], goals: [...item.goals], stages: [...item.stages] }));
+}

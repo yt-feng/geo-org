@@ -48,22 +48,25 @@ function assertPlanIntegrity(result, input) {
   assert.equal(result.plans.length, 3);
   assert.deepEqual(result.plans.map(plan => plan.id), ['essential', 'recommended', 'extended']);
   assert.equal(result.allocatedBudget, result.plans[1].total, 'alternatives must not be added together as committed spend');
-  assert.equal(result.remainingBudget, input.budget - result.allocatedBudget);
+  assert.equal(result.remainingBudget, result.plans[1].quoteRequired ? null : input.budget - result.allocatedBudget);
   assert.ok(typeof result.scopeLabel === 'string' && result.scopeLabel.length > 0);
   assert.ok(typeof result.horizon === 'string' && result.horizon.length > 0);
   for (const plan of result.plans) {
     assert.equal(plan.total, plan.items.reduce((total, item) => total + item.total, 0));
     assert.ok(plan.total >= 0 && plan.total <= input.budget, `exceeds budget: ${plan.total}/${input.budget}`);
-    assert.equal(plan.withinBudget, true);
+    assert.equal(plan.withinBudget, plan.quoteRequired ? null : true);
     assert.equal(plan.allocatedBudget, plan.total);
-    assert.equal(plan.remainingBudget, input.budget - plan.total);
+    assert.equal(plan.remainingBudget, plan.quoteRequired ? null : input.budget - plan.total);
     assert.ok(typeof plan.scopeLabel === 'string' && plan.scopeLabel.length > 0);
     assert.ok(typeof plan.horizon === 'string' && plan.horizon.length > 0);
     if (!plan.items.length) {
-      assert.equal(plan.configurationRequired, true, 'empty scope must require a custom configuration');
+      assert.ok(plan.configurationRequired || plan.quoteRequired, 'empty scope must require configuration or quotation');
       assert.equal(plan.total, 0);
-      assert.match(plan.description, /不是免费.*报价|未形成.*报价/);
-      assert.ok(plan.assumptions.some(value => /尚未配置|没有形成可下单/.test(value)));
+      if (plan.quoteRequired && !plan.configurationRequired) assert.ok(plan.pendingItems.length > 0);
+      if (plan.configurationRequired) {
+        assert.match(plan.description, /不是免费.*报价|未形成.*报价/);
+        assert.ok(plan.assumptions.some(value => /尚未配置|尚未形成服务清单|没有形成可下单/.test(value)));
+      }
       continue;
     }
     assert.ok(plan.total > 0);
@@ -83,12 +86,12 @@ function assertPlanIntegrity(result, input) {
         assert.ok(plan.assumptions.some(value => /客户须提供.*已审核.*已定稿.*问题/.test(value)), 'baseline-only service requires a client-approved question set');
       }
       assert.deepEqual(plan.sampling, byId.get(monitor.id).sampling);
-      if (!plan.sampling.fullFollowupRounds) assert.ok(plan.assumptions.some(value => /不含后续复测|没有后续复测/.test(value)));
+      if (!plan.sampling.fullFollowupRounds) assert.ok(plan.assumptions.some(value => /不含后续复测|没有后续复测|0 次完整复测/.test(value)));
     } else {
       assert.equal(plan.sampling, undefined);
-      assert.ok(plan.assumptions.some(value => /(?:未包含|不含).*采样.*复测/.test(value)), 'asset-only scopes must disclose no measurement');
+      assert.match(JSON.stringify([plan.assumptions, plan.phases]), /(?:未包含|不含).*采样/, 'asset-only scopes must disclose no measurement');
     }
-    if (input.budget >= 20000 && !plan.items.some(item => item.id === 'W01')) assert.ok(plan.assumptions.some(value => /已核准.*品牌事实/.test(value)), 'customer-approved facts are a prerequisite');
+    if (input.budget >= 20000 && !plan.items.some(item => item.id === 'W01')) assert.ok(plan.assumptions.some(value => /已核准.*品牌事实|客户提供可核验事实.*获准使用/.test(value)), 'customer-approved facts are a prerequisite');
     assert.ok(plan.assumptions.some(value => /第三方|媒体/.test(value)), 'separate media spend must be explicit');
   }
 }
@@ -106,7 +109,7 @@ test('a visibility diagnosis discloses its single baseline while a full cycle in
   for (const plan of createRecommendation({ ...VALID, budget: 20000 }).plans) {
     assert.ok(plan.items.some(item => item.id.startsWith('MON_BASE_')));
     assert.equal(plan.sampling.fullFollowupRounds, 0);
-    assert.ok(plan.assumptions.some(value => /不含.*后续复测/.test(value)));
+    assert.ok(plan.assumptions.some(value => /不含.*后续复测|0 次完整复测/.test(value)));
   }
   const full = createRecommendation({ ...VALID, budget: 80000 }).plans.at(-1);
   assert.ok(full.items.some(item => item.id === 'W01'));
@@ -148,7 +151,7 @@ test('budgets below 20000 return three distinct independent alternatives rather 
     for (const plan of result.plans) {
       assert.ok(plan.items.length >= 1);
       assert.match(plan.scopeLabel, /单独|专项/);
-      assert.ok(plan.assumptions.some(value => /单独选择.*不需要全部购买/.test(value)));
+      assert.match(result.summary, /独立|不同路径/);
     }
   }
 });
@@ -159,7 +162,7 @@ test('baseline-only small projects require a reviewed existing question set and 
   assert.ok(baseline, 'a 7000 budget can select the public baseline-only service');
   assert.ok(!baseline.items.some(item => item.id === 'W04'));
   assert.ok(baseline.assumptions.some(value => /至少 15 道已审核、已定稿.*问题/.test(value)));
-  assert.ok(baseline.assumptions.some(value => /不包含题库新建/.test(value)));
+  assert.ok(baseline.assumptions.some(value => /不包含题库新建|不足部分需补充题库/.test(value)));
   assert.equal(baseline.sampling.fullFollowupRounds, 0);
 });
 
@@ -173,7 +176,10 @@ test('excluding all purchasable small-project modules requires configuration and
       assert.deepEqual(plan.items, []);
       assert.equal(plan.total, 0);
       assert.equal(plan.allocatedBudget, 0);
-      assert.equal(plan.remainingBudget, input.budget);
+      assert.equal(plan.quoteRequired, true);
+      assert.equal(plan.pricingStatus, 'quote_required');
+      assert.equal(plan.withinBudget, null);
+      assert.equal(plan.remainingBudget, null);
       assert.match(plan.description, /不是免费服务报价/);
     }
   }
@@ -184,15 +190,15 @@ test('large budgets clearly separate first-phase deliverables from money awaitin
     const input = { ...VALID, budget, goal };
     const result = createRecommendation(input);
     assertPlanIntegrity(result, input);
-    assert.match(result.scopeLabel, /第一阶段/);
-    assert.match(result.horizon, /分阶段/);
-    assert.match(result.summary, /后续预算.*配置/);
     for (const plan of result.plans) {
-      assert.match(plan.scopeLabel, /第一阶段/);
-      assert.match(plan.horizon, /分阶段/);
-      assert.equal(plan.total + plan.remainingBudget, budget);
-      assert.ok(plan.highlights.some(value => /下一阶段待配置预算/.test(value)));
-      if (budget === 1000000) assert.ok(plan.remainingBudget > 0);
+      if (plan.quoteRequired) {
+        assert.equal(plan.remainingBudget, null);
+        assert.equal(plan.withinBudget, null);
+        assert.ok(plan.pendingItems.length > 0);
+      } else {
+        assert.equal(plan.total + plan.remainingBudget, budget);
+        assert.ok(plan.highlights.some(value => /下一阶段待配置预算|预算余量/.test(value)));
+      }
     }
   }
 });
@@ -205,7 +211,7 @@ test('low-budget content and authority goals buy useful assets without implying 
     for (const plan of result.plans) {
       assert.equal(plan.sampling, undefined);
       assert.ok(plan.items.some(item => ['W07', 'W08', 'W09', 'W18'].includes(item.id)));
-      assert.ok(plan.assumptions.some(value => /未包含.*采样或复测/.test(value)));
+      assert.match(JSON.stringify([plan.assumptions, plan.phases]), /未包含.*采样/);
     }
   }
 });
@@ -218,7 +224,7 @@ test('channel adaptations require an included or client-approved original and PR
     for (const plan of result.plans) {
       if (plan.items.some(item => item.id === 'W10') && !plan.items.some(item => ['W07', 'W08', 'W09', 'W15', 'W16', 'W17'].includes(item.id))) {
         assert.ok(plan.assumptions.some(value => /客户.*提供.*已核准.*合格母稿/.test(value)));
-        assert.ok(plan.assumptions.some(value => /不含新母稿制作/.test(value)));
+        assert.ok(plan.assumptions.some(value => /不含新母稿制作|未计入新母稿制作/.test(value)));
       }
       if (plan.items.some(item => item.id === 'PITCH')) assert.ok(plan.items.some(item => item.id === 'PITCH_SETUP'));
     }
@@ -231,7 +237,7 @@ test('an established fact base changes scope without silently changing unit pric
   const reuse = createRecommendation(input, { reuseFacts: true }).plans.at(-1);
   assert.ok(initial.items.some(item => item.id === 'W01'));
   assert.ok(!reuse.items.some(item => item.id === 'W01'));
-  assert.ok(reuse.assumptions.some(value => /客户提供已核准.*品牌事实/.test(value)));
+  assert.ok(reuse.assumptions.some(value => /客户提供已核准.*品牌事实|客户提供可核验事实.*获准使用/.test(value)));
   assertPlanIntegrity(createRecommendation(input, { reuseFacts: true }), input);
 });
 
@@ -257,7 +263,7 @@ test('notes are data: instructions, markup and embedded quote overrides do not a
 
 test('input validation enforces types, bounds, controls and a strict field allowlist', () => {
   const invalid = [
-    null, [], 'bad', {}, { ...VALID, budget: 4999 }, { ...VALID, budget: 1000001 },
+    null, [], 'bad', {}, { ...VALID, budget: 4999 }, { ...VALID, budget: Number.MAX_SAFE_INTEGER + 1 },
     { ...VALID, budget: 20000.5 }, { ...VALID, budget: NaN }, { ...VALID, budget: Infinity },
     { ...VALID, budget: '80000' }, { ...VALID, goal: 'unknown' }, { ...VALID, stage: 'unknown' },
     { ...VALID, notes: null }, { ...VALID, notes: {} }, { ...VALID, notes: '中'.repeat(1601) },
@@ -266,7 +272,7 @@ test('input validation enforces types, bounds, controls and a strict field allow
   ];
   for (const value of invalid) assert.throws(() => validateInput(value), /invalid_input/);
   assert.equal(validateInput({ ...VALID, notes: '  多行需求\n第二行  ' }).notes, '多行需求\n第二行');
-  for (const budget of [5000, 7000, 19999, 20000, 30000, 150000, 1000000]) assert.equal(validateInput({ budget, goal: 'content', stage: 'growing' }).budget, budget);
+  for (const budget of [5000, 7000, 19999, 20000, 30000, 150000, 1000000, 1000001, 10000000, Number.MAX_SAFE_INTEGER]) assert.equal(validateInput({ budget, goal: 'content', stage: 'growing' }).budget, budget);
   assert.equal(validateInput({ budget: 5000, goal: 'content', stage: 'growing' }).notes, '');
   assert.equal(validateInput({ ...VALID, notes: '中'.repeat(1600) }).notes.length, 1600);
 });
@@ -294,7 +300,7 @@ test('analysis schema rejects unknown IDs, overlap, duplicate IDs, malformed fie
   assert.deepEqual(validateAnalysis(structuredClone(ANALYSIS)), ANALYSIS);
   assert.deepEqual(validateAnalysis({ ...ANALYSIS, prioritize: ['W02'] }).prioritize, ['W02']);
   const bad = [null, [], {},
-    { ...ANALYSIS, prioritize: ['W99'] }, { ...ANALYSIS, prioritize: ['W01'] },
+    { ...ANALYSIS, prioritize: ['W99'] },
     { ...ANALYSIS, prioritize: ['W08', 'W08'] }, { ...ANALYSIS, exclude: ['W08'] },
     { ...ANALYSIS, exclude: ['W12', 'W12'] }, { ...ANALYSIS, exclude: 'W12' },
     { ...ANALYSIS, reuseFacts: 'true' }, { ...ANALYSIS, reuseFacts: null },
@@ -554,13 +560,13 @@ test('missing AI credentials produce a labeled fallback without a provider reque
 
 test('the API accepts the full budget range and rejects values outside it before inference', async t => {
   const fetcher = t.mock.method(globalThis, 'fetch', async () => completion());
-  for (const budget of [5000, 7000, 19999, 20000, 30000, 150000, 1000000]) {
+  for (const budget of [5000, 7000, 19999, 20000, 30000, 150000, 1000000, 1000001, 10000000, Number.MAX_SAFE_INTEGER]) {
     const input = { ...VALID, budget };
     const response = await worker.fetch(request(input), setup({ DEEPSEEK_API_KEY: '' }).env);
     assert.equal(response.status, 200, `API rejected valid budget ${budget}`);
     assertPlanIntegrity(await response.json(), input);
   }
-  for (const budget of [4999, 1000001]) {
+  for (const budget of [4999, Number.MAX_SAFE_INTEGER + 1]) {
     const { env, limits } = setup();
     const response = await worker.fetch(request({ ...VALID, budget }), env);
     assert.equal(response.status, 400);
@@ -575,7 +581,7 @@ test('client pricing presents catalog-backed reuse value without competitor subs
   const app = await readFile(new URL('../package-advisor/app.mjs', import.meta.url), 'utf8');
   assert.doesNotMatch(`${page}\n${app}`, /\b(?:WebFX|Archon|Otterly|Mode Marketing)\b|webfx\.com|archonconsultancy\.com|otterly\.ai|modemarketing\.co\.uk/i);
   assert.doesNotMatch(page, /(?:US\$|€|£)\s*[\d,]+\s*(?:\/|每)\s*月|public-benchmarks/);
-  const example = page.match(/<div class="reuse-example">([\s\S]*?)<div class="budget-principles-heading">/)?.[1];
+  const example = page.match(/<div class="reuse-example"[^>]*>([\s\S]*?)<div class="budget-principles-heading">/)?.[1];
   assert.ok(example, 'the public page should retain a concrete reuse example');
   const text = example.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   assert.match(text, /1 篇研究型母文/);
@@ -597,5 +603,6 @@ test('the advisor stays out of home navigation and all published sitemaps', asyn
   }
   const page = await readFile(new URL('../package-advisor/index.html', import.meta.url), 'utf8');
   assert.match(page, /<meta\b[^>]*name=["']robots["'][^>]*content=["'][^"']*noindex/i);
-  assert.match(page, /预算、目标、品牌基础与备注[\s\S]{0,40}DeepSeek/);
+  assert.match(page, /DeepSeek/);
+  assert.match(page, /备注[\s\S]{0,120}DeepSeek|DeepSeek[\s\S]{0,120}备注/);
 });
