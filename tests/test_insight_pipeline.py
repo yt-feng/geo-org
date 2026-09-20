@@ -17,6 +17,20 @@ import insight_pipeline as ip
 import generate_daily_blog as daily
 
 
+class GenerationBudgetTests(unittest.TestCase):
+    def test_research_and_chinese_draft_budgets_are_independent(self):
+        for environment, expected in (({}, [48000, 48000]),
+                ({"INSIGHT_RESEARCH_MAX_TOKENS": "36000", "INSIGHT_MAX_TOKENS": "52000"}, [36000, 52000])):
+            with self.subTest(environment=environment), tempfile.TemporaryDirectory() as directory, \
+                    patch.dict(os.environ, environment, clear=True), \
+                    patch.object(ip, "request_json", side_effect=[{}, RuntimeError("stop before draft")]) as request:
+                with self.assertRaisesRegex(RuntimeError, "stop before draft"):
+                    ip.produce_article(ip.gb.TopicRow(2, "Example", {}, "Brand", "GEO"), [], "key",
+                        audit_path=Path(directory) / "zh.json")
+                self.assertEqual([call.kwargs["stage"] for call in request.call_args_list], ["research-brief", "zh-draft-0"])
+                self.assertEqual([call.kwargs["max_tokens"] for call in request.call_args_list], expected)
+
+
 class ProviderResponse(io.BytesIO):
     def __init__(self, body, content_type="text/event-stream"):
         super().__init__(body.encode() if isinstance(body, str) else body)
@@ -86,14 +100,56 @@ class StreamingTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "incomplete output \\(length\\)"):
             self.request(event({"content": '{"ok":true}'}, finish_reason="length") + "data: [DONE]\n\n")
 
-    def test_length_cutoff_does_not_retry_identical_budget(self):
-        body = event({"content": '{"ok":true}'}, finish_reason="length") + "data: [DONE]\n\n"
-        logs = io.StringIO()
-        with patch.object(ip.gb, "RETRIES", 3), patch.object(ip.urllib.request, "urlopen", return_value=ProviderResponse(body)) as opener, contextlib.redirect_stdout(logs):
-            with self.assertRaisesRegex(RuntimeError, "identical-budget retry disabled"):
+    def test_length_cutoff_retries_once_with_larger_budget_only(self):
+        cutoff = event({"content": '{"partial":true}'}, finish_reason="length") + "data: [DONE]\n\n"
+        success = event({"content": '{"complete":true}'}, finish_reason="stop") + "data: [DONE]\n\n"
+        with patch.object(ip.gb, "RETRIES", 3), patch.object(ip.urllib.request, "urlopen",
+                side_effect=[ProviderResponse(cutoff), ProviderResponse(success)]) as opener:
+            result = ip.request_json("prompt", "key", stage="test-length", max_tokens=48000)
+        self.assertEqual(result, {"complete": True})
+        self.assertEqual([json.loads(call.args[0].data)["max_tokens"] for call in opener.call_args_list], [48000, 96000])
+        self.assertTrue(all(json.loads(call.args[0].data)["thinking"]["type"] == "enabled" for call in opener.call_args_list))
+
+    def test_repeated_length_cutoff_stops_after_one_larger_attempt(self):
+        cutoff = event({"content": '{"partial":true}'}, finish_reason="length") + "data: [DONE]\n\n"
+        with patch.object(ip.gb, "RETRIES", 3), patch.object(ip.urllib.request, "urlopen",
+                side_effect=[ProviderResponse(cutoff), ProviderResponse(cutoff)]) as opener:
+            with self.assertRaisesRegex(RuntimeError, "bounded length recovery exhausted"):
                 ip.request_json("prompt", "key", stage="test-length", max_tokens=24000)
+        self.assertEqual([json.loads(call.args[0].data)["max_tokens"] for call in opener.call_args_list], [24000, 48000])
+
+    def test_length_cutoff_at_configured_cap_does_not_retry(self):
+        cutoff = event({"content": '{"partial":true}'}, finish_reason="length") + "data: [DONE]\n\n"
+        with patch.object(ip.gb, "RETRIES", 3), patch.dict(os.environ, {"INSIGHT_LENGTH_RETRY_MAX_TOKENS": "48000"}), \
+                patch.object(ip.urllib.request, "urlopen", return_value=ProviderResponse(cutoff)) as opener:
+            with self.assertRaisesRegex(RuntimeError, "identical-budget retry disabled"):
+                ip.request_json("prompt", "key", stage="test-length", max_tokens=48000)
         self.assertEqual(opener.call_count, 1)
-        self.assertIn("increase this stage's max_tokens", logs.getvalue())
+
+    def test_length_recovery_respects_cap_and_total_request_limit(self):
+        cutoff = event({"content": '{"partial":true}'}, finish_reason="length") + "data: [DONE]\n\n"
+        with patch.object(ip.gb, "RETRIES", 3), patch.dict(os.environ, {"INSIGHT_LENGTH_RETRY_MAX_TOKENS": "64000"}), \
+                patch.object(ip.time, "sleep"), patch.object(ip.urllib.request, "urlopen", side_effect=[
+                    TimeoutError(), ProviderResponse(cutoff), TimeoutError()]) as opener:
+            with self.assertRaisesRegex(RuntimeError, "idle read timeout"):
+                ip.request_json("prompt", "key", stage="test-length", max_tokens=48000)
+        self.assertEqual([json.loads(call.args[0].data)["max_tokens"] for call in opener.call_args_list], [48000, 48000, 64000])
+
+    def test_nonstream_length_cutoff_uses_same_bounded_recovery(self):
+        def response(reason, content):
+            return ProviderResponse(json.dumps({"choices": [{"finish_reason": reason, "message": {"content": content}}]}), "application/json")
+        with patch.object(ip.gb, "RETRIES", 3), patch.object(ip.urllib.request, "urlopen", side_effect=[
+                response("length", '{"partial":true}'), response("stop", '{"complete":true}')]) as opener:
+            self.assertEqual(ip.request_json("prompt", "key", stage="test-json", max_tokens=48000), {"complete": True})
+        self.assertEqual(opener.call_count, 2)
+
+    def test_invalid_length_recovery_budget_never_calls_provider(self):
+        for value in ("0", "-1", "invalid"):
+            with self.subTest(value=value), patch.dict(os.environ, {"INSIGHT_LENGTH_RETRY_MAX_TOKENS": value}), \
+                    patch.object(ip.urllib.request, "urlopen") as opener:
+                with self.assertRaisesRegex(ValueError, "INSIGHT_LENGTH_RETRY_MAX_TOKENS"):
+                    ip.request_json("prompt", "key", stage="test-budget")
+                opener.assert_not_called()
 
     def test_error_chunk_and_malformed_json_do_not_expose_provider_body(self):
         for body in ('data: {"error":{"message":"KEY_PRIVATE_SENTINEL SOURCE_PRIVATE_SENTINEL"}}\n\n',

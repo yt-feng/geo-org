@@ -93,6 +93,10 @@ class _CompletionError(ValueError):
         self.retryable = retryable
 
 
+class _OutputLimitError(_CompletionError):
+    """Only a provider length cutoff can request a larger completion budget."""
+
+
 def _safe_usage(value: object) -> dict:
     if not isinstance(value, dict):
         return {}
@@ -109,7 +113,7 @@ def _safe_usage(value: object) -> dict:
 
 def _require_stopped(reason: object) -> None:
     if reason == "length":
-        raise _CompletionError(
+        raise _OutputLimitError(
             "incomplete output (length); increase this stage's max_tokens or shorten the requested output; identical-budget retry disabled",
             retryable=False,
         )
@@ -218,7 +222,7 @@ def _read_completion(response: object, progress: dict, cancelled: threading.Even
     return "".join(parts), usage
 
 
-def _provider_failure(exc: Exception) -> tuple[str, bool]:
+def _provider_failure(exc: Exception) -> tuple[str, bool, bool]:
     """Return safe reason and whether retrying is appropriate, without raw text."""
     if isinstance(exc, urllib.error.HTTPError):
         code = exc.code
@@ -228,14 +232,14 @@ def _provider_failure(exc: Exception) -> tuple[str, bool]:
             exc.close()
         except Exception:
             pass
-        return f"provider HTTP {code}", code not in {400, 401, 403, 404, 422}
+        return f"provider HTTP {code}", code not in {400, 401, 403, 404, 422}, False
     if isinstance(exc, _CompletionError):
-        return str(exc), exc.retryable
+        return str(exc), exc.retryable, isinstance(exc, _OutputLimitError)
     if isinstance(exc, TimeoutError) or isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, TimeoutError):
-        return "provider idle read timeout", True
+        return "provider idle read timeout", True, False
     if isinstance(exc, (OSError, urllib.error.URLError)):
-        return "provider transport failure", True
-    return "invalid provider response", True
+        return "provider transport failure", True, False
+    return "invalid provider response", True, False
 
 
 def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeout: int, total_timeout: int) -> tuple[str, dict]:
@@ -276,7 +280,9 @@ def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeou
                     raise _CompletionError("request exceeded overall deadline")
                 if success:
                     return value
-                reason, retryable = value
+                reason, retryable, output_limited = value
+                if output_limited:
+                    raise _OutputLimitError(reason, retryable=False)
                 if not retryable:
                     raise RuntimeError(reason)
                 raise _CompletionError(reason)
@@ -299,8 +305,12 @@ def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeou
             threading.Thread(target=close_response, name="insight-http-close", daemon=True).start()
 
 
-def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 24000) -> dict:
+def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 48000) -> dict:
     """Read complete streamed JSON, with bounded retries and safe progress logs."""
+    if type(max_tokens) is not int or max_tokens <= 0:
+        raise ValueError("max_tokens must be a positive integer")
+    length_retry_limit = token_budget("INSIGHT_LENGTH_RETRY_MAX_TOKENS", 96000)
+    length_recovered = False
     payload = {
         "model": os.environ.get("INSIGHT_REVIEW_MODEL", gb.MODEL) if "review" in stage else gb.MODEL,
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
@@ -310,14 +320,14 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 240
         "stream": True,
         "stream_options": {"include_usage": True},
     }
-    request = urllib.request.Request(gb.DEEPSEEK_URL, data=json.dumps(payload, ensure_ascii=False).encode(),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "Accept": "text/event-stream"}, method="POST")
     idle_timeout = int(os.environ.get("INSIGHT_API_TIMEOUT", "300"))
     total_timeout = int(os.environ.get("INSIGHT_API_DEADLINE", "1200"))
     if idle_timeout <= 0 or total_timeout <= 0:
         raise ValueError("Insight API timeouts must be positive seconds")
     for attempt in range(1, gb.RETRIES + 1):
-        print(f"Insight {stage}: request {attempt}/{gb.RETRIES}", flush=True)
+        request = urllib.request.Request(gb.DEEPSEEK_URL, data=json.dumps(payload, ensure_ascii=False).encode(),
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "Accept": "text/event-stream"}, method="POST")
+        print(f"Insight {stage}: request {attempt}/{gb.RETRIES}; max_tokens={payload['max_tokens']}", flush=True)
         try:
             content, usage = _completion_attempt(request, stage, idle_timeout, total_timeout)
             try:
@@ -328,6 +338,16 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 240
                 raise _CompletionError("response must be a JSON object")
             print(f"Insight {stage}: completed; usage={json.dumps(usage)}", flush=True)
             return result
+        except _OutputLimitError as exc:
+            # Partial JSON never reaches callers. Permit one fresh, larger request
+            # within the same total attempt limit; never repeat a cut-off budget.
+            next_budget = min(payload["max_tokens"] * 2, length_retry_limit)
+            if length_recovered or attempt == gb.RETRIES or next_budget <= payload["max_tokens"]:
+                raise RuntimeError(f"Insight {stage}: {exc}; bounded length recovery exhausted") from None
+            length_recovered = True
+            payload["max_tokens"] = next_budget
+            print(f"Insight {stage}: output truncated; one larger-budget retry max_tokens={next_budget}", flush=True)
+            continue
         except RuntimeError as exc:
             print(f"Insight {stage}: request {attempt}/{gb.RETRIES} failed: {exc}", flush=True)
             raise RuntimeError(f"Insight {stage}: {exc}") from None
@@ -339,16 +359,21 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 240
     raise RuntimeError(f"Insight {stage} failed: {error}")
 
 
-def review_max_tokens() -> int:
-    """Return the completion budget for independent editorial reviews."""
-    raw = os.environ.get("INSIGHT_REVIEW_MAX_TOKENS", "48000")
+def token_budget(name: str, default: int) -> int:
+    """Validate each stage's output allowance, including its reasoning tokens."""
+    raw = os.environ.get(name, str(default))
     try:
         value = int(raw)
     except ValueError:
-        raise ValueError("INSIGHT_REVIEW_MAX_TOKENS must be a positive integer") from None
+        raise ValueError(f"{name} must be a positive integer") from None
     if value <= 0:
-        raise ValueError("INSIGHT_REVIEW_MAX_TOKENS must be a positive integer")
+        raise ValueError(f"{name} must be a positive integer")
     return value
+
+
+def review_max_tokens() -> int:
+    """Return the completion budget for independent editorial reviews."""
+    return token_budget("INSIGHT_REVIEW_MAX_TOKENS", 48000)
 
 
 class _InlineStyleNormalizer(HTMLParser):
@@ -1140,7 +1165,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 不要把BCG的调研等同于中国本行业事实，不得把引用/提及/点击/成交等同。
 近30篇选题用于避免套路与重复：{json.dumps((recent_posts or [])[:30], ensure_ascii=False)}
 当前选题：{json.dumps(vars(topic), ensure_ascii=False)}
-已读取原始资料：{research_text(sources)}""", api_key, stage="research-brief", max_tokens=24000)
+已读取原始资料：{research_text(sources)}""", api_key, stage="research-brief", max_tokens=token_budget("INSIGHT_RESEARCH_MAX_TOKENS", 48000))
                 brief_fields = {"decision_question", "thesis", "causal_chain", "evidence_map",
                     "segments_and_tradeoffs", "counterargument", "worked_example", "exhibits",
                     "management_actions", "unknowns", "outline", "decision_model"}
@@ -1231,7 +1256,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 raw = editorial_revision
             else:
                 raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
-                                   max_tokens=int(os.environ.get("INSIGHT_MAX_TOKENS", "24000") if lang == "zh" else os.environ.get("INSIGHT_TRANSLATION_MAX_TOKENS", "48000")))
+                                   max_tokens=token_budget("INSIGHT_MAX_TOKENS" if lang == "zh" else "INSIGHT_TRANSLATION_MAX_TOKENS", 48000))
             normalization = {}
             try:
                 article = normalize_article(raw, lang, normalization=normalization)

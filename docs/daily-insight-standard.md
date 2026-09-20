@@ -18,7 +18,7 @@
 
 ## 工作流与维护
 
-日更计划于每天北京时间 08:30 触发（GitHub 排队可能延迟），沿用 Excel 未生成选题和三语输出。生产使用 DeepSeek V4.1 Flash (`deepseek-flash`) thinking，中文稿和提纲输出预算 24,000 tokens，独立审稿和格式复核预算由 `INSIGHT_REVIEW_MAX_TOKENS` 控制，生产默认为 48,000 tokens，译稿预算 48,000 tokens；提纲要求精简为 1,500–2,200 汉字。流程：选题 → 原文检索/读取 → 研究提纲 → 写作/审稿/修订 → 英阿本地化与审稿 → 保存 → 提交 main → Vercel Git 集成部署主站；另行触发仓库的 Pages 发布链路。
+日更计划于每天北京时间 08:30 触发（GitHub 排队可能延迟），沿用 Excel 未生成选题和三语输出。生产使用 DeepSeek V4.1 Flash (`deepseek-flash`) thinking，中文稿和提纲输出预算分别由 `INSIGHT_MAX_TOKENS` 和 `INSIGHT_RESEARCH_MAX_TOKENS` 控制，生产默认为 48,000 tokens（包含思考与正文），独立审稿和格式复核预算由 `INSIGHT_REVIEW_MAX_TOKENS` 控制，生产默认为 48,000 tokens，译稿预算 48,000 tokens；提纲要求精简为 1,500–2,200 汉字。流程：选题 → 原文检索/读取 → 研究提纲 → 写作/审稿/修订 → 英阿本地化与审稿 → 保存 → 提交 main → Vercel Git 集成部署主站；另行触发仓库的 Pages 发布链路。
 
 `generate_daily_blog.py --preview-dir .artifacts/preview` 或 GitHub workflow 的 `preview=true` 生成样稿、保持网站不变。审稿记录在 `.artifacts/insights/<slug>/<lang>.json`，GitHub artifact 保留 14 天；记录原创研究提纲、各轮草稿、审稿与修订回应，以及来源读取边界与正文哈希；网站只保存来源元数据，不保存第三方正文。
 
@@ -40,7 +40,7 @@
 
 Vercel 是主站当前生产部署平台；GITHUB_TOKEN 的限制不能用来推断 Vercel Git 集成未运行。Pages 手动触发仅针对独立的 Pages 链路。
 
-长输出采用 SSE 流式接收，要求正常结束标记与完整 JSON。每 60 秒报告阶段进度，单次请求整体上限 1,200 秒、读取空闲上限 300 秒。输出截断立即停止并报告，不使用相同预算重复请求。Excel 的 60 个现有行业都有独立中英文检索配置，正文依据仍需每次实际读取与验证。
+长输出采用 SSE 流式接收，要求正常结束标记与完整 JSON。每 60 秒报告阶段进度，单次请求整体上限 1,200 秒、读取空闲上限 300 秒。输出截断不接受残缺 JSON；在原有最多三次请求内，只允许一次提高输出预算的完整重试（翻倍且不超过 `INSIGHT_LENGTH_RETRY_MAX_TOKENS`，生产 96,000 tokens）。再次截断、达到上限或已用完请求次数则停止，不使用相同预算重复截断请求。正文长度、独立审稿及三语原子发布门槛保持不变。Excel 的 60 个现有行业都有独立中英文检索配置，正文依据仍需每次实际读取与验证。
 
 失败稿可用 workflow 的 `resume_run_id` 指定原生成任务继续修订。程序重新读取原来源并严格核对 ID、URL、正文摘录哈希，保留提纲及全部历史稿件，追加最多三次正文修订并重新独立审稿；来源变化则停止续写，要求重新研究。历史事实问题须逐项由审稿确认解决，作者回应格式不会消耗正文修订次数。
 
