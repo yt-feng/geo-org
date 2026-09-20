@@ -9,13 +9,66 @@ import json
 import os
 import re
 from datetime import datetime
+from html.parser import HTMLParser
 from pathlib import Path
 from insight_styles import INSIGHT_CSS
 from string import Template
 from typing import Dict, Iterable, List, Mapping, Optional
+from urllib.parse import unquote, urlsplit
 
 EMAIL = "info@eco-geo.com"
 SITE_URL = os.environ.get("SITE_URL", "https://eco-geo.org").rstrip("/")
+
+# Direct-link tools have their own layout and must stay outside public discovery.
+UNLISTED_PATHS = frozenset({"package-advisor"})
+
+
+class _PageVisibilityParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.unlisted = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
+        if tag != "meta":
+            return
+        values = {key.lower(): (value or "").lower() for key, value in attrs}
+        name = values.get("name", "")
+        tokens = set(re.split(r"[,\s]+", values.get("content", "").strip()))
+        if name in {"robots", "googlebot", "bingbot"} and tokens & {"noindex", "none"}:
+            self.unlisted = True
+        if name == "site-visibility" and "unlisted" in tokens:
+            self.unlisted = True
+
+
+def is_unlisted_page(path: Path, text: str = "") -> bool:
+    """Check a site-relative path plus its existing document's visibility intent."""
+    parts = path.parts
+    if any(part.startswith(".") for part in parts):
+        return True
+    if parts and parts[0] in {"en", "ar"}:
+        parts = parts[1:]
+    if parts and parts[0] in UNLISTED_PATHS:
+        return True
+    parser = _PageVisibilityParser()
+    parser.feed(re.split(r"</head\s*>", text, maxsplit=1, flags=re.I)[0])
+    return parser.unlisted
+
+
+def is_public_html(root: Path, path: Path) -> bool:
+    target = root / path
+    return target.is_file() and not is_unlisted_page(path, target.read_text(encoding="utf-8"))
+
+
+def include_in_sitemap(url: str, root: Path) -> bool:
+    parsed = urlsplit(url)
+    path = Path(unquote(parsed.path).lstrip("/"))
+    if is_unlisted_page(path):
+        return False
+    if parsed.netloc and parsed.netloc not in {urlsplit(SITE_URL).netloc, "www.eco-geo.org"}:
+        return True
+    target_path = path if path.suffix else path / "index.html"
+    target = root / target_path
+    return not target.is_file() or is_public_html(root, target_path)
 
 GLOBE_SVG = (
     '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" '
@@ -522,9 +575,16 @@ def localized_article_html(
 
 def ensure_language_scaffold(root: Path = Path(".")) -> None:
     for lang in ("en", "ar"):
-        write_text(root / lang / "index.html", home_page(lang))
-        write_text(root / lang / "brand-audit" / "index.html", audit_page(lang))
-        write_text(root / lang / "blog" / "index.html", blog_index_page(lang))
+        pages = (
+            (Path(lang) / "index.html", home_page),
+            (Path(lang) / "brand-audit" / "index.html", audit_page),
+            (Path(lang) / "blog" / "index.html", blog_index_page),
+        )
+        for relative, renderer in pages:
+            target = root / relative
+            if target.is_file() and is_unlisted_page(relative, target.read_text(encoding="utf-8")):
+                continue
+            write_text(target, renderer(lang))
         posts_path = root / lang / "blog" / "posts.json"
         if not posts_path.exists():
             write_text(posts_path, "[]\n")
@@ -543,6 +603,8 @@ def sync_language_switchers(root: Path = Path(".")) -> None:
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8")
+        if is_unlisted_page(path.relative_to(root), text):
+            continue
         if ".lang-switcher" not in text:
             text = text.replace("</style>", f"{LANG_SWITCHER_CSS}\n</style>", 1)
         if 'class="lang-switcher"' not in text:
@@ -567,7 +629,7 @@ def write_sitemap(posts_by_lang: Optional[Mapping[str, Iterable[Mapping[str, str
     static_paths = ["", "brand-audit/", "blog/"] + trust_paths + hub_paths
     static_paths += [f"en/{path}" for path in ["", "brand-audit/", "blog/"] + trust_paths + hub_paths]
     static_paths += [f"ar/{path}" for path in ["", "brand-audit/", "blog/"] + trust_paths + hub_paths]
-    items = [f"  <url><loc>{SITE_URL}/{path}</loc></url>" for path in static_paths]
+    items = [f"  <url><loc>{SITE_URL}/{path}</loc></url>" for path in static_paths if include_in_sitemap(f"{SITE_URL}/{path}", root)]
     for lang, posts in posts_by_lang.items():
         for post in posts:
             slug = post.get("slug")
@@ -579,6 +641,8 @@ def write_sitemap(posts_by_lang: Optional[Mapping[str, Iterable[Mapping[str, str
                 url = f"{SITE_URL}/blog/articles/{slug}/"
             else:
                 url = f"{SITE_URL}/{lang}/blog/articles/{slug}/"
+            if post.get("unlisted") is True or post.get("noindex") is True or not include_in_sitemap(url, root):
+                continue
             lastmod = post.get("date", "")
             items.append(f"  <url><loc>{esc(url)}</loc><lastmod>{esc(lastmod)}</lastmod></url>")
     write_text(

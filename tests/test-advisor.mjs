@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { beforeEach, test } from 'node:test';
 import { catalog } from '../package-advisor/catalog.mjs';
-import { createRecommendation, validateInput, GOALS, STAGES } from '../package-advisor/planner.mjs';
+import { createRecommendation, validateInput, GOALS, STAGES, PREFERENCE_SERVICES } from '../package-advisor/planner.mjs';
 import worker, { analyze, validateAnalysis } from '../advisor-service/worker.mjs';
 
 const VALID = { budget: 80000, goal: 'visibility', stage: 'starting', notes: '' };
@@ -47,11 +47,27 @@ function completion(value = ANALYSIS, finish = 'stop') {
 function assertPlanIntegrity(result, input) {
   assert.equal(result.plans.length, 3);
   assert.deepEqual(result.plans.map(plan => plan.id), ['essential', 'recommended', 'extended']);
+  assert.equal(result.allocatedBudget, result.plans[1].total, 'alternatives must not be added together as committed spend');
+  assert.equal(result.remainingBudget, input.budget - result.allocatedBudget);
+  assert.ok(typeof result.scopeLabel === 'string' && result.scopeLabel.length > 0);
+  assert.ok(typeof result.horizon === 'string' && result.horizon.length > 0);
   for (const plan of result.plans) {
-    assert.ok(plan.items.length >= 1, `empty service plan for ${JSON.stringify(input)}`);
     assert.equal(plan.total, plan.items.reduce((total, item) => total + item.total, 0));
-    assert.ok(plan.total > 0 && plan.total <= input.budget, `exceeds budget: ${plan.total}/${input.budget}`);
+    assert.ok(plan.total >= 0 && plan.total <= input.budget, `exceeds budget: ${plan.total}/${input.budget}`);
     assert.equal(plan.withinBudget, true);
+    assert.equal(plan.allocatedBudget, plan.total);
+    assert.equal(plan.remainingBudget, input.budget - plan.total);
+    assert.ok(typeof plan.scopeLabel === 'string' && plan.scopeLabel.length > 0);
+    assert.ok(typeof plan.horizon === 'string' && plan.horizon.length > 0);
+    if (!plan.items.length) {
+      assert.equal(plan.configurationRequired, true, 'empty scope must require a custom configuration');
+      assert.equal(plan.total, 0);
+      assert.match(plan.description, /不是免费.*报价|未形成.*报价/);
+      assert.ok(plan.assumptions.some(value => /尚未配置|没有形成可下单/.test(value)));
+      continue;
+    }
+    assert.ok(plan.total > 0);
+    assert.notEqual(plan.configurationRequired, true);
     assert.equal(new Set(plan.items.map(item => item.id)).size, plan.items.length);
     for (const item of plan.items) {
       assert.ok(byId.has(item.id), `unknown service ${item.id}`);
@@ -62,30 +78,33 @@ function assertPlanIntegrity(result, input) {
     const monitor = plan.items.find(item => byId.get(item.id).sampling);
     if (monitor) {
       const questionUnits = plan.items.find(item => item.id === 'W04')?.quantity || 0;
-      assert.ok(questionUnits * 30 >= plan.sampling.questions, 'sampling requires enough question-design scope');
+      if (questionUnits * 30 < plan.sampling.questions) {
+        assert.ok(input.budget < 20000, 'a full service combination must include enough question-design scope');
+        assert.ok(plan.assumptions.some(value => /客户须提供.*已审核.*已定稿.*问题/.test(value)), 'baseline-only service requires a client-approved question set');
+      }
       assert.deepEqual(plan.sampling, byId.get(monitor.id).sampling);
-      if (!plan.sampling.fullFollowupRounds) assert.ok(plan.assumptions.some(value => /不含后续复测/.test(value)));
+      if (!plan.sampling.fullFollowupRounds) assert.ok(plan.assumptions.some(value => /不含后续复测|没有后续复测/.test(value)));
     } else {
       assert.equal(plan.sampling, undefined);
-      assert.ok(plan.assumptions.some(value => /未包含.*采样或复测/.test(value)), 'asset-only scopes must disclose no measurement');
+      assert.ok(plan.assumptions.some(value => /(?:未包含|不含).*采样.*复测/.test(value)), 'asset-only scopes must disclose no measurement');
     }
-    if (!plan.items.some(item => item.id === 'W01')) assert.ok(plan.assumptions.some(value => /已核准.*品牌事实/.test(value)), 'customer-approved facts are a prerequisite');
+    if (input.budget >= 20000 && !plan.items.some(item => item.id === 'W01')) assert.ok(plan.assumptions.some(value => /已核准.*品牌事实/.test(value)), 'customer-approved facts are a prerequisite');
     assert.ok(plan.assumptions.some(value => /第三方|媒体/.test(value)), 'separate media spend must be explicit');
   }
 }
 
 test('all goals and stages respect public prices and budget across tier boundaries', () => {
-  const budgets = new Set([20000, 20001, 24999, 40499, 40500, 45000, 47500, 67500, 250000, 500000]);
-  for (let budget = 20000; budget <= 500000; budget += 10000) budgets.add(budget);
+  const budgets = new Set([5000, 7000, 10000, 15000, 19999, 20000, 20001, 24999, 30000, 40499, 40500, 45000, 47500, 67500, 88888, 150000, 250000, 500000, 1000000]);
+  for (let budget = 25000; budget <= 1000000; budget += 25000) budgets.add(budget);
   for (const budget of budgets) for (const goal of GOALS) for (const stage of STAGES) {
     const input = { budget, goal, stage, notes: '' };
     assertPlanIntegrity(createRecommendation(input), input);
   }
 });
 
-test('a low budget is explicitly diagnosis-only while a full cycle includes retesting', () => {
+test('a visibility diagnosis discloses its single baseline while a full cycle includes retesting', () => {
   for (const plan of createRecommendation({ ...VALID, budget: 20000 }).plans) {
-    assert.ok(plan.items.every(item => item.id === 'W04' || item.id.startsWith('MON_BASE_')));
+    assert.ok(plan.items.some(item => item.id.startsWith('MON_BASE_')));
     assert.equal(plan.sampling.fullFollowupRounds, 0);
     assert.ok(plan.assumptions.some(value => /不含.*后续复测/.test(value)));
   }
@@ -95,7 +114,7 @@ test('a low budget is explicitly diagnosis-only while a full cycle includes rete
 });
 
 test('higher tiers retain earlier deliverables and only upgrade measurement scope', () => {
-  for (const budget of [20000, 30000, 40500, 50000, 65000, 80000, 100000, 120000, 175000, 250000, 320000, 500000]) {
+  for (const budget of [20000, 30000, 40500, 50000, 65000, 80000, 100000, 120000, 150000, 175000, 250000, 320000, 500000, 1000000]) {
     for (const goal of GOALS) for (const stage of STAGES) {
       const plans = createRecommendation({ ...VALID, budget, goal, stage }).plans;
       for (let i = 1; i < plans.length; i++) {
@@ -118,6 +137,66 @@ test('higher tiers retain earlier deliverables and only upgrade measurement scop
   }
 });
 
+test('budgets below 20000 return three distinct independent alternatives rather than additive tiers', () => {
+  for (const budget of [5000, 7000, 15000, 19999]) for (const goal of GOALS) for (const stage of STAGES) {
+    const input = { ...VALID, budget, goal, stage };
+    const result = createRecommendation(input);
+    assertPlanIntegrity(result, input);
+    const signatures = result.plans.map(plan => plan.items.map(item => `${item.id}:${item.quantity}`).sort().join('|'));
+    assert.equal(new Set(signatures).size, 3, `repeated alternatives for ${budget}/${goal}/${stage}`);
+    assert.match(result.summary, /不同路径|独立.*专项/);
+    for (const plan of result.plans) {
+      assert.ok(plan.items.length >= 1);
+      assert.match(plan.scopeLabel, /单独|专项/);
+      assert.ok(plan.assumptions.some(value => /不同专项.*不需要全部购买/.test(value)));
+    }
+  }
+});
+
+test('baseline-only small projects require a reviewed existing question set and do not imply retesting', () => {
+  const result = createRecommendation({ ...VALID, budget: 7000 });
+  const baseline = result.plans.find(plan => plan.items.some(item => item.id === 'MON_BASE_15'));
+  assert.ok(baseline, 'a 7000 budget can select the public baseline-only service');
+  assert.ok(!baseline.items.some(item => item.id === 'W04'));
+  assert.ok(baseline.assumptions.some(value => /至少 15 道已审核、已定稿.*问题/.test(value)));
+  assert.ok(baseline.assumptions.some(value => /不包含题库新建/.test(value)));
+  assert.equal(baseline.sampling.fullFollowupRounds, 0);
+});
+
+test('excluding all purchasable small-project modules requires configuration and never offers free service', () => {
+  for (const goal of GOALS) for (const stage of STAGES) {
+    const input = { ...VALID, budget: 5000, goal, stage };
+    const result = createRecommendation(input, { exclude: PREFERENCE_SERVICES });
+    assertPlanIntegrity(result, input);
+    for (const plan of result.plans) {
+      assert.equal(plan.configurationRequired, true);
+      assert.deepEqual(plan.items, []);
+      assert.equal(plan.total, 0);
+      assert.equal(plan.allocatedBudget, 0);
+      assert.equal(plan.remainingBudget, input.budget);
+      assert.match(plan.description, /不是免费服务报价/);
+    }
+  }
+});
+
+test('large budgets clearly separate first-phase deliverables from money awaiting later scope decisions', () => {
+  for (const budget of [150000, 500000, 1000000]) for (const goal of GOALS) {
+    const input = { ...VALID, budget, goal };
+    const result = createRecommendation(input);
+    assertPlanIntegrity(result, input);
+    assert.match(result.scopeLabel, /第一阶段/);
+    assert.match(result.horizon, /分阶段/);
+    assert.match(result.summary, /后续预算.*配置/);
+    for (const plan of result.plans) {
+      assert.match(plan.scopeLabel, /第一阶段/);
+      assert.match(plan.horizon, /分阶段/);
+      assert.equal(plan.total + plan.remainingBudget, budget);
+      assert.ok(plan.highlights.some(value => /下一阶段待配置预算/.test(value)));
+      if (budget === 1000000) assert.ok(plan.remainingBudget > 0);
+    }
+  }
+});
+
 test('low-budget content and authority goals buy useful assets without implying AI retesting', () => {
   for (const goal of ['content', 'authority']) for (const stage of STAGES) {
     const input = { ...VALID, goal, stage, budget: 20000 };
@@ -131,13 +210,16 @@ test('low-budget content and authority goals buy useful assets without implying 
   }
 });
 
-test('channel adaptations require an original asset and PR outreach includes setup', () => {
-  for (const budget of [20000, 50000, 100000, 200000, 500000]) for (const goal of GOALS) {
+test('channel adaptations require an included or client-approved original and PR outreach includes setup', () => {
+  for (const budget of [5000, 7000, 19999, 20000, 50000, 100000, 200000, 500000, 1000000]) for (const goal of GOALS) {
     const input = { ...VALID, budget, goal };
     const result = createRecommendation(input, { prioritize: ['W10', 'PITCH'] });
     assertPlanIntegrity(result, input);
     for (const plan of result.plans) {
-      if (plan.items.some(item => item.id === 'W10')) assert.ok(plan.items.some(item => ['W07', 'W08', 'W09', 'W15', 'W16', 'W17'].includes(item.id)));
+      if (plan.items.some(item => item.id === 'W10') && !plan.items.some(item => ['W07', 'W08', 'W09', 'W15', 'W16', 'W17'].includes(item.id))) {
+        assert.ok(plan.assumptions.some(value => /客户.*提供.*已核准.*合格母稿/.test(value)));
+        assert.ok(plan.assumptions.some(value => /不含新母稿制作/.test(value)));
+      }
       if (plan.items.some(item => item.id === 'PITCH')) assert.ok(plan.items.some(item => item.id === 'PITCH_SETUP'));
     }
   }
@@ -175,7 +257,7 @@ test('notes are data: instructions, markup and embedded quote overrides do not a
 
 test('input validation enforces types, bounds, controls and a strict field allowlist', () => {
   const invalid = [
-    null, [], 'bad', {}, { ...VALID, budget: 19999 }, { ...VALID, budget: 500001 },
+    null, [], 'bad', {}, { ...VALID, budget: 4999 }, { ...VALID, budget: 1000001 },
     { ...VALID, budget: 20000.5 }, { ...VALID, budget: NaN }, { ...VALID, budget: Infinity },
     { ...VALID, budget: '80000' }, { ...VALID, goal: 'unknown' }, { ...VALID, stage: 'unknown' },
     { ...VALID, notes: null }, { ...VALID, notes: {} }, { ...VALID, notes: '中'.repeat(1601) },
@@ -184,7 +266,8 @@ test('input validation enforces types, bounds, controls and a strict field allow
   ];
   for (const value of invalid) assert.throws(() => validateInput(value), /invalid_input/);
   assert.equal(validateInput({ ...VALID, notes: '  多行需求\n第二行  ' }).notes, '多行需求\n第二行');
-  assert.equal(validateInput({ budget: 20000, goal: 'content', stage: 'growing' }).notes, '');
+  for (const budget of [5000, 7000, 19999, 20000, 30000, 150000, 1000000]) assert.equal(validateInput({ budget, goal: 'content', stage: 'growing' }).budget, budget);
+  assert.equal(validateInput({ budget: 5000, goal: 'content', stage: 'growing' }).notes, '');
   assert.equal(validateInput({ ...VALID, notes: '中'.repeat(1600) }).notes.length, 1600);
 });
 
@@ -209,6 +292,7 @@ test('public catalog and recommendations contain no internal pricing fields', ()
 
 test('analysis schema rejects unknown IDs, overlap, duplicate IDs, malformed fields and overrides', () => {
   assert.deepEqual(validateAnalysis(structuredClone(ANALYSIS)), ANALYSIS);
+  assert.deepEqual(validateAnalysis({ ...ANALYSIS, prioritize: ['W02'] }).prioritize, ['W02']);
   const bad = [null, [], {},
     { ...ANALYSIS, prioritize: ['W99'] }, { ...ANALYSIS, prioritize: ['W01'] },
     { ...ANALYSIS, prioritize: ['W08', 'W08'] }, { ...ANALYSIS, exclude: ['W08'] },
@@ -466,6 +550,44 @@ test('missing AI credentials produce a labeled fallback without a provider reque
   assert.match(body.summary, /备注尚未纳入/);
   assertPlanIntegrity(body, VALID);
   assert.equal(fetcher.mock.callCount(), 0);
+});
+
+test('the API accepts the full budget range and rejects values outside it before inference', async t => {
+  const fetcher = t.mock.method(globalThis, 'fetch', async () => completion());
+  for (const budget of [5000, 7000, 19999, 20000, 30000, 150000, 1000000]) {
+    const input = { ...VALID, budget };
+    const response = await worker.fetch(request(input), setup({ DEEPSEEK_API_KEY: '' }).env);
+    assert.equal(response.status, 200, `API rejected valid budget ${budget}`);
+    assertPlanIntegrity(await response.json(), input);
+  }
+  for (const budget of [4999, 1000001]) {
+    const { env, limits } = setup();
+    const response = await worker.fetch(request({ ...VALID, budget }), env);
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: 'invalid_input' });
+    assert.equal(limits.length, 0);
+  }
+  assert.equal(fetcher.mock.callCount(), 0);
+});
+
+test('client pricing presents catalog-backed reuse value without competitor subscription price anchors or invented discounts', async () => {
+  const page = await readFile(new URL('../package-advisor/index.html', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../package-advisor/app.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(`${page}\n${app}`, /\b(?:WebFX|Archon|Otterly|Mode Marketing)\b|webfx\.com|archonconsultancy\.com|otterly\.ai|modemarketing\.co\.uk/i);
+  assert.doesNotMatch(page, /(?:US\$|€|£)\s*[\d,]+\s*(?:\/|每)\s*月|public-benchmarks/);
+  const example = page.match(/<div class="reuse-example">([\s\S]*?)<div class="budget-principles-heading">/)?.[1];
+  assert.ok(example, 'the public page should retain a concrete reuse example');
+  const text = example.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  assert.match(text, /1 篇研究型母文/);
+  assert.match(text, /3 条渠道适配/);
+  assert.match(text, /适配不当作 3 篇新增原创/);
+  assert.doesNotMatch(text, /折扣|打折|原价|划线价|便宜\s*\d|节省\s*\d/);
+  const price = id => Number(page.match(new RegExp(`id="${id}">¥([\\d,]+)<`))?.[1].replaceAll(',', ''));
+  assert.equal(price('example-source-price'), byId.get('W08').price);
+  assert.equal(price('example-adapt-price'), byId.get('W10').price);
+  assert.equal(price('example-total'), byId.get('W08').price + byId.get('W10').price);
+  assert.equal(price('example-total'), 9500);
+  assert.match(page, /观察次数为采样计划，不代表引用或曝光次数/);
 });
 
 test('the advisor stays out of home navigation and all published sitemaps', async () => {

@@ -5,8 +5,10 @@ navigation and sitemap links. HTML metadata and Vercel response headers request
 no indexing. Anyone with the direct URL can view it; it is not an authenticated
 member page.
 
-The three core inputs are the first-period CNY budget, business goal and current
-stage. Optional notes are sent only after the visitor requests an AI suggestion.
+The three core inputs are the project CNY budget, business goal and current
+stage. The budget control starts with three cooperation bands (focused project,
+systematic build, or phased scale), followed by a band-specific slider and an
+exact amount field. It accepts CNY 5,000–1,000,000. Optional notes are sent only after the visitor requests an AI suggestion.
 The Worker calls DeepSeek and does not persist request/response contents. The
 browser previews the public service catalogue locally. It does not call the AI
 provider directly, contain credentials or receive any internal pricing model.
@@ -17,7 +19,9 @@ provider directly, contain credentials or receive any internal pricing model.
 prices, delivery units, scope and prerequisites. The private source workbook,
 cost engine and delivery documents must never be published or given to the
 model. Prices are versioned as public service prices, with no profitability or
-staffing fields. Customer amounts are CNY before tax. Third-party placements and
+staffing fields. Small budgets buy bounded alternative specialties; large
+budgets show a first-phase allocation and a separately identified unallocated
+amount for later scope confirmation. Customer amounts are CNY before tax. Third-party placements and
 unscoped work are separately confirmed.
 
 `planner.mjs` computes quantities and totals from the public catalogue. Budget is
@@ -49,12 +53,16 @@ origins may call the API from browsers. `/health` reports configuration
 readiness, not proof of provider completion; a real recommendation with
 `source: "deepseek"` is required for end-to-end verification.
 
-## Public benchmark references
+## Value and procurement comparisons
 
-The page's comparison links are service-provider pages verified on 2026-09-20.
-Preserve original currencies, billing periods, taxes and minimum terms. They
-describe different procurement models and must not be used to claim a market
-average or calculate a savings percentage for unequal scopes.
+The client page compares procurement models and its own included deliverables.
+It does not juxtapose software/monthly supplier charges with our project totals.
+The reuse example is derived from public catalog prices: one research article
+and three channel adaptations. It is not presented as a discount or a claim
+about competitors.
+
+The following supplier references were checked during development on
+2026-09-20, but are not price anchors on the client page:
 
 - https://www.webfx.com/seo/services/ai-search-optimization/
 - https://archonconsultancy.com/pricing
