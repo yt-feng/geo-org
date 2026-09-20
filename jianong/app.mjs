@@ -39,7 +39,7 @@ function clearPrivateWorkspace() {
   state.lastChatRequest = null; state.lastImageRequest = null; state.checkoutRequests.clear();
   state.adminAction = null; state.imageAdmin = null; state.captchaId = ''; state.pendingChat = false;
   state.imagePolls.forEach((token) => { token.cancelled = true; }); state.imagePolls.clear();
-  for (const id of ['messages','history-list','mobile-history','image-results','image-history','knowledge-results','customer-list','customer-detail-body','activity-list','account-details','detail-body','admin-users','admin-metrics','admin-image-tasks','ledger-body','listening-metrics','listening-platforms','listening-themes','listening-results']) {
+  for (const id of ['messages','history-list','mobile-history','image-results','image-history','knowledge-results','customer-list','customer-detail-body','activity-list','account-details','detail-body','admin-users','admin-metrics','admin-image-tasks','ledger-body','orders-body','listening-metrics','listening-platforms','listening-themes','listening-results']) {
     const node = $(id); if (node) empty(node);
   }
   for (const id of ['auth-form','chat-form','image-form','customer-form','activity-form','password-form','admin-action-form','image-admin-form']) {
