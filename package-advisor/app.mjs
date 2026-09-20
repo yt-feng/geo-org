@@ -188,7 +188,6 @@ function renderRecommendation(recommendation, mode = 'preview') {
   $('plans-grid').dataset.planCount = String(displayedPlans.length);
   $('plans-grid').replaceChildren(...displayedPlans.map(createPlanCard));
   renderSelectedPlan();
-  updateQuantityDraftState();
 }
 function createPlanCard(plan) {
   const button = node('button', `plan-card${plan.id === selectedPlanId ? ' selected' : ''}`);
@@ -274,7 +273,7 @@ function updateQuantityDraftState() {
     field.setAttribute('aria-invalid', String(invalid));
     return invalid;
   });
-  if (!invalidQuantityDraft) { $('ai-button').disabled = false; return; }
+  if (!invalidQuantityDraft) { $('ai-button').disabled = Boolean(requestController); return; }
   $('plans-grid').hidden = true;
   $('detail-total').textContent = '待填写有效数量';
   $('value-plan-total').textContent = '待填写有效数量';
@@ -347,6 +346,7 @@ function renderSelectedPlan() {
   $('highlights').replaceChildren(...(plan.highlights || []).map((text) => node('li', '', text)));
   $('assumptions').replaceChildren(...(plan.assumptions || []).map((text) => node('li', '', text)));
   renderDeliveryValue(plan);
+  updateQuantityDraftState();
 }
 function renderPricingBreakdown(plan) {
   const breakdown = plan.pricingBreakdown;
