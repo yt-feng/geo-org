@@ -1,0 +1,17 @@
+name: Test package advisor
+on:
+  push:
+    paths: ['package-advisor/**', 'advisor-service/**', 'tests/test-advisor.mjs', '.github/workflows/test-advisor.yml']
+  pull_request:
+    paths: ['package-advisor/**', 'advisor-service/**', 'tests/test-advisor.mjs', '.github/workflows/test-advisor.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test tests/test-advisor.mjs

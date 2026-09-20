@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2119">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="description" content="根据预算、目标与品牌基础，配置首期 90 天海外 GEO 服务。清楚查看服务范围、交付明细与实施节奏。">
+  <link rel="canonical" href="https://eco-geo.org/package-advisor/">
+  <link rel="icon" href="/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>90 天 GEO 套餐顾问｜Eco GEO</title>
+</head>
+<body>
+  <a class="skip-link" href="#advisor">跳至套餐配置</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="Eco GEO 首页"><img src="/logo.svg" alt="" width="44" height="36"><span>ECO GEO<small>BRAND-FIRST GEO</small></span></a>
+      <span class="header-caption">海外 GEO · 90 天服务规划</span>
+      <a class="header-contact" href="/contact/#inquiry">与顾问聊聊 <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> YOUR BUDGET. YOUR GROWTH PLAN.</p>
+        <h1 id="page-title">把预算，变成<br><em>看得见的交付。</em></h1>
+        <p class="hero-intro">从 AI 认知诊断到可信内容与海外传播，<br class="desktop-break">让每一笔投入，都对应清楚的工作与可复用的品牌资产。</p>
+        <div class="hero-tags"><span>按预算配置</span><span>逐项看交付</span><span>先规划，再确认</span></div>
+      </div>
+      <div class="hero-aside" aria-label="服务规划路径">
+        <div class="orbit" aria-hidden="true"><span class="orbit-ring ring-one"></span><span class="orbit-ring ring-two"></span><span class="orbit-ring ring-three"></span><span class="orbit-center">GEO<small>品牌资产</small></span><span class="orbit-label label-one">被理解</span><span class="orbit-label label-two">被引用</span><span class="orbit-label label-three">被选择</span></div>
+        <p>一次规划，把诊断、内容、传播与复盘连起来。</p>
+      </div>
+    </section>
+
+    <section class="workspace-section" id="advisor" aria-labelledby="advisor-title">
+      <div class="container">
+        <div class="section-heading"><div><p class="eyebrow">BUILD YOUR PLAN</p><h2 id="advisor-title">适合你的组合，从这里开始</h2></div><p>3 个选择 + 一段补充，找到投入的优先顺序。</p></div>
+        <div class="workspace">
+          <form class="config-panel" id="advisor-form">
+            <div class="panel-top"><span class="step-kicker">01 / 你的需求</span><span class="live-dot">实时预算预览</span></div>
+            <div class="control-group budget-group">
+              <label class="control-label" for="budget"><span class="control-number">1</span> 首期 90 天预算</label>
+              <div class="budget-display"><output for="budget" id="budget-value">¥50,000</output><span>人民币</span></div>
+              <input type="range" id="budget" name="budget" min="20000" max="500000" value="50000" step="5000" aria-describedby="budget-help">
+              <div class="range-extents"><span>¥20,000</span><span>¥500,000</span></div>
+              <div class="budget-presets" aria-label="快捷选择预算"><button type="button" data-budget="30000">3 万</button><button type="button" data-budget="50000" class="active" aria-pressed="true">5 万</button><button type="button" data-budget="100000">10 万</button><button type="button" data-budget="200000">20 万</button></div>
+              <p class="field-help" id="budget-help">预算是服务配置的上限参考，不必一次用满。第三方媒体及平台采购另行确认。</p>
+            </div>
+            <fieldset class="control-group goal-group">
+              <legend class="control-label"><span class="control-number">2</span> 这次最想解决什么？</legend>
+              <label class="choice"><input type="radio" name="goal" value="visibility" checked><span class="choice-icon" aria-hidden="true">◎</span><span><strong>提升 AI 可见度</strong><small>看清品牌现状，找准优先机会</small></span><span class="radio-mark" aria-hidden="true"></span></label>
+              <label class="choice"><input type="radio" name="goal" value="content"><span class="choice-icon" aria-hidden="true">▤</span><span><strong>建设可信内容</strong><small>把产品与证据，变成可引用资产</small></span><span class="radio-mark" aria-hidden="true"></span></label>
+              <label class="choice"><input type="radio" name="goal" value="authority"><span class="choice-icon" aria-hidden="true">↗</span><span><strong>建立海外影响力</strong><small>完善叙事，连接内容与媒体传播</small></span><span class="radio-mark" aria-hidden="true"></span></label>
+            </fieldset>
+            <div class="control-group stage-group">
+              <label class="control-label" for="stage"><span class="control-number">3</span> 品牌目前的基础</label>
+              <div class="select-wrap"><select id="stage" name="stage"><option value="starting">刚开始出海 · 资料需要梳理</option><option value="growing" selected>正在增长 · 已有官网与内容</option><option value="established">相对成熟 · 需要规模化建设</option></select><span aria-hidden="true">⌄</span></div>
+            </div>
+            <div class="control-group notes-group">
+              <label class="control-label" for="notes">还有什么希望我们知道？<span class="optional">选填</span></label>
+              <textarea id="notes" name="notes" rows="4" maxlength="1600" placeholder="例如：做 B2B 工业设备，主要面向美国和中东，已有英文站。希望 AI 更准确解释产品差异，优先英文内容。" aria-describedby="notes-help"></textarea>
+              <div class="notes-footer"><span id="notes-help">目标国家、语言、行业与已有材料都很有用</span><span id="notes-count">0 / 1600</span></div>
+            </div>
+            <button class="ai-button" type="submit" id="ai-button"><span class="ai-symbol" aria-hidden="true">✦</span><span id="ai-button-text">生成 AI 定制建议</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+            <p class="ai-help">点击生成后，预算、目标、品牌基础与备注将提交并由 DeepSeek 分析。请只填写可用于方案咨询的信息。</p>
+            <p id="request-message" class="request-message" role="status" aria-live="polite" hidden></p>
+          </form>
+
+          <div class="results-panel" id="results-panel" aria-labelledby="results-title">
+            <div class="results-heading"><div><span class="step-kicker">02 / 你的服务组合</span><h3 id="results-title">预算有边界，交付有重点。</h3></div><span class="source-badge" id="source-badge">预算预览</span></div>
+            <p class="result-summary" id="result-summary" aria-live="polite">正在为你配置可执行的服务组合…</p>
+            <div class="plans-grid" id="plans-grid" aria-label="比较三种服务方案"></div>
+            <div class="plan-detail" id="plan-detail" hidden>
+              <div class="detail-heading"><div><span class="detail-kicker">DELIVERABLES, MADE CLEAR</span><h4 id="detail-title">你的交付清单</h4></div><span class="detail-count" id="detail-count"></span></div>
+              <div class="line-items" id="line-items"></div>
+              <div class="total-row"><span>本期所选服务费合计</span><strong id="detail-total"></strong></div>
+              <p class="quote-note">这是按当前需求配置的参考方案。市场、语言、资料基础与确认后的工作范围会影响正式报价；税费以正式报价单为准。</p>
+              <div class="phases-heading"><h4>从需求确认到交付，按阶段推进</h4><span>YOUR DELIVERY ROADMAP</span></div>
+              <ol class="phases" id="phases"></ol>
+              <div class="value-box"><span class="value-icon" aria-hidden="true">↺</span><div><h4>本期完成，下期继续用</h4><ul id="highlights"></ul></div></div>
+              <details class="assumptions"><summary>查看方案前提与范围说明 <span aria-hidden="true">＋</span></summary><ul id="assumptions"></ul></details>
+              <div class="result-actions"><a class="consult-button" href="/contact/#inquiry">带着方案，与顾问确认 <span aria-hidden="true">↗</span></a><button type="button" id="export-button">下载方案 <span aria-hidden="true">↓</span></button><button type="button" id="print-button" aria-label="打印或保存方案为 PDF">打印 <span aria-hidden="true">↗</span></button></div>
+            </div>
+            <noscript><p class="noscript-message">请启用 JavaScript 以使用预算配置器。你也可以<a href="/contact/#inquiry">直接联系顾问</a>，获取定制服务方案。</p></noscript>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="value-section container" aria-labelledby="value-title">
+      <div class="section-heading"><div><p class="eyebrow">MORE THAN A CONTENT ORDER</p><h2 id="value-title">你买到的，是一套可以接着用的工作成果。</h2></div></div>
+      <div class="value-grid">
+        <article class="value-card"><span class="value-number">01</span><div class="value-graphic graphic-diagnose" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>先选对问题，<br>再安排投入。</h3><p>用诊断、用户问题与证据梳理确定内容方向，让执行围绕真实业务需求展开。</p><span class="asset-tag">诊断 · 问题集 · 优先级</span></article>
+        <article class="value-card"><span class="value-number">02</span><div class="value-graphic graphic-assets" aria-hidden="true"><i></i><i></i><i></i></div><h3>一套事实基础，<br>支持多种表达。</h3><p>经确认的品牌事实与证据，可继续用于官网、FAQ、销售材料和媒体沟通，减少重复整理。</p><span class="asset-tag">事实库 · 内容 · 销售复用</span></article>
+        <article class="value-card"><span class="value-number">03</span><div class="value-graphic graphic-loop" aria-hidden="true"><i>↗</i></div><h3>交付有记录，<br>后续有依据。</h3><p>按选定范围记录产出与观察结果，保留版本、链接及复盘建议，让下一轮决策有据可依。</p><span class="asset-tag">交付清单 · 证据 · 复盘</span></article>
+      </div>
+    </section>
+
+    <section class="pricing-section" aria-labelledby="pricing-title">
+      <div class="container pricing-layout">
+        <div class="pricing-intro"><p class="eyebrow">HOW YOUR PRICE IS BUILT</p><h2 id="pricing-title">把钱花在哪里，<br>说得清楚。</h2><p>按可确认的服务范围报价。把专业判断、执行工作与可复用资产放进同一张清单，方便你比较，也方便验收。</p><a href="#advisor">回到我的预算 <span aria-hidden="true">↑</span></a></div>
+        <div class="pricing-rules">
+          <article><span>01</span><div><h3>按范围与数量计价</h3><p>诊断、内容、传播与复盘各有明确交付。服务费由选定工作项及数量组成，清楚列示，不把文章篇数当作全部价值。</p></div></article>
+          <article><span>02</span><div><h3>复杂度提前确认</h3><p>目标市场、语言、专业资料深度与审批要求会影响工作范围。先确认需求，再确定正式报价与交付标准。</p></div></article>
+          <article><span>03</span><div><h3>已有资产，优先复用</h3><p>先检查你已有的官网、研究、产品资料和案例。在确认适用后，优先整理与改写，减少不必要的重复建设。</p></div></article>
+          <article><span>04</span><div><h3>服务与外部采购分别列示</h3><p>付费媒体刊位、广告投放、数据库、订阅与翻译等第三方采购如有需要，将单独确认。媒体沟通不等于保证刊发。</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="comparison-section container" aria-labelledby="comparison-title">
+      <div class="section-heading"><div><p class="eyebrow">COMPARE THE WHOLE SCOPE</p><h2 id="comparison-title">比价格，也把服务范围放在一起比。</h2></div><p>不同采购方式解决不同问题。<br>比较同一范围，才能判断什么更适合你。</p></div>
+      <div class="comparison-scroll" tabindex="0" role="region" aria-label="采购方式对比表，可左右滚动">
+        <table class="comparison-table"><thead><tr><th scope="col">比较维度</th><th scope="col">单篇内容采购<small>以篇数或字数计价</small></th><th scope="col">监测软件订阅<small>以席位、问题数或用量计价</small></th><th scope="col">专项顾问服务<small>以课题或服务周期计价</small></th><th scope="col" class="our-column">Eco GEO 交付组合<small>以确认的工作范围计价</small></th></tr></thead><tbody>
+          <tr><th scope="row">核心购买内容</th><td>约定主题的内容成稿</td><td>数据采集与分析工具权限</td><td>专业判断、策略与建议</td><td class="our-column">诊断、内容、执行与复盘的组合</td></tr>
+          <tr><th scope="row">需求与证据梳理</th><td>视约定范围</td><td>通常由使用方准备</td><td>按项目范围约定</td><td class="our-column">按选定工作项列出交付</td></tr>
+          <tr><th scope="row">内容实际落地</th><td>成稿范围内</td><td>需另行安排执行</td><td>视是否包含执行</td><td class="our-column">可组合文稿、FAQ 与页面等资产</td></tr>
+          <tr><th scope="row">传播与媒体工作</th><td>通常需另行采购</td><td>通常需另行安排</td><td>按项目范围约定</td><td class="our-column">按需加入；第三方费用单列</td></tr>
+          <tr><th scope="row">后续复用</th><td>复用已交付的文稿</td><td>依订阅与数据导出条款</td><td>复用已交付的研究建议</td><td class="our-column">复用已确认的事实、内容与执行记录</td></tr>
+          <tr><th scope="row">预算判断方式</th><td>单价 × 数量</td><td>订阅费 + 使用与执行投入</td><td>项目费 + 未包含的执行投入</td><td class="our-column"><strong>对照交付清单，逐项确认</strong></td></tr>
+        </tbody></table>
+      </div>
+      <p class="comparison-note">上表比较采购模式，不代表任何具体供应商的完整服务。实际范围以各方合同为准；本页不承诺 AI 引用、排名、销售转化或媒体刊发结果。</p>
+      <div id="public-benchmarks" class="benchmarks">
+        <h3>放进市场背景里，看清自己的选择。</h3>
+        <p>以下为供应商官网公开标价，核验日期：2026 年 9 月 20 日。保留原币、周期与最低承诺，方便你了解不同采购模式。</p>
+        <div class="benchmark-list">
+          <article><h4>WebFX · GEO 服务</h4><p class="benchmark-price">US$3,000 <span>/ 月起</span></p><p>6 个月服务承诺。公开范围包含 AI 查询研究、内容资产与可见度软件。</p><a href="https://www.webfx.com/seo/services/ai-search-optimization/" target="_blank" rel="noopener noreferrer nofollow">查看官方服务与报价 ↗</a></article>
+          <article><h4>Archon · Starter</h4><p class="benchmark-price">€2,500 <span>/ 月</span></p><p>最低 3 个月。5 个平台审计、5 个优先页面优化、结构化数据与月报。</p><a href="https://archonconsultancy.com/pricing" target="_blank" rel="noopener noreferrer nofollow">查看官方套餐范围 ↗</a></article>
+          <article><h4>Mode · GEO Programme</h4><p class="benchmark-price">£2,000–3,500 <span>/ 月</span></p><p>另加 VAT，最低 3 个月。GEO Audit 单次诊断另列 £1,500 + VAT。</p><a href="https://modemarketing.co.uk/geo/" target="_blank" rel="noopener noreferrer nofollow">查看官方报价与说明 ↗</a></article>
+          <article><h4>Otterly · 监测软件</h4><p class="benchmark-price">US$29 <span>/ 月起</span></p><p>Lite 含 15 个问题；Standard 为 US$189 / 月、100 个问题。属于工具订阅，执行服务另行安排。</p><a href="https://otterly.ai/pricing" target="_blank" rel="noopener noreferrer nofollow">查看官方订阅价格 ↗</a></article>
+        </div>
+        <p class="benchmark-footnote">这些是不同范围的采购模式参考，并非同规格价差比较。价格可能更新；税费、订阅条款与完整范围以供应商当期说明为准。Eco GEO 的参考金额以本页交付清单为准。</p>
+      </div>
+    </section>
+
+    <section class="coverage-section container" aria-labelledby="coverage-title">
+      <div><p class="eyebrow">ONE CONNECTED SERVICE SYSTEM</p><h2 id="coverage-title">把零散的工作，<br>接成一条完整路径。</h2><p>先做最需要的部分，再随业务扩展。<br>下列能力按需求选配，以方案明细为准。</p></div>
+      <div class="coverage-grid"><div><span>01</span><h3>AI 认知诊断</h3><p>问题设计 · 品牌表达 · 引用观察</p></div><div><span>02</span><h3>品牌事实与证据</h3><p>资料梳理 · 证据索引 · 表达一致性</p></div><div><span>03</span><h3>可信内容资产</h3><p>观点文章 · FAQ · 产品与案例</p></div><div><span>04</span><h3>海外媒体沟通</h3><p>选题 · 资料准备 · 媒体沟通</p></div><div><span>05</span><h3>市场与语言适配</h3><p>目标语境 · 本地表达 · 内容校对</p></div><div><span>06</span><h3>交付与持续复盘</h3><p>产出记录 · 观察反馈 · 下期建议</p></div></div>
+    </section>
+
+    <section class="closing-section container"><div><p class="eyebrow">A CLEARER NEXT STEP</p><h2>先看清方案，再决定投入。</h2><p>保存你的组合，和顾问一起确认市场、语言与交付重点。</p></div><a href="#advisor">配置我的 90 天方案 <span aria-hidden="true">↑</span></a></section>
+  </main>
+
+  <footer class="site-footer container"><div class="footer-brand">ECO GEO <span>Brand-first GEO.</span></div><div><a href="mailto:info@eco-geo.com">info@eco-geo.com</a><a href="/privacy/">隐私政策</a><a href="/terms/">服务条款</a><span>© 2026 Eco GEO</span></div></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>
