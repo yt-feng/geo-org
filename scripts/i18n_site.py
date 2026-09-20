@@ -20,7 +20,7 @@ EMAIL = "info@eco-geo.com"
 SITE_URL = os.environ.get("SITE_URL", "https://eco-geo.org").rstrip("/")
 
 # Direct-link tools have their own layout and must stay outside public discovery.
-UNLISTED_PATHS = frozenset({"package-advisor"})
+UNLISTED_PATHS = frozenset({"package-advisor", "jianong"})
 
 
 class _PageVisibilityParser(HTMLParser):
