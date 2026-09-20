@@ -475,7 +475,7 @@ export const catalog = [
     "deliverables": [
       "按所选语种和已有资产核对本地表达、专业术语、页面与渠道适配范围",
       "共享研究与事实库优先复用，新增语种的增量制作和审校单独核价",
-      "不与语言范围待报价重复计费；目标语种和具体资产数量需确认"
+      "所选语种的本地化与审校范围统一列入服务清单"
     ],
     "prerequisites": [
       "原文已完成并确认目标语言的审校条件"
@@ -1194,8 +1194,16 @@ const cnQuarter = {
   market: 'cn', pricingStatus: 'priced', optional: false, maxQuantity: 115600,
 };
 
-// Chinese extensions have independently confirmed scopes and quotations.
-// Overseas unit prices never determine a Chinese extension's price.
+// Independent reference service fees for additional Chinese-market work.
+export const CN_REFERENCE_PRICES = {
+  W01: 12000, W02: 3000, W03: 9000, W05: 8000, W06: 28000,
+  W07: 4500, W08: 5000, W09: 8000, W10: 1000, W11: 4000,
+  W12: 4000, W13: 4000, W14: 8000, W15: 22000, W16: 24000,
+  W17: 7500, W18: 3600, W19: 8500, W20: null, W21: 8000,
+  W22: 3000, W23: 15000, W24: 45000, W25: 6500, W26: 15000,
+  W27: 38000, W28: 9000, W29: 6000, W30: 11000, W31: 6000,
+  PITCH_SETUP: 6000, PITCH: 22000,
+};
 const cnScopeDescriptions = {
   W01: '整理品牌与产品事实、主张证据、资料缺口和公开范围。',
   W02: '围绕业务与客户决策进行访谈、记录整理和主题编码。',
@@ -1234,29 +1242,29 @@ const cnScopeDescriptions = {
 
 export const cnCatalog = [cnQuarter, ...catalog.filter(item => !item.sampling && item.id !== 'W04').map(item => ({
   id: `CN_${item.id}`, name: item.id === 'W22' ? '中文 · 超出基包的多团队项目统筹' : `中文 · ${item.name.replace(/^英文/, '')}`, unit: item.unit,
-  price: null, deliverables: [cnScopeDescriptions[item.id], '具体数量、平台、研究深度与审校轮次随中文增项范围确认', '交付对应成果、来源或执行记录，并完成约定交接'],
-  prerequisites: ['客户提供真实资料、所需权限及审校负责人', '与中文季度基包核对重叠范围，增量服务单独核价，不套用境外单价'],
+  price: CN_REFERENCE_PRICES[item.id], deliverables: [cnScopeDescriptions[item.id], '以所列计价单位为一份交付，具体篇幅、平台与审校轮次在正式服务清单中确认', '交付对应成果、来源或执行记录，并完成约定交接'],
+  prerequisites: ['客户提供真实资料、所需权限及审校负责人', '本项用于基包之外的新增交付，正式服务清单确认具体范围'],
   category: item.category, priority: item.priority, goals: [...item.goals], stages: [...item.stages],
-  market: 'cn', pricingStatus: 'quote_required', optional: item.id !== 'W20', availableForSelection: item.id !== 'W20',
+  market: 'cn', pricingStatus: 'estimate', optional: item.id !== 'W20', availableForSelection: item.id !== 'W20',
   maxQuantity: item.id === 'PITCH_SETUP' ? 1 : 100,
 })), {
-  id: 'CN_AI_OBSERVATION', name: '中文 · AI回答观测与分析增项', unit: '增项范围', price: null,
-  deliverables: ['按中文增项需求确认实际平台、去重题库、采样协议、基线与复测安排', '交付约定的原回答证据、引用、缺失状态和分析', '具体题数、平台数、轮次与观察量另行确认；此项不是社交聆听'],
+  id: 'CN_AI_OBSERVATION', name: '中文 · AI回答观测与分析增项', unit: '30题季度观测包', price: 15000,
+  deliverables: ['30个已确认去重主题、3个约定AI平台，每题每轮采样1次；季度内1次基线及1次完整复测', '交付180份计划回答的原始证据、引用、缺失状态与分析', '用于基包之外的增量观测；社交聆听另行选择'],
   prerequisites: ['先核对中文季度基包中已约定的观测范围，避免重复收费', '客户确认题库和可核验品牌事实'],
   category: 'AI观测与复盘', priority: 2, goals: ['visibility', 'content', 'authority'], stages: ['starting', 'growing', 'established'],
-  market: 'cn', pricingStatus: 'quote_required', optional: true, maxQuantity: 100,
+  market: 'cn', pricingStatus: 'estimate', optional: true, maxQuantity: 100,
 }];
 
 export const socialListeningService = {
-  id: 'SOCIAL_LISTENING', name: '定制 Social Listening 社交聆听', unit: '定制项目', price: null,
-  deliverables: ['按平台、研究深度、监测频率、市场与语种确定采集和分析范围', '另行确认历史覆盖、可取得的数据、主题或品牌识别口径与报告交付', '告警规则、响应安排及外部数据费用按实际需求核价'],
+  id: 'SOCIAL_LISTENING', name: 'Social Listening 社交聆听', unit: '季度', price: 45000,
+  deliverables: ['按所选平台、研究深度、频率、市场与语种开展季度社交讨论观察与分析', '交付来源记录、主题与品牌识别结果，以及所选深度的定期报告', '历史窗口、授权数据及告警响应在正式服务清单中确认；外部数据采购费用单列'],
   prerequisites: ['平台授权与数据可取得性需要确认', 'AI回答采样和一次性精选讨论研究均不替代持续社交聆听'],
   category: '定制社交聆听', priority: 2, goals: ['visibility', 'content', 'authority'], stages: ['starting', 'growing', 'established'],
-  market: 'all', pricingStatus: 'quote_required', optional: true, maxQuantity: 1,
+  market: 'all', pricingStatus: 'estimate', optional: true, maxQuantity: 1,
 };
 
 export const optionalServices = [
-  ...catalog.map(item => ({ ...item, market: 'overseas', pricingStatus: item.price === null ? 'quote_required' : 'priced', optional: item.id !== 'W20', availableForSelection: item.id !== 'W20', maxQuantity: item.sampling || item.id === 'PITCH_SETUP' ? 1 : 100 })),
+  ...catalog.map(item => ({ ...item, market: 'overseas', pricingStatus: 'estimate', optional: item.id !== 'W20', availableForSelection: item.id !== 'W20', maxQuantity: item.sampling || item.id === 'PITCH_SETUP' ? 1 : 100 })),
   ...cnCatalog,
   socialListeningService,
 ];
@@ -1266,5 +1274,15 @@ export function getOptionalServices(market = 'overseas') {
   return optionalServices.filter(item => item.market === market || item.market === 'all').map(item => ({ ...item, deliverables: [...item.deliverables], prerequisites: [...item.prerequisites], goals: [...item.goals], stages: [...item.stages] }));
 }
 
-export const LANGUAGE_LABELS = { zh: '中文', en: '英语', ar: '阿拉伯语', fr: '法语', de: '德语', es: '西班牙语', pt: '葡萄牙语', ru: '俄语', ja: '日语', ko: '韩语', other: '其他语种（备注说明）' };
+export const LANGUAGE_LABELS = { zh: '中文', en: '英语', ar: '阿拉伯语', fr: '法语', de: '德语', es: '西班牙语', pt: '葡萄牙语', ru: '俄语', ja: '日语', ko: '韩语', other: '其他语种' };
 export const OVERSEAS_LANGUAGES = ['en', 'ar', 'fr', 'de', 'es', 'pt', 'ru', 'ja', 'ko', 'other'];
+
+// Public preliminary service-price rules. These are sales references, not costs.
+export const LANGUAGE_PRICE_FACTORS = { en: 1, ar: 1.5, fr: 1.3, de: 1.3, es: 1.3, pt: 1.3, ru: 1.4, ja: 1.5, ko: 1.5, other: 1.6 };
+export const SHARED_SERVICE_IDS = ['W01', 'W03', 'W04', 'W05', 'W06', 'W19', 'W21', 'W22', 'W23', 'W24', 'W27', 'W28', 'W29', 'W30', 'W31', 'PITCH_SETUP'];
+export const EXTRA_LANGUAGE_SHARE = 0.5;
+export const SOCIAL_QUARTER_PRICES = { mentions: 15000, insights: 45000, strategy: 120000 };
+export const SOCIAL_CADENCE_FACTORS = { monthly: 1, weekly: 2, daily: 4, realtime: 8 };
+export const ESTIMATE_NOTICE = '初步报价，实际以正式报价单为准。';
+
+export const PLATFORM_LABELS = { linkedin: 'LinkedIn', reddit: 'Reddit', youtube: 'YouTube', x: 'X', xiaohongshu: '小红书', douyin: '抖音', weibo: '微博', wechat: '微信' };

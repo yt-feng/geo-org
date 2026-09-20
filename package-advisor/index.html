@@ -50,13 +50,13 @@
                 <p class="control-label">客户使用哪些语言？<span class="optional">可多选</span></p>
                 <div class="language-options">
                   <label><input type="checkbox" name="service-language" value="en" checked><span><strong>英语</strong><small>标准价 · 先建立英语内容与可见度</small></span></label>
-                  <label><input type="checkbox" name="service-language" value="ar"><span><strong>阿拉伯语</strong><small>独立报价 · 本地表达、专业审校与页面适配</small></span></label>
+                  <label><input type="checkbox" name="service-language" value="ar"><span><strong>阿拉伯语</strong><small>本地表达 · 专业审校 · 页面适配</small></span></label>
                 </div>
-                <details class="language-more"><summary>其他语言市场 <span aria-hidden="true">＋</span></summary><div class="language-checks">
+                <fieldset class="language-more language-expanded"><legend>其他语言市场</legend><div class="language-checks">
                   <label><input type="checkbox" name="service-language" value="fr">法语</label><label><input type="checkbox" name="service-language" value="de">德语</label><label><input type="checkbox" name="service-language" value="es">西班牙语</label><label><input type="checkbox" name="service-language" value="pt">葡萄牙语</label><label><input type="checkbox" name="service-language" value="ja">日语</label><label><input type="checkbox" name="service-language" value="ko">韩语</label><label><input type="checkbox" name="service-language" value="ru">俄语</label><label><input type="checkbox" name="service-language" value="other">其他语种</label>
-                </div></details>
-                <p class="field-help" id="language-pricing-note" aria-live="polite">当前为英语标准价。阿拉伯语及其他语言按各自的内容量、本地化和审校范围报价。</p>
-                <p class="field-help">目标国家和已有语言版本可写在备注里；已确认的研究与品牌事实优先共用，不因增加语种就重复采购整套研究。</p>
+                </div></fieldset>
+                <p class="field-help" id="language-pricing-note" aria-live="polite">所选语种会纳入初步报价，最终金额以确认服务范围后的正式报价单为准。</p>
+                <p class="field-help">选择其他语种时，请在备注写明语言和目标国家。已有语言版本也可一并说明，已确认的研究与品牌事实优先共用。</p>
               </div>
               <div class="chinese-base" id="chinese-base" hidden><strong>¥50,000 <span>/ 季度基础包</span></strong><p>每单元：1 条产品线、3 个场景、3 类客群、最多 30 个去重意图主题。超范围按标准单元核算，下面会展开计算。</p></div>
             </fieldset>
@@ -96,14 +96,14 @@
               <div class="select-wrap"><select id="stage" name="stage"><option value="starting">刚开始出海 · 资料需要梳理</option><option value="growing" selected>正在增长 · 已有官网与内容</option><option value="established">相对成熟 · 需要规模化建设</option></select><span aria-hidden="true">⌄</span></div>
             </div>
             </details>
-            <details class="social-config"><summary><span>独立 Social Listening</span><small>按范围另行报价</small><span aria-hidden="true">＋</span></summary><p class="field-help">监测社交平台中的话题、品牌与消费者讨论，独立配置。它与 AI 回答采样是不同服务。</p>
+            <details class="social-config"><summary><span>独立 Social Listening</span><small>按平台与范围估算</small><span aria-hidden="true">＋</span></summary><p class="field-help">监测社交平台中的话题、品牌与消费者讨论，独立配置。它与 AI 回答采样是不同服务。</p>
               <label class="check-row"><input type="checkbox" id="social-enabled"><span>将 Social Listening 纳入需求</span></label>
               <div id="social-fields" hidden>
                 <fieldset class="social-platforms"><legend>监控平台（可多选）</legend><label><input type="checkbox" name="social-platform" value="linkedin">LinkedIn</label><label><input type="checkbox" name="social-platform" value="reddit">Reddit</label><label><input type="checkbox" name="social-platform" value="youtube">YouTube</label><label><input type="checkbox" name="social-platform" value="x">X</label><label><input type="checkbox" name="social-platform" value="facebook">Facebook</label><label><input type="checkbox" name="social-platform" value="instagram">Instagram</label><label><input type="checkbox" name="social-platform" value="tiktok">TikTok</label><label><input type="checkbox" name="social-platform" value="xiaohongshu">小红书</label><label><input type="checkbox" name="social-platform" value="douyin">抖音</label><label><input type="checkbox" name="social-platform" value="weibo">微博</label><label><input type="checkbox" name="social-platform" value="wechat">微信公众号</label><label><input type="checkbox" name="social-platform" value="zhihu">知乎</label><label><input type="checkbox" name="social-platform" value="bilibili">哔哩哔哩</label></fieldset>
                 <p class="field-help">需要监控其他平台，可在备注中填写平台名称及希望了解的问题。</p>
                 <div class="social-selects"><div><label for="social-depth">研究深度</label><select id="social-depth"><option value="mentions">提及与趋势概览</option><option value="insights" selected>主题与讨论分析</option><option value="strategy">深度策略研究</option></select></div><div><label for="social-frequency">更新频率</label><select id="social-frequency"><option value="monthly" selected>每月</option><option value="weekly">每周</option><option value="daily">每日</option><option value="realtime">实时需求（需确认）</option></select></div></div>
                 <div class="scope-inputs social-counts"><label for="social-markets">市场数量<input type="number" id="social-markets" min="1" max="50" step="1" value="1"></label><label for="social-languages">语种数量<input type="number" id="social-languages" min="1" max="30" step="1" value="1"></label></div>
-                <p class="field-help">采样指约定平台上的公开可获取讨论，不代表全网全量。深度决定是看提及趋势、解释主题，还是形成策略建议；频率指约定更新节奏。需确认数据可取范围、历史窗口和人工分析要求后报价。</p>
+                <p class="field-help">采样指约定平台上的公开可获取讨论，不代表全网全量。深度决定是看提及趋势、解释主题，还是形成策略建议；频率指约定更新节奏。根据所选平台、深度、频率和覆盖范围提供季度初步服务费；数据可取范围、历史窗口及外部数据采购在正式报价中确认。</p>
               </div>
             </details>
             <div class="control-group notes-group">
@@ -120,6 +120,7 @@
             <div class="results-heading"><div><span class="step-kicker">02 / 你的服务组合</span><h3 id="results-title">范围看得清，交付有重点。</h3></div><span class="source-badge" id="source-badge">预算预览</span></div>
             <p class="result-summary" id="result-summary" aria-live="polite">正在为你配置可执行的服务组合…</p>
             <dl class="decision-summary" id="decision-summary" aria-live="polite"></dl>
+            <p class="estimate-notice">金额为当前配置的初步报价，最终以实际服务范围和正式报价单为准。</p>
             <div class="plans-grid" id="plans-grid" aria-label="比较可选服务方案"></div>
             <div class="plan-detail" id="plan-detail" hidden>
               <div class="detail-heading"><div><span class="detail-kicker">DELIVERABLES, MADE CLEAR</span><h4 id="detail-title">你的交付清单</h4></div><span class="detail-count" id="detail-count"></span></div>
@@ -128,12 +129,12 @@
               <div id="pricing-breakdown" class="pricing-breakdown" hidden></div>
               <div id="pending-quote" class="pending-quote" hidden></div>
               <div class="total-row"><span id="detail-total-label">本期所选服务费合计</span><strong id="detail-total"></strong></div>
-              <p class="quote-note">这是按当前需求配置的参考方案。市场、语言、资料基础与确认后的工作范围会影响正式报价；税费以正式报价单为准。</p>
+              <p class="quote-note">此为当前配置的初步报价。实际服务范围、资料基础、税费及外部采购，以双方确认的正式报价单为准。</p>
               <div class="phases-heading"><h4>从需求确认到交付，按阶段推进</h4><span>YOUR DELIVERY ROADMAP</span></div>
               <ol class="phases" id="phases"></ol>
               <div class="value-box"><span class="value-icon" aria-hidden="true">↺</span><div><h4>本期完成，下期继续用</h4><ul id="highlights"></ul></div></div>
               <details class="assumptions"><summary>查看方案前提与范围说明 <span aria-hidden="true">＋</span></summary><ul id="assumptions"></ul></details>
-              <div class="result-actions"><a class="consult-button" id="consult-button" href="/contact/#inquiry">带着方案，与顾问确认 <span aria-hidden="true">↗</span></a><button type="button" id="export-button">下载方案 <span aria-hidden="true">↓</span></button><button type="button" id="print-button" aria-label="打印或保存方案为 PDF">打印 <span aria-hidden="true">↗</span></button></div>
+              <div class="result-actions"><a class="consult-button" id="consult-button" href="/contact/#inquiry">带着方案，与顾问确认 <span aria-hidden="true">↗</span></a><button type="button" id="export-button">下载方案 PDF <span aria-hidden="true">↓</span></button><button type="button" id="print-button" aria-label="打印当前方案">打印 <span aria-hidden="true">↗</span></button></div>
               <p class="consult-next">下一步可核对已选方案，补充姓名和邮箱后再提交。顾问会与你确认范围、报价与排期，无需先付款。</p>
             </div>
             <noscript><p class="noscript-message">请启用 JavaScript 以使用预算配置器。你也可以<a href="/contact/#inquiry">直接联系顾问</a>，获取定制服务方案。</p></noscript>
@@ -158,7 +159,7 @@
           <article><span>01</span><div><h3>按范围与数量计价</h3><p>诊断、内容、传播与复盘各有明确交付。服务费由选定工作项及数量组成，清楚列示，不把文章篇数当作全部价值。</p></div></article>
           <article><span>02</span><div><h3>复杂度提前确认</h3><p>目标市场、语言、专业资料深度与审批要求会影响工作范围。先确认需求，再确定正式报价与交付标准。</p></div></article>
           <article><span>03</span><div><h3>已有资产，优先复用</h3><p>先检查你已有的官网、研究、产品资料和案例。在确认适用后，优先整理与改写，减少不必要的重复建设。</p></div></article>
-          <article><span>04</span><div><h3>服务与外部采购分别列示</h3><p>付费媒体刊位、广告投放、数据库、订阅与翻译等第三方采购如有需要，将单独确认。媒体沟通不等于保证刊发。</p></div></article>
+          <article><span>04</span><div><h3>服务与外部采购分别列示</h3><p>付费媒体刊位、广告投放、数据库、订阅等第三方采购如有需要，将单独确认。媒体沟通不等于保证刊发。</p></div></article>
         </div>
       </div>
     </section>
@@ -194,7 +195,7 @@
             <p id="composition-note"></p>
           </div>
         </div>
-        <div class="price-boundary"><p><strong>计入当前服务费</strong>上方已定价明细中的研究、内容、适配与约定执行；数量以你选定的清单为准。</p><p><strong>如需采购，另行确认</strong>第三方媒体刊位、广告投放、数据库与专门数据授权等，不包含在渠道上稿服务费内。</p><p><strong>增加语言时如何计价</strong>英语使用标准价；阿拉伯语及其他语种按目标市场、本地化、专业审校和内容量分别报价。先核验可复用成果，再确认增量工作。</p></div>
+        <div class="price-boundary"><p><strong>计入当前服务费</strong>所选服务明细中的研究、内容、适配与约定执行；数量以你选定的清单为准。</p><p><strong>如需采购，另行确认</strong>第三方媒体刊位、广告投放、数据库与专门数据授权等，不包含在渠道上稿服务费内。</p><p><strong>增加语言时如何计价</strong>按所选语种和交付数量形成初步报价，共享研究与品牌事实优先复用。新增语言版本的适配与审校费用计入明细，最终以正式报价单为准。</p></div>
 
         <div class="budget-principles-heading"><p class="eyebrow">MAKE YOUR BUDGET GO FURTHER</p><h3>让预算更经用的三件事。</h3></div>
         <div class="budget-principles">

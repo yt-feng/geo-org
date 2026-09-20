@@ -33,25 +33,44 @@ Chinese scope units = product lines × ceil(scenarios / 3) × ceil(audiences / 3
 Intent units = ceil(total intent themes / 30). Charge for the larger unit count,
 not the sum. This avoids counting the same coverage twice. The resulting unit
 count describes the contracted scope; content volumes and observation rounds
-are stated separately in the delivery schedule. Chinese optional services are
-quoted separately and never reuse overseas prices.
+are stated separately in the delivery schedule. Chinese optional services use an
+independent, numeric reference fee table (`CN_REFERENCE_PRICES`), rather than
+inheriting the overseas tariff. The confirmed base remains CNY 50,000 per unit.
 
-Overseas modules retain their public unit prices. Large enterprise scopes and
-additional product lines, scenarios, audiences or intent coverage require a
-separate scope quotation, rather than automatically multiplying article counts.
+Overseas enterprise and expanded scopes use the same coverage axes to plan a
+quarter's work. Each coverage unit requests W04 × 1, W05 × 1 and W22 × 3, worth
+CNY 30,000 at the English reference tariff. Existing quantities of each component
+are subtracted before the remaining work is listed as `OVERSEAS_SCOPE`; components
+explicitly set to zero are not re-added. A fully covered scope has no extra row.
+Content, channels and AI sampling retain their own stated quantities. A large or
+open budget never automatically multiplies those deliverables.
 
-Social listening is independent of AI answer sampling and one-off discussion
-research. Its requested platforms, research depth, frequency, market count and
-language count are recorded. Data availability, historical window, reporting,
-alerts and response responsibilities are confirmed before a quotation. Its price
-is unknown until scoped; it is not a low-price monitoring add-on.
+Social listening has a numeric quarterly preliminary fee:
 
-`planner.mjs` is authoritative for prices and quantities. Every plan separates
-priced `items` from unpriced `pendingItems`; `total` is only the priced subtotal.
-Pending scope cannot be labelled fully within budget. Basic required services
-stay locked; optional modules can be removed, restored or changed in quantity.
-Explicit customer quantities and zero exclusions take precedence over AI choices.
-Prerequisite services and material requirements remain visible after edits.
+```
+ceil_to_100(platform_count × depth_base × cadence_factor
+            × (1 + 0.35 × (markets - 1) + 0.20 × (languages - 1)))
+```
+
+Depth bases are CNY 15,000 / 45,000 / 120,000 for mentions / insights / strategy;
+cadence factors are 1 / 2 / 4 / 8 for monthly / weekly / daily / realtime.
+An unspecified platform list provisionally means one platform. Historical window,
+data access, reporting and alert-response arrangements are confirmed in the
+formal scope. External data acquisition is separate from the service fee.
+
+`pricing.mjs` is authoritative for service estimates; `planner.mjs` chooses
+quantities using those estimates. Configured plans have numeric `items`, empty
+`pendingItems`, `pricingStatus: "estimate"`, `estimated: true` and
+`quoteRequired: false`. `total` is the full preliminary service fee across selected
+languages. Amount budgets compare that total directly; discuss budgets retain
+null `withinBudget` and `remainingBudget` while still displaying a service estimate.
+An empty configuration retains `configurationRequired`, requires service selection
+and has no budget comparison. Every proposal states “初步报价，实际以正式报价单为准。”
+
+Original required minimums remain locked; optional modules can be removed,
+restored or changed in quantity. Explicit customer quantities and zero exclusions
+take precedence over AI choices. Repeated customization is idempotent and
+prerequisite services and material requirements remain visible.
 
 DeepSeek can propose priorities and exclusions from the current market's public
 service whitelist. It cannot change prices, markets, scope or explicit customer
@@ -65,8 +84,9 @@ contact form using the same tab's session storage. The draft expires after 30
 minutes and is consumed once. It is not sent to a server by the handoff action.
 The customer reviews or edits the populated message and supplies contact details
 before explicitly submitting the existing form. Existing message text is never
-overwritten. Downloads include current quantities, deleted modules and pending
-quotations. No credentials or private pricing fields are included.
+overwritten. The PDF is generated locally from the current proposal snapshot and
+includes selected quantities, scope, service-language detail and the preliminary
+quote notice. No credentials or private pricing fields are included.
 
 ## Deployment
 
@@ -126,20 +146,31 @@ selected one three-article bundle now requests three articles and reserves CNY
 4,500. Reusing the mother article does not create three new originals, and paid
 media procurement is separate. Manual W10 quantities now always mean articles.
 
-When English and another language are selected, priced items are the English
-portion only and `LANGUAGE_SCOPE` records the additional languages and selected
-module quantities for a separate quotation. Shared research and the fact base
-are reused; terminology, local expression, page/channel adaptation and review
-are scoped as incremental work, with no blanket price multiplier.
+All selected languages now receive numeric preliminary service prices. Public
+language factors are English 1.0; Arabic, Japanese and Korean 1.5; French, German,
+Spanish and Portuguese 1.3; Russian 1.4; and other languages 1.6. Primary-language
+selection is deterministic in the published language order, with English first
+when present. Content and channel execution use the primary-language factor,
+then 50% of each additional language's reference fee for localization and review.
+W10 is an exception: each language requires the full channel-execution fee of
+CNY 1,500 × its language factor, including additional languages.
+Each pricing component is rounded to whole CNY before quantities are applied.
+AI sampling instead charges the complete protocol for each language; its
+`sampling.plannedAnswersPerLanguage`, `languageCount`, `languages` and
+`plannedAnswersTotal` make the complete observation count explicit.
 
-With only non-English overseas languages, selected services retain their IDs and
-quantities but move to unpriced pending lines. Their total and unit price are
-null; the plan's numerical total is only the empty known subtotal, not a zero-cost
-offer. They remain editable and retain the original required minimums. Switching
-back to English restores trusted English prices without losing selections.
+Shared research, facts, scope planning and technical work are billed once. The
+shared service IDs are W01, W03, W04, W05, W06, W19, W21, W22, W23, W24, W27,
+W28, W29, W30, W31 and PITCH_SETUP. Different language versions of an existing
+asset are not counted as additional original assets. Paid media remains separate.
 
-The former W20 universal multi-language fee has been withdrawn (`price: null`).
-It is hidden from new purchase options. Existing explicit W20 inputs remain
-supported: that line owns the same language-increment quotation, so an additional
-`LANGUAGE_SCOPE` is not charged or listed alongside it. Only-non-English W20 notes
-are incorporated into the per-service quotation and explicitly not charged twice.
+Every row contains public `pricingDetails` with language, label, unitPrice,
+quantity and amount. `estimateServiceUnitPrice(id, input)` gives a numeric unit
+estimate for optional-service controls; `estimateServicePricing(id, input,
+quantity)` also returns those details. These functions use only canonical scope
+and catalogues; clients and AI cannot submit custom prices or factors.
+
+The former W20 universal language fee stays hidden from new purchase options.
+Existing W20 and CN_W20 inputs are accepted as legacy aliases and absorbed into
+the canonical language selection; they add no second line or fee. A language
+alias without any selected service does not create a quoted service.

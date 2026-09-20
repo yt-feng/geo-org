@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { beforeEach, test } from 'node:test';
-import { catalog } from '../package-advisor/catalog.mjs';
+import { catalog, getOptionalServices } from '../package-advisor/catalog.mjs';
 import { createRecommendation, validateInput, GOALS, STAGES, PREFERENCE_SERVICES } from '../package-advisor/planner.mjs';
 import worker, { analyze, validateAnalysis } from '../advisor-service/worker.mjs';
 
@@ -73,19 +73,23 @@ function assertPlanIntegrity(result, input) {
     assert.notEqual(plan.configurationRequired, true);
     assert.equal(new Set(plan.items.map(item => item.id)).size, plan.items.length);
     for (const item of plan.items) {
-      assert.ok(byId.has(item.id), `unknown service ${item.id}`);
+      assert.ok(byId.has(item.id) || item.id === 'OVERSEAS_SCOPE', `unknown service ${item.id}`);
       assert.ok(Number.isInteger(item.quantity) && item.quantity > 0);
-      assert.equal(item.unitPrice, byId.get(item.id).price, `price override for ${item.id}`);
+      if (byId.has(item.id)) assert.equal(item.unitPrice, byId.get(item.id).price, `price override for ${item.id}`);
+      else {
+        assert.ok(item.pricingDetails.length > 0);
+        assert.equal(item.pricingDetails.reduce((sum, part) => sum + part.amount, 0), item.total);
+      }
       assert.equal(item.total, item.unitPrice * item.quantity);
     }
-    const monitor = plan.items.find(item => byId.get(item.id).sampling);
+    const monitor = plan.items.find(item => byId.get(item.id)?.sampling);
     if (monitor) {
       const questionUnits = plan.items.find(item => item.id === 'W04')?.quantity || 0;
       if (questionUnits * 30 < plan.sampling.questions) {
         assert.ok(input.budget < 20000, 'a full service combination must include enough question-design scope');
         assert.ok(plan.assumptions.some(value => /客户须提供.*已审核.*已定稿.*问题/.test(value)), 'baseline-only service requires a client-approved question set');
       }
-      assert.deepEqual(plan.sampling, byId.get(monitor.id).sampling);
+      for (const [key, value] of Object.entries(byId.get(monitor.id).sampling)) assert.deepEqual(plan.sampling[key], value);
       if (!plan.sampling.fullFollowupRounds) assert.ok(plan.assumptions.some(value => /不含后续复测|没有后续复测|0 次完整复测/.test(value)));
     } else {
       assert.equal(plan.sampling, undefined);
@@ -125,7 +129,7 @@ test('higher tiers retain earlier deliverables and only upgrade measurement scop
         const upgraded = plans[i];
         assert.ok(upgraded.total >= previous.total);
         for (const item of previous.items) {
-          if (byId.get(item.id).sampling) {
+          if (byId.get(item.id)?.sampling) {
             assert.ok(upgraded.sampling, 'a higher tier cannot remove measurement');
             assert.ok(upgraded.sampling.questions >= previous.sampling.questions);
             assert.ok(upgraded.sampling.fullFollowupRounds >= previous.sampling.fullFollowupRounds);
@@ -166,10 +170,10 @@ test('baseline-only small projects require a reviewed existing question set and 
   assert.equal(baseline.sampling.fullFollowupRounds, 0);
 });
 
-test('excluding all purchasable small-project modules requires configuration and never offers free service', () => {
+test('explicitly removing all purchasable small-project modules requires configuration and never offers free service', () => {
   for (const goal of GOALS) for (const stage of STAGES) {
-    const input = { ...VALID, budget: 5000, goal, stage };
-    const result = createRecommendation(input, { exclude: PREFERENCE_SERVICES });
+    const input = { ...VALID, budget: 5000, goal, stage, modules: Object.fromEntries(getOptionalServices('overseas').map(item => [item.id, 0])) };
+    const result = createRecommendation(input);
     assertPlanIntegrity(result, input);
     for (const plan of result.plans) {
       assert.equal(plan.configurationRequired, true);
@@ -211,7 +215,7 @@ test('low-budget content and authority goals buy useful assets without implying 
     for (const plan of result.plans) {
       assert.equal(plan.sampling, undefined);
       assert.ok(plan.items.some(item => ['W07', 'W08', 'W09', 'W18'].includes(item.id)));
-      assert.match(JSON.stringify([plan.assumptions, plan.phases]), /未包含.*采样/);
+      assert.match(JSON.stringify([plan.assumptions, plan.phases]), /(?:未包含|不含).*采样/);
     }
   }
 });

@@ -1,5 +1,5 @@
 import { catalog, cnCatalog, getOptionalServices } from './catalog.mjs';
-import { normalizeAdvisorInput, customizePricedPlan, createChinesePlans, createEnterprisePlans, finalizeRecommendation } from './pricing.mjs';
+import { normalizeAdvisorInput, customizePricedPlan, createChinesePlans, createEnterprisePlans, finalizeRecommendation, estimateServiceUnitPrice } from './pricing.mjs';
 
 const byId = new Map(catalog.map(item => [item.id, item]));
 export const GOALS = ['visibility', 'content', 'authority'];
@@ -11,10 +11,11 @@ const ORIGINALS = ['W07', 'W08', 'W09', 'W15', 'W16', 'W17'];
 
 export function validateInput(value) { return normalizeAdvisorInput(value); }
 
-function line(id, quantity = 1) {
+function line(id, quantity = 1, input) {
   const item = byId.get(id);
   if (!item || !Number.isFinite(item.price) || !Number.isInteger(quantity) || quantity < 1) throw new Error('unknown_service');
-  return { id, name: item.name, quantity, unitPrice: item.price, total: item.price * quantity, unit: item.unit, deliverables: [...item.deliverables] };
+  const unitPrice = input ? estimateServiceUnitPrice(id, input) : item.price;
+  return { id, name: item.name, quantity, unitPrice, total: unitPrice * quantity, unit: item.unit, deliverables: [...item.deliverables] };
 }
 
 const commonAssumptions = [
@@ -34,7 +35,8 @@ function normalizePreferences(value, market = 'overseas') {
 function buildPlan(input, target, index, preferences, previous) {
   // Each tier retains the earlier deliverables. Measurement upgrades replace only
   // the same underlying measurement service, never the content already offered.
-  const items = previous ? previous.items.map(item => line(item.id, item.quantity)) : [];
+  const price = id => estimateServiceUnitPrice(id, input);
+  const items = previous ? previous.items.map(item => line(item.id, item.quantity, input)) : [];
   const exclusions = new Set(preferences.exclude);
   const sum = () => items.reduce((total, item) => total + item.total, 0);
   const count = id => items.find(item => item.id === id)?.quantity || 0;
@@ -43,11 +45,11 @@ function buildPlan(input, target, index, preferences, previous) {
     if (!byId.has(id) || !Number.isFinite(byId.get(id).price) || exclusions.has(id)) return false;
     const current = count(id);
     if (current >= quantity) return true;
-    const increment = byId.get(id).price * (quantity - current);
+    const increment = price(id) * (quantity - current);
     if (sum() + increment > target) return false;
     const old = items.findIndex(item => item.id === id);
-    if (old >= 0) items[old] = line(id, quantity);
-    else items.push(line(id, quantity));
+    if (old >= 0) items[old] = line(id, quantity, input);
+    else items.push(line(id, quantity, input));
     return true;
   };
   const monitor = () => items.find(item => byId.get(item.id).sampling);
@@ -58,16 +60,16 @@ function buildPlan(input, target, index, preferences, previous) {
     const withFollowup = followup || Boolean(sampling?.fullFollowupRounds);
     const id = `MON_${withFollowup ? '90' : 'BASE'}_${desiredQuestions}`;
     const questionUnits = Math.ceil(desiredQuestions / 30);
-    const addition = byId.get(id).price - (current?.total || 0) + Math.max(0, questionUnits - count('W04')) * byId.get('W04').price;
+    const addition = price(id) - (current?.total || 0) + Math.max(0, questionUnits - count('W04')) * price('W04');
     if (sum() + addition > target) return false;
     append('W04', questionUnits);
-    if (current) items[items.findIndex(item => item.id === current.id)] = line(id);
-    else items.push(line(id));
+    if (current) items[items.findIndex(item => item.id === current.id)] = line(id, 1, input);
+    else items.push(line(id, 1, input));
     return true;
   };
   const addPitch = () => {
     if (exclusions.has('PITCH')) return false;
-    const needed = (count('PITCH_SETUP') ? 0 : byId.get('PITCH_SETUP').price) + (count('PITCH') ? 0 : byId.get('PITCH').price);
+    const needed = (count('PITCH_SETUP') ? 0 : price('PITCH_SETUP')) + (count('PITCH') ? 0 : price('PITCH'));
     if (sum() + needed > target) return false;
     append('PITCH_SETUP');
     return append('PITCH');
@@ -242,15 +244,18 @@ function buildSmallPlans(input, preferences) {
   };
   const preferred = preferences.prioritize.filter(id => byId.has(id) && Number.isFinite(byId.get(id).price) && id !== 'PITCH').map(id => [byId.get(id).name + '专项', [[id, 1]]]);
   const seen = new Set();
-  const candidates = [...preferred, ...recipes[input.goal]].flatMap(([name, quantities]) => {
-    if (quantities.some(([id]) => excluded.has(id))) return [];
-    const items = quantities.map(([id, quantity]) => line(id, quantity));
+  const eligible = [...preferred, ...recipes[input.goal], ['单篇渠道适配专项', [['W10', 1]]]].flatMap(([name, quantities]) => {
+    if (quantities.some(([id]) => excluded.has(id) || input.modules[id] === 0)) return [];
+    const items = quantities.map(([id, quantity]) => line(id, quantity, input));
     const total = items.reduce((n, item) => n + item.total, 0);
     const signature = items.map(item => item.id + ':' + item.quantity).sort().join('|');
-    if (total > input.budget || seen.has(signature)) return [];
+    if (seen.has(signature)) return [];
     seen.add(signature);
     return [{ name, items, total }];
   });
+  const affordable = eligible.filter(option => option.total <= input.budget);
+  const minimum = eligible.reduce((best, option) => !best || option.total < best.total ? option : best, undefined);
+  const candidates = affordable.length ? affordable : minimum ? [minimum] : [];
   // Small budgets compare executable alternatives, not three fees to add together.
   // A different route can cost less: service scope and prerequisites are explicit.
   const recommended = candidates[0];
@@ -283,7 +288,9 @@ function buildSmallPlans(input, preferences) {
     return {
       ...base, name, total, withinBudget: total <= input.budget, allocatedBudget: total, remainingBudget: input.budget - total,
       horizon: sampling ? '首月单次基线' : '按专项范围安排交付',
-      description: `先完成一个明确任务：${name}。以已有素材和约定成果为基础，可独立验收后再决定下一步。`,
+      description: total > input.budget
+        ? `当前预算内暂无适合所选条件的专项，先列出最小可执行范围：${name}。初步报价超出当前预算，可减少语种或调整服务范围后重新选择。`
+        : `先完成一个明确任务：${name}。以已有素材和约定成果为基础，可独立验收后再决定下一步。`,
       items, highlights: [quantityDescription, `专项服务费 ¥${total.toLocaleString('zh-CN')}，预算余量 ¥${(input.budget - total).toLocaleString('zh-CN')}`, sampling ? '交付原回答、引用与缺失记录，明确当前起点' : '交付范围和前置素材写清楚，完成一项再扩展'], assumptions,
       phases: [
         { title: '01 · 确认前置资料', description: '核对该专项要求的事实、素材、问题清单或受访安排，确认本次边界。' },
@@ -327,9 +334,9 @@ export function createRecommendation(raw, rawPreferences = {}) {
   const preferences = normalizePreferences(rawPreferences, input.market);
   let recommendation;
   if (input.market === 'cn') {
-    recommendation = { source: 'rules', summary: '中文季度标准单元独立定价：按产品线、每产品线场景及客群、全项目去重意图计算所需单元；可选增项单独报价。', plans: createChinesePlans(input, preferences) };
+    recommendation = { source: 'rules', summary: '按产品线、场景、客群及全项目去重意图配置中文季度服务，基包与所选增项列出初步报价，实际以正式报价单为准。', plans: createChinesePlans(input, preferences) };
   } else if (input.budgetMode === 'discuss' || input.budget > 320000) {
-    recommendation = { source: 'rules', summary: '境外企业项目先按实际范围配置阶段与服务，完整报价另行确认；预算不作为自动生产内容数量或固定总价。', plans: createEnterprisePlans(input) };
+    recommendation = { source: 'rules', summary: '按实际范围配置季度研究、统筹及所选内容与渠道服务，提供初步报价，实际以正式报价单为准。', plans: createEnterprisePlans(input, preferences) };
   } else {
     recommendation = createLegacyRecommendation(input, preferences);
   }

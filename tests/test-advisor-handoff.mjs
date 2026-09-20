@@ -3,15 +3,15 @@ import { test } from 'node:test';
 import { buildContactSummary, prepareContactHandoff, consumeContactHandoff, HANDOFF_KEY, HANDOFF_TTL } from '../package-advisor/handoff.mjs';
 
 const input = { market: 'cn', budget: null, budgetMode: 'discuss', scope: { productLines: 2, scenarios: 3, audiences: 3, intents: 60 }, notes: '已有材料，请优先复用。', modules: { CN_W10: 0 }, listening: { enabled: true, platforms: ['weibo', 'xiaohongshu'], depth: 'insights', cadence: 'weekly', markets: 1, languages: 1 } };
-const plan = { name: '中文季度服务', total: 100000, quoteRequired: true, items: [{ name: '中文季度标准单元', quantity: 2, unit: '单元', total: 100000 }], pendingItems: [{ name: 'Social listening', quantity: 1, reason: '按平台与分析范围确认', details: ['2 个平台'] }] };
+const plan = { name: '中文季度服务', total: 280000, pricingStatus: 'estimate', estimated: true, quoteRequired: false, items: [{ id: 'CN_QUARTER', name: '中文季度标准单元', quantity: 2, unit: '单元', unitPrice: 50000, total: 100000 }, { id: 'SOCIAL_LISTENING', name: 'Social listening', quantity: 1, unit: '季度', unitPrice: 180000, total: 180000 }], pendingItems: [] };
 function storage() {
   const values = new Map();
   return { values, setItem: (key, value) => values.set(key, value), getItem: key => values.get(key), removeItem: key => values.delete(key) };
 }
 
-test('consultation summary retains scope, unknown prices and notes without private fields', () => {
+test('consultation summary retains scope, preliminary totals and notes without private fields', () => {
   const summary = buildContactSummary(input, { ...plan, margin: 0.9, internalCost: 1 });
-  for (const text of ['另行讨论', '2 条产品线', '60 个去重意图主题', '¥100,000', '不是完整报价', 'Social listening', '本次明确不选：中文 · 渠道适配与上稿', input.notes]) assert.ok(summary.includes(text), text);
+  for (const text of ['另行讨论', '2 条产品线', '60 个去重意图主题', '¥280,000', '¥100,000', '¥180,000', '初步服务费合计', '实际以正式报价单为准', 'Social listening', '本次明确不选：中文 · 渠道适配与上稿', input.notes]) assert.ok(summary.includes(text), text);
   assert.doesNotMatch(summary, /margin|internalCost|毛利|¥0/);
 });
 
