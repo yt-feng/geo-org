@@ -431,18 +431,18 @@ def path_for_lang_suffix(lang: str, suffix: str) -> Path:
 
 
 def alternate_links(root: Path, path: Path) -> str:
-    if path.name == "404.html":
+    if path.name == "404.html" or not i18n_site.is_public_html(root, path):
         return ""
     suffix = content_suffix_for_path(path)
     links = []
     for code, hreflang in (("zh", "zh-CN"), ("en", "en"), ("ar", "ar")):
         target = root / path_for_lang_suffix(code, suffix)
-        if not target.exists():
+        if not i18n_site.is_public_html(root, target.relative_to(root)):
             continue
         href = f"{SITE_URL}/{suffix}" if code == "zh" else f"{SITE_URL}/{code}/{suffix}"
         links.append(f'<link rel="alternate" hreflang="{hreflang}" href="{href}"/>')
     zh_target = root / path_for_lang_suffix("zh", suffix)
-    if zh_target.exists():
+    if i18n_site.is_public_html(root, zh_target.relative_to(root)):
         links.append(f'<link rel="alternate" hreflang="x-default" href="{SITE_URL}/{suffix}"/>')
     return "".join(links)
 
@@ -458,7 +458,7 @@ def fallback_suffix(suffix: str) -> str:
 def relative_lang_href(root: Path, path: Path, target_lang: str) -> str:
     prefix = root_prefix_for_html(path)
     suffix = content_suffix_for_path(path)
-    target_suffix = suffix if (root / path_for_lang_suffix(target_lang, suffix)).exists() else fallback_suffix(suffix)
+    target_suffix = suffix if i18n_site.is_public_html(root, path_for_lang_suffix(target_lang, suffix)) else fallback_suffix(suffix)
     if target_lang == "zh":
         return f"{prefix}{target_suffix}" if target_suffix else f"{prefix}index.html"
     return f"{prefix}{target_lang}/{target_suffix}"
@@ -490,6 +490,8 @@ def add_head_authority(
     root: Path,
     posts_by_lang: Mapping[str, Mapping[str, Mapping[str, str]]],
 ) -> str:
+    if i18n_site.is_unlisted_page(path, text):
+        return text
     text = clean_ld_json(text)
     canonical = canonical_for_path(path)
     canonical_tag = f'<link rel="canonical" href="{canonical}"/>'
@@ -630,10 +632,12 @@ def patch_html(root: Path = Path(".")) -> None:
         "ar": {post.get("slug", ""): post for post in read_json(root / "ar" / "blog" / "posts.json", []) if post.get("slug")},
     }
     for path in sorted(root.rglob("*.html")):
-        if ".git" in path.parts:
-            continue
         rel = path.relative_to(root)
+        if i18n_site.is_unlisted_page(rel):
+            continue
         text = path.read_text(encoding="utf-8")
+        if i18n_site.is_unlisted_page(rel, text):
+            continue
         original = text
         text = add_head_authority(text, rel, root, posts_by_lang)
         text = patch_language_switcher(text, root, rel)
