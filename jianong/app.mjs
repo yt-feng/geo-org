@@ -489,6 +489,11 @@ async function initialize() {
   if (results[0].status === 'fulfilled') { state.config = results[0].value; renderPackages(); if (state.config.image_credits != null) setText('image-price-note', `本次最多预留 ${points(state.config.image_credits)} 通用积分，完成后按用量结算、多余退回；生成图为创意稿，品牌标识、包装与文字请复核后使用。`); }
   else { toast('服务配置暂时无法读取，登录前请稍后刷新。'); setText('billing-note', '充值配置暂时未能读取，请稍后刷新。'); }
   if (results[1].status === 'fulfilled') { updateUser(results[1].value.user); await loadHistory(); } else updateUser(null);
-  if (new URLSearchParams(location.search).has('_ptxn')) { switchView('wallet'); if (state.user) refreshAfterPayment(); }
+  const paymentId = new URLSearchParams(location.search).get('_ptxn');
+  if (paymentId && /^txn_[a-z0-9]{26}$/.test(paymentId)) {
+    switchView('wallet');
+    try { if (await preparePaddle()) window.Paddle.Checkout.open({ transactionId: paymentId, settings: { displayMode: 'overlay', theme: 'light', locale: 'zh-Hans' } }); }
+    catch (error) { toast(error.message); }
+  }
 }
 initialize();
