@@ -13,7 +13,7 @@ export function validateInput(value) { return normalizeAdvisorInput(value); }
 
 function line(id, quantity = 1) {
   const item = byId.get(id);
-  if (!item || !Number.isInteger(quantity) || quantity < 1) throw new Error('unknown_service');
+  if (!item || !Number.isFinite(item.price) || !Number.isInteger(quantity) || quantity < 1) throw new Error('unknown_service');
   return { id, name: item.name, quantity, unitPrice: item.price, total: item.price * quantity, unit: item.unit, deliverables: [...item.deliverables] };
 }
 
@@ -40,7 +40,7 @@ function buildPlan(input, target, index, preferences, previous) {
   const count = id => items.find(item => item.id === id)?.quantity || 0;
   const hasOriginal = () => ORIGINALS.some(id => count(id));
   const append = (id, quantity = 1) => {
-    if (!byId.has(id) || exclusions.has(id)) return false;
+    if (!byId.has(id) || !Number.isFinite(byId.get(id).price) || exclusions.has(id)) return false;
     const current = count(id);
     if (current >= quantity) return true;
     const increment = byId.get(id).price * (quantity - current);
@@ -80,18 +80,18 @@ function buildPlan(input, target, index, preferences, previous) {
     setMonitoring(15, target >= 40500);
     append('W08');
     if (!hasOriginal()) append('W07');
-    append('W10');
+    append('W10', 3);
     append('W07');
   } else if (input.goal === 'content') {
     append('W08');
-    append('W10');
+    append('W10', 3);
     append('W07');
     if (!hasOriginal()) append('W09');
   } else {
     append('W09');
     append('W18');
     if (!hasOriginal()) append('W08');
-    append('W10');
+    append('W10', 3);
   }
 
   if (input.goal !== 'visibility' && target >= 65000) setMonitoring(15, target >= 80000);
@@ -110,10 +110,10 @@ function buildPlan(input, target, index, preferences, previous) {
 
   const depth = target >= 250000 ? 4 : target >= 175000 ? 3 : target >= 115000 ? 2 : target >= 75000 ? 1 : 0;
   const desired = input.goal === 'content'
-    ? { W07: [1, 2, 3, 4, 5][depth], W08: [2, 3, 4, 6, 8][depth], W09: [0, 1, 1, 2, 3][depth], W10: [1, 2, 4, 6, 8][depth] }
+    ? { W07: [1, 2, 3, 4, 5][depth], W08: [2, 3, 4, 6, 8][depth], W09: [0, 1, 1, 2, 3][depth], W10: [3, 6, 12, 18, 24][depth] }
     : input.goal === 'authority'
-      ? { W07: [0, 1, 1, 2, 3][depth], W08: [1, 2, 3, 4, 5][depth], W09: [1, 2, 2, 3, 4][depth], W10: [1, 2, 3, 4, 5][depth] }
-      : { W07: [1, 2, 3, 4, 5][depth], W08: [1, 2, 3, 5, 7][depth], W09: [0, 1, 1, 2, 3][depth], W10: [1, 2, 3, 5, 7][depth] };
+      ? { W07: [0, 1, 1, 2, 3][depth], W08: [1, 2, 3, 4, 5][depth], W09: [1, 2, 2, 3, 4][depth], W10: [3, 6, 9, 12, 15][depth] }
+      : { W07: [1, 2, 3, 4, 5][depth], W08: [1, 2, 3, 5, 7][depth], W09: [0, 1, 1, 2, 3][depth], W10: [3, 6, 9, 15, 21][depth] };
   const expansionOrder = input.goal === 'authority' ? ['W09', 'W08', 'W07', 'W10'] : ['W08', 'W07', 'W10', 'W09'];
   // Rotate between asset types rather than consuming the remainder with one type.
   for (let quantity = 1; quantity <= Math.max(...Object.values(desired)); quantity++) {
@@ -122,13 +122,13 @@ function buildPlan(input, target, index, preferences, previous) {
 
   if (index === 2 && target >= 40500 && target < 75000 && input.goal === 'visibility') {
     const extraAsset = append('W08', count('W08') + 1) || append('W07', count('W07') + 1);
-    if (extraAsset) append('W10', count('W10') + 1);
+    if (extraAsset) append('W10', count('W10') + 3);
     else if (monitor()) setMonitoring(30, true);
   }
 
   if (index === 2 && target < 75000 && input.goal !== 'visibility') {
     append('W08', count('W08') + 1);
-    if (input.goal === 'content') append('W10', Math.min(2, count('W10') + 1));
+    if (input.goal === 'content') append('W10', Math.min(6, count('W10') + 3));
   }
 
   if (target >= 60000) append('W05');
@@ -154,7 +154,7 @@ function buildPlan(input, target, index, preferences, previous) {
   const sampling = samplingItem && byId.get(samplingItem.id).sampling;
   const hasFollowup = Boolean(sampling?.fullFollowupRounds);
   const originals = items.filter(item => ORIGINALS.includes(item.id)).reduce((n, item) => n + item.quantity, 0);
-  const adaptations = count('W10') * 3;
+  const adaptations = count('W10');
   const assumptions = [...commonAssumptions];
   if (!count('W01')) assumptions.push('本组合以客户提供已核准的品牌事实、产品资料和公开权限为前提；若资料不足，先补充事实盘点并重新确认范围，暂不直接制作或发布。');
   else assumptions.push('已包含品牌事实盘点；客户指定业务与技术审校负责人，确认事实、证据及公开范围。');
@@ -211,36 +211,36 @@ function buildSmallPlans(input, preferences) {
     visibility: [
       ['题库与基线专项', [['W04', 1], ['MON_BASE_15', 1]]],
       ['基线与内容专项', [['MON_BASE_15', 1], ['W08', 1]]],
-      ['基线与渠道适配', [['MON_BASE_15', 1], ['W10', 1]]],
+      ['基线与渠道适配', [['MON_BASE_15', 1], ['W10', 3]]],
       ['AI 回答基线专项', [['MON_BASE_15', 1]]],
       ['购买问题设计专项', [['W04', 1]]],
       ['业务访谈专项', [['W02', 1]]],
       ['核心页面专项', [['W07', 1]]],
       ['行业资料专项', [['W18', 1]]],
-      ['已有内容适配专项', [['W10', 1]]],
+      ['已有内容适配专项', [['W10', 3]]],
     ],
     content: [
-      ['官网内容起步', [['W07', 1], ['W08', 1], ['W10', 1]]],
-      ['研究文章与渠道适配', [['W08', 1], ['W10', 1]]],
-      ['核心页面与渠道适配', [['W07', 1], ['W10', 1]]],
+      ['官网内容起步', [['W07', 1], ['W08', 1], ['W10', 3]]],
+      ['研究文章与渠道适配', [['W08', 1], ['W10', 3]]],
+      ['核心页面与渠道适配', [['W07', 1], ['W10', 3]]],
       ['研究文章专项', [['W08', 1]]],
       ['核心页面专项', [['W07', 1]]],
-      ['已有内容适配专项', [['W10', 1]]],
+      ['已有内容适配专项', [['W10', 3]]],
       ['业务访谈专项', [['W02', 1]]],
       ['行业资料专项', [['W18', 1]]],
     ],
     authority: [
       ['真实案例与行业资料', [['W09', 1], ['W18', 1]]],
-      ['真实案例与渠道适配', [['W09', 1], ['W10', 1]]],
+      ['真实案例与渠道适配', [['W09', 1], ['W10', 3]]],
       ['真实案例专项', [['W09', 1]]],
       ['访谈与行业资料', [['W02', 1], ['W18', 1]]],
-      ['行业资料与内容适配', [['W18', 1], ['W10', 1]]],
+      ['行业资料与内容适配', [['W18', 1], ['W10', 3]]],
       ['行业资料专项', [['W18', 1]]],
       ['业务访谈专项', [['W02', 1]]],
-      ['已有内容适配专项', [['W10', 1]]],
+      ['已有内容适配专项', [['W10', 3]]],
     ],
   };
-  const preferred = preferences.prioritize.filter(id => byId.has(id) && id !== 'PITCH').map(id => [byId.get(id).name + '专项', [[id, 1]]]);
+  const preferred = preferences.prioritize.filter(id => byId.has(id) && Number.isFinite(byId.get(id).price) && id !== 'PITCH').map(id => [byId.get(id).name + '专项', [[id, 1]]]);
   const seen = new Set();
   const candidates = [...preferred, ...recipes[input.goal]].flatMap(([name, quantities]) => {
     if (quantities.some(([id]) => excluded.has(id))) return [];

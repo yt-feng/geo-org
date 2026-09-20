@@ -371,7 +371,7 @@ test('inconsistent module combinations return a controlled 400 before limiting o
   const fetcher = t.mock.method(globalThis, 'fetch', async () => { throw new Error('must_not_call_provider'); });
   let limited = 0;
   const configured = { DEEPSEEK_API_KEY: 'test-only-placeholder', ADVISOR_RATE_LIMIT: { async limit() { limited++; return { success: true }; } } };
-  const input = { ...INPUT, market: 'overseas', budget: 50000, goal: 'visibility', stage: 'starting' };
+  const input = { ...INPUT, market: 'overseas', budget: 60000, goal: 'visibility', stage: 'starting' };
   for (const modules of [{ W04: 0 }, { W01: 0 }, { MON_BASE_15: 0 }, { MON_BASE_15: 1, MON_BASE_30: 1 }]) {
     assert.doesNotThrow(() => planner.validateInput({ ...input, modules }), 'this case exercises configuration semantics after schema validation');
     const response = await worker.fetch(request({ ...input, modules }), configured);
@@ -384,7 +384,7 @@ test('inconsistent module combinations return a controlled 400 before limiting o
 });
 
 test('existing overseas core units allow explicit increases without changing their minimum or trusted price', () => {
-  const input = { ...INPUT, market: 'overseas', budget: 50000, goal: 'visibility', stage: 'starting' };
+  const input = { ...INPUT, market: 'overseas', budget: 60000, goal: 'visibility', stage: 'starting' };
   for (const id of ['W01', 'W04']) {
     const result = planner.createRecommendation({ ...input, modules: { [id]: 2 } });
     for (const plan of result.plans) {

@@ -1,6 +1,6 @@
-import { catalog, cnCatalog, getOptionalServices, CN_UNIT_PRICE, INTENT_DEFINITION } from './catalog.mjs';
+import { catalog, cnCatalog, getOptionalServices, CN_UNIT_PRICE, INTENT_DEFINITION, LANGUAGE_LABELS, OVERSEAS_LANGUAGES } from './catalog.mjs';
 
-const INPUT_KEYS = new Set(['budget', 'budgetMode', 'market', 'scope', 'goal', 'stage', 'notes', 'modules', 'listening']);
+const INPUT_KEYS = new Set(['budget', 'budgetMode', 'market', 'scope', 'goal', 'stage', 'notes', 'modules', 'listening', 'languages']);
 const SCOPE_KEYS = new Set(['productLines', 'scenarios', 'audiences', 'intents']);
 const LISTENING_KEYS = new Set(['enabled', 'platforms', 'depth', 'cadence', 'markets', 'languages']);
 const DEFAULT_SCOPE = { productLines: 1, scenarios: 3, audiences: 3, intents: 30 };
@@ -18,7 +18,7 @@ export function calculateChineseUnits(scope) {
   return {
     scopeUnits, intentUnits, units: Math.max(scopeUnits, intentUnits), unitPrice: CN_UNIT_PRICE,
     formula: '单元数 = max(产品线数 × 向上取整(每产品线场景数 ÷ 3) × 向上取整(每产品线客群数 ÷ 3), 向上取整(全项目去重意图数 ÷ 30))；季度价 = 单元数 × ¥50,000',
-    scopeBasis: '场景数和客群数按每条产品线统一规划；产品线间的差异写入备注后确认。范围单元不是文章、发布或回答数量，意图费用不重复叠加。',
+    scopeBasis: '场景数和客群数按每条产品线统一规划；产品线间的差异可在备注中说明。实际文章、发布与观察数量以季度交付清单为准。',
     intentDefinition: INTENT_DEFINITION,
   };
 }
@@ -46,6 +46,10 @@ export function normalizeAdvisorInput(value) {
   if (!['visibility', 'content', 'authority'].includes(value.goal) || !['starting', 'growing', 'established'].includes(value.stage)) return fail('invalid_input');
   if (value.notes !== undefined && (typeof value.notes !== 'string' || value.notes.length > 1600 || CONTROLS.test(value.notes))) return fail('invalid_input');
   if (value.scope !== undefined && (!object(value.scope) || Object.keys(value.scope).some(key => !SCOPE_KEYS.has(key)))) return fail('invalid_scope');
+  const languageInput = value.languages === undefined ? [market === 'cn' ? 'zh' : 'en'] : value.languages;
+  if (!Array.isArray(languageInput) || languageInput.length < 1 || languageInput.length > 10 || languageInput.some(language => typeof language !== 'string' || !(market === 'cn' ? ['zh'] : OVERSEAS_LANGUAGES).includes(language))) return fail('invalid_languages');
+  const languages = [...new Set(languageInput)];
+  if (market === 'cn' && (languages.length !== 1 || languages[0] !== 'zh')) return fail('invalid_languages');
   const scope = { ...DEFAULT_SCOPE, ...value.scope };
   for (const [key, count] of Object.entries(scope)) if (!safeInteger(count, 1, key === 'intents' ? 1000 : 100)) return fail('invalid_scope');
   if (value.listening !== undefined && (!object(value.listening) || Object.keys(value.listening).some(key => !LISTENING_KEYS.has(key)))) return fail('invalid_listening');
@@ -53,7 +57,7 @@ export function normalizeAdvisorInput(value) {
   if (typeof listening.enabled !== 'boolean' || !['mentions', 'insights', 'strategy'].includes(listening.depth) || !['monthly', 'weekly', 'daily', 'realtime'].includes(listening.cadence) || !safeInteger(listening.markets, 1, 50) || !safeInteger(listening.languages, 1, 30)) return fail('invalid_listening');
   if (!Array.isArray(listening.platforms) || listening.platforms.length > 20 || listening.platforms.some(platform => typeof platform !== 'string' || platform.trim().length < 1 || platform.length > 80 || CONTROLS.test(platform))) return fail('invalid_listening');
   listening.platforms = [...new Set(listening.platforms.map(platform => platform.trim()))];
-  const input = { budget: value.budget, budgetMode, market, scope, goal: value.goal, stage: value.stage, notes: value.notes?.trim() || '', listening };
+  const input = { budget: value.budget, budgetMode, market, languages, scope, goal: value.goal, stage: value.stage, notes: value.notes?.trim() || '', listening };
   input.modules = normalizeSelections(value.modules, input);
   return input;
 }
@@ -65,19 +69,52 @@ function pendingLine(service, quantity, reason, details = []) {
   return { id: service.id, name: service.name, quantity, unit: service.unit, unitPrice: null, total: null, reason, details: [...details], deliverables: [...(service.deliverables || [])], prerequisites: [...(service.prerequisites || [])], required: false, optional: true, pricingStatus: 'quote_required' };
 }
 function scopeDetails(input) {
-  return [`${input.scope.productLines} 条产品线；每产品线 ${input.scope.scenarios} 个场景、${input.scope.audiences} 类客群`, `全项目 ${input.scope.intents} 个去重决策主题；同义问法不重复计数`, INTENT_DEFINITION];
+  return [`服务语种：${input.languages.map(language => LANGUAGE_LABELS[language]).join('、')}`, `${input.scope.productLines} 条产品线；每产品线 ${input.scope.scenarios} 个场景、${input.scope.audiences} 类客群`, `全项目 ${input.scope.intents} 个去重决策主题；同义问法不重复计数`, INTENT_DEFINITION];
 }
 function socialLine(input) {
   const service = getOptionalServices(input.market).find(item => item.id === 'SOCIAL_LISTENING');
   const depth = { mentions: '提及与主题识别', insights: '讨论洞察与竞品分析', strategy: '策略研究与行动建议' }[input.listening.depth];
   const cadence = { monthly: '月度', weekly: '每周', daily: '每日', realtime: '实时监测需求（须确认可取得性与响应安排）' }[input.listening.cadence];
-  return { ...pendingLine(service, 1, '定制社交聆听独立核价；不与 AI 回答采样、精选讨论研究混算。', [`平台：${input.listening.platforms.join('、') || '待确认'}`, `研究深度：${depth}；频率：${cadence}`, `覆盖 ${input.listening.markets} 个市场、${input.listening.languages} 种语言`, '历史窗口、数据授权、告警规则、响应方式及外部数据费用另行确认']), parameters: { ...input.listening, enabled: true, platforms: [...input.listening.platforms] } };
+  return { ...pendingLine(service, 1, '社交聆听按平台、研究深度、频率及覆盖范围独立报价。', [`平台：${input.listening.platforms.join('、') || '待确认'}`, `研究深度：${depth}；频率：${cadence}`, `覆盖 ${input.listening.markets} 个市场、${input.listening.languages} 种语言`, '历史窗口、数据授权、告警规则、响应方式及外部数据费用另行确认']), parameters: { ...input.listening, enabled: true, platforms: [...input.listening.platforms] } };
 }
 
 function systemScopeLine(input, id = 'OVERSEAS_SCOPE') {
   return { id, name: id === 'OVERSEAS_SCOPE' ? '境外范围扩展与实施方案' : '境外企业项目整体范围与报价', quantity: 1, unit: '定制项目', unitPrice: null, total: null, pricingStatus: 'quote_required', required: true, optional: false,
-    reason: '境外项目按实际产品线、场景、客群、去重意图与实施条件核价；不直接套用中文标准单元或把预算截断为套餐总价。',
-    details: [...scopeDetails(input), '内容、渠道、语言、采样协议和执行排期分别确认；矩阵大小不等于文章或发布数量。'],
+    reason: '境外项目按产品线、场景、客群、去重决策主题与实施条件确认服务范围和报价。',
+    details: [...scopeDetails(input), '内容数量、渠道、语种、采样协议和执行排期在项目清单中确认。'],
+  };
+}
+
+
+function languageScopeLine(input, quantities, services, legacy = false) {
+  const languages = input.languages.filter(language => language !== 'en');
+  const modules = [...quantities.entries()].filter(([id]) => id !== 'SOCIAL_LISTENING' && id !== 'W20').map(([id, quantity]) => ({ id, name: services.get(id).name.replace(/^英文/, ''), quantity, unit: services.get(id).unit }));
+  return {
+    id: legacy ? 'W20' : 'LANGUAGE_SCOPE', name: '新增语种的本地化与审校范围', quantity: legacy ? quantities.get('W20') : 1, unit: legacy ? services.get('W20').unit : '语种增量范围',
+    unitPrice: null, total: null, pricingStatus: 'quote_required', pricingBasis: 'language_quote', required: !legacy, optional: legacy,
+    reason: '共享研究与品牌事实库优先复用；新增语种按本地表达、专业术语、页面或渠道适配及审校范围独立报价。',
+    details: [
+      `新增语种：${languages.length ? languages.map(language => LANGUAGE_LABELS[language]).join('、') : '待补充，请在语种选择或备注中说明'}`,
+      ...modules.map(item => `待核对数量：${item.name} × ${item.quantity} ${item.unit}；按新增语种确认复用与适配范围`),
+      '所列数量用于确认各语种的交付范围；研究资料与品牌事实库优先复用。',
+      '结合已有内容资产与审校能力，确认各语种所需的本地化与审校增量。',
+    ],
+    parameters: { languages: [...languages], modules, reuseBasis: '共享研究和事实库复用，按本地表达、术语、页面渠道和审校的增量核价', legacyW20: legacy },
+  };
+}
+
+function localizedServiceLine(service, quantity, required, input) {
+  const labels = input.languages.map(language => LANGUAGE_LABELS[language]).join('、');
+  return {
+    ...pendingLine(service, quantity, '该服务按所选语种独立核价，以实际本地化范围、资料复用和审校要求为准。', [
+      `所选语种：${labels}`,
+      `申请数量：${quantity} ${service.unit}；逐语种确认具体交付、共享资料复用与增量范围`,
+      '共享研究和事实库优先复用；本地表达、专业术语、页面渠道适配与审校按实际需要确认。',
+    ]),
+    name: `${labels} · ${service.name.replace(/^英文/, '')}`,
+    deliverables: [`按所选语种确认${service.name.replace(/^英文/, '')}的具体范围`, '所列数量为本次需求，具体文本深度、平台、轮次与审校范围在报价清单中确认'],
+    required, optional: !required, pricingBasis: 'language_quote', languages: [...input.languages],
+    parameters: { languages: [...input.languages], requestedQuantity: quantity, unit: service.unit },
   };
 }
 
@@ -104,18 +141,21 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
   const selected = normalizeSelections(selections, input);
   const services = new Map(getOptionalServices(input.market).map(item => [item.id, item]));
   const coreMinimums = originalCoreMinimums(plan, input, services);
+  const localizedOnly = input.market === 'overseas' && !input.languages.includes('en');
+  const mixedLanguages = input.market === 'overseas' && input.languages.includes('en') && input.languages.some(language => language !== 'en');
   const quantities = new Map();
   const systemPending = [];
   for (const item of plan.items) {
     const service = services.get(item.id);
-    if (!service || service.price === null || !safeInteger(item.quantity, 1, service.maxQuantity)) return fail('invalid_plan');
+    if (!service || (service.price === null && item.id !== 'W20') || !safeInteger(item.quantity, 1, service.maxQuantity)) return fail('invalid_plan');
     quantities.set(item.id, item.quantity);
   }
   for (const item of plan.pendingItems || []) {
+    if (item.id === 'LANGUAGE_SCOPE') continue; // Rebuilt from canonical languages and current quantities.
     if (systemPendingIds.has(item.id)) systemPending.push(systemScopeLine(input, item.id));
     else {
       const service = services.get(item.id);
-      if (!service || service.price !== null || !safeInteger(item.quantity, 1, service.maxQuantity)) return fail('invalid_plan');
+      if (!service || (service.price !== null && item.pricingBasis !== 'language_quote') || !safeInteger(item.quantity, 1, service.maxQuantity)) return fail('invalid_plan');
       quantities.set(item.id, item.quantity);
     }
   }
@@ -133,10 +173,10 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
   const dependencyNotes = [];
   if (quantities.has(pitchId)) {
     quantities.set(setupId, 1);
-    dependencyNotes.push('行业 PR 编辑沟通自动配套一次首次资料与方法设置；同一项目不重复收取设置费用。');
+    dependencyNotes.push('行业 PR 编辑沟通配套首次资料整理与沟通准备，按项目计收一次。');
   } else if (quantities.has(setupId)) {
     quantities.delete(setupId);
-    dependencyNotes.push('未选择 PR 编辑沟通，首次设置未单独计入。');
+    dependencyNotes.push('首次资料整理与沟通准备随行业 PR 编辑沟通服务配置。');
   }
   const monitorIds = [...quantities.keys()].filter(id => input.market === 'overseas' && services.get(id)?.sampling);
   if (monitorIds.length > 1) {
@@ -156,9 +196,16 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
   for (const [id, quantity] of quantities) {
     const service = services.get(id);
     if (id === 'SOCIAL_LISTENING') pendingItems.push(socialLine(input));
-    else if (service.price === null) pendingItems.push(pendingLine(service, quantity, id === 'CN_W22' ? '仅核价超出基包的额外多团队协作；基础排期、执行统筹和季度复盘已在基包内，不重复收费。' : '中文增项按所选数量和实际范围单独报价，先扣除基包已包含的工作，不使用境外价格。', ['数量表示申请配置的增量计价单位，具体交付与价格在正式报价中确认。']));
+    else if (id === 'W20') {
+      if (localizedOnly) pendingItems.push({ ...localizedServiceLine(service, quantity, false, input), reason: '语言适配纳入所选语种的服务范围，结合资料复用、本地化与审校需求统一确认报价。' });
+      else pendingItems.push(languageScopeLine(input, quantities, services, true));
+    }
+    else if (localizedOnly) pendingItems.push(localizedServiceLine(service, quantity, coreMinimums[id] !== undefined || (id === setupId && quantities.has(pitchId)), input));
+    else if (service.price === null) pendingItems.push(pendingLine(service, quantity, id === 'CN_W22' ? '基包包含基础排期、执行统筹和季度复盘；额外多团队协作按实际范围另行报价。' : '中文增项在基包范围之外，按所选数量与实际交付要求独立报价。', ['所选数量与具体交付范围将在正式报价中确认。']));
     else items.push(pricedLine(service, quantity, coreMinimums[id] !== undefined || (id === setupId && quantities.has(pitchId))));
   }
+  if (mixedLanguages && !quantities.has('W20') && [...quantities.keys()].some(id => id !== 'SOCIAL_LISTENING')) pendingItems.push(languageScopeLine(input, quantities, services));
+  for (const item of items) item.languages = [input.market === 'cn' ? 'zh' : 'en'];
   const expandedOverseas = input.market === 'overseas' && (input.scope.productLines > 1 || input.scope.scenarios > 3 || input.scope.audiences > 3 || input.scope.intents > 30);
   if (expandedOverseas && !pendingItems.some(item => systemPendingIds.has(item.id))) pendingItems.unshift(systemScopeLine(input));
   const total = items.reduce((n, item) => n + item.total, 0);
@@ -169,30 +216,31 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
   const count = id => quantities.get(id) || 0;
   const sampling = input.market === 'overseas' ? items.map(item => services.get(item.id).sampling).find(Boolean) : undefined;
   const assumptions = [
-    input.market === 'cn' ? '中文季度标准单元与境外服务独立定价；本方案只使用中文标准价和中文增项待报价。' : '境外服务按各行注明的计价单位列示；超出已定价单位的整体范围另行核价。',
+    input.market === 'cn' ? '中文服务按季度标准单元计价，可选增项按范围另行报价。' : localizedOnly ? '所选语种的各项服务按本地化范围、资料复用与审校要求确认报价。' : mixedLanguages ? '已列金额为英语部分服务费；其他语种按本地化与审校增量另行报价。' : '英语单价仅适用于英语服务；其他语种按实际范围独立报价。',
+    `服务语种：${input.languages.map(language => LANGUAGE_LABELS[language]).join('、')}`,
     '金额为人民币未税服务费。媒体采购、会员、广告、拍摄、差旅、专门数据授权等外部费用按实际项目另列。',
     INTENT_DEFINITION,
-    '每行范围描述以一个计价单位为准。矩阵、去重主题、文章、适配发布、AI回答观察和社交讨论样本分别计量，不互相充当数量。',
+    '每行交付范围以一个计价单位为准，实际交付数量按所选服务及数量确认。',
     ...dependencyNotes,
   ];
-  if (quoteRequired) assumptions.unshift('显示金额仅为已定价服务小计；待报价项目尚未计入，不能据此判断整体价格或是否在预算内。');
-  if (input.budgetMode === 'discuss') assumptions.unshift('预算选择另行讨论；本页不作预算内承诺，也不将开放预算视为零元。');
+  if (quoteRequired) assumptions.unshift('显示金额为已定价服务小计，待报价项目尚未计入；完整报价确认后与预算核对。');
+  if (input.budgetMode === 'discuss') assumptions.unshift('项目预算与服务范围另行确认。');
   if (input.market === 'cn') assumptions.push(calculateChineseUnits(input.scope).scopeBasis);
   if (!count(prefix + 'W01')) assumptions.push('客户提供可核验事实、获准使用的资料和审校负责人；资料不足时先确认补充范围，不直接制作或发布未经核准的主张。');
-  if (count(prefix + 'W15')) assumptions.push('白皮书复用已付费的母文、案例或访谈时，正式范围核销重复制作，不将复用内容计为额外原创。');
+  if (count(prefix + 'W15')) assumptions.push('白皮书优先复用已有母文、案例与访谈资料，新增撰写与编辑范围在交付清单中确认。');
   if (sampling) {
     if (count('W04') * 30 < sampling.questions) assumptions.push(`客户须提供至少 ${sampling.questions} 道已审核、已定稿且可直接采样的去重问题；不足部分需补充题库工作后再执行。`);
-    assumptions.push(`AI 回答采样：${sampling.questions} 题 × ${sampling.platforms} 个实际平台 × 每题每轮 ${sampling.repeats} 次；${sampling.baselineRounds} 次基线、${sampling.fullFollowupRounds} 次完整复测，共 ${sampling.plannedAnswers} 次计划回答观察。此项不是社交聆听。`);
+    assumptions.push(`AI 回答采样：${sampling.questions} 题 × ${sampling.platforms} 个实际平台 × 每题每轮 ${sampling.repeats} 次；${sampling.baselineRounds} 次基线、${sampling.fullFollowupRounds} 次完整复测，共 ${sampling.plannedAnswers} 次计划回答观察。社交聆听按独立服务范围确认。`);
   }
   if (count(prefix + 'W10') && !originals.some(id => count(prefix + id))) assumptions.push('渠道适配须由客户提供已完成、已核准且可公开使用的合格母稿；未计入新母稿制作。');
-  if (count(prefix + 'W03')) assumptions.push('精选公开讨论研究是有界的一次性人工研究，不等于持续跨平台 Social Listening；定制社交聆听独立核价。');
+  if (count(prefix + 'W03')) assumptions.push('精选公开讨论研究为约定范围内的一次性人工研究；持续跨平台社交聆听另行确认范围与报价。');
   for (const item of [...items, ...pendingItems]) for (const prerequisite of services.get(item.id)?.prerequisites || []) if (!assumptions.includes(prerequisite)) assumptions.push(prerequisite);
-  if (!configured) assumptions.unshift('当前选择尚未形成服务清单；零小计不代表免费服务，请选择合适模块或按需求配置。');
+  if (!configured) assumptions.unshift('当前选择尚未形成服务清单，请选择所需模块后确认范围与报价。');
   const comparable = input.budgetMode === 'amount' && !quoteRequired;
   const quantitySummary = items.map(item => `${item.name} × ${item.quantity}`).join('；');
   const remaining = comparable ? input.budget - total : null;
-  const scopeLabel = input.market === 'cn' ? '中文季度标准单元' : quoteRequired ? '范围与报价建议' : plan.scopeLabel || '服务组合';
-  const horizon = input.market === 'cn' ? '按季度确认交付' : quoteRequired || input.budgetMode === 'discuss' ? '范围确认后分阶段推进' : plan.horizon || '按所选专项安排交付';
+  const scopeLabel = input.market === 'cn' ? '中文季度标准单元' : quoteRequired ? '范围与报价建议' : input.budget >= 150000 ? '第一阶段建议' : input.budget < 20000 ? '可单独购买的专项' : '首期服务组合';
+  const horizon = input.market === 'cn' ? '按季度确认交付' : quoteRequired || input.budgetMode === 'discuss' ? '范围确认后分阶段推进' : sampling?.fullFollowupRounds ? '90 天验证周期' : sampling ? '首月基线与所选专项' : '按所选专项安排交付';
   const customized = Object.keys(selected).length > 0;
   const phases = input.market === 'cn' ? [
     { title: '01 · 确认中文范围单元', description: '核对产品线、每产品线的场景与客群、全项目去重意图；固定标准单元和可选增项分别列示。' },
@@ -209,12 +257,13 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
   ];
   const result = {
     ...plan, ...(customized ? { name: `${input.market === 'cn' ? '中文季度' : '境外'} · 自选服务组合` } : {}), customized, phases, market: input.market, budgetMode: input.budgetMode, scope: { ...input.scope }, scopeLabel, horizon,
-    coreMinimums: { ...coreMinimums }, items, pendingItems, total, totalLabel: quoteRequired ? '已定价服务小计（待报价项目未计入）' : '已定价服务小计',
+    languages: [...input.languages], ...(input.market === 'overseas' ? { pricingLanguageBasis: localizedOnly ? 'localized' : mixedLanguages ? 'multilingual' : 'english' } : {}),
+    coreMinimums: { ...coreMinimums }, items, pendingItems, total, totalLabel: localizedOnly ? '所选语种服务待报价' : mixedLanguages ? '英语部分服务费小计' : quoteRequired ? '已定价服务小计（待报价项目未计入）' : '当前方案服务费合计',
     pricingStatus, quoteRequired, withinBudget: comparable ? total <= input.budget : null,
     pricedSubtotalWithinBudget: input.budgetMode === 'amount' ? total <= input.budget : null,
     allocatedBudget: total, remainingBudget: remaining, configurationRequired: !configured,
-    description: !configured ? '当前尚未配置可执行服务；此处不是免费服务报价。请保留需求或调整可选模块。' : customized ? '已按您的模块选择重新计算。已定价服务与待报价项目分别列明，数量按实际清单核对。' : plan.description,
-    highlights: [quantitySummary || '整体范围待核价，尚未产生可下单的已定价服务清单', ...(pendingItems.length ? [`${pendingItems.length} 项待报价，金额尚未计入`] : !configured ? ['尚未配置服务，需先确定交付范围'] : []), input.budgetMode === 'discuss' ? '预算另行讨论；不作预算内承诺' : quoteRequired ? `项目预算 ¥${input.budget.toLocaleString('zh-CN')}，完整报价确认后再比较` : `预算余量 ¥${remaining.toLocaleString('zh-CN')}；按需要决定下一步`],
+    description: !configured ? '当前尚未形成报价，请先选择需要的服务以确认交付范围。' : customized ? '以下为您选择的服务与数量，待报价项目将在范围确认后提供报价。' : plan.description,
+    highlights: [quantitySummary || '服务范围与报价待确认', ...(pendingItems.length ? [`${pendingItems.length} 项待报价，金额尚未计入`] : !configured ? ['尚未配置服务，需先确定交付范围'] : []), input.budgetMode === 'discuss' ? '预算与服务范围另行确认' : quoteRequired ? `项目预算 ¥${input.budget.toLocaleString('zh-CN')}，完整报价确认后再比较` : `预算余量 ¥${remaining.toLocaleString('zh-CN')}；按需要决定下一步`],
     assumptions: [...new Set(assumptions)],
   };
   if (sampling) result.sampling = { ...sampling };
@@ -238,8 +287,8 @@ export function createChinesePlans(input, preferences = {}) {
     id: ['essential', 'recommended', 'extended'][index], label: ['季度基础', '优先建议', '增项候选'][index], name: optional.length ? ['中文季度标准单元', '中文基础与优先增项', '中文基础与扩展候选'][index] : '中文季度标准单元',
     items: [pricedLine(service, units, true)],
     pendingItems: optional.slice(0, index).map(id => id === 'SOCIAL_LISTENING' ? socialLine(input) : pendingLine(allowed.get(id), 1, '此为可删减的中文增项候选，需单独确认范围与价格。')),
-    description: `已确认季度标准单元为 ¥50,000，当前范围需 ${units} 个单元；可选增项独立列示，不默认为包含在基包内。`,
-    assumptions: ['中文基包覆盖所选标准单元范围；不直接复制境外套餐的内容篇数、采样量、媒体数量或效果承诺。'],
+    description: `已确认季度标准单元为 ¥50,000，当前范围需 ${units} 个单元；可选增项按实际范围另行报价。`,
+    assumptions: ['中文基包覆盖所选标准单元，具体内容、渠道与观察数量以季度交付清单为准。'],
     phases: [
       { title: '01 · 确认范围单元', description: '核对产品线、各产品线场景与客群，以及全项目去重决策主题。' },
       { title: '02 · 锁定季度清单', description: '按标准单元与确认的增项，明确研究、内容、渠道和观测的实际交付清单。' },
@@ -252,7 +301,7 @@ export function createEnterprisePlans(input) {
   return [0, 1, 2].map(index => ({
     id: ['essential', 'recommended', 'extended'][index], label: '企业定制方案', name: '境外企业定制方案', items: [], pendingItems: [systemScopeLine(input, 'OVERSEAS_PROGRAM_DISCOVERY')],
     description: `围绕 ${input.scope.productLines} 条产品线及所选场景、客群和去重意图配置境外服务。先确认各阶段清单与报价，已选标准模块可单独列价。`,
-    assumptions: ['当前是企业需求与报价范围建议，尚未形成全项目总价；没有将大预算截断成固定套餐，也没有自动虚构国家、周期或内容数量。'],
+    assumptions: ['企业项目按需求确认各阶段服务范围、交付数量与排期，再提供完整报价。'],
     phases: [
       { title: '01 · 核对业务范围', description: '按产品线梳理场景、客群、独立决策主题、现有资料和渠道条件。' },
       { title: '02 · 配置首阶段', description: '选择明确的研究、内容、观测或渠道模块，逐项确认数量与报价。' },
@@ -270,7 +319,7 @@ export function finalizeRecommendation(recommendation, rawInput, preferences = {
     return customizePricedPlan(plan, input, requested);
   });
   const recommended = plans.find(plan => plan.id === 'recommended') || plans[0];
-  return { ...recommendation, market: input.market, budgetMode: input.budgetMode, scope: { ...input.scope }, plans,
+  return { ...recommendation, market: input.market, languages: [...input.languages], ...(recommended.pricingLanguageBasis ? { pricingLanguageBasis: recommended.pricingLanguageBasis } : {}), budgetMode: input.budgetMode, scope: { ...input.scope }, plans,
     pricingStatus: recommended.pricingStatus, quoteRequired: recommended.quoteRequired, scopeLabel: recommended.scopeLabel, horizon: recommended.horizon,
     allocatedBudget: recommended.allocatedBudget, remainingBudget: recommended.remainingBudget,
     ...(recommended.pricingBreakdown ? { pricingBreakdown: recommended.pricingBreakdown } : {}),

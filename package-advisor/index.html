@@ -44,9 +44,27 @@
             <div class="panel-top"><span class="step-kicker">01 / 你的需求</span><span class="live-dot">实时预算预览</span></div>
             <fieldset class="control-group market-group">
               <legend class="control-label"><span class="control-number">1</span> 选择服务市场</legend>
-              <div class="market-switch"><label><input type="radio" name="market" value="overseas" checked><span>境外 GEO<small>按公开模块组合</small></span></label><label><input type="radio" name="market" value="cn"><span>中文 GEO<small>季度基础包与范围确认</small></span></label></div>
+              <div class="market-switch"><label><input type="radio" name="market" value="overseas" checked><span>境外 GEO<small>按所需交付逐项报价</small></span></label><label><input type="radio" name="market" value="cn"><span>中文 GEO<small>季度基础包与范围确认</small></span></label></div>
               <p class="field-help" id="market-help">境外项目按市场、语言与交付模块配置，第三方采购单独确认。</p>
+              <div id="overseas-languages">
+                <p class="control-label">客户使用哪些语言？<span class="optional">可多选</span></p>
+                <div class="language-options">
+                  <label><input type="checkbox" name="service-language" value="en" checked><span><strong>英语</strong><small>标准价 · 先建立英语内容与可见度</small></span></label>
+                  <label><input type="checkbox" name="service-language" value="ar"><span><strong>阿拉伯语</strong><small>独立报价 · 本地表达、专业审校与页面适配</small></span></label>
+                </div>
+                <details class="language-more"><summary>其他语言市场 <span aria-hidden="true">＋</span></summary><div class="language-checks">
+                  <label><input type="checkbox" name="service-language" value="fr">法语</label><label><input type="checkbox" name="service-language" value="de">德语</label><label><input type="checkbox" name="service-language" value="es">西班牙语</label><label><input type="checkbox" name="service-language" value="pt">葡萄牙语</label><label><input type="checkbox" name="service-language" value="ja">日语</label><label><input type="checkbox" name="service-language" value="ko">韩语</label><label><input type="checkbox" name="service-language" value="ru">俄语</label><label><input type="checkbox" name="service-language" value="other">其他语种</label>
+                </div></details>
+                <p class="field-help" id="language-pricing-note" aria-live="polite">当前为英语标准价。阿拉伯语及其他语言按各自的内容量、本地化和审校范围报价。</p>
+                <p class="field-help">目标国家和已有语言版本可写在备注里；已确认的研究与品牌事实优先共用，不因增加语种就重复采购整套研究。</p>
+              </div>
               <div class="chinese-base" id="chinese-base" hidden><strong>¥50,000 <span>/ 季度基础包</span></strong><p>每单元：1 条产品线、3 个场景、3 类客群、最多 30 个去重意图主题。超范围按标准单元核算，下面会展开计算。</p></div>
+            </fieldset>
+            <fieldset class="control-group goal-group">
+              <legend class="control-label">这次最想解决什么？</legend>
+              <label class="choice"><input type="radio" name="goal" value="visibility" checked><span class="choice-icon" aria-hidden="true">◎</span><span><strong>让目标客户更容易找到我</strong><small>先诊断 AI 如何介绍品牌，再补关键内容</small></span><span class="radio-mark" aria-hidden="true"></span></label>
+              <label class="choice"><input type="radio" name="goal" value="content"><span class="choice-icon" aria-hidden="true">▤</span><span><strong>让客户看懂产品优势</strong><small>把产品、案例与证据做成销售可用的内容</small></span><span class="radio-mark" aria-hidden="true"></span></label>
+              <label class="choice"><input type="radio" name="goal" value="authority"><span class="choice-icon" aria-hidden="true">↗</span><span><strong>建立当地市场的信任</strong><small>结合可信内容、行业来源与媒体沟通</small></span><span class="radio-mark" aria-hidden="true"></span></label>
             </fieldset>
             <div class="control-group budget-group">
               <label class="control-label" for="budget"><span class="control-number">2</span><span id="budget-label">本期项目预算</span></label>
@@ -70,15 +88,9 @@
               <div class="scope-inputs"><label for="scope-product-lines">产品线<input type="number" id="scope-product-lines" min="1" max="100" step="1" value="1"><small>独立系列，如工业压缩机</small></label><label for="scope-scenarios">每产品线场景数<input type="number" id="scope-scenarios" min="1" max="100" step="1" value="3"><small>如新厂采购、旧机替换</small></label><label for="scope-audiences">每产品线客群数<input type="number" id="scope-audiences" min="1" max="100" step="1" value="3"><small>如采购、技术负责人</small></label><label for="scope-intents">全项目意图主题<input type="number" id="scope-intents" min="1" max="1000" step="1" value="30"><small>全项目总数，如选型主题</small></label></div>
               <p class="field-help">先填大致需求即可。产品线是独立产品系列；场景是使用或采购情境；客群是参与决策的人群。</p>
               <p class="scope-status" id="scope-status">1 条产品线、3 个场景、3 类客群、30 个需求主题，待确认优先范围。</p>
-              <details class="intent-explainer"><summary>“意图主题”怎么数？ <span aria-hidden="true">＋</span></summary><p>意图是去重后的决策问题主题。例如“工业设备怎么选型”和“买设备看哪些参数”若解决同一决策问题，可归为同一主题，同义问法不重复计算。</p><p>例如 1 条工业设备产品线，场景可为新厂采购、旧机替换和产能扩建，客群可为采购、技术与经营负责人。各轴是规划范围，不能直接当成原创文章数或实际覆盖数。默认 30 可修改，已包含的题数与采样次数以明细为准。</p></details>
+              <details class="intent-explainer"><summary>“意图主题”怎么数？ <span aria-hidden="true">＋</span></summary><p>意图是去重后的决策问题主题。例如“工业设备怎么选型”和“买设备看哪些参数”若解决同一决策问题，可归为同一主题，同义问法不重复计算。</p><p>例如 1 条工业设备产品线，场景可为新厂采购、旧机替换和产能扩建，客群可为采购、技术与经营负责人。这里填写业务规划范围；具体文章篇数与回答观察次数，以所选交付清单为准。意图主题默认 30 个，可按需调整。</p></details>
             </fieldset>
-            <details class="advanced-preferences"><summary>高级偏好 · 目标与品牌基础 <span aria-hidden="true">＋</span></summary>
-            <fieldset class="control-group goal-group">
-              <legend class="control-label">这次最想解决什么？</legend>
-              <label class="choice"><input type="radio" name="goal" value="visibility" checked><span class="choice-icon" aria-hidden="true">◎</span><span><strong>提升 AI 可见度</strong><small>看清品牌现状，找准优先机会</small></span><span class="radio-mark" aria-hidden="true"></span></label>
-              <label class="choice"><input type="radio" name="goal" value="content"><span class="choice-icon" aria-hidden="true">▤</span><span><strong>建设可信内容</strong><small>把产品与证据，变成可引用资产</small></span><span class="radio-mark" aria-hidden="true"></span></label>
-              <label class="choice"><input type="radio" name="goal" value="authority"><span class="choice-icon" aria-hidden="true">↗</span><span><strong>建立海外影响力</strong><small>完善叙事，连接内容与媒体传播</small></span><span class="radio-mark" aria-hidden="true"></span></label>
-            </fieldset>
+            <details class="advanced-preferences"><summary>补充品牌基础 <span aria-hidden="true">＋</span></summary>
             <div class="control-group stage-group">
               <label class="control-label" for="stage">品牌目前的基础</label>
               <div class="select-wrap"><select id="stage" name="stage"><option value="starting">刚开始出海 · 资料需要梳理</option><option value="growing" selected>正在增长 · 已有官网与内容</option><option value="established">相对成熟 · 需要规模化建设</option></select><span aria-hidden="true">⌄</span></div>
@@ -100,13 +112,14 @@
               <div class="notes-footer"><span id="notes-help">目标国家、语言、行业与已有材料都很有用</span><span id="notes-count">0 / 1600</span></div>
             </div>
             <button class="ai-button" type="submit" id="ai-button"><span class="ai-symbol" aria-hidden="true">✦</span><span id="ai-button-text">生成 AI 定制建议</span><span class="button-arrow" aria-hidden="true">↗</span></button>
-            <p class="ai-help">点击生成后，市场、预算、范围、选配项目与备注将提交并由 DeepSeek 分析。请只填写可用于方案咨询的信息。</p>
+            <p class="ai-help">点击生成后，市场、语种、预算、范围、选配项目与备注将提交并由 DeepSeek 分析。请只填写可用于方案咨询的信息。</p>
             <p id="request-message" class="request-message" role="status" aria-live="polite" hidden></p>
           </form>
 
           <div class="results-panel" id="results-panel" aria-labelledby="results-title">
             <div class="results-heading"><div><span class="step-kicker">02 / 你的服务组合</span><h3 id="results-title">范围看得清，交付有重点。</h3></div><span class="source-badge" id="source-badge">预算预览</span></div>
             <p class="result-summary" id="result-summary" aria-live="polite">正在为你配置可执行的服务组合…</p>
+            <dl class="decision-summary" id="decision-summary" aria-live="polite"></dl>
             <div class="plans-grid" id="plans-grid" aria-label="比较可选服务方案"></div>
             <div class="plan-detail" id="plan-detail" hidden>
               <div class="detail-heading"><div><span class="detail-kicker">DELIVERABLES, MADE CLEAR</span><h4 id="detail-title">你的交付清单</h4></div><span class="detail-count" id="detail-count"></span></div>
@@ -164,7 +177,7 @@
       </div>
       <p class="comparison-note">上表比较采购模式，不代表任何具体供应商的完整服务。实际范围以各方合同为准；本页不承诺 AI 引用、排名、销售转化或媒体刊发结果。</p>
       <section class="budget-value" aria-labelledby="budget-value-title">
-        <div class="budget-value-heading"><div><p class="eyebrow">EVERY DELIVERABLE COUNTS</p><h3 id="budget-value-title">同一笔预算，看到完整的交付。</h3><p>把当前方案拆开来看：内容、渠道与观察，都有明确的数量和范围。</p></div><a href="#advisor">调整我的组合 <span aria-hidden="true">↑</span></a></div>
+        <div class="budget-value-heading"><div><p class="eyebrow">EVERY DELIVERABLE COUNTS</p><h3 id="budget-value-title">本期交付与费用</h3><p>了解本期包含的内容、渠道服务与 AI 回答观察范围。</p></div><a href="#advisor">调整我的组合 <span aria-hidden="true">↑</span></a></div>
         <div class="value-plan-caption"><span class="value-plan-dot" aria-hidden="true"></span><span id="value-plan-name">当前选中方案</span><strong id="value-plan-total"></strong></div>
         <div class="delivery-metrics" id="delivery-metrics" aria-live="polite">
           <article><span id="metric-content-label">核心内容资产</span><strong id="metric-content">—</strong><p id="metric-content-note">按当前套餐交付清单计算</p></article>
@@ -173,15 +186,15 @@
         </div>
         <p class="metric-note">数量随选中方案更新，只统计该方案已列明的工作。内容与渠道适配分别计数，观察次数为采样计划，不代表引用或曝光次数。</p>
 
-        <div class="reuse-example" id="overseas-reuse-example">
-          <div class="reuse-example-intro"><span class="example-tag">资产复用示例</span><h4>一份研究，<br>不止一种表达。</h4><p>经确认的研究母文，可用于官网，并适配为自有渠道内容与销售沟通材料。研究基础继续用，按渠道需要调整表达。</p></div>
+        <div class="reuse-example price-composition" id="price-composition">
+          <div class="reuse-example-intro"><span class="example-tag">当前方案费用构成</span><h4>本期服务与费用</h4><p>按所选服务和数量计费，交付范围与费用明细如下。</p><p id="composition-language"></p></div>
           <div class="reuse-equation">
-            <div class="reuse-line"><div><strong>1 篇研究型母文</strong><span>来源核对、编辑审校与约定修改</span></div><b id="example-source-price">¥6,500</b></div>
-            <div class="reuse-line"><div><strong><span aria-hidden="true">＋ </span>3 条渠道适配</strong><span>复用已确认母内容，适配不同场景</span></div><b id="example-adapt-price">¥3,000</b></div>
-            <div class="reuse-total"><span>示例组合服务费</span><strong id="example-total">¥9,500</strong></div>
-            <p>1 篇原创母文 + 3 条适配，分别计价；适配不当作 3 篇新增原创。此为境外服务公开单价组合示例，是否纳入本期以所选套餐清单为准。</p>
+            <div id="composition-lines"></div>
+            <div class="reuse-total"><span id="composition-total-label">当前方案服务费合计</span><strong id="composition-total">—</strong></div>
+            <p id="composition-note"></p>
           </div>
         </div>
+        <div class="price-boundary"><p><strong>计入当前服务费</strong>上方已定价明细中的研究、内容、适配与约定执行；数量以你选定的清单为准。</p><p><strong>如需采购，另行确认</strong>第三方媒体刊位、广告投放、数据库与专门数据授权等，不包含在渠道上稿服务费内。</p><p><strong>增加语言时如何计价</strong>英语使用标准价；阿拉伯语及其他语种按目标市场、本地化、专业审校和内容量分别报价。先核验可复用成果，再确认增量工作。</p></div>
 
         <div class="budget-principles-heading"><p class="eyebrow">MAKE YOUR BUDGET GO FURTHER</p><h3>让预算更经用的三件事。</h3></div>
         <div class="budget-principles">
@@ -192,10 +205,7 @@
       </section>
     </section>
 
-    <section class="coverage-section container" aria-labelledby="coverage-title">
-      <div><p class="eyebrow">ONE CONNECTED SERVICE SYSTEM</p><h2 id="coverage-title">把零散的工作，<br>接成一条完整路径。</h2><p>先做最需要的部分，再随业务扩展。<br>下列能力按需求选配，以方案明细为准。</p></div>
-      <div class="coverage-grid"><div><span>01</span><h3>AI 认知诊断</h3><p>问题设计 · 品牌表达 · 引用观察</p></div><div><span>02</span><h3>品牌事实与证据</h3><p>资料梳理 · 证据索引 · 表达一致性</p></div><div><span>03</span><h3>可信内容资产</h3><p>观点文章 · FAQ · 产品与案例</p></div><div><span>04</span><h3>海外媒体沟通</h3><p>选题 · 资料准备 · 媒体沟通</p></div><div><span>05</span><h3>市场与语言适配</h3><p>目标语境 · 本地表达 · 内容校对</p></div><div><span>06</span><h3>交付与持续复盘</h3><p>产出记录 · 观察反馈 · 下期建议</p></div></div>
-    </section>
+
 
     <section class="closing-section container"><div><p class="eyebrow">A CLEARER NEXT STEP</p><h2>先看清方案，再决定投入。</h2><p>保存你的组合，和顾问一起确认市场、语言与交付重点。</p></div><a href="#advisor">配置我的服务方案 <span aria-hidden="true">↑</span></a></section>
   </main>

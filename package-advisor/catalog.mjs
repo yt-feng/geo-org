@@ -229,11 +229,11 @@ export const catalog = [
   },
   {
     "id": "W10",
-    "name": "渠道适配与上稿",
-    "unit": "3条包",
-    "price": 3000,
+    "name": "英文渠道适配与上稿",
+    "unit": "篇",
+    "price": 1500,
     "deliverables": [
-      "3条实质渠道适配或专业社交短帖",
+      "1篇英文渠道适配稿或专业社交内容及约定自有渠道上稿",
       "基于已确认的母内容复用",
       "客户自有渠道上稿；第三方媒介另列"
     ],
@@ -469,13 +469,13 @@ export const catalog = [
   },
   {
     "id": "W20",
-    "name": "多语言内容适配",
-    "unit": "5资产包",
-    "price": 18000,
+    "name": "新增语种内容适配（按语种核价）",
+    "unit": "适配范围",
+    "price": null,
     "deliverables": [
-      "1种已确认可审校语种的5项内容适配",
-      "每项原文不超过1000词",
-      "本地化审校；新增研究另列"
+      "按所选语种和已有资产核对本地表达、专业术语、页面与渠道适配范围",
+      "共享研究与事实库优先复用，新增语种的增量制作和审校单独核价",
+      "不与语言范围待报价重复计费；目标语种和具体资产数量需确认"
     ],
     "prerequisites": [
       "原文已完成并确认目标语言的审校条件"
@@ -1233,11 +1233,11 @@ const cnScopeDescriptions = {
 };
 
 export const cnCatalog = [cnQuarter, ...catalog.filter(item => !item.sampling && item.id !== 'W04').map(item => ({
-  id: `CN_${item.id}`, name: item.id === 'W22' ? '中文 · 超出基包的多团队项目统筹' : `中文 · ${item.name}`, unit: item.unit,
+  id: `CN_${item.id}`, name: item.id === 'W22' ? '中文 · 超出基包的多团队项目统筹' : `中文 · ${item.name.replace(/^英文/, '')}`, unit: item.unit,
   price: null, deliverables: [cnScopeDescriptions[item.id], '具体数量、平台、研究深度与审校轮次随中文增项范围确认', '交付对应成果、来源或执行记录，并完成约定交接'],
   prerequisites: ['客户提供真实资料、所需权限及审校负责人', '与中文季度基包核对重叠范围，增量服务单独核价，不套用境外单价'],
   category: item.category, priority: item.priority, goals: [...item.goals], stages: [...item.stages],
-  market: 'cn', pricingStatus: 'quote_required', optional: true,
+  market: 'cn', pricingStatus: 'quote_required', optional: item.id !== 'W20', availableForSelection: item.id !== 'W20',
   maxQuantity: item.id === 'PITCH_SETUP' ? 1 : 100,
 })), {
   id: 'CN_AI_OBSERVATION', name: '中文 · AI回答观测与分析增项', unit: '增项范围', price: null,
@@ -1256,7 +1256,7 @@ export const socialListeningService = {
 };
 
 export const optionalServices = [
-  ...catalog.map(item => ({ ...item, market: 'overseas', pricingStatus: 'priced', optional: true, maxQuantity: item.sampling || item.id === 'PITCH_SETUP' ? 1 : 100 })),
+  ...catalog.map(item => ({ ...item, market: 'overseas', pricingStatus: item.price === null ? 'quote_required' : 'priced', optional: item.id !== 'W20', availableForSelection: item.id !== 'W20', maxQuantity: item.sampling || item.id === 'PITCH_SETUP' ? 1 : 100 })),
   ...cnCatalog,
   socialListeningService,
 ];
@@ -1265,3 +1265,6 @@ export function getOptionalServices(market = 'overseas') {
   if (!['cn', 'overseas'].includes(market)) throw new Error('invalid_market');
   return optionalServices.filter(item => item.market === market || item.market === 'all').map(item => ({ ...item, deliverables: [...item.deliverables], prerequisites: [...item.prerequisites], goals: [...item.goals], stages: [...item.stages] }));
 }
+
+export const LANGUAGE_LABELS = { zh: '中文', en: '英语', ar: '阿拉伯语', fr: '法语', de: '德语', es: '西班牙语', pt: '葡萄牙语', ru: '俄语', ja: '日语', ko: '韩语', other: '其他语种（备注说明）' };
+export const OVERSEAS_LANGUAGES = ['en', 'ar', 'fr', 'de', 'es', 'pt', 'ru', 'ja', 'ko', 'other'];

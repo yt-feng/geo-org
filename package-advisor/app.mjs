@@ -6,14 +6,15 @@ import { prepareContactHandoff } from './handoff.mjs';
 const API_URL = 'https://recommend.eco-geo.org/api/recommend';
 const $ = (id) => document.getElementById(id);
 const money = (value) => Number.isFinite(value) ? `¥${Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 0 })}` : '待报价';
-const goalLabels = { visibility: '提升 AI 可见度', content: '建设可信内容', authority: '建立海外影响力' };
+const goalLabels = { visibility: '让目标客户更容易找到我', content: '让客户看懂产品优势', authority: '建立当地市场的信任' };
+const languageLabels = { zh: '中文', en: '英语', ar: '阿拉伯语', fr: '法语', de: '德语', es: '西班牙语', pt: '葡萄牙语', ru: '俄语', ja: '日语', ko: '韩语', other: '其他语种（待确认）' };
 const stageLabels = { starting: '起步 · 资料需要梳理', growing: '增长 · 已有官网与内容', established: '成熟 · 规模化建设' };
 const publicServices = new Map([...catalog, ...cnCatalog].map((item) => [item.id, item]));
 const coreContentIds = new Set(['W07', 'W08', 'W09', 'W15', 'W16', 'W17']);
 const budgetBands = {
   light: { min: 5000, max: 30000, step: 500, initial: 15000, presets: [5000, 10000, 15000, 30000], help: '灵活选择专项，先完成一项重点工作。周期、前提与交付范围以所选方案为准。' },
   system: { min: 30000, max: 150000, step: 1000, initial: 50000, presets: [30000, 50000, 100000, 150000], help: '按需组合诊断、内容与复测。预算是规划参考，不代表必须一次用满。' },
-  scale: { min: 150000, max: 10000000, step: 1000, initial: 300000, presets: [150000, 500000, 1000000, 3000000], help: '高档滑条采用对数刻度。可手填超过参考刻度的金额，或选择“另行讨论”。先确认优先范围，再安排阶段投入。' },
+  scale: { min: 150000, max: 10000000, step: 1000, initial: 300000, presets: [150000, 500000, 1000000, 3000000], help: '按阶段规划重点市场、产品线与交付范围。可直接填写预算，或先与顾问确认项目范围。' },
 };
 const form = $('advisor-form');
 const moduleSelections = { overseas: {}, cn: {} };
@@ -29,6 +30,7 @@ let selectedPlanId;
 let resultMode = 'preview';
 let manualAdjusted = false;
 let configurationValid = false;
+let invalidQuantityDraft = false;
 let requestController;
 let requestSequence = 0;
 let toastTimer;
@@ -40,6 +42,12 @@ function node(tag, className, text) {
   return element;
 }
 function currentMarket() { return form.elements.market.value; }
+function selectedLanguages() { return currentMarket() === 'cn' ? ['zh'] : [...form.querySelectorAll('[name="service-language"]:checked')].map((field) => field.value); }
+function languageText() { return selectedLanguages().map((language) => languageLabels[language]).join('、'); }
+function priceLabel(plan) {
+  if (isPending(plan)) return currentMarket() === 'overseas' && selectedLanguages().includes('en') && selectedLanguages().length > 1 ? '英语部分服务费小计' : '已定价部分小计';
+  return currentMarket() === 'cn' ? '当前季度方案服务费合计' : '当前英语方案服务费合计';
+}
 function readListeningFields() {
   return { enabled: $('social-enabled').checked, platforms: [...form.querySelectorAll('[name="social-platform"]:checked')].map((input) => input.value), depth: $('social-depth').value, cadence: $('social-frequency').value, markets: Number($('social-markets').value), languages: Number($('social-languages').value) };
 }
@@ -62,6 +70,7 @@ function getInput() {
     budget: currentBudgetMode === 'discuss' ? null : currentBudget,
     budgetMode: currentBudgetMode,
     market: currentMarket(),
+    languages: selectedLanguages(),
     scope: { productLines: Number($('scope-product-lines').value), scenarios: Number($('scope-scenarios').value), audiences: Number($('scope-audiences').value), intents: Number($('scope-intents').value) },
     goal: form.elements.goal.value,
     stage: $('stage').value,
@@ -76,7 +85,7 @@ function setMessage(message = '', isError = false) {
   $('request-message').classList.toggle('error', isError);
 }
 function setLoading(loading) {
-  $('ai-button').disabled = loading;
+  $('ai-button').disabled = loading || invalidQuantityDraft;
   $('ai-button').classList.toggle('is-loading', loading);
   $('ai-button-text').textContent = loading ? '正在理解你的需求…' : '生成 AI 定制建议';
   $('results-panel').setAttribute('aria-busy', String(loading));
@@ -109,7 +118,7 @@ function updateControls() {
   if (!discuss && document.activeElement !== $('budget-amount')) $('budget-amount').value = String(currentBudget);
   $('budget-range-min').textContent = money(band.min);
   $('budget-range-max').textContent = scale ? '另行讨论 →' : money(band.max);
-  $('budget-band-help').textContent = (chinese ? '中文标准单元为 ¥50,000 / 季度。所填金额是本季度预算，不是全年预算。低于基础价时，需调整预算或与顾问讨论专项范围，不代表另有低价标准包。' : band.help) + (!discuss && currentBudget > 10000000 ? ' 当前手填金额已超过参考刻度，金额原样保留。' : '');
+  $('budget-band-help').textContent = chinese ? '中文标准单元为 ¥50,000 / 季度。请填写本季度预算；低于基础价时，可与顾问讨论优先开展的专项服务。' : band.help;
   $('budget-log-ticks').hidden = !scale;
   if (scale && !$('budget-log-ticks').children.length) [150000, 500000, 1000000, 3000000, 10000000].forEach((value) => {
     const button = node('button', '', `${value / 10000}万`);
@@ -132,7 +141,12 @@ function updateControls() {
   });
   $('notes-count').textContent = `${$('notes').value.length} / 1600`;
   $('chinese-base').hidden = input.market !== 'cn';
-  $('overseas-reuse-example').hidden = input.market === 'cn';
+  $('overseas-languages').hidden = chinese;
+  form.querySelectorAll('[name="service-language"]').forEach((field) => { field.disabled = chinese; });
+  const languageControl = form.querySelector('[name="service-language"]');
+  languageControl.setCustomValidity(input.languages.length ? '' : '请至少选择一种客户使用的语言。');
+  const extraLanguages = input.languages.filter((language) => language !== 'en');
+  $('language-pricing-note').textContent = !input.languages.length ? '请至少选择一种语言，才能确定报价口径。' : !extraLanguages.length ? '当前为英语标准价。英文渠道适配与自有渠道上稿 ¥1,500 / 篇；第三方媒体刊位另行确认。' : input.languages.includes('en') ? `英语部分使用标准价；${extraLanguages.map((language) => languageLabels[language]).join('、')}的本地化与审校增量另行报价。完整费用将在范围确认后提供。` : `${languageText()}独立核价。请选择所需交付与数量，我们将按目标市场、本地表达与专业审校要求提供报价。`;
   $('market-help').textContent = input.market === 'cn' ? '中文方案以季度标准单元计价；境外方案按项目模块计价，两种服务口径分别展示。' : '境外项目按市场、语言与交付模块配置。项目范围和周期见明细，第三方采购另行确认。';
   $('social-fields').hidden = !input.listening.enabled;
   $('social-fields').querySelectorAll('input,select').forEach((field) => { field.disabled = !input.listening.enabled; });
@@ -158,12 +172,16 @@ function renderRecommendation(recommendation, mode = 'preview') {
   const input = getInput();
   displayedPlans = distinctPlans(recommendation.plans.map((plan) => customizePlan(plan, input, input.modules)));
   configurationValid = true;
+  invalidQuantityDraft = false;
+  $('plans-grid').hidden = false;
   $('export-button').disabled = false;
   $('print-button').disabled = false;
   $('consult-button').removeAttribute('aria-disabled');
   $('consult-button').removeAttribute('tabindex');
   selectedPlanId = displayedPlans.find((plan) => plan.id === selectedPlanId)?.id || displayedPlans.find((plan) => plan.id === 'recommended')?.id || displayedPlans[0]?.id;
   $('result-summary').textContent = recommendation.summary.replace(/(?:三|3)\s*(?:种|个|档|套)\s*((?:服务)?(?:方案|套餐|组合))/gu, '可选$1');
+  const decisions = [['本期业务重点', goalLabels[input.goal]], ['服务语言', languageText()], [input.market === 'cn' ? '本季度预算参考' : '本期预算参考', input.budgetMode === 'discuss' ? '先定范围，再讨论预算' : money(input.budget)]];
+  $('decision-summary').replaceChildren(...decisions.map(([label, value]) => { const group = node('div'); group.append(node('dt', '', label), node('dd', '', value)); return group; }));
   const baseLabel = mode === 'preview' ? '预算预览' : recommendation.source === 'deepseek' ? 'AI 定制建议' : '基础推荐';
   $('source-badge').textContent = manualAdjusted ? `手动调整 · ${baseLabel}` : baseLabel;
   $('source-badge').classList.toggle('ai', !manualAdjusted && mode !== 'preview' && recommendation.source === 'deepseek');
@@ -216,6 +234,10 @@ function changeModule(id, quantity, restoreFocus = false) {
 }
 function moduleControls(item) {
   const controls = node('div', 'item-controls');
+  if (item.id === 'LANGUAGE_SCOPE') {
+    const link = node('a', 'remove-module', '调整服务语种'); link.href = '#overseas-languages';
+    controls.append(node('small', '', '这里对应已勾选的额外语种，取消该语种后会同步移除。'), link); return controls;
+  }
   if (item.required || item.optional === false) {
     controls.append(node('span', 'required-label', '基础必需 · 已锁定'));
     const info = node('small', '', '构成本方案的基础范围。如已有成果可复用，请在备注说明，由顾问核验。'); controls.append(info); return controls;
@@ -224,7 +246,7 @@ function moduleControls(item) {
   if (item.id === 'SOCIAL_LISTENING') {
     const remove = node('button', 'remove-module', '移除独立聆听'); remove.type = 'button';
     remove.addEventListener('click', () => changeModule(item.id, 0));
-    controls.append(node('small', '', '平台、深度与频率可在左侧独立聆听配置中调整。'), remove);
+    controls.append(node('small', '', '平台、深度与频率可在需求区的独立聆听配置中调整。'), remove);
     return controls;
   }
   const label = node('label', '', '数量');
@@ -233,6 +255,7 @@ function moduleControls(item) {
     quantityDrafts.set(item.id, quantity.value);
     const value = Number(quantity.value);
     if (quantity.value !== '' && Number.isInteger(value) && value >= 1 && value <= Number(quantity.max)) changeModule(item.id, value, document.activeElement === quantity);
+    else { cancelPending(); updateQuantityDraftState(); }
   });
   quantity.addEventListener('change', () => {
     if (quantity.value === '' || !quantity.checkValidity()) return;
@@ -242,6 +265,25 @@ function moduleControls(item) {
   const remove = node('button', 'remove-module', '移除'); remove.type = 'button'; remove.setAttribute('aria-label', `移除${item.name}`);
   remove.addEventListener('click', () => { changeModule(item.id, 0); showToast(`已移除${item.name}，对应交付也已移除。可按需重新加入。`); });
   controls.append(label, remove); return controls;
+}
+function updateQuantityDraftState() {
+  const fields = [...$('plan-detail').querySelectorAll('[data-module-id]')];
+  invalidQuantityDraft = fields.some((field) => {
+    const invalid = field.value === '' || !Number.isInteger(Number(field.value)) || Number(field.value) < 1 || Number(field.value) > Number(field.max);
+    field.setAttribute('aria-invalid', String(invalid));
+    return invalid;
+  });
+  if (!invalidQuantityDraft) { $('ai-button').disabled = Boolean(requestController); return; }
+  $('plans-grid').hidden = true;
+  $('detail-total').textContent = '待填写有效数量';
+  $('value-plan-total').textContent = '待填写有效数量';
+  $('composition-total').textContent = '待填写有效数量';
+  $('composition-lines').replaceChildren();
+  $('composition-note').textContent = '请先完成服务数量，随后更新费用明细。';
+  $('export-button').disabled = true; $('print-button').disabled = true; $('ai-button').disabled = true;
+  $('consult-button').setAttribute('aria-disabled', 'true'); $('consult-button').setAttribute('tabindex', '-1');
+  $('source-badge').textContent = '请完成服务数量';
+  $('plan-detail').querySelectorAll('.item-price').forEach((element) => { element.textContent = '待确认数量'; });
 }
 function syncModuleQuantities() {
   if (!configurationValid) return false;
@@ -279,24 +321,32 @@ function renderSelectedPlan() {
     $('pending-quote').append(node('h4', '', '待确认报价的范围'));
     if (!pending.length) $('pending-quote').append(node('p', '', '先确认市场、交付和阶段范围，再给出完整报价。此处未填写的费用不代表免费。'));
     pending.forEach((item) => {
-      const article = node('article', 'pending-item'); article.append(node('h5', '', item.name), node('p', '', item.reason || '按确认的工作范围另行报价'));
-      (item.details || []).forEach((text) => article.append(node('p', '', text)));
+      const article = node('article', 'pending-item'); article.append(node('h5', '', item.name));
+      if (item.pricingBasis === 'language_quote' || item.id === 'LANGUAGE_SCOPE') {
+        article.append(node('p', '', item.id === 'LANGUAGE_SCOPE' ? `待报价语种：${(item.parameters?.languages || []).map((language) => languageLabels[language]).join('、')}。共享研究先复用，再确认本地化与审校增量。` : `${item.quantity} ${item.unit || '项'} · 按所选语种确认报价`));
+        const details = node('details', 'pending-explainer'); details.append(node('summary', '', '查看本项范围与计价说明'), node('p', '', item.reason || '按确认范围报价'));
+        (item.details || []).forEach((text) => details.append(node('p', '', text))); article.append(details);
+      } else {
+        article.append(node('p', '', item.reason || '按确认的工作范围另行报价'));
+        (item.details || []).forEach((text) => article.append(node('p', '', text)));
+      }
       article.append(moduleControls(item)); $('pending-quote').append(article);
     });
   }
-  $('detail-total-label').textContent = isPending(plan) ? '已定价部分小计' : plan.totalLabel || '本期所选服务费合计';
+  $('detail-total-label').textContent = priceLabel(plan);
   $('detail-total').textContent = isPending(plan) && plan.total === 0 ? '待报价' : money(plan.total);
   renderPricingBreakdown(plan);
   const selected = new Set([...plan.items, ...pending].map((item) => item.id));
   const options = getOptionalServices(currentMarket()).filter((item) => item.optional !== false && !item.required && !selected.has(item.id) && item.id !== 'SOCIAL_LISTENING');
   const optionNodes = [new Option(options.length ? '选择一个可选模块…' : '当前可选模块均已加入', '')];
-  options.forEach((item) => optionNodes.push(new Option(`${item.name} · ${item.price === null ? '按范围报价' : money(item.price) + '/' + item.unit}`, item.id)));
+  options.forEach((item) => optionNodes.push(new Option(`${item.name} · ${item.price === null || (currentMarket() === 'overseas' && !selectedLanguages().includes('en')) ? '按所选语种与范围报价' : money(item.price) + '/' + item.unit + (currentMarket() === 'overseas' ? '（英语）' : '')}`, item.id)));
   $('module-select').replaceChildren(...optionNodes); $('add-module').disabled = !options.length;
   $('module-picker-note').textContent = currentMarket() === 'cn' ? '中文可选模块按范围报价，不套用境外单价。移除可选项目时，相应交付一并移除。' : '可选项目可调整数量或移除。基础必需项目用于保证方案成立，已有成果可由顾问核验复用。';
   $('phases').replaceChildren(...(plan.phases || []).map((phase) => { const item = node('li'); item.append(node('h5', '', phase.title), node('p', '', phase.description)); return item; }));
   $('highlights').replaceChildren(...(plan.highlights || []).map((text) => node('li', '', text)));
   $('assumptions').replaceChildren(...(plan.assumptions || []).map((text) => node('li', '', text)));
   renderDeliveryValue(plan);
+  updateQuantityDraftState();
 }
 function renderPricingBreakdown(plan) {
   const breakdown = plan.pricingBreakdown;
@@ -306,19 +356,32 @@ function renderPricingBreakdown(plan) {
   $('pricing-breakdown').append(node('h4', '', '中文季度基础包如何计算'), node('p', '', `业务范围需要 ${breakdown.scopeUnits} 个单元；意图主题需要 ${breakdown.intentUnits} 个单元。取较大值 ${breakdown.units}，不重复叠加。`), node('strong', '', `${money(breakdown.unitPrice)} × ${breakdown.units} = ${money(breakdown.unitPrice * breakdown.units)} / 季度`), node('p', '', '范围单元 = 产品线数 × ⌈每条产品线场景数 ÷ 3⌉ × ⌈每条产品线客群数 ÷ 3⌉；意图单元 = ⌈全项目去重主题数 ÷ 30⌉。⌈ ⌉ 表示向上取整。单元描述服务覆盖范围；原创内容、采样次数和发布数量按交付清单确认，不把同义问法或复用内容重复计数。'));
 }
 function renderDeliveryValue(plan) {
-  const count = plan.items.filter((item) => coreContentIds.has(item.id)).reduce((sum, item) => sum + item.quantity, 0);
-  const channels = plan.items.filter((item) => item.id === 'W10').reduce((sum, item) => sum + item.quantity * 3, 0);
+  const localizedOnly = currentMarket() === 'overseas' && !selectedLanguages().includes('en');
+  const deliveryItems = localizedOnly ? [...plan.items, ...(plan.pendingItems || [])] : plan.items;
+  const count = deliveryItems.filter((item) => coreContentIds.has(item.id)).reduce((sum, item) => sum + item.quantity, 0);
+  const channels = deliveryItems.filter((item) => item.id === 'W10').reduce((sum, item) => sum + item.quantity, 0);
   const observations = plan.items.reduce((sum, item) => sum + (publicServices.get(item.id)?.sampling?.plannedAnswers || 0) * item.quantity, 0);
   $('value-plan-name').textContent = `${plan.name} · ${plan.scopeLabel || '本期所选服务'}`; $('value-plan-total').textContent = priceText(plan);
   $('metric-content-label').textContent = currentMarket() === 'cn' ? '季度服务覆盖' : '核心内容资产';
   $('metric-content').textContent = count ? `${count} 项` : currentMarket() === 'cn' ? `${plan.pricingBreakdown?.units || 1} 标准单元` : '按需选配';
-  $('metric-content-note').textContent = count ? '按清单已选页面、母文、案例等数量合计。' : currentMarket() === 'cn' ? '中文季度基础包按确认的业务范围与意图主题配置，具体内容产出见交付约定。' : '本档未选内容制作；可在诊断后确认新增范围。';
-  $('metric-channels').textContent = channels ? `${channels} 条` : '按需选配'; $('metric-channels-note').textContent = channels ? '以 3 条为一包，基于已确认母内容适配。' : '以清单中明确列出的适配范围为准。';
+  $('metric-content-note').textContent = count ? localizedOnly ? '按已选页面、母文与案例数量规划；所选语种价格待确认。' : '按清单已定价页面、母文、案例等数量合计。' : currentMarket() === 'cn' ? '中文季度基础包按确认的业务范围与意图主题配置，具体内容产出见交付约定。' : '本档未选内容制作；可在诊断后确认新增范围。';
+  $('metric-channels').textContent = channels ? `${channels} 篇` : '按需选配'; $('metric-channels-note').textContent = channels ? localizedOnly ? `${languageText()}适配与上稿篇数；按语种报价，第三方媒体刊位另计。` : '英语 ¥1,500 / 篇，基于已核准母稿适配并上稿至自有渠道；媒体刊位另计。' : '以清单中明确列出的语种、篇数和待报价范围为准。';
   $('metric-observations-label').textContent = observations ? '计划 AI 回答观察' : '已列明服务'; $('metric-observations').textContent = observations ? `${observations.toLocaleString('zh-CN')} 次` : `${plan.items.length + (plan.pendingItems?.length || 0)} 项`;
   $('metric-observations-note').textContent = observations ? '按所选问题数、平台与观察轮次计算。独立社交聆听不计入此处。' : '包括已定价与待报价范围，两者在上方分别列明。';
+  renderComposition(plan);
+}
+function renderComposition(plan) {
+  $('composition-language').textContent = `服务语言：${languageText()}。${currentMarket() === 'cn' ? '中文季度单元独立计价。' : selectedLanguages().includes('en') ? selectedLanguages().length > 1 ? '下列数值对应英语服务；其他语种单列待报价。' : '当前按英语标准价计费。' : '所选语种按范围报价。'}`;
+  const rows = plan.items.map((item) => { const row = node('div', 'reuse-line'); const detail = node('div'); detail.append(node('strong', '', item.name), node('span', '', `${money(item.unitPrice)} × ${item.quantity} ${item.unit || '项'}`)); row.append(detail, node('b', '', money(item.total))); return row; });
+  (plan.pendingItems || []).forEach((item) => { const row = node('div', 'reuse-line'); const detail = node('div'); detail.append(node('strong', '', item.name), node('span', '', `${item.quantity} ${item.unit || '项'} · 未计入小计`)); row.append(detail, node('b', '', '待报价')); rows.push(row); });
+  $('composition-lines').replaceChildren(...rows);
+  $('composition-total-label').textContent = priceLabel(plan);
+  $('composition-total').textContent = isPending(plan) && !plan.total ? '待报价' : money(plan.total);
+  $('composition-note').textContent = isPending(plan) ? '金额为已定价服务小计。待报价语种与项目尚未计入，完整费用在范围确认后提供。税费及外部采购以正式报价单为准。' : '金额为未税服务费，包含上述已定价服务及约定执行。第三方媒体采购及其他外部费用另行确认。';
 }
 function refreshPreview() {
   cancelPending(); setMessage(); manualAdjusted = Object.keys(moduleSelections[currentMarket()]).length > 0; updateControls();
+  if (!selectedLanguages().length) { markInputInvalid('请至少选择一种客户使用的语言，随后会按语种重新配置方案。'); return; }
   if (!form.checkValidity()) { markInputInvalid('请完成有效的预算与服务范围输入，随后会重新计算当前方案。'); return; }
   if (getInput().listening.enabled && !getInput().listening.platforms.length) { markInputInvalid('请选择至少一个社交监控平台，或取消独立 Social Listening。'); return; }
   try { renderRecommendation(createRecommendation(getInput()), 'preview'); }
@@ -338,6 +401,11 @@ function markInputInvalid(message) {
   $('consult-button').setAttribute('tabindex', '-1');
   $('value-plan-name').textContent = '完善输入后显示当前服务组合';
   $('value-plan-total').textContent = '待配置';
+  $('decision-summary').replaceChildren();
+  $('composition-lines').replaceChildren();
+  $('composition-total').textContent = '待配置';
+  $('composition-language').textContent = '';
+  $('composition-note').textContent = '完善输入后，显示与当前方案一致的费用构成。';
   ['metric-content', 'metric-channels', 'metric-observations'].forEach((id) => { $(id).textContent = '—'; });
 }
 function isValidRecommendation(data) {
@@ -367,10 +435,11 @@ function exportPlan() {
   if (!syncModuleQuantities()) return;
   const plan = getDisplayedPlan(); if (!plan || !configurationValid) return; const input = getInput();
   const lines = ['# Eco GEO · 项目服务方案', '', `日期：${new Date().toLocaleDateString('zh-CN')}`, '', `方案来源：${$('source-badge').textContent}`, '', `服务市场：${input.market === 'cn' ? '中文 GEO' : '境外 GEO'}`, '', `${input.market === 'cn' ? '本季度预算' : '境外本期项目预算'}：${input.budgetMode === 'discuss' ? '另行讨论，先确认范围' : money(input.budget)}`, '', `范围：${input.scope.productLines} 条产品线，每产品线 ${input.scope.scenarios} 个场景、${input.scope.audiences} 类客群；全项目 ${input.scope.intents} 个去重意图主题。`, '', `主要目标：${goalLabels[input.goal]}`, '', `品牌基础：${stageLabels[input.stage]}`, ''];
+  lines.push(`服务语言：${languageText()}`, '');
   if (input.notes) lines.push(`备注：${safeMarkdown(input.notes)}`, '');
   lines.push(`## ${safeMarkdown(plan.name)}`, '', safeMarkdown(plan.description), '', '## 已定价交付', '', '| 服务 | 数量 | 单价 | 小计 |', '| --- | --- | --- | --- |');
   plan.items.forEach((item) => lines.push(`| ${safeMarkdown(item.name)}${item.required ? '（基础必需）' : ''} | ${item.quantity} ${safeMarkdown(item.unit || '项')} | ${money(item.unitPrice)} | ${money(item.total)} |`));
-  lines.push('', `**${isPending(plan) ? '已定价部分小计' : plan.totalLabel || '服务费合计'}：${isPending(plan) && !plan.total ? '待报价' : money(plan.total)}**`, '');
+  lines.push('', `**${priceLabel(plan)}：${isPending(plan) && !plan.total ? '待报价' : money(plan.total)}**`, '');
   if (plan.pendingItems?.length) { lines.push('## 待报价范围', ''); plan.pendingItems.forEach((item) => { lines.push(`- ${safeMarkdown(item.name)} × ${item.quantity}：${safeMarkdown(item.reason || '按范围报价')}`); (item.details || []).forEach((text) => lines.push(`  - ${safeMarkdown(text)}`)); }); lines.push('', '以上待报价范围未计入已定价小计，当前不是完整报价。', ''); }
   if (plan.pricingBreakdown) { const p = plan.pricingBreakdown; lines.push('## 中文季度标准单元', '', `业务范围单元 ${p.scopeUnits}；意图单元 ${p.intentUnits}；取较大值 ${p.units} × ${money(p.unitPrice)} = ${money(p.unitPrice * p.units)} / 季度。`, ''); }
   if (input.listening.enabled) lines.push('## 独立 Social Listening', '', `平台：${input.listening.platforms.join('、') || '待确认'}；深度：${$('social-depth').selectedOptions[0].textContent}；频率：${$('social-frequency').selectedOptions[0].textContent}；${input.listening.markets} 个市场、${input.listening.languages} 种语言。按范围另行报价，区别于 AI 回答采样。`, '');
