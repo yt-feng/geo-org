@@ -1,20 +1,15 @@
-import { catalog } from './catalog.mjs';
+import { catalog, cnCatalog, getOptionalServices } from './catalog.mjs';
+import { normalizeAdvisorInput, customizePricedPlan, createChinesePlans, createEnterprisePlans, finalizeRecommendation } from './pricing.mjs';
 
 const byId = new Map(catalog.map(item => [item.id, item]));
 export const GOALS = ['visibility', 'content', 'authority'];
 export const STAGES = ['starting', 'growing', 'established'];
 const LABELS = { visibility: 'AI 可见度', content: '采购决策内容', authority: '可信来源' };
-const ALLOWED = new Set(['budget', 'goal', 'stage', 'notes']);
-export const PREFERENCE_SERVICES = ['W02', 'W03', 'W05', 'W07', 'W08', 'W09', 'W10', 'W11', 'W12', 'W15', 'W16', 'W17', 'W18', 'W19', 'W21', 'W25', 'W26', 'W28', 'W29', 'W30', 'PITCH'];
+export const PREFERENCE_SERVICES = ['W02', 'W03', 'W05', 'W07', 'W08', 'W09', 'W10', 'W11', 'W12', 'W15', 'W16', 'W17', 'W18', 'W19', 'W21', 'W25', 'W26', 'W28', 'W29', 'W30', 'PITCH', ...cnCatalog.filter(item => item.optional).map(item => item.id), 'SOCIAL_LISTENING'];
 const preferenceIds = new Set(PREFERENCE_SERVICES);
 const ORIGINALS = ['W07', 'W08', 'W09', 'W15', 'W16', 'W17'];
 
-export function validateInput(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !ALLOWED.has(key))) throw new Error('invalid_input');
-  if (!Number.isInteger(value.budget) || value.budget < 5000 || value.budget > 1000000 || !GOALS.includes(value.goal) || !STAGES.includes(value.stage)) throw new Error('invalid_input');
-  if (value.notes !== undefined && (typeof value.notes !== 'string' || value.notes.length > 1600 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value.notes))) throw new Error('invalid_input');
-  return { budget: value.budget, goal: value.goal, stage: value.stage, notes: value.notes?.trim() || '' };
-}
+export function validateInput(value) { return normalizeAdvisorInput(value); }
 
 function line(id, quantity = 1) {
   const item = byId.get(id);
@@ -29,9 +24,10 @@ const commonAssumptions = [
   '每条服务的范围描述以 1 个计价单位为准，交付数量按所列数量计算；渠道适配不作为新增原创文章计数。',
 ];
 
-function normalizePreferences(value) {
+function normalizePreferences(value, market = 'overseas') {
   const preferences = value && typeof value === 'object' ? value : {};
-  const clean = list => Array.isArray(list) ? [...new Set(list.filter(id => preferenceIds.has(id)))] : [];
+  const marketIds = new Set(getOptionalServices(market).map(item => item.id));
+  const clean = list => Array.isArray(list) ? [...new Set(list.filter(id => typeof id === 'string').map(id => market === 'cn' && !id.startsWith('CN_') && id !== 'SOCIAL_LISTENING' ? `CN_${id}` : id).filter(id => preferenceIds.has(id) && marketIds.has(id)))] : [];
   return { prioritize: clean(preferences.prioritize), exclude: clean(preferences.exclude), reuseFacts: preferences.reuseFacts === true };
 }
 
@@ -176,7 +172,7 @@ function buildPlan(input, target, index, preferences, previous) {
     if (!assumptions.includes(prerequisite)) assumptions.push(prerequisite);
   }
   const omitted = preferences.prioritize.filter(id => !count(id) && !exclusions.has(id));
-  if (omitted.length) assumptions.push(`备注中优先关注的${omitted.map(id => byId.get(id).name).join('、')}尚未进入本档预算，可与已有服务替换后另行确认。`);
+  if (omitted.length) assumptions.push(`备注中优先关注的${omitted.map(id => byId.get(id)?.name || '定制社交聆听').join('、')}尚未进入本档预算，可与已有服务替换后另行确认。`);
 
   const highlights = [
     originals ? `${originals} 项核心内容或研究资产${adaptations ? `，另含 ${adaptations} 条渠道适配` : ''}${count('W18') ? `、${count('W18') * 3} 项行业资料提交` : ''}` : '先建立问题与证据清单，明确下一步投入方向',
@@ -244,7 +240,7 @@ function buildSmallPlans(input, preferences) {
       ['已有内容适配专项', [['W10', 1]]],
     ],
   };
-  const preferred = preferences.prioritize.filter(id => id !== 'PITCH').map(id => [byId.get(id).name + '专项', [[id, 1]]]);
+  const preferred = preferences.prioritize.filter(id => byId.has(id) && id !== 'PITCH').map(id => [byId.get(id).name + '专项', [[id, 1]]]);
   const seen = new Set();
   const candidates = [...preferred, ...recipes[input.goal]].flatMap(([name, quantities]) => {
     if (quantities.some(([id]) => excluded.has(id))) return [];
@@ -298,7 +294,7 @@ function buildSmallPlans(input, preferences) {
   });
 }
 
-export function createRecommendation(raw, rawPreferences = {}) {
+function createLegacyRecommendation(raw, rawPreferences = {}) {
   const input = validateInput(raw);
   const preferences = normalizePreferences(rawPreferences);
   if (input.budget < 20000) {
@@ -318,4 +314,25 @@ export function createRecommendation(raw, rawPreferences = {}) {
     repeated.add(signature);
   }
   return { source: 'rules', summary: input.budget >= 150000 ? `围绕${LABELS[input.goal]}先明确第一阶段的可执行范围。后续预算按阶段、素材和实际交付需要继续配置。` : `围绕${LABELS[input.goal]}优先安排可验收的交付。可按需要增加资产或观测范围，预算是上限；已有合格材料在正式确认时复用核销。`, scopeLabel: input.budget >= 150000 ? '第一阶段建议' : '首期服务组合', horizon: input.budget >= 150000 ? '范围确认后分阶段推进' : '按所选专项安排交付', allocatedBudget: plans[1].total, remainingBudget: input.budget - plans[1].total, plans, recommendationId: `preview-${input.budget}-${input.goal}-${input.stage}` };
+}
+
+
+export function customizePlan(plan, rawInput, selections = {}) {
+  const input = validateInput(rawInput);
+  return customizePricedPlan(plan, input, { ...input.modules, ...selections });
+}
+
+export function createRecommendation(raw, rawPreferences = {}) {
+  const input = validateInput(raw);
+  const preferences = normalizePreferences(rawPreferences, input.market);
+  let recommendation;
+  if (input.market === 'cn') {
+    recommendation = { source: 'rules', summary: '中文季度标准单元独立定价：按产品线、每产品线场景及客群、全项目去重意图计算所需单元；可选增项单独报价。', plans: createChinesePlans(input, preferences) };
+  } else if (input.budgetMode === 'discuss' || input.budget > 320000) {
+    recommendation = { source: 'rules', summary: '境外企业项目先按实际范围配置阶段与服务，完整报价另行确认；预算不作为自动生产内容数量或固定总价。', plans: createEnterprisePlans(input) };
+  } else {
+    recommendation = createLegacyRecommendation(input, preferences);
+  }
+  recommendation.recommendationId = `preview-${input.market}-${input.budgetMode}-${input.budget ?? 'discuss'}-${input.goal}-${input.stage}`;
+  return finalizeRecommendation(recommendation, input, preferences);
 }
