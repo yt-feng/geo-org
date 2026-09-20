@@ -346,10 +346,16 @@ function renderPackages() {
 }
 async function loadWallet() {
   renderPackages(); updateWalletSummary();
-  const body = $('ledger-body'); empty(body);
+  const body = $('ledger-body'); empty(body); renderOrders([]);
   if (!state.user) { const tr = el('tr'); const td = el('td', 'empty-row', '登录后查看你的积分流水。'); td.colSpan = 4; tr.append(td); body.append(tr); return; }
-  try { const result = await api('/wallet'); if (result.user) updateUser(result.user); const ledger = result.ledger || []; if (!ledger.length) { const tr = el('tr'); const td = el('td', 'empty-row', '尚无积分记录。'); td.colSpan = 4; tr.append(td); body.append(tr); } ledger.forEach((row) => { const tr = el('tr'); const amount = Number(row.credits || 0); tr.append(el('td', '', date(row.created_at)), el('td', '', row.note || ledgerKind(row.kind)), el('td', amount >= 0 ? 'positive' : 'negative', `${amount > 0 ? '+' : ''}${points(amount)}${row.trial ? ' 体验' : ''}`), el('td', '', ledgerKind(row.kind))); body.append(tr); }); }
+  try { const result = await api('/wallet'); if (result.user) updateUser(result.user); renderOrders(result.orders || []); const ledger = result.ledger || []; if (!ledger.length) { const tr = el('tr'); const td = el('td', 'empty-row', '尚无积分记录。'); td.colSpan = 4; tr.append(td); body.append(tr); } ledger.forEach((row) => { const tr = el('tr'); const amount = Number(row.credits || 0); tr.append(el('td', '', date(row.created_at)), el('td', '', row.note || ledgerKind(row.kind)), el('td', amount >= 0 ? 'positive' : 'negative', `${amount > 0 ? '+' : ''}${points(amount)}${row.trial ? ' 体验' : ''}`), el('td', '', ledgerKind(row.kind))); body.append(tr); }); }
   catch (error) { if (isStaleAccountResponse(error)) return; toast(error.message); }
+}
+function renderOrders(orders) {
+  const body = $('orders-body'); if (!body) return; empty(body);
+  if (!orders.length) { const tr = el('tr'), td = el('td', 'empty-row', state.user ? '尚无充值订单。' : '登录后查看你的充值订单。'); td.colSpan = 4; tr.append(td); body.append(tr); return; }
+  const labels = { creating: '正在创建', pending: '待付款 / 确认中', uncertain: '待核实，请勿重复付款', paid: '已到账', partially_reversed: '部分退回', reversed: '已退回' };
+  for (const order of orders) { const tr = el('tr'); tr.append(el('td', '', date(order.created_at)), el('td', '', order.id), el('td', '', `¥${money(order.amount_cny)} / ${points(order.credits)} 积分`), el('td', '', labels[order.status] || order.status)); body.append(tr); }
 }
 function ledgerKind(kind) { return ({ purchase: '充值到账', recharge: '充值到账', chat: '对话使用', image: '图片生成', refund: '积分退回', trial: '体验积分', trial_grant: '体验赠送', admin_credit: '管理员赠送', admin_grant: '管理员赠送', welcome: '体验赠送', reserve: '积分预留', settle: '使用结算', release: '预留退回', credit: '赠送积分', image_reserve: '图片积分预留', image_refund: '图片积分退回' })[kind] || '积分变动'; }
 async function startCheckout(packageId, button) {
