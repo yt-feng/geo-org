@@ -148,7 +148,7 @@ test('budgets below 20000 return three distinct independent alternatives rather 
     for (const plan of result.plans) {
       assert.ok(plan.items.length >= 1);
       assert.match(plan.scopeLabel, /单独|专项/);
-      assert.ok(plan.assumptions.some(value => /不同专项.*不需要全部购买/.test(value)));
+      assert.ok(plan.assumptions.some(value => /单独选择.*不需要全部购买/.test(value)));
     }
   }
 });
