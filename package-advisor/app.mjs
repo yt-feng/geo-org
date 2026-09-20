@@ -84,15 +84,25 @@ function updateControls() {
 
 function renderRecommendation(recommendation, mode = 'preview') {
   currentRecommendation = recommendation;
-  const plans = recommendation.plans;
+  const plans = distinctPlans(recommendation.plans);
   const previous = plans.find((plan) => plan.id === selectedPlanId);
-  selectedPlanId = previous?.id || plans[1]?.id || plans[0].id;
-  $('result-summary').textContent = recommendation.summary;
+  selectedPlanId = previous?.id || plans.find((plan) => plan.id === 'recommended')?.id || plans[0].id;
+  $('result-summary').textContent = recommendation.summary.replace(/(?:三|3)\s*(?:种|个|档|套)\s*((?:服务)?(?:方案|套餐|组合))/gu, '可选$1');
   const badge = $('source-badge');
   badge.textContent = mode === 'preview' ? '预算预览' : recommendation.source === 'deepseek' ? 'AI 定制建议' : '基础推荐';
   badge.classList.toggle('ai', mode !== 'preview' && recommendation.source === 'deepseek');
+  $('plans-grid').dataset.planCount = String(plans.length);
   $('plans-grid').replaceChildren(...plans.map(createPlanCard));
   renderSelectedPlan();
+}
+
+function distinctPlans(plans) {
+  const byDeliverables = new Map();
+  for (const plan of plans) {
+    const signature = JSON.stringify(plan.items.map((item) => [item.id, item.quantity, item.total]).sort((a, b) => String(a[0]).localeCompare(String(b[0])) || a[1] - b[1] || a[2] - b[2]));
+    if (!byDeliverables.has(signature) || plan.id === 'recommended') byDeliverables.set(signature, plan);
+  }
+  return [...byDeliverables.values()];
 }
 
 function createPlanCard(plan) {
