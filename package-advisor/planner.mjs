@@ -275,7 +275,7 @@ function buildSmallPlans(input, preferences) {
     const count = id => items.find(item => item.id === id)?.quantity || 0;
     const sampling = items.map(item => byId.get(item.id).sampling).find(Boolean);
     const hasOriginal = ORIGINALS.some(id => count(id));
-    const assumptions = [...commonAssumptions, '这三张卡是可单独选择的不同专项，不需要全部购买，也不代表年度套餐。'];
+    const assumptions = [...commonAssumptions, '专项可按当前需要单独选择，不需要全部购买，也不代表年度套餐。'];
     if (count('W02')) assumptions.push('访谈由客户安排受访者，服务包含访谈、转录整理与主题编码；不等同于完整品牌事实盘点。');
     if (count('W10') && !hasOriginal) assumptions.push('客户须提供已完成、已核准且可公开使用的合格母稿；本项仅做渠道适配，不含新母稿制作。资料不满足时先确认补充范围。');
     if (sampling && !count('W04')) assumptions.push(`客户须提供至少 ${sampling.questions} 道已审核、已定稿且可直接采样的问题，以及准确品牌事实；本项不包含题库新建。资料不足时先完成题库确认。`);
@@ -303,7 +303,7 @@ export function createRecommendation(raw, rawPreferences = {}) {
   const preferences = normalizePreferences(rawPreferences);
   if (input.budget < 20000) {
     const plans = buildSmallPlans(input, preferences);
-    return { source: 'rules', summary: '按当前预算推荐可独立交付的专项。三张卡是不同路径，选择最符合当前任务的一项即可；已有素材与题库条件逐项列明。', scopeLabel: '可单独购买的专项', horizon: '按专项范围安排交付', allocatedBudget: plans[1].total, remainingBudget: input.budget - plans[1].total, plans, recommendationId: `preview-${input.budget}-${input.goal}-${input.stage}` };
+    return { source: 'rules', summary: '按当前预算推荐可独立交付的专项。选择最符合当前任务的专项即可；已有素材与题库条件逐项列明。', scopeLabel: '可单独购买的专项', horizon: '按专项范围安排交付', allocatedBudget: plans[1].total, remainingBudget: input.budget - plans[1].total, plans, recommendationId: `preview-${input.budget}-${input.goal}-${input.stage}` };
   }
   // Scope is bounded to a single initial phase; a larger ceiling is not a reason
   // to invent additional countries, channels, media fees or annual commitments.
@@ -317,5 +317,5 @@ export function createRecommendation(raw, rawPreferences = {}) {
     if (repeated.has(signature)) plan.description += ' 当前预算下与前一档交付相同，无需为升级标签额外付费。';
     repeated.add(signature);
   }
-  return { source: 'rules', summary: input.budget >= 150000 ? `围绕${LABELS[input.goal]}先明确第一阶段的可执行范围。后续预算按阶段、素材和实际交付需要继续配置。` : `围绕${LABELS[input.goal]}优先安排可验收的交付。三档逐步增加资产或观测范围，预算是上限；已有合格材料在正式确认时复用核销。`, scopeLabel: input.budget >= 150000 ? '第一阶段建议' : '首期服务组合', horizon: input.budget >= 150000 ? '范围确认后分阶段推进' : '按所选专项安排交付', allocatedBudget: plans[1].total, remainingBudget: input.budget - plans[1].total, plans, recommendationId: `preview-${input.budget}-${input.goal}-${input.stage}` };
+  return { source: 'rules', summary: input.budget >= 150000 ? `围绕${LABELS[input.goal]}先明确第一阶段的可执行范围。后续预算按阶段、素材和实际交付需要继续配置。` : `围绕${LABELS[input.goal]}优先安排可验收的交付。可按需要增加资产或观测范围，预算是上限；已有合格材料在正式确认时复用核销。`, scopeLabel: input.budget >= 150000 ? '第一阶段建议' : '首期服务组合', horizon: input.budget >= 150000 ? '范围确认后分阶段推进' : '按所选专项安排交付', allocatedBudget: plans[1].total, remainingBudget: input.budget - plans[1].total, plans, recommendationId: `preview-${input.budget}-${input.goal}-${input.stage}` };
 }
