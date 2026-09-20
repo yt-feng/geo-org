@@ -1,5 +1,196 @@
 [
   {
+    "order": "712",
+    "row": "700",
+    "slug": "00700-geo-ae3cb4c1",
+    "title": "Eco-GEO：先补证据还是扩内容？美妆个护小团队的80小时条件式预算模型",
+    "excerpt": "面向已有AI引用页面、能够独立复核的小团队，本文用同一80小时预算比较补全现有证据与扩展新内容。严重错误先共同处置；可选问题池限制可改变两者排序，测量工时与最低增量门槛则可能把决策推向暂停扩写。所有数值均为示意假设，给出统一的选择规则、闭合账本和六个可复算情境；期望结果须与后续实测分开，不能当成已获效果。",
+    "category": "美妆个护",
+    "tags": "GEO预算, 条件式决策, 美妆个护, 证据与测量, Eco-GEO, 品牌化GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-20",
+    "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00700-geo-ae3cb4c1/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-20T07:56:34+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Registration & Listing of Cosmetic Product Facilities and Products",
+        "url": "https://www.fda.gov/cosmetics/registration-listing-cosmetic-product-facilities-and-products",
+        "publisher": "US Food and Drug Administration",
+        "published": "",
+        "retrieved_at": "2026-09-20T07:56:34+00:00",
+        "evidence_kind": "regulatory_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 13604,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "fda.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "cosmetics_personal_care"
+        ],
+        "scope_notes": "US MoCRA facility-registration and product-listing information. Registration/listing does not mean FDA approval or a promotional certification; counts are not sales or unique brands. Do not treat US requirements as Chinese rules. Publication date unconfirmed: an explicit publication field could not be interpreted consistently.",
+        "text_sha256": "fe65db33cbb66b3960506b3c0d8d44e56487439a085876d691df9a3c069cf36b"
+      },
+      {
+        "id": "S3",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-20T07:56:35+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S4",
+        "title": "Legislation",
+        "url": "https://single-market-economy.ec.europa.eu/sectors/cosmetics/legislation_en",
+        "publisher": "European Commission",
+        "published": "",
+        "retrieved_at": "2026-09-20T07:56:35+00:00",
+        "evidence_kind": "regulatory_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 16904,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "europa.eu",
+        "evidence_role": "industry_context",
+        "industries": [
+          "cosmetics_personal_care"
+        ],
+        "scope_notes": "European Commission description of the EU finished-cosmetics framework, responsible persons, assessment, notification and product claims. Applicable to the EU context; not Chinese rules, market-demand estimates, or proof of a brand's sales and GEO returns.",
+        "text_sha256": "aff5816d6dd73a02697c2f36be78d40b105097f721add75d026f6a9170e4d0ae"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+        "url": "https://blogs.bing.com/webmaster/February-2026/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-20T07:56:35+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 6043,
+        "body_chars": 6043,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "f6687661960668704af65c098aeb036f60596547f40f6c6eae8d89cdd8b77c22"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 10,
+        "table_count": 3,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 5,
+            "headers": 6,
+            "cells": 24
+          },
+          {
+            "captions": 1,
+            "rows": 9,
+            "headers": 5,
+            "cells": 40
+          },
+          {
+            "captions": 1,
+            "rows": 7,
+            "headers": 8,
+            "cells": 48
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 5,
+          "S2": 2,
+          "S3": 3,
+          "S4": 1,
+          "S5": 2
+        },
+        "visible_character_count": 12097,
+        "zh_character_count": 8472,
+        "word_count": 2016,
+        "minimum_zh_characters": 2600,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 3,
+        "valid_citation_count": 13,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "blogs.bing.com",
+          "developers.google.com",
+          "fda.gov",
+          "single-market-economy.ec.europa.eu"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 5,
+        "actionability": 4,
+        "originality": 4
+      },
+      "revisions": 4,
+      "review_type": "automated editorial review"
+    }
+  },
+  {
     "order": "711",
     "row": "699",
     "slug": "00699-ai-geo-4a6a30df",
