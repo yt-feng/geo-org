@@ -1,4 +1,4 @@
-import { getOptionalServices } from './catalog.mjs';
+import { getOptionalServices, LANGUAGE_LABELS } from './catalog.mjs';
 
 export const HANDOFF_KEY = 'eco-geo-advisor-contact-v1';
 export const HANDOFF_TTL = 30 * 60 * 1000;
@@ -7,15 +7,18 @@ const money = (value) => `¥${Number(value).toLocaleString('zh-CN')}`;
 const text = (value) => String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, '').trim();
 
 export function buildContactSummary(input, plan, recommendation = {}) {
+  const languages = input.languages || [input.market === 'cn' ? 'zh' : 'en'];
+  const mixedLanguages = input.market !== 'cn' && languages.includes('en') && languages.some(language => language !== 'en');
   const scope = input.scope || { productLines: 1, scenarios: 3, audiences: 3, intents: 30 };
   const lines = [
     'Eco GEO · 待确认的服务方案',
     `市场：${input.market === 'cn' ? '中文 GEO / 按季度' : '境外 GEO / 按项目范围'}`,
+    `服务语种：${languages.map(language => LANGUAGE_LABELS[language] || text(language)).join('、')}`,
     `预算参考：${input.budgetMode === 'discuss' || input.budget === null ? '另行讨论' : money(input.budget)}`,
     `范围：${scope.productLines} 条产品线；每条 ${scope.scenarios} 个场景、${scope.audiences} 类客群；全项目 ${scope.intents} 个去重意图主题`,
     `选择：${text(plan.name)}`,
     `来源：${recommendation.source === 'deepseek' ? 'AI 建议及当前手动配置' : '当前配置预览'}`,
-    plan.items?.length ? `已定价部分：${money(plan.total)}${input.market === 'cn' ? ' / 季度基础包及已定价项' : ''}` : '已定价部分：尚未形成报价',
+    plan.items?.length ? `${mixedLanguages ? '英语部分服务费小计' : '已定价部分'}：${money(plan.total)}${input.market === 'cn' ? ' / 季度基础包及已定价项' : ''}` : '已定价部分：尚未形成报价',
     plan.quoteRequired ? '另有待报价范围；以上小计不是完整报价。' : '金额为参考服务费，按确认范围与排期签约。',
     '', '已选交付：',
   ];

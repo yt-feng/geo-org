@@ -64,7 +64,7 @@ function assertPlanIntegrity(result, input) {
       assert.equal(plan.total, 0);
       if (plan.quoteRequired && !plan.configurationRequired) assert.ok(plan.pendingItems.length > 0);
       if (plan.configurationRequired) {
-        assert.match(plan.description, /不是免费.*报价|未形成.*报价/);
+        assert.match(plan.description, /尚未形成报价/);
         assert.ok(plan.assumptions.some(value => /尚未配置|尚未形成服务清单|没有形成可下单/.test(value)));
       }
       continue;
@@ -180,7 +180,7 @@ test('excluding all purchasable small-project modules requires configuration and
       assert.equal(plan.pricingStatus, 'quote_required');
       assert.equal(plan.withinBudget, null);
       assert.equal(plan.remainingBudget, null);
-      assert.match(plan.description, /不是免费服务报价/);
+      assert.match(plan.description, /尚未形成报价/);
     }
   }
 });
@@ -289,7 +289,8 @@ test('public catalog and recommendations contain no internal pricing fields', ()
   }
   for (const item of catalog) {
     assert.ok(Object.keys(item).every(key => publicKeys.has(key)), `non-public catalog key in ${item.id}`);
-    assert.ok(Number.isInteger(item.price) && item.price > 0);
+    if (item.id === 'W20') assert.equal(item.price, null, 'legacy multi-language fee is explicitly unpriced');
+    else assert.ok(Number.isInteger(item.price) && item.price > 0);
   }
   scan(catalog);
   scan(createRecommendation(VALID));
@@ -357,7 +358,7 @@ test('DeepSeek receives only public scope and structured client data and returns
   assert.equal(body.messages.length, 2);
   assert.equal(body.messages[0].role, 'system');
   assert.equal(body.messages[1].role, 'user');
-  assert.deepEqual(JSON.parse(body.messages[1].content), input);
+  assert.deepEqual(JSON.parse(body.messages[1].content), validateInput(input));
   assert.ok(!options.body.includes(env.DEEPSEEK_API_KEY));
   assert.doesNotMatch(body.messages[0].content, /"(?:price|cost|margin|salary|unitPrice|total)"\s*:/);
 });
@@ -581,18 +582,10 @@ test('client pricing presents catalog-backed reuse value without competitor subs
   const app = await readFile(new URL('../package-advisor/app.mjs', import.meta.url), 'utf8');
   assert.doesNotMatch(`${page}\n${app}`, /\b(?:WebFX|Archon|Otterly|Mode Marketing)\b|webfx\.com|archonconsultancy\.com|otterly\.ai|modemarketing\.co\.uk/i);
   assert.doesNotMatch(page, /(?:US\$|€|£)\s*[\d,]+\s*(?:\/|每)\s*月|public-benchmarks/);
-  const example = page.match(/<div class="reuse-example"[^>]*>([\s\S]*?)<div class="budget-principles-heading">/)?.[1];
-  assert.ok(example, 'the public page should retain a concrete reuse example');
-  const text = example.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-  assert.match(text, /1 篇研究型母文/);
-  assert.match(text, /3 条渠道适配/);
-  assert.match(text, /适配不当作 3 篇新增原创/);
-  assert.doesNotMatch(text, /折扣|打折|原价|划线价|便宜\s*\d|节省\s*\d/);
-  const price = id => Number(page.match(new RegExp(`id="${id}">¥([\\d,]+)<`))?.[1].replaceAll(',', ''));
-  assert.equal(price('example-source-price'), byId.get('W08').price);
-  assert.equal(price('example-adapt-price'), byId.get('W10').price);
-  assert.equal(price('example-total'), byId.get('W08').price + byId.get('W10').price);
-  assert.equal(price('example-total'), 9500);
+  assert.match(page, /id="composition-lines"/);
+  assert.match(page, /id="composition-total"/);
+  assert.doesNotMatch(page, /id="example-total"|¥9,500/);
+  assert.doesNotMatch(page, /折扣|划线价|全网最低/);
   assert.match(page, /观察次数为采样计划，不代表引用或曝光次数/);
 });
 

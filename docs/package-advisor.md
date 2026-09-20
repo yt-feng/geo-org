@@ -95,8 +95,9 @@ readiness, not proof of provider completion; a real recommendation with
 
 The client page compares procurement models and its own included deliverables.
 It does not juxtapose software/monthly supplier charges with our project totals.
-The reuse example is derived from public catalog prices: one research article
-and three channel adaptations. It is not presented as a discount or a claim
+The price composition is derived from the currently selected priced items, not
+a fixed example amount. English W10 is CNY 1,500 per article; quantity one means
+one adaptation and agreed upload, not a three-article bundle. It is not presented as a discount or a claim
 about competitors.
 
 The following supplier references were checked during development on
@@ -109,3 +110,36 @@ The following supplier references were checked during development on
 
 The page creates a proposal, local download and optional contact-form draft.
 It does not send messages or inquiries automatically.
+
+## Service languages and channel adaptation
+
+`languages` is a canonical nonempty array. Overseas values are `en`, `ar`, `fr`,
+`de`, `es`, `pt`, `ru`, `ja`, `ko`, and `other`; omitted values default to `en`.
+Chinese plans accept only `zh` and default to it. Unknown codes, null values and
+cross-market codes are rejected. The choice goes to the provider and consultation
+summary, but the provider cannot change it. The numeric language count inside
+`listening` remains a separate research-scope input.
+
+English-only plans use English public module prices. W10 is explicitly CNY 1,500
+per adapted article with agreed own-channel upload. A planner recipe that formerly
+selected one three-article bundle now requests three articles and reserves CNY
+4,500. Reusing the mother article does not create three new originals, and paid
+media procurement is separate. Manual W10 quantities now always mean articles.
+
+When English and another language are selected, priced items are the English
+portion only and `LANGUAGE_SCOPE` records the additional languages and selected
+module quantities for a separate quotation. Shared research and the fact base
+are reused; terminology, local expression, page/channel adaptation and review
+are scoped as incremental work, with no blanket price multiplier.
+
+With only non-English overseas languages, selected services retain their IDs and
+quantities but move to unpriced pending lines. Their total and unit price are
+null; the plan's numerical total is only the empty known subtotal, not a zero-cost
+offer. They remain editable and retain the original required minimums. Switching
+back to English restores trusted English prices without losing selections.
+
+The former W20 universal multi-language fee has been withdrawn (`price: null`).
+It is hidden from new purchase options. Existing explicit W20 inputs remain
+supported: that line owns the same language-increment quotation, so an additional
+`LANGUAGE_SCOPE` is not charged or listed alongside it. Only-non-English W20 notes
+are incorporated into the per-service quotation and explicitly not charged twice.
