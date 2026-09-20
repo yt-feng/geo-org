@@ -1,20 +1,26 @@
 User-agent: *
 Allow: /
+Disallow: /jianong/
 
 User-agent: Googlebot
 Allow: /
+Disallow: /jianong/
 
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /jianong/
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /jianong/
 
 User-agent: GPTBot
 Allow: /
+Disallow: /jianong/
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /jianong/
 
 Sitemap: https://eco-geo.org/sitemap.xml
 # Eco GEO allows search and AI answer crawlers for public content.
