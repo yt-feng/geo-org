@@ -196,19 +196,38 @@ def _restore_table_edges(source: str, result: str) -> str:
     return '|' + inner + '|'
 
 
-def validate_result(source: str, result: str, source_language: str, target: str) -> None:
+def substantial_text_omission(source: str, result: str) -> bool:
+    """Detect a collapsed long block, not wording or stylistic differences."""
+    source_size = len(_LETTERS.findall(_PLACEHOLDERS.sub('', source)))
+    result_size = len(_LETTERS.findall(_PLACEHOLDERS.sub('', result)))
+    return source_size >= 160 and result_size < max(24, source_size * 0.2)
+
+
+def validate_result(source: str, result: str, source_language: str, target: str,
+                    *, quality_mode: str = 'strict') -> list[str]:
+    if quality_mode not in ('strict', 'publish'):
+        raise ValueError('quality_mode must be strict or publish')
+    warnings = []
+    def quality_note(message: str) -> None:
+        if quality_mode == 'strict':
+            raise OfflineTranslationError(message)
+        warnings.append(message)
     if not result.strip():
         raise OfflineTranslationError('Empty Hy-MT2 translation')
     if Counter(_PLACEHOLDERS.findall(source)) != Counter(_PLACEHOLDERS.findall(result)):
         raise OfflineTranslationError('Hy-MT2 changed, omitted, or duplicated a protected placeholder')
-    # Korean/Japanese GEO copy is gated on structure and quantities, not wording.
+    if re.search(r'\w', _PLACEHOLDERS.sub('', source)) and not re.search(r'\w', _PLACEHOLDERS.sub('', result)):
+        raise OfflineTranslationError('Hy-MT2 omitted visible text')
+    if substantial_text_omission(source, result):
+        raise OfflineTranslationError('Hy-MT2 omitted most of a substantial text block')
     problems = quantity_issues(source, result, source_language, target)
     if problems:
-        raise OfflineTranslationError('Hy-MT2 quantity validation failed: ' + '; '.join(problems))
-    # Structural punctuation, unlike linguistic punctuation, must stay exact.
+        quality_note('Hy-MT2 quantity warning: ' + '; '.join(problems))
+    # The HTML adapter separately requires intact tags and resources. Generic
+    # Markdown punctuation or mathematical wording does not stop publication.
     for marker in ('|', '[', ']', '*', '_', '~', '`'):
         if source.count(marker) != result.count(marker):
-            raise OfflineTranslationError(f'Hy-MT2 changed Markdown structure: {marker}')
+            quality_note(f'Hy-MT2 changed Markdown punctuation: {marker}')
     destination_shape = r'\]\(__HYMTPH_\d+__\)|\]\[__HYMTPH_\d+__\]'
     if Counter(re.findall(destination_shape, source)) != Counter(re.findall(destination_shape, result)):
         raise OfflineTranslationError('Hy-MT2 changed a Markdown link destination boundary')
@@ -217,7 +236,8 @@ def validate_result(source: str, result: str, source_language: str, target: str)
         scripts = {'zh': r'[\u3400-\u9fff]', 'en': r'[A-Za-z]', 'ko': r'[\uac00-\ud7af]',
                    'ja': r'[\u3040-\u30ff\u3400-\u9fff]', 'ar': r'[\u0600-\u06ff]'}
         if not re.search(scripts[target], clean):
-            raise OfflineTranslationError('Hy-MT2 target script missing')
+            quality_note('Hy-MT2 target script missing')
+    return warnings
 
 
 class _HyMTEngine:
@@ -294,7 +314,12 @@ class _HyMTEngine:
 class HyMTOfflineTranslator:
     def __init__(self, cache_dir: str | Path | None = None, *, model_dir: str | Path | None = None,
                  engine_factory: Callable[[str, str], object] | None = None, batch_size: int = 1,
-                 diagnostic_callback: Callable[[dict], None] | None = None):
+                 diagnostic_callback: Callable[[dict], None] | None = None,
+                 quality_mode: str = 'strict'):
+        if quality_mode not in ('strict', 'publish'):
+            raise ValueError('quality_mode must be strict or publish')
+        self.quality_mode = quality_mode
+        self.quality_warnings: list[dict] = []
         self.cache_dir = Path(cache_dir or os.environ.get('HYMT_TRANSLATION_CACHE') or os.environ.get('PORTAL_OFFLINE_TRANSLATION_CACHE', '.cache/hymt-translation'))
         self.model_dir = Path(model_dir or os.environ.get('HYMT_MODEL_DIR', '.cache/hymt-model'))
         self._engine_factory = engine_factory
@@ -338,7 +363,7 @@ class HyMTOfflineTranslator:
             if all(cached.get(name) == value for name, value in identity.items()):
                 value = cached['translation']
                 # Cache stores the validated masked form, independent of source URLs.
-                validate_result(masked, value, detected, target)
+                warnings = validate_result(masked, value, detected, target, quality_mode=self.quality_mode)
                 self.stats['cache_hits'] += 1
             else:
                 raise ValueError('Cache identity changed')
@@ -351,7 +376,7 @@ class HyMTOfflineTranslator:
                                                'source_language': detected, 'target_language': target,
                                                'controlled_terms': dict(terms)})
                 value = _restore_table_edges(masked, value)
-                validate_result(masked, value, detected, target)
+                warnings = validate_result(masked, value, detected, target, quality_mode=self.quality_mode)
             except OfflineTranslationError:
                 raise
             except Exception as error:
@@ -359,6 +384,8 @@ class HyMTOfflineTranslator:
             atomic_json(path, {**identity, 'translation': value, 'created_at': datetime.now(timezone.utc).isoformat()})
             self.stats['translated_fragments'] += 1
             self.stats['batch_requests'] += 1
+        self.quality_warnings.extend({'source_sha256': identity['source_sha256'],
+                                      'target_language': target, 'warning': warning} for warning in warnings)
         value = _restore_terms(value, terms)
         for token, original in replacements.items():
             value = value.replace(token, original)

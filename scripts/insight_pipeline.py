@@ -17,7 +17,7 @@ from pathlib import Path
 import generate_blog as gb
 from deepseek_cost_policy import begin_request, complete_request
 from insight_offline_translation import translate_article as translate_article_offline
-from insight_quality import DRAFT_REQUIREMENTS, REVIEW_RUBRIC, validate_insight
+from insight_quality import DRAFT_REQUIREMENTS, REVIEW_RUBRIC, validate_insight, validate_translation_publication
 
 SCORE_KEYS = ("thesis", "evidence", "mechanism", "tradeoffs", "actionability", "originality")
 SYSTEM = """You are an evidence-led strategy editor for Eco-GEO. Return a strict JSON object.
@@ -1275,7 +1275,8 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             normalization = {}
             try:
                 article = normalize_article(raw, lang, normalization=normalization)
-                structural = validate_insight(article, sources, lang=lang, source_article=original)
+                structural = (validate_translation_publication(article, sources, lang, original) if lang != "zh"
+                              else validate_insight(article, sources, lang=lang, source_article=original))
             except ValueError as exc:
                 structural = {"passed": False, "errors": [str(exc)], "metrics": {}}
                 article = {key: raw.get(key) for key in ("title", "excerpt", "body_html", "tags")}
@@ -1295,6 +1296,23 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             audit["attempts"].append(attempt)
             # Preserve each authored draft even if a later model request fails.
             write_audit(audit_path, audit)
+            if lang != "zh":
+                # The reviewed Chinese source is localized for publication, not
+                # re-scored as a new article. Ordinary quality notes never start
+                # another paid review, source rewrite, or full retranslation.
+                attempt["review_state"] = "not_required_offline_translation"
+                attempt["warnings"] = (list(raw.get("translation_provenance", {}).get("quality_warnings", []))
+                                       + list(structural.get("warnings", [])))
+                attempt["errors"] = errors
+                audit["passed"] = not errors
+                write_audit(audit_path, audit)
+                if errors:
+                    raise InsightQualityError(f"{lang} translation cannot be published: invalid or missing content; inspect {audit_path}")
+                article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
+                    "revisions": revision, "review_type": "offline translation structure check",
+                    "warnings": attempt["warnings"], "paid_translation_calls": 0}
+                print(f"Insight {lang}: ready to publish; {len(attempt['warnings'])} nonblocking quality notes; paid calls=0", flush=True)
+                return article
             if structural["passed"]:
                 attempt["review_state"] = "pending"
                 write_audit(audit_path, audit)

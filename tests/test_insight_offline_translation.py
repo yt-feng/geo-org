@@ -171,8 +171,7 @@ class OfflineArticleTests(unittest.TestCase):
             offline.translate_article(SOURCE, "en", checkpoint_path=path, translator=FakeTranslator())
             state = json.loads(path.read_text())
             state["blocks"]["excerpt"]["translation"] = "The budget is 900 yuan."
-            # Even a recomputed output digest must pass source quantity checks.
-            state["blocks"]["excerpt"]["translation_sha256"] = offline.digest(state["blocks"]["excerpt"]["translation"])
+            # Output corruption cannot reuse a checkpoint with another digest.
             path.write_text(json.dumps(state))
             translator = FakeTranslator()
             result = offline.translate_article(SOURCE, "en", checkpoint_path=path, translator=translator)
@@ -194,43 +193,101 @@ class OfflineArticleTests(unittest.TestCase):
             self.assertIn(token, protected.values())
             self.assertNotIn(token, masked)
 
+    def test_publish_mode_records_quality_warnings_and_reuses_output_without_retranslation(self):
+        class ImperfectTranslator(FakeTranslator):
+            def translate(self, text, target, source):
+                return super().translate(text, target, source).replace("100 yuan", "900 yuan")
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "checkpoint.json"
+            first = ImperfectTranslator()
+            result = offline.translate_article(SOURCE, "en", checkpoint_path=path, translator=first)
+            self.assertEqual(result["excerpt"], "The budget is 900 yuan.")
+            self.assertEqual(result["translation_provenance"]["quality_mode"], "publish")
+            warnings = result["translation_provenance"]["quality_warnings"]
+            self.assertTrue(any("numeric" in entry["warning"] for entry in warnings))
+            second = FakeTranslator(fail_at=1)
+            replay = offline.translate_article(SOURCE, "en", checkpoint_path=path, translator=second)
+            self.assertEqual(second.calls, [])
+            self.assertEqual(replay["translation_provenance"]["quality_warnings"], warnings)
+            self.assertEqual(replay["translation_provenance"]["translated_blocks"], 0)
+
+    def test_publish_mode_records_terms_script_operators_and_numeric_differences(self):
+        pairs = [("GEO分析", "SEO Analysis"), ("预算100元", "Budget 900 dollars"),
+                 ("中文原文", "中文原文"), ("错误率≤5%", "Error rate is below 5%")]
+        for source, translated in pairs:
+            with self.subTest(source=source):
+                self.assertTrue(offline.validate_block(source, translated, "ar", quality_mode="publish"))
+        self.assertTrue(hymt.validate_result("预算100元", "Budget 900 dollars", "zh", "ar", quality_mode="publish"))
+
+    def test_real_translator_publish_mode_preserves_quantity_warnings_in_provenance(self):
+        class Engine:
+            def translate(self, text, source, target):
+                for old, new in REPLACEMENTS.items():
+                    text = text.replace(old, new)
+                return text.replace("100 yuan", "900 dollars")
+
+        with tempfile.TemporaryDirectory() as directory:
+            translator = hymt.HyMTOfflineTranslator(cache_dir=Path(directory) / "fragments", engine_factory=lambda *_: Engine())
+            result = offline.translate_article(SOURCE, "en", checkpoint_path=Path(directory) / "article.json", translator=translator)
+        self.assertEqual(translator.quality_mode, "publish")
+        self.assertTrue(any("quantity warning" in entry["warning"] for entry in result["translation_provenance"]["quality_warnings"]))
+        self.assertEqual(result["translation_provenance"]["paid_provider_requests"], 0)
+
+    def test_publish_mode_still_stops_empty_structurally_broken_or_collapsed_output(self):
+        pairs = [("正文", ""), ("正文", "..."), ('<strong>正文</strong>', '<em>Text</em>'),
+                 ('<a href="https://example.org/a">来源</a>', '<a href="https://example.org/b">Source</a>'),
+                 ("这是完整长段落。" * 40, "Short summary.")]
+        for source, translated in pairs:
+            with self.subTest(source=source[:40]), self.assertRaises(offline.OfflineTranslationError):
+                offline.validate_block(source, translated, "en", quality_mode="publish")
+        with self.assertRaises(offline.OfflineTranslationError):
+            hymt.validate_result("正文 __HYMTPH_0000__", "Text", "zh", "en", quality_mode="publish")
+
+    def test_runtime_output_truncation_is_still_rejected(self):
+        engine = hymt._HyMTEngine.__new__(hymt._HyMTEngine)
+        engine.port = 1
+        with patch.object(hymt, "request_json", return_value={"choices": [{"finish_reason": "length", "message": {"content": "partial"}}]}):
+            with self.assertRaisesRegex(hymt.OfflineTranslationError, "token limit"):
+                engine.translate("正文", "zh", "en")
+
 
 class OfflinePipelineTests(unittest.TestCase):
-    def run_pipeline(self, *, failed_review=False, translation_failure=False):
+    def run_pipeline(self, *, quality_warning=False, translation_failure=False):
         raw = copy.deepcopy(SOURCE)
         raw.update({"title": "Eco-GEO: Title", "excerpt": "Budget 100 yuan", "tags": "GEO, Analysis",
-                    "translation_provenance": {"paid_provider_requests": 0, "provider": "hymt-cpu"}})
-        review = {"scores": dict.fromkeys(ip.SCORE_KEYS, 5), "issues": [],
-                  "blockers": ["source issue requires inspection"] if failed_review else []}
+                    "translation_provenance": {"paid_provider_requests": 0, "provider": "hymt-cpu",
+                        "quality_warnings": [{"block": "excerpt", "warning": "numeric variation"}] if quality_warning else []}})
         with tempfile.TemporaryDirectory() as directory, \
                 patch.dict(os.environ, {"INSIGHT_MAX_REVISIONS": "5", "INSIGHT_OFFLINE_CHECKPOINT_DIR": directory}), \
                 patch.object(ip, "translate_article_offline", side_effect=offline.OfflineTranslationError("local failure") if translation_failure else None,
                              return_value=raw) as translate, \
                 patch.object(ip, "validate_insight", return_value={"passed": True, "errors": [], "metrics": {}}), \
-                patch.object(ip, "review_article", return_value=review) as reviewer, \
+                patch.object(ip, "review_article", side_effect=AssertionError("No paid locale review")) as reviewer, \
                 patch.object(ip, "request_json", side_effect=AssertionError("paid drafting must never run")) as paid:
             path = Path(directory) / "en.json"
             invoke = lambda: ip.produce_article(ip.gb.TopicRow(2, "Example", {}, "Brand", "GEO"), [], "key",
                                                lang="en", original=SOURCE, audit_path=path)
-            if failed_review or translation_failure:
+            if translation_failure:
                 with self.assertRaises((ip.InsightQualityError, offline.OfflineTranslationError)):
                     invoke()
             else:
                 invoke()
             paid.assert_not_called()
             self.assertEqual(translate.call_count, 1)
-            self.assertEqual(reviewer.call_count, 0 if translation_failure else 1)
+            reviewer.assert_not_called()
             return json.loads(path.read_text())
 
-    def test_paid_model_only_reviews_an_offline_translation(self):
+    def test_offline_translation_is_published_without_paid_review(self):
         audit = self.run_pipeline()
         self.assertTrue(audit["passed"])
         self.assertEqual(audit["attempts"][0]["draft_origin"], "offline_translation")
 
-    def test_failed_review_does_not_cause_full_paid_retranslation_or_repeated_review(self):
-        audit = self.run_pipeline(failed_review=True)
-        self.assertFalse(audit["passed"])
+    def test_quality_warning_does_not_block_publication_or_cause_paid_review(self):
+        audit = self.run_pipeline(quality_warning=True)
+        self.assertTrue(audit["passed"])
         self.assertEqual(len(audit["attempts"]), 1)
+        self.assertTrue(audit["attempts"][0]["warnings"])
 
     def test_offline_failure_stops_before_any_paid_review_or_fallback(self):
         self.assertFalse(self.run_pipeline(translation_failure=True)["passed"])
