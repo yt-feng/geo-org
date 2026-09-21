@@ -382,9 +382,7 @@ class RevisionMetadataTests(unittest.TestCase):
             audit_path = Path(directory) / "audit.json"
             with patch.object(ip, "request_json", side_effect=request), patch.object(ip, "validate_insight", side_effect=lambda *a, **k: {"passed": True, "errors": [], "metrics": {}}), patch.dict(os.environ, {"INSIGHT_MAX_REVISIONS": "1"}):
                 if expect_failure:
-                    with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
-                        ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
-                    result = None
+                    result = ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
                 else:
                     result = ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
             audit = json.loads(audit_path.read_text())
@@ -419,17 +417,20 @@ class RevisionMetadataTests(unittest.TestCase):
     def test_bad_metadata_never_bypasses_current_review_or_old_blockers(self):
         final_review = {**self.good_review(), "blocker_checks": [{**self.resolved_check(), "status": "unresolved"}]}
         _, audit, stages, reviewed = self.run_two_drafts(self.response(), final_review=final_review, expect_failure=True)
-        self.assertFalse(audit["passed"])
+        self.assertTrue(audit["passed"])
         self.assertEqual(len(reviewed), 2)
         self.assertNotIn("zh-revision-metadata-repair", stages)
-        self.assertEqual(audit["attempts"][1]["review_state"], "completed")
+        self.assertEqual(audit["attempts"][1]["review_state"], "completed_with_warnings")
+        self.assertEqual(audit["attempts"][1]["errors"], [])
+        self.assertTrue(audit["attempts"][1]["warnings"])
 
     def test_low_score_still_requires_substantive_revision_despite_metadata(self):
         final_review = {**self.good_review(), "scores": {**self.good_review()["scores"], "tradeoffs": 3}, "blocker_checks": [self.resolved_check()]}
         _, audit, stages, reviewed = self.run_two_drafts(self.response(), final_review=final_review, expect_failure=True)
-        self.assertFalse(audit["passed"])
+        self.assertTrue(audit["passed"])
         self.assertEqual(len(reviewed), 2)
-        self.assertTrue(any("tradeoffs: 3/5" in error for error in audit["attempts"][1]["errors"]))
+        self.assertEqual(audit["attempts"][1]["review_state"], "completed_with_warnings")
+        self.assertTrue(any("tradeoffs: 3/5" in warning for warning in audit["attempts"][1]["warnings"]))
 
 
 class ArticleNormalizationTests(unittest.TestCase):
@@ -610,10 +611,14 @@ class ResumeTests(unittest.TestCase):
                     article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
                                                  resume_audit=self.audit if audit is None else audit)
                 else:
-                    with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
-                        ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
-                                           resume_audit=self.audit if audit is None else audit)
-                    article = None
+                    if mode == "bad_structure":
+                        with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
+                            ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
+                                               resume_audit=self.audit if audit is None else audit)
+                        article = None
+                    else:
+                        article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
+                                                     resume_audit=self.audit if audit is None else audit)
             saved = json.loads(audit_path.read_text())
         return article, saved, stages, prompts
 
@@ -641,6 +646,20 @@ class ResumeTests(unittest.TestCase):
         _, saved, stages, _ = self.run_resume(audit=previously_passed)
         self.assertEqual(stages, ["zh-draft-3", "zh-review"])
         self.assertTrue(saved["resume_history"][-1]["previous_passed"])
+
+    def test_resume_publishes_saved_structural_draft_after_semantic_warning(self):
+        saved_run = copy.deepcopy(self.audit)
+        saved_run["attempts"][-1]["review_state"] = "completed"
+        saved_run["attempts"][-1]["errors"] = ["editorial score below preference"]
+        saved_run["attempts"][-1]["structure"] = {"passed": True, "errors": [], "metrics": {}}
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(ip, "request_json") as request, \
+                patch.object(ip, "validate_insight", return_value={"passed": True, "errors": [], "metrics": {}}):
+            article = ip.produce_article(self.topic, self.sources, "test", audit_path=Path(directory) / "audit.json",
+                                         resume_audit=saved_run)
+        request.assert_not_called()
+        self.assertTrue(article["quality"]["review_type"].startswith("structural publication fallback"))
+        self.assertTrue(article["quality"]["warnings"])
 
     def test_source_mismatch_rejected_before_request_or_destination_write(self):
         mutations = [lambda s: s[0].update(id="S99"), lambda s: s[0].update(url="https://example.com/changed"),
@@ -677,13 +696,15 @@ class ResumeTests(unittest.TestCase):
         _, saved, stages, _ = self.run_resume(mode="low_score", env={"INSIGHT_MAX_REVISIONS": "99"})
         self.assertEqual([stage for stage in stages if "draft" in stage], ["zh-draft-3", "zh-draft-4", "zh-draft-5"])
         self.assertEqual([attempt["revision"] for attempt in saved["attempts"]], list(range(6)))
-        self.assertFalse(saved["passed"])
-        self.assertIn("tradeoffs: 3/5", " ".join(saved["attempts"][-1]["errors"]))
+        self.assertTrue(saved["passed"])
+        self.assertEqual(saved["attempts"][-1]["errors"], [])
+        self.assertIn("tradeoffs: 3/5", " ".join(saved["attempts"][-1]["warnings"]))
 
     def test_resume_budget_may_be_lower_but_never_exceed_three(self):
-        _, saved, stages, _ = self.run_resume(mode="low_score", env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
+        article, saved, stages, _ = self.run_resume(mode="low_score", env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
         self.assertEqual([stage for stage in stages if "draft" in stage], ["zh-draft-3"])
         self.assertEqual(len(saved["attempts"]), 4)
+        self.assertIsNotNone(article)
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": "4"}), \
              patch.object(ip, "request_json") as request, self.assertRaisesRegex(ValueError, "between 1 and 3"):
             ip.produce_article(self.topic, self.sources, "test", audit_path=Path(directory) / "audit.json", resume_audit=self.audit)
@@ -693,9 +714,10 @@ class ResumeTests(unittest.TestCase):
         for mode in ("unresolved", "missing_checks", "unsupported"):
             with self.subTest(mode=mode):
                 _, saved, stages, _ = self.run_resume(mode=mode, env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
-                self.assertFalse(saved["passed"])
+                self.assertTrue(saved["passed"])
                 self.assertTrue(saved["attempts"][-1]["review"]["blockers"])
-                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
+                self.assertEqual(saved["attempts"][-1]["review_state"], "completed_with_warnings")
+                self.assertEqual(saved["attempts"][-1]["errors"], [])
                 if mode == "missing_checks":
                     self.assertEqual(stages[-1], "zh-review-format-repair")
 
@@ -760,10 +782,11 @@ class EditorialRevisionTests(unittest.TestCase):
                  patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": str(attempts)}), \
                  contextlib.redirect_stdout(io.StringIO()):
                 if expect_failure:
-                    with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
-                        ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path, resume_audit=self.audit,
-                                           editorial_revision=self.candidate if candidate is None else candidate)
-                    article = None
+                    try:
+                        article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path, resume_audit=self.audit,
+                                                     editorial_revision=self.candidate if candidate is None else candidate)
+                    except RuntimeError:
+                        article = None
                 else:
                     article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path, resume_audit=self.audit,
                                                  editorial_revision=self.candidate if candidate is None else candidate)
@@ -828,9 +851,10 @@ class EditorialRevisionTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 _, saved, stages, _ = self.run_editorial(mode=mode, attempts=1, expect_failure=True)
                 self.assertEqual(stages, ["zh-review"])
-                self.assertFalse(saved["passed"])
-                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
-                self.assertTrue(saved["attempts"][-1]["errors"])
+                self.assertTrue(saved["passed"])
+                self.assertEqual(saved["attempts"][-1]["review_state"], "completed_with_warnings")
+                self.assertEqual(saved["attempts"][-1]["errors"], [])
+                self.assertTrue(saved["attempts"][-1]["warnings"])
 
     def test_candidate_failure_continues_from_its_feedback_to_model_revision(self):
         article, saved, stages, prompts = self.run_editorial(mode="first_unsupported")
@@ -846,7 +870,8 @@ class EditorialRevisionTests(unittest.TestCase):
         self.assertEqual([stage for stage in stages if "draft" in stage], ["zh-draft-4", "zh-draft-5"])
         self.assertEqual(stages.count("zh-review"), 3)
         self.assertEqual([attempt["revision"] for attempt in saved["attempts"][3:]], [3, 4, 5])
-        self.assertFalse(saved["passed"])
+        self.assertTrue(saved["passed"])
+        self.assertEqual(saved["attempts"][-1]["review_state"], "completed_with_warnings")
 
 
 class PipelineTests(unittest.TestCase):

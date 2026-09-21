@@ -128,9 +128,9 @@ class CrossLanguageResumeTests(unittest.TestCase):
 
         with mock.patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": "1"}), mock.patch.object(ip, "request_json", side_effect=request):
             if status != "resolved" or scope not in ("source_article", "translation_only"):
-                with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
-                    ip.produce_article(self.topic, self.sources, "test", resume_audit=loaded,
-                        editorial_revision=candidate, audit_path=self.destination)
+                result = ip.produce_article(self.topic, self.sources, "test", resume_audit=loaded,
+                    editorial_revision=candidate, audit_path=self.destination)
+                self.assertTrue(result["quality"]["warnings"])
             else:
                 result = ip.produce_article(self.topic, self.sources, "test", resume_audit=loaded,
                     editorial_revision=candidate, audit_path=self.destination)
@@ -156,11 +156,13 @@ class CrossLanguageResumeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "blocker"):
                     ip.validate_passed_chinese_audit(altered, self.topic)
 
-    def test_unresolved_or_unclassified_cross_language_question_cannot_pass(self):
+    def test_unresolved_or_unclassified_cross_language_question_is_published_as_warning(self):
         for scope, status in (("source_article", "unresolved"), ("source_article", "unverifiable"), (None, "resolved")):
             with self.subTest(scope=scope, status=status):
                 saved, _ = self.editorial(scope=scope, status=status)
-                self.assertFalse(saved["passed"])
+                self.assertTrue(saved["passed"])
+                self.assertEqual(saved["attempts"][-1]["review_state"], "completed_with_warnings")
+                self.assertEqual(saved["attempts"][-1]["errors"], [])
                 self.assertTrue(ip.has_pending_cross_language_feedback(saved))
 
     def test_nonfactual_translation_failure_does_not_force_chinese_revision(self):

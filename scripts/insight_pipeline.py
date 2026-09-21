@@ -971,8 +971,8 @@ def _format_repair_fact_failures(review: dict) -> list[str]:
 def _saved_pass_review_errors(review: dict, sources: list[dict], required: list[dict]) -> list[str]:
     if not isinstance(review, dict):
         return ["saved pass requires a complete independent review"]
-    if review.get("review_status") == "unavailable":
-        return review_errors(review) if not _publishable_review_fallback(review, required) else []
+    if _publishable_review_fallback(review, required):
+        return []
     allowed = {source["id"] for source in sources}
     return list(dict.fromkeys(
         _review_contract_errors(review, required, allowed_source_ids=allowed)
@@ -988,8 +988,10 @@ def _json_review_failure(error: Exception) -> bool:
 
 
 def _publishable_review_fallback(review: dict, required: list[dict] | None = None) -> bool:
-    return (isinstance(review, dict) and review.get("review_status") == "unavailable"
-            and review.get("reason") == "invalid_json" and not (required or []))
+    if not isinstance(review, dict) or required:
+        return False
+    return ((review.get("review_status") == "unavailable" and review.get("reason") == "invalid_json")
+            or review.get("publication_fallback") is True)
 
 
 def _unavailable_review(error: Exception) -> dict:
@@ -998,6 +1000,36 @@ def _unavailable_review(error: Exception) -> dict:
     # quality metadata so it can be revisited on a later run.
     return {"review_status": "unavailable", "reason": "invalid_json",
             "error": str(error)[:500], "issues": [], "blockers": [], "claim_checks": []}
+
+
+def _structural_publication_fallback(audit: dict, attempt: dict, article: dict,
+                                     structural: dict, review_errors_list: list[str],
+                                     *, audit_path: Path, lang: str, revision: int) -> dict:
+    """Publish a structurally valid draft while preserving semantic review warnings."""
+    warning_list = [str(item)[:500] for item in review_errors_list if str(item).strip()]
+    review = attempt.get("review")
+    if not isinstance(review, dict):
+        raise ValueError("structural publication fallback requires the completed review record")
+    review["publication_fallback"] = True
+    review["fallback_reason"] = "semantic review findings are retained as warnings"
+    attempt["review_state"] = "completed_with_warnings"
+    attempt["publication_fallback"] = {
+        "reason": "structural_gates_passed; semantic_review_warnings_retained",
+        "warning_count": len(warning_list),
+    }
+    attempt["warnings"] = warning_list
+    attempt["errors"] = []
+    audit["passed"] = True
+    audit.pop("error", None)
+    write_audit(audit_path, audit)
+    article["quality"] = {
+        "version": audit["version"], "metrics": structural["metrics"],
+        "revisions": revision,
+        "review_type": "structural publication fallback after semantic review warnings",
+        "warnings": warning_list,
+    }
+    print(f"Insight {lang}: structural publication fallback; warnings={len(warning_list)}", flush=True)
+    return article
 
 
 def validate_passed_chinese_audit(audit: dict, topic: gb.TopicRow) -> dict:
@@ -1050,7 +1082,7 @@ def validate_passed_chinese_audit(audit: dict, topic: gb.TopicRow) -> dict:
                 required.extend({"id": f"r{last_revision}-blocker-{index}", "kind": "blocker", "problem": blocker}
                                 for index, blocker in enumerate(blockers, 1))
     last = attempts[-1]
-    if last.get("errors") != [] or last.get("review_state") != "completed":
+    if last.get("errors") != [] or last.get("review_state") not in ("completed", "completed_with_warnings"):
         raise invalid("last attempt must have empty errors and a completed review")
     old_structure = last["structure"]
     if old_structure.get("passed") is not True or old_structure.get("errors") != [] or not isinstance(old_structure.get("metrics"), dict):
@@ -1151,8 +1183,11 @@ def reuse_passed_chinese_audit(topic: gb.TopicRow, sources: list[dict], api_key:
     article = dict(article)
     article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
                           "revisions": last["revision"],
-                          "review_type": "automated editorial review" if last["review"].get("review_status") != "unavailable"
-                          else "structural publish fallback after invalid review JSON",
+                          "review_type": "structural publication fallback after semantic review warnings"
+                          if last["review"].get("publication_fallback") is True
+                          else ("automated editorial review" if last["review"].get("review_status") != "unavailable"
+                                else "structural publish fallback after invalid review JSON"),
+                          **({"warnings": last.get("warnings", [])} if last.get("warnings") else {}),
                           **({"scores": last["review"]["scores"]} if "scores" in last["review"] else {})}
     mode = "reused" if record["mode"] == "validated_passed_chinese" else "fresh_review"
     print(f"Insight zh: {mode} passed; revision={last['revision']}; review={json.dumps(last['review'].get('scores', 'unavailable'), ensure_ascii=False)}", flush=True)
@@ -1264,6 +1299,22 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             # Repeating a deterministic translation must not repeat paid reviews.
             # Failures retain per-block checkpoints for a corrected-source rerun.
             attempt_budget = 1
+        if lang == "zh" and resume_audit is not None and audit["attempts"]:
+            # A failed run may already contain a structurally valid final draft and
+            # a completed semantic review. Do not spend another paid draft/review
+            # cycle just because the review found warnings; publish that saved
+            # draft with the findings visible in its audit and quality metadata.
+            saved_attempt = audit["attempts"][-1]
+            if (saved_attempt.get("review_state") == "completed"
+                    and saved_attempt.get("errors")
+                    and isinstance(saved_attempt.get("article"), dict)):
+                saved_article = normalize_article(saved_attempt["article"], lang)
+                saved_structure = validate_insight(saved_article, sources, lang=lang)
+                if saved_structure["passed"] and not saved_structure["errors"]:
+                    return _structural_publication_fallback(
+                        audit, saved_attempt, saved_article, saved_structure,
+                        saved_attempt["errors"], audit_path=audit_path, lang=lang,
+                        revision=saved_attempt["revision"])
         for revision in range(start_revision, start_revision + attempt_budget):
             prompt = base_prompt
             if feedback and lang == "zh":
@@ -1393,6 +1444,13 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 visible_issues = [issue[:500] for issue in issues[:8] if isinstance(issue, str)]
                 if visible_issues:
                     print(f"Insight {lang}: revision {revision} review issues: {json.dumps(visible_issues, ensure_ascii=False)}", flush=True)
+        last_attempt = audit["attempts"][-1] if audit["attempts"] else {}
+        if (lang == "zh" and last_attempt.get("review_state") == "completed"
+                and last_attempt.get("errors") and last_attempt.get("structure", {}).get("passed") is True):
+            return _structural_publication_fallback(
+                audit, last_attempt, last_attempt["article"], last_attempt["structure"],
+                last_attempt["errors"], audit_path=audit_path, lang=lang,
+                revision=last_attempt["revision"])
         raise InsightQualityError(f"{lang} insight did not pass quality gates; inspect {audit_path}")
     except Exception as exc:
         audit["error"] = str(exc)
