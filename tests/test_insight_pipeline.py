@@ -46,6 +46,10 @@ def event(delta=None, finish_reason=None, *, usage=None):
 
 class StreamingTests(unittest.TestCase):
     def setUp(self):
+        for name in ("begin_request", "complete_request"):
+            policy = patch.object(ip, name)
+            policy.start()
+            self.addCleanup(policy.stop)
         environment = patch.dict(os.environ, {"INSIGHT_API_TIMEOUT": "300", "INSIGHT_API_DEADLINE": "1200"})
         environment.start()
         self.addCleanup(environment.stop)
@@ -108,7 +112,7 @@ class StreamingTests(unittest.TestCase):
             result = ip.request_json("prompt", "key", stage="test-length", max_tokens=48000)
         self.assertEqual(result, {"complete": True})
         self.assertEqual([json.loads(call.args[0].data)["max_tokens"] for call in opener.call_args_list], [48000, 96000])
-        self.assertTrue(all(json.loads(call.args[0].data)["thinking"]["type"] == "enabled" for call in opener.call_args_list))
+        self.assertTrue(all(json.loads(call.args[0].data)["thinking"]["type"] == "disabled" for call in opener.call_args_list))
 
     def test_repeated_length_cutoff_stops_after_one_larger_attempt(self):
         cutoff = event({"content": '{"partial":true}'}, finish_reason="length") + "data: [DONE]\n\n"
@@ -845,7 +849,8 @@ class PipelineTests(unittest.TestCase):
         response = MagicMock()
         response.__enter__.return_value.read.return_value = json.dumps({"choices": [{
             "finish_reason": "length", "message": {"content": '{"title":"valid JSON"}'}}]})
-        with patch.object(ip.urllib.request, "urlopen", return_value=response), patch.object(ip.gb, "RETRIES", 1):
+        with patch.object(ip.urllib.request, "urlopen", return_value=response), patch.object(ip.gb, "RETRIES", 1), \
+                patch.object(ip, "begin_request"), patch.object(ip, "complete_request"):
             with self.assertRaisesRegex(RuntimeError, "incomplete output"):
                 ip.request_json("test", "test-key", stage="test")
 

@@ -1,0 +1,56 @@
+name: Offline translation and cost controls
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/actions/setup-offline-translation/**'
+      - '.github/workflows/*translation*'
+      - '.github/workflows/generate*.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/actions/setup-offline-translation/**'
+      - '.github/workflows/*translation*'
+      - '.github/workflows/generate*.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-translation-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install editorial dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run editorial and cost regressions without provider credentials
+        run: |
+          python -m unittest discover -s tests -p 'test_insight*.py'
+          python -m unittest discover -s tests -p 'test_daily_*.py'
+      - name: Set up pinned CPU translation
+        uses: ./.github/actions/setup-offline-translation
+        with:
+          targets: en,ar
+      - name: Translate English and Arabic with no paid API credentials
+        run: python scripts/smoke_insight_offline_translation.py --output-dir .artifacts/offline-smoke
+      - name: Save translation samples and CPU provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-translation-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/offline-smoke/
+          if-no-files-found: ignore
+          retention-days: 7

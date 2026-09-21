@@ -184,7 +184,7 @@ class CrossLanguageResumeTests(unittest.TestCase):
 
     def test_new_translation_records_original_core_hash_before_model_calls(self):
         original = {**self.article, "quality": {"scores": "not part of article identity"}}
-        with mock.patch.object(ip, "request_json", side_effect=RuntimeError("stop before draft")):
+        with mock.patch.object(ip, "translate_article_offline", side_effect=RuntimeError("stop before draft")):
             with self.assertRaisesRegex(RuntimeError, "stop before draft"):
                 ip.produce_article(self.topic, self.sources, "test", lang="en", original=original, audit_path=self.destination)
         saved = json.loads(self.destination.read_text())

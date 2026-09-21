@@ -19,6 +19,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from insight_styles import INSIGHT_CSS
+import deepseek_cost_policy as cost_policy
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -264,14 +265,17 @@ Excel 选题：
     for attempt in range(1, RETRIES + 1):
         attempt_payload = dict(payload)
         attempt_payload["model"] = models[(attempt - 1) % len(models)]
+        ticket = cost_policy.begin_request("legacy-article", attempt_payload, 120)
         try:
             req = deepseek_request(api_key, attempt_payload)
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                raw = resp.read().decode("utf-8")
-            obj = json.loads(raw)
-            content = obj["choices"][0]["message"]["content"].strip()
+            # Reuse the deadline-enforced transport. urlopen's timeout alone is
+            # only an idle timeout and could let keep-alives cross peak hours.
+            from insight_pipeline import _completion_attempt
+            content, usage = _completion_attempt(req, "legacy-article", 120, 120)
+            cost_policy.complete_request(ticket, usage)
             return parse_model_json(content, topic)
         except Exception as exc:  # noqa: BLE001
+            cost_policy.complete_request(ticket, status="failed_unknown_usage")
             last_error = format_api_error(exc)
             if attempt >= RETRIES:
                 break
