@@ -13,14 +13,14 @@ import json
 from pathlib import Path
 import re
 
-from hymt_offline_translation import HyMTOfflineTranslator, OfflineTranslationError, atomic_json
+from hymt_offline_translation import HyMTOfflineTranslator, OfflineTranslationError, PROTECTED_TERM_PATTERN, atomic_json
 from insight_quality import _numbers
 
 ADAPTER_VERSION = "insight-html-blocks-v1"
 _TAG = re.compile(r'''<!--.*?-->|</?[A-Za-z](?:"[^"]*"|'[^']*'|[^'">])*>''', re.DOTALL)
 _BLOCK = re.compile(r'</?(?:article|section|div|p|h[1-6]|ul|ol|li|blockquote|figure|figcaption|table|thead|tbody|tfoot|tr|td|th|caption|dl|dt|dd|hr)\b', re.I)
 _URL = re.compile(r'https?://[^\s<>"\']+')
-_TERM = re.compile(r'(?<![A-Za-z])(?:Eco-GEO|GEO|SEO|AI|SOV|ROI|ChatGPT|DeepSeek)(?![A-Za-z])')
+_TERM = re.compile(PROTECTED_TERM_PATTERN)
 
 
 def digest(value: object) -> str:

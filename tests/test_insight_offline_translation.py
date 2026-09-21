@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import insight_offline_translation as offline
@@ -39,6 +39,44 @@ class FakeTranslator:
 
 
 class OfflineArticleTests(unittest.TestCase):
+    def test_real_translator_keeps_pure_protected_arabic_tags_without_starting_engine(self):
+        original = {"title": "Eco-GEO", "excerpt": "AI, SOV, ROI", "body_html": '<p>SEO</p>',
+                    "tags": ["GEO", "ChatGPT", "DeepSeek"]}
+        engine_factory = Mock(side_effect=AssertionError("Protected terms must not start model inference"))
+        with tempfile.TemporaryDirectory() as directory:
+            translator = hymt.HyMTOfflineTranslator(cache_dir=Path(directory) / "cache", engine_factory=engine_factory)
+            result = offline.translate_article(original, "ar", checkpoint_path=Path(directory) / "article.json", translator=translator)
+        self.assertEqual({key: result[key] for key in original}, original)
+        self.assertEqual(translator.stats["batch_requests"], 0)
+        engine_factory.assert_not_called()
+
+    def test_real_translator_masks_visible_terms_and_keeps_resources_whole_for_arabic(self):
+        original = {"title": "Eco-GEO：分析", "excerpt": "AI分析",
+                    "body_html": '<p>AI分析<a href="https://example.org/GEO?model=AI" data-source-id="S1">[S1]</a>。</p>',
+                    "tags": ["GEO", "分析"]}
+        model_inputs = []
+
+        class Engine:
+            def translate(self, text, source, target):
+                model_inputs.append(text)
+                # A real engine only sees placeholders for each whole resource
+                # and each visible protected term, not literal attributes.
+                return text.replace("分析", "تحليل").replace("。", ".")
+
+        with tempfile.TemporaryDirectory() as directory:
+            translator = hymt.HyMTOfflineTranslator(cache_dir=Path(directory) / "cache", engine_factory=lambda *_: Engine())
+            result = offline.translate_article(original, "ar", checkpoint_path=Path(directory) / "article.json", translator=translator)
+        self.assertEqual(result["tags"], ["GEO", "تحليل"])
+        self.assertEqual(result["title"], "Eco-GEO：تحليل")
+        self.assertIn('AIتحليل<a href="https://example.org/GEO?model=AI" data-source-id="S1">[S1]</a>', result["body_html"])
+        self.assertEqual(len(model_inputs), 4)  # The pure GEO tag causes no fifth request.
+        for text in model_inputs:
+            self.assertIsNone(offline._TERM.search(text))
+            self.assertNotIn("href", text)
+            self.assertNotIn("https://", text)
+        _, protected, _ = hymt._mask(original["body_html"], "ar")
+        self.assertIn('<a href="https://example.org/GEO?model=AI" data-source-id="S1">', protected.values())
+
     def test_arabic_currency_and_date_aliases_preserve_quantity_identity(self):
         for source, translated in (("预算为1000元。", "الميزانية 1000 يوان."),
                                    ("2026年9月21日", "21 سبتمبر 2026"),

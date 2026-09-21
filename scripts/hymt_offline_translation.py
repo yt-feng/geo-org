@@ -29,10 +29,11 @@ MANIFEST = json.loads(MANIFEST_PATH.read_text(encoding='utf-8'))
 PROVIDER = 'hymt'
 MODEL = MANIFEST['model']['repository']
 REVISION = MANIFEST['model']['revision']
-MODEL_ID = f"{MODEL}@{REVISION}:Q8_0:insight-html-v1:{hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()[:16]}"
+MODEL_ID = f"{MODEL}@{REVISION}:Q8_0:insight-html-v2-protected-terms:{hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()[:16]}"
 INSTALL_COMMAND = 'Use .github/actions/setup-offline-translation on a Linux GitHub Actions runner'
 _PLACEHOLDERS = re.compile(r'__[A-Za-z0-9_]+__')
 _LETTERS = re.compile(r'[A-Za-z\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af\u0600-\u06ff]')
+PROTECTED_TERM_PATTERN = r'(?<![A-Za-z])(?:Eco-GEO|GEO|SEO|AI|SOV|ROI|ChatGPT|DeepSeek)(?![A-Za-z])'
 # Financial amounts, dates, percentages, names, and predicates are intentionally
 # absent: splitting those away from the sentence changed financial meaning.
 _OPAQUE = re.compile(
@@ -48,7 +49,7 @@ _OPAQUE = re.compile(
     r'|(?:https?://|mailto:)(?:[^\s<>\[\]()]|\([^\s<>\[\]()]*\))+'
     r'|&(?:\#\d+|\#x[\da-fA-F]+|[A-Za-z]+);'
     r'|\[S\d+\]'
-    r'|(?<![A-Za-z])(?:Eco-GEO|GEO|SEO|AI|SOV|ROI|ChatGPT|DeepSeek)(?![A-Za-z])'
+    r'|' + PROTECTED_TERM_PATTERN +
     r'|\\.', re.DOTALL)
 _ENGINES: dict[str, object] = {}
 _LOCK = threading.RLock()
@@ -305,6 +306,10 @@ class HyMTOfflineTranslator:
         leading, trailing = text[:len(text) - len(text.lstrip())], text[len(text.rstrip()):]
         core = text.strip()
         detected = source or _detect_source(core)
+        # Pure protected vocabulary (e.g. a GEO tag in an Arabic article) is
+        # already correct. Skip inference and target-script checks entirely.
+        # Resource alternatives in _OPAQUE precede terms, so hrefs and whole
+        # inline tags are reserved once rather than edited inside attributes.
         if not core or detected == target or not _LETTERS.search(_PLACEHOLDERS.sub('', _OPAQUE.sub('', core))):
             return text
         identity = {'provider': PROVIDER, 'model': MODEL_ID, 'source_language': detected,
