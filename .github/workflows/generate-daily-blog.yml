@@ -110,6 +110,10 @@ jobs:
             [[ "$RESUME_RUN_ID" =~ ^[0-9]+$ ]] || { echo "Resume run ID must contain digits only"; exit 1; }
             gh run view "$RESUME_RUN_ID" --json workflowName,conclusion --jq '.workflowName == "Generate Daily Blog Article" and (.conclusion == "failure" or .conclusion == "cancelled")' | grep -qx true
             gh run download "$RESUME_RUN_ID" --name "daily-insight-review-$RESUME_RUN_ID" --dir "$RUNNER_TEMP/insight-resume"
+            if [ -d "$RUNNER_TEMP/insight-resume/offline-translations" ]; then
+              mkdir -p .artifacts/offline-translations
+              cp -R "$RUNNER_TEMP/insight-resume/offline-translations/." .artifacts/offline-translations/
+            fi
             args+=(--resume-dir "$RUNNER_TEMP/insight-resume/insights")
           fi
           if [ -n "$EDITORIAL_REVISION_JSON" ]; then
