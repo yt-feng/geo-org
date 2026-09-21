@@ -2,7 +2,7 @@ name: Generate Daily Blog Article
 
 on:
   schedule:
-    - cron: "30 0 * * *"
+    - cron: "17 18 * * *" # Beijing 02:17; every paid request also checks its actual start/deadline
   workflow_dispatch:
     inputs:
       preview:
@@ -30,7 +30,12 @@ jobs:
   generate:
     name: Generate one new article
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
+    env:
+      TZ: Asia/Shanghai
+      DEEPSEEK_USAGE_LOG: .artifacts/usage/deepseek.jsonl
+      DEEPSEEK_MAX_RUN_REQUESTS: "12"
+      DEEPSEEK_MAX_RUN_TOKENS: "600000"
 
     steps:
       - name: Checkout
@@ -43,6 +48,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Check actual off-peak admission
+        run: python scripts/deepseek_cost_policy.py
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -53,22 +61,36 @@ jobs:
           python -m unittest discover -s tests -p "test_insight*.py" -v
           python -m unittest discover -s tests -p "test_daily_*.py" -v
 
+      - name: Restore source-bound offline translation checkpoints
+        uses: actions/cache/restore@v4
+        with:
+          path: .artifacts/offline-translations
+          key: geo-offline-fragments-${{ hashFiles('scripts/insight_offline_translation.py', 'scripts/hymt_translation_model_manifest.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            geo-offline-fragments-${{ hashFiles('scripts/insight_offline_translation.py', 'scripts/hymt_translation_model_manifest.json') }}-
+
+      - name: Set up pinned offline translation on CPU
+        uses: ./.github/actions/setup-offline-translation
+        with:
+          targets: en,ar
+
       - name: Generate one researched insight
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           SITE_URL: https://eco-geo.org
           DEEPSEEK_MODEL: deepseek-flash
-          INSIGHT_THINKING: "enabled"
+          INSIGHT_THINKING: "disabled"
+          INSIGHT_REVIEW_THINKING: "enabled"
           INSIGHT_RESEARCH_MAX_TOKENS: "48000"
           INSIGHT_MAX_TOKENS: "48000"
           INSIGHT_LENGTH_RETRY_MAX_TOKENS: "96000"
           INSIGHT_REVIEW_MAX_TOKENS: "48000"
-          INSIGHT_TRANSLATION_MAX_TOKENS: "48000"
           DEEPSEEK_REQUEST_DELAY: "0.2"
-          DEEPSEEK_RETRIES: "3"
-          INSIGHT_MAX_REVISIONS: "2"
-          INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS: "1"
+          DEEPSEEK_RETRIES: "2"
+          INSIGHT_MAX_REVISIONS: "1"
+          INSIGHT_RESUME_MAX_ATTEMPTS: "2"
+          INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS: "0"
           INSIGHT_MIN_ZH_CHARS: "2600"
           INSIGHT_API_TIMEOUT: "300"
           PREVIEW_ONLY: ${{ inputs.preview }}
@@ -96,6 +118,17 @@ jobs:
             args+=(--editorial-revision "$RUNNER_TEMP/editorial-revision.json")
           fi
           python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog "${args[@]}"
+
+      - name: Preserve completed offline translation checkpoints
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .artifacts/offline-translations
+          key: geo-offline-fragments-${{ hashFiles('scripts/insight_offline_translation.py', 'scripts/hymt_translation_model_manifest.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Summarize paid usage by stage
+        if: always()
+        run: python scripts/deepseek_cost_policy.py --summary
 
       - name: Save research and review artifacts
         if: always()

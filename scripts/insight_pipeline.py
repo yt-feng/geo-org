@@ -15,6 +15,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import generate_blog as gb
+from deepseek_cost_policy import begin_request, complete_request
+from insight_offline_translation import translate_article as translate_article_offline
 from insight_quality import DRAFT_REQUIREMENTS, REVIEW_RUBRIC, validate_insight
 
 SCORE_KEYS = ("thesis", "evidence", "mechanism", "tradeoffs", "actionability", "originality")
@@ -315,7 +317,8 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
         "model": os.environ.get("INSIGHT_REVIEW_MODEL", gb.MODEL) if "review" in stage else gb.MODEL,
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
-        "thinking": {"type": os.environ.get("INSIGHT_THINKING", "enabled")},
+        "thinking": {"type": os.environ.get("INSIGHT_REVIEW_THINKING", "enabled") if "review" in stage
+                     else os.environ.get("INSIGHT_THINKING", "enabled")},
         "response_format": {"type": "json_object"},
         "stream": True,
         "stream_options": {"include_usage": True},
@@ -328,8 +331,12 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
         request = urllib.request.Request(gb.DEEPSEEK_URL, data=json.dumps(payload, ensure_ascii=False).encode(),
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "Accept": "text/event-stream"}, method="POST")
         print(f"Insight {stage}: request {attempt}/{gb.RETRIES}; max_tokens={payload['max_tokens']}", flush=True)
+        ticket = begin_request(stage, payload, total_timeout)
+        accounted = False
         try:
             content, usage = _completion_attempt(request, stage, idle_timeout, total_timeout)
+            complete_request(ticket, usage=usage)
+            accounted = True
             try:
                 result = json.loads(content)
             except ValueError:
@@ -353,6 +360,9 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
             raise RuntimeError(f"Insight {stage}: {exc}") from None
         except _CompletionError as exc:
             error = str(exc)
+        finally:
+            if not accounted:
+                complete_request(ticket, status="failed_unknown_usage")
         print(f"Insight {stage}: request {attempt}/{gb.RETRIES} failed: {error}", flush=True)
         if attempt < gb.RETRIES:
             time.sleep(min(15, attempt * 4))
@@ -1210,14 +1220,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
         else:
             if not original:
                 raise ValueError("localization requires the complete Chinese original")
-            base_prompt = f"""将下方深度洞察完整本地化为{'English' if lang == 'en' else 'Modern Standard Arabic'}。
-保持所有分析、因果关系、例子、反论点、局限、数字、表格、公式及行动条件，不缩写为摘要。
-保留所有HTML标签结构、data-role属性、data-source-id属性、引用URL与[S1]格式ID。
-保留每个文本块的位置与数字的重复次数；HTML文本中的比较符号使用 &lt;、&gt; 或 ≤、≥，不能变成伪标签。
-仅翻译人类可见的内容。原文以数字字符写的数值保持数字形式并使用ASCII（含0、1），保留百分号与公式，不改成zero、one等拼写数词；原文以中文文字写的数词保持文字形式，译为目标语言对应数词（如“四周”译为“four weeks”），不要改为数字4；数量、单位、范围、序数和币种均不得改变。
-段落可以自然改写，但不能合并/删除章节、表格、脚注或限定条件，不能增加新事实。
-输出完整JSON title,excerpt,body_html,tags。title以Eco-GEO:开头。
-原文：{json.dumps(original, ensure_ascii=False)}"""
+            base_prompt = ""  # All translation work runs on the pinned local CPU model.
         feedback: dict = _revision_feedback(audit) if resume_audit is not None else {}
         previous = normalize_article(audit["attempts"][-1]["article"], lang) if resume_audit is not None else None
         start_revision = audit["attempts"][-1]["revision"] + 1 if resume_audit is not None else 0
@@ -1230,9 +1233,13 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             print(f"Insight {lang}: resuming after revision {start_revision - 1}; at most {attempt_budget} new drafts", flush=True)
         else:
             attempt_budget = int(os.environ.get("INSIGHT_MAX_REVISIONS", "2")) + 1
+        if lang != "zh":
+            # Repeating a deterministic translation must not repeat paid reviews.
+            # Failures retain per-block checkpoints for a corrected-source rerun.
+            attempt_budget = 1
         for revision in range(start_revision, start_revision + attempt_budget):
             prompt = base_prompt
-            if feedback:
+            if feedback and lang == "zh":
                 prompt += f"""\n上稿未通过审查。逐项处理required_fixes的每一个ID，先解决全部blocker
 和结构问题，再重构低分维度对应的论证、表格或计算；不能只追加免责声明、增加篇幅，
 不能删除实质分析来躲避审查。保留过去已修正的事实边界，不得重新引入此前blocker。
@@ -1254,15 +1261,17 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 作者的回应仅用于审计，最终仍由独立主编审稿，不能代替事实核查或改变分数门槛。
 上稿：{json.dumps(previous, ensure_ascii=False)}
 完整修订任务：{json.dumps(feedback, ensure_ascii=False)}"""
-                if lang != "zh":
-                    prompt += "\n当前是译稿修订：以上分析重构要求仅适用于中文创作。译稿只能依据中文原文修复忠实度、措辞和格式，不能新增或改动原文的方案、表格、数字、假设及结论；若问题来自中文原文自身，明确报告，不能在译稿中自行补造。"
-                    prompt += "\n数值差异按 numeric_changes 各字段的 block_differences 定位原文与译稿。公式和阈值中的数字字符须原样保留，例如 ΔQ=0 不能译为 ΔQ is zero。修复对应段落，不能在无关位置追加数字凑齐次数；unpaired_candidates 仅为线索，须先核对完整原文位置。"
             draft_origin = "editorial_revision" if editorial_revision is not None and revision == start_revision else "model"
-            if draft_origin == "editorial_revision":
+            if lang != "zh":
+                draft_origin = "offline_translation"
+                checkpoint_dir = Path(os.environ.get("INSIGHT_OFFLINE_CHECKPOINT_DIR", ".artifacts/offline-translations"))
+                raw = translate_article_offline(original, lang,
+                    checkpoint_path=checkpoint_dir / f"{topic.idx}-{lang}-{audit['source_article_sha256'][:16]}.json")
+            elif draft_origin == "editorial_revision":
                 raw = editorial_revision
             else:
                 raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
-                                   max_tokens=token_budget("INSIGHT_MAX_TOKENS" if lang == "zh" else "INSIGHT_TRANSLATION_MAX_TOKENS", 48000))
+                                   max_tokens=token_budget("INSIGHT_MAX_TOKENS", 48000))
             normalization = {}
             try:
                 article = normalize_article(raw, lang, normalization=normalization)
@@ -1280,6 +1289,8 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                        "metadata_errors": metadata_errors,
                        "metadata_state": "warning" if metadata_errors else "valid",
                        "feedback_applied": feedback, "review_state": "not_started"}
+            if lang != "zh":
+                attempt["translation_provenance"] = raw["translation_provenance"]
             errors = list(structural["errors"])
             audit["attempts"].append(attempt)
             # Preserve each authored draft even if a later model request fails.
@@ -1295,7 +1306,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             # Auxiliary author-response formatting cannot prevent a sound draft
             # from receiving its independent factual and editorial review. Repair
             # it once only when the article itself already passes every gate.
-            if not errors and metadata_errors:
+            if not errors and metadata_errors and lang == "zh":
                 attempt["metadata_state"] = "repair_pending"
                 write_audit(audit_path, audit)
                 metadata_repair = _repair_revision_metadata(article, raw.get("revision_response"), feedback, api_key, lang)

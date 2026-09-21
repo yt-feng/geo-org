@@ -46,6 +46,10 @@ def event(delta=None, finish_reason=None, *, usage=None):
 
 class StreamingTests(unittest.TestCase):
     def setUp(self):
+        for name in ("begin_request", "complete_request"):
+            policy = patch.object(ip, name)
+            policy.start()
+            self.addCleanup(policy.stop)
         environment = patch.dict(os.environ, {"INSIGHT_API_TIMEOUT": "300", "INSIGHT_API_DEADLINE": "1200"})
         environment.start()
         self.addCleanup(environment.stop)
@@ -845,7 +849,8 @@ class PipelineTests(unittest.TestCase):
         response = MagicMock()
         response.__enter__.return_value.read.return_value = json.dumps({"choices": [{
             "finish_reason": "length", "message": {"content": '{"title":"valid JSON"}'}}]})
-        with patch.object(ip.urllib.request, "urlopen", return_value=response), patch.object(ip.gb, "RETRIES", 1):
+        with patch.object(ip.urllib.request, "urlopen", return_value=response), patch.object(ip.gb, "RETRIES", 1), \
+                patch.object(ip, "begin_request"), patch.object(ip, "complete_request"):
             with self.assertRaisesRegex(RuntimeError, "incomplete output"):
                 ip.request_json("test", "test-key", stage="test")
 

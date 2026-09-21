@@ -29,6 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
+    env:
+      DEEPSEEK_USAGE_LOG: .artifacts/usage/deepseek.jsonl
+      DEEPSEEK_MAX_RUN_REQUESTS: "12"
+      DEEPSEEK_MAX_RUN_TOKENS: "600000"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,6 +79,18 @@ jobs:
           python scripts/enhance_blog_index.py
           python scripts/i18n_site.py
           python scripts/authority_site.py
+
+      - name: Summarize paid usage by stage
+        if: always()
+        run: python scripts/deepseek_cost_policy.py --summary
+
+      - name: Preserve paid usage ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepseek-usage-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/usage/
+          retention-days: 14
 
       - name: Commit generated blog
         run: |
