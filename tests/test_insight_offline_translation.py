@@ -39,6 +39,46 @@ class FakeTranslator:
 
 
 class OfflineArticleTests(unittest.TestCase):
+    def test_domain_noun_glossary_preserves_full_sentence_quantities_and_opaque_resources(self):
+        source = '<p>先核对事实，再扩大内容投入，预算为1000元，错误率≤5%。<a href="https://example.org/内容投资" title="内容投入">内容投资</a></p>'
+        for target, noun in (("en", "content investment"), ("ar", "الاستثمار في المحتوى")):
+            model_inputs = []
+
+            class Engine:
+                def translate(self, text, source, target):
+                    model_inputs.append(text)
+                    mappings = {"en": {"先核对事实，再扩大": "First verify the facts, then expand ", "，预算为": ", the budget is ",
+                                       "元": " yuan", "，错误率": ", error rate "},
+                                "ar": {"先核对事实，再扩大": "تحقق أولاً من الحقائق، ثم زد ", "，预算为": "، الميزانية ",
+                                       "元": " يوان", "，错误率": "، معدل الخطأ "}}
+                    for old, new in mappings[target].items():
+                        text = text.replace(old, new)
+                    return text.replace("。", ".")
+
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
+                translator = hymt.HyMTOfflineTranslator(cache_dir=directory, engine_factory=lambda *_: Engine())
+                result = translator.translate(source, target, "zh")
+                self.assertEqual(len(model_inputs), 1)
+                self.assertIn("1000元", model_inputs[0])
+                self.assertIn("错误率≤5%", model_inputs[0])
+                self.assertNotIn("内容投入", model_inputs[0])
+                self.assertNotIn("内容投资", model_inputs[0])
+                self.assertIn("先核对事实，再扩大", model_inputs[0])
+                self.assertEqual(result.count(noun), 2)
+                self.assertIn('<a href="https://example.org/内容投资" title="内容投入">', result)
+                offline.validate_block(source, result, target)
+
+    def test_standalone_domain_noun_needs_no_engine_and_generic_investment_is_not_mapped(self):
+        engine_factory = Mock(side_effect=AssertionError("Canonical noun needs no inference"))
+        with tempfile.TemporaryDirectory() as directory:
+            translator = hymt.HyMTOfflineTranslator(cache_dir=directory, engine_factory=engine_factory)
+            self.assertEqual(translator.translate("内容投入", "ar", "zh"), "الاستثمار في المحتوى")
+            self.assertEqual(translator.translate("内容投资", "en", "zh"), "content investment")
+        engine_factory.assert_not_called()
+        masked, _, terms = hymt._mask("设备投入和内容投入", "ar")
+        self.assertIn("设备投入", masked)
+        self.assertEqual(list(terms.values()), ["الاستثمار في المحتوى"])
+
     def test_real_translator_keeps_pure_protected_arabic_tags_without_starting_engine(self):
         original = {"title": "Eco-GEO", "excerpt": "AI, SOV, ROI", "body_html": '<p>SEO</p>',
                     "tags": ["GEO", "ChatGPT", "DeepSeek"]}

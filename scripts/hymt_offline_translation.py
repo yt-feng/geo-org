@@ -29,7 +29,7 @@ MANIFEST = json.loads(MANIFEST_PATH.read_text(encoding='utf-8'))
 PROVIDER = 'hymt'
 MODEL = MANIFEST['model']['repository']
 REVISION = MANIFEST['model']['revision']
-MODEL_ID = f"{MODEL}@{REVISION}:Q8_0:insight-html-v2-protected-terms:{hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()[:16]}"
+MODEL_ID = f"{MODEL}@{REVISION}:Q8_0:insight-html-v3-domain-nouns:{hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()[:16]}"
 INSTALL_COMMAND = 'Use .github/actions/setup-offline-translation on a Linux GitHub Actions runner'
 _PLACEHOLDERS = re.compile(r'__[A-Za-z0-9_]+__')
 _LETTERS = re.compile(r'[A-Za-z\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af\u0600-\u06ff]')
@@ -53,6 +53,12 @@ _OPAQUE = re.compile(
     r'|\\.', re.DOTALL)
 _ENGINES: dict[str, object] = {}
 _LOCK = threading.RLock()
+# Narrow noun concepts only, never whole claims, quantities, units or generic
+# verbs such as 投入. Content investment must not become information input in a
+# short marketing title with little context. HTML/resources are masked first.
+_INSIGHT_NOUN_GLOSSARY = (
+    (r'内容(?:投入|投资)', {'en': 'content investment', 'ar': 'الاستثمار في المحتوى'}),
+)
 # Finance vocabulary constrains individual concepts, never whole sentences.
 # Rates must remain distinct from the corresponding absolute profit amounts.
 _KOREAN_FINANCIAL_TERMS = (
@@ -155,6 +161,9 @@ def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
         dictionary[token] = value
         return token
     masked = _OPAQUE.sub(lambda match: reserve(match.group(), replacements), text)
+    for pattern, destinations in _INSIGHT_NOUN_GLOSSARY:
+        if target in destinations:
+            masked = re.sub(pattern, lambda _match, term=destinations[target]: reserve(term, terms), masked)
     if target == 'ko':
         for pattern, term, _is_rate in _KOREAN_FINANCIAL_TERMS:
             masked = re.sub(pattern, lambda _match, term=term: reserve(term, terms), masked, flags=re.I)
@@ -317,6 +326,13 @@ class HyMTOfflineTranslator:
         key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
         path = self.cache_dir / key[:2] / f'{key}.json'
         masked, replacements, terms = _mask(core, target)
+        # A standalone controlled noun is already translated; do not ask the
+        # model to infer prose from a string consisting only of placeholders.
+        if not _LETTERS.search(_PLACEHOLDERS.sub('', masked)):
+            value = _restore_terms(masked, terms)
+            for token, original in replacements.items():
+                value = value.replace(token, original)
+            return leading + value + trailing
         try:
             cached = json.loads(path.read_text(encoding='utf-8'))
             if all(cached.get(name) == value for name, value in identity.items()):

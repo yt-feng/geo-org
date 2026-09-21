@@ -76,6 +76,8 @@ def main():
                 assert len(interrupted["blocks"]) == 3 and not interrupted["complete"]
                 result = translate_article(ARTICLE, language, checkpoint_path=checkpoint, translator=translator)
                 assert result["translation_provenance"]["reused_blocks"] == 3
+                canonical_noun = "content investment" if language == "en" else "الاستثمار في المحتوى"
+                assert canonical_noun in result["title"], "Content investment must retain its marketing meaning in the title"
                 replay = translate_article(ARTICLE, language, checkpoint_path=checkpoint, translator=translator)
                 assert replay["translation_provenance"]["translated_blocks"] == 0
                 assert all(result[key] == replay[key] for key in ARTICLE)
