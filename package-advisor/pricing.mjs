@@ -1,6 +1,6 @@
-import { catalog, cnCatalog, getOptionalServices, CN_UNIT_PRICE, INTENT_DEFINITION, LANGUAGE_LABELS, OVERSEAS_LANGUAGES, LANGUAGE_PRICE_FACTORS, SHARED_SERVICE_IDS, EXTRA_LANGUAGE_SHARE, SOCIAL_QUARTER_PRICES, SOCIAL_CADENCE_FACTORS, ESTIMATE_NOTICE, PLATFORM_LABELS } from './catalog.mjs';
+import { catalog, cnCatalog, getOptionalServices, CN_UNIT_PRICE, INTENT_DEFINITION, LANGUAGE_LABELS, OVERSEAS_LANGUAGES, LANGUAGE_PRICE_FACTORS, SHARED_SERVICE_IDS, EXTRA_LANGUAGE_SHARE, SOCIAL_QUARTER_PRICES, SOCIAL_CADENCE_FACTORS, ESTIMATE_NOTICE, PLATFORM_LABELS, WEBSITE_PROFILES } from './catalog.mjs';
 
-const INPUT_KEYS = new Set(['budget', 'budgetMode', 'market', 'scope', 'goal', 'stage', 'notes', 'modules', 'listening', 'languages']);
+const INPUT_KEYS = new Set(['budget', 'budgetMode', 'market', 'scope', 'goal', 'stage', 'notes', 'modules', 'listening', 'languages', 'website']);
 const SCOPE_KEYS = new Set(['productLines', 'scenarios', 'audiences', 'intents']);
 const LISTENING_KEYS = new Set(['enabled', 'platforms', 'depth', 'cadence', 'markets', 'languages']);
 const DEFAULT_SCOPE = { productLines: 1, scenarios: 3, audiences: 3, intents: 30 };
@@ -11,6 +11,16 @@ const systemPendingIds = new Set(['OVERSEAS_SCOPE', 'OVERSEAS_PROGRAM_DISCOVERY'
 const object = value => Boolean(value && typeof value === 'object' && !Array.isArray(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value)));
 const safeInteger = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 const fail = code => { throw new Error(code); };
+
+function normalizeWebsite(value) {
+  if (value === undefined) return undefined;
+  if (!object(value) || Object.keys(value).some(key => !['mode', 'completion'].includes(key))) return fail('invalid_website');
+  const mode = value.mode === undefined ? 'existing' : value.mode;
+  const completion = value.completion === undefined ? 'medium' : value.completion;
+  if (!['existing', 'rebuild'].includes(mode) || !['high', 'medium', 'low', 'full'].includes(completion)) return fail('invalid_website');
+  if (mode === 'rebuild' && completion !== 'full') return fail('invalid_website');
+  return { mode, completion };
+}
 
 export function calculateChineseUnits(scope) {
   const scopeUnits = scope.productLines * Math.ceil(scope.scenarios / 3) * Math.ceil(scope.audiences / 3);
@@ -57,7 +67,8 @@ export function normalizeAdvisorInput(value) {
   if (typeof listening.enabled !== 'boolean' || !['mentions', 'insights', 'strategy'].includes(listening.depth) || !['monthly', 'weekly', 'daily', 'realtime'].includes(listening.cadence) || !safeInteger(listening.markets, 1, 50) || !safeInteger(listening.languages, 1, 30)) return fail('invalid_listening');
   if (!Array.isArray(listening.platforms) || listening.platforms.length > 20 || listening.platforms.some(platform => typeof platform !== 'string' || platform.trim().length < 1 || platform.length > 80 || CONTROLS.test(platform))) return fail('invalid_listening');
   listening.platforms = [...new Set(listening.platforms.map(platform => platform.trim()))];
-  const input = { budget: value.budget, budgetMode, market, languages, scope, goal: value.goal, stage: value.stage, notes: value.notes?.trim() || '', listening };
+  const website = normalizeWebsite(value.website);
+  const input = { budget: value.budget, budgetMode, market, languages, scope, goal: value.goal, stage: value.stage, notes: value.notes?.trim() || '', listening, ...(website ? { website } : {}) };
   input.modules = normalizeSelections(value.modules, input);
   return input;
 }
@@ -129,6 +140,21 @@ function estimatedLine(service, quantity, input, required = false) {
   };
 }
 
+function websiteLine(input) {
+  const profile = WEBSITE_PROFILES[input.website.mode][input.website.completion];
+  const pricingDetails = profile.components.map(([label, amount, standalonePrice]) => ({
+    language: 'shared', label, unitPrice: amount, quantity: 1, amount, listPrice: standalonePrice,
+  }));
+  return {
+    id: 'WEBSITE_SCOPE', name: profile.label, quantity: 1, unitPrice: profile.packagePrice,
+    total: profile.packagePrice, listPrice: profile.standalonePrice, unit: '网站方案',
+    deliverables: [...profile.deliverables], prerequisites: ['客户提供网站后台、域名与必要的技术权限；第三方主题、插件、服务器及媒体采购费用另列'],
+    required: true, optional: false, pricingStatus: 'estimate', estimated: true,
+    pricingDetails, website: { mode: input.website.mode, completion: input.website.completion },
+    details: [profile.description, `单独购买参考价 ${money(profile.standalonePrice)}；纳入本次 GEO 组合后为 ${money(profile.packagePrice)}，组合参考节省 ${money(profile.standalonePrice - profile.packagePrice)}。`, `包含：${profile.components.map(([label]) => label).join('、')}。`],
+  };
+}
+
 function scopeDetails(input) {
   return [`服务语种：${input.languages.map(language => LANGUAGE_LABELS[language]).join('、')}`, `${input.scope.productLines} 条产品线；每产品线 ${input.scope.scenarios} 个场景、${input.scope.audiences} 类客群`, `全项目 ${input.scope.intents} 个去重决策主题；同义问法不重复计数`, INTENT_DEFINITION];
 }
@@ -190,6 +216,7 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
   const quantities = new Map();
   let hasSystemScope = Boolean(plan.enterprise);
   for (const item of [...plan.items, ...(plan.pendingItems || [])]) {
+    if (item.id === 'WEBSITE_SCOPE') continue;
     if (item.id === 'LANGUAGE_SCOPE') continue;
     if (systemPendingIds.has(item.id)) { if (item.id !== 'OVERSEAS_SCOPE') hasSystemScope = true; continue; }
     const service = services.get(item.id);
@@ -226,7 +253,8 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
     else if (selected[id] > 0) scopeExclusions.delete(id);
   }
   const scopeSelections = { ...Object.fromEntries([...scopeExclusions].map(id => [id, 0])), ...selected };
-  const items = [...quantities].map(([id, quantity]) => id === 'SOCIAL_LISTENING' ? socialLine(input, services) : estimatedLine(services.get(id), quantity, input, coreMinimums[id] !== undefined || (id === setupId && quantities.has(pitchId))));
+  const items = input.website ? [websiteLine(input)] : [];
+  items.push(...[...quantities].map(([id, quantity]) => id === 'SOCIAL_LISTENING' ? socialLine(input, services) : estimatedLine(services.get(id), quantity, input, coreMinimums[id] !== undefined || (id === setupId && quantities.has(pitchId)))));
   const expanded = input.market === 'overseas' && (input.scope.productLines > 1 || input.scope.scenarios > 3 || input.scope.audiences > 3 || input.scope.intents > 30);
   if (input.market === 'overseas' && (hasSystemScope || expanded)) {
     const scope = scopeLine(input, quantities, scopeSelections, services);
@@ -246,6 +274,7 @@ export function customizePricedPlan(plan, rawInput, selections = {}) {
     '每行交付范围以一个计价单位为准，实际交付数量按所选服务及数量确认。',
     input.market === 'cn' ? '中文季度基包与增项采用各自参考服务价；增项用于基包之外的新增交付。' : '共享研究与事实资料优先复用；内容和渠道按所选语种完成本地表达、术语核对及审校，各语种版本对应同一份内容资产。',
   ];
+  if (input.website) assumptions.push(`网站基础服务已纳入：${websiteLine(input).name}。本行显示单独购买参考价与组合优惠价；服务器、主题、插件及第三方采购费用另列。`);
   if (input.budgetMode === 'discuss') assumptions.push('项目预算与服务范围另行确认。');
   if (input.market === 'cn') assumptions.push(calculateChineseUnits(input.scope).scopeBasis);
   if (!count(prefix + 'W01')) assumptions.push('客户提供可核验事实、获准使用的资料和审校负责人；资料不足时先确认补充范围。');

@@ -37,6 +37,17 @@ are stated separately in the delivery schedule. Chinese optional services use an
 independent, numeric reference fee table (`CN_REFERENCE_PRICES`), rather than
 inheriting the overseas tariff. The confirmed base remains CNY 50,000 per unit.
 
+Website foundation is a required customer choice in the page. The visitor can
+choose an existing-site optimization profile (high, medium or low completion)
+or a GEO-ready rebuild. Each profile has a customer-facing package price and a
+crossed standalone reference price; the rebuild profile uses CNY 100,000 as its
+standalone reference and CNY 78,000 in the wider GEO package. The proposal
+breaks the website line into build or structural work, framework and knowledge
+architecture, SEO, GEO pages and FAQ, plus first-period maintenance and scheduled
+updates. Hosting, themes, plugins, paid media and other third-party purchases
+remain separate. These are preliminary sales references, not internal cost or
+margin fields.
+
 Overseas enterprise and expanded scopes use the same coverage axes to plan a
 quarter's work. Each coverage unit requests W04 × 1, W05 × 1 and W22 × 3, worth
 CNY 30,000 at the English reference tariff. Existing quantities of each component

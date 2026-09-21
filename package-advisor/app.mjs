@@ -1,5 +1,5 @@
 import { createRecommendation, customizePlan } from './planner.mjs';
-import { catalog, cnCatalog, getOptionalServices, LANGUAGE_LABELS } from './catalog.mjs';
+import { catalog, cnCatalog, getOptionalServices, LANGUAGE_LABELS, WEBSITE_PROFILES } from './catalog.mjs';
 import { budgetToPosition, positionToBudget, SCALE_DISCUSS_POSITION, MAX_SAFE_BUDGET } from './budget-ui.mjs';
 import { prepareContactHandoff } from './handoff.mjs';
 import { estimateServiceUnitPrice } from './pricing.mjs';
@@ -46,6 +46,11 @@ function node(tag, className, text) {
 function currentMarket() { return form.elements.market.value; }
 function selectedLanguages() { return currentMarket() === 'cn' ? ['zh'] : [...form.querySelectorAll('[name="service-language"]:checked')].map((field) => field.value); }
 function languageText() { return selectedLanguages().map((language) => languageLabels[language]).join('、'); }
+function websiteSelection() {
+  const mode = form.elements['website-mode']?.value || 'existing';
+  const completion = mode === 'rebuild' ? 'full' : (form.elements['website-completion']?.value || 'medium');
+  return { mode, completion };
+}
 function priceLabel(plan) {
   if (isPending(plan)) return '已配置服务初步报价';
   return currentMarket() === 'cn' ? '本季度初步报价合计' : '本期服务初步报价合计';
@@ -79,6 +84,7 @@ function getInput() {
     notes: $('notes').value.trim(),
     modules: { ...moduleSelections[currentMarket()] },
     listening,
+    website: websiteSelection(),
   };
 }
 function setMessage(message = '', isError = false) {
@@ -142,6 +148,14 @@ function updateControls() {
     button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
   });
   $('notes-count').textContent = `${$('notes').value.length} / 1600`;
+  const website = input.website;
+  const websiteProfile = WEBSITE_PROFILES[website.mode][website.completion];
+  const websiteSaving = websiteProfile.standalonePrice - websiteProfile.packagePrice;
+  const websiteSavingText = websiteSaving > 0 ? `，组合参考节省 ${money(websiteSaving)}（约 ${Math.round(websiteProfile.packagePrice / websiteProfile.standalonePrice * 100)} 折）` : '';
+  $('website-completion-wrap').hidden = website.mode !== 'existing';
+  $('website-price-note').textContent = website.mode === 'rebuild'
+    ? `当前按“重新建站”估算：单独购买参考价 ${money(websiteProfile.standalonePrice)}，纳入 GEO 组合后初步价 ${money(websiteProfile.packagePrice)}${websiteSavingText}。`
+    : `当前按“${websiteProfile.label.replace('优化现有网站 · ', '')}”估算：单独购买参考价 ${money(websiteProfile.standalonePrice)}，纳入 GEO 组合后初步价 ${money(websiteProfile.packagePrice)}${websiteSavingText}。`;
   $('chinese-base').hidden = input.market !== 'cn';
   $('overseas-languages').hidden = chinese;
   form.querySelectorAll('[name="service-language"]').forEach((field) => { field.disabled = chinese; });
@@ -316,10 +330,12 @@ function renderSelectedPlan() {
     const list = node('ul', 'item-deliverables'); [...(item.deliverables || []), ...(item.details || [])].forEach((text) => list.append(node('li', '', text))); main.append(list, moduleControls(item));
     if (item.pricingDetails?.length) {
       const details = node('details', 'item-estimate-details'); details.append(node('summary', '', '查看初步费用构成'));
-      const breakdown = node('ul'); item.pricingDetails.forEach((part) => breakdown.append(node('li', '', `${part.label || languageLabels[part.language] || '服务费用'}：${money(part.amount)}${Number.isFinite(part.quantity) && Number.isFinite(part.unitPrice) ? `（${money(part.unitPrice)} × ${part.quantity}）` : ''}`)));
+      const breakdown = node('ul'); item.pricingDetails.forEach((part) => breakdown.append(node('li', '', `${part.label || languageLabels[part.language] || '服务费用'}：${money(part.amount)}${Number.isFinite(part.quantity) && Number.isFinite(part.unitPrice) ? `（${money(part.unitPrice)} × ${part.quantity}）` : ''}${Number.isFinite(part.listPrice) && part.listPrice > part.amount ? `；单独参考 ${money(part.listPrice)}` : ''}`)));
       details.append(breakdown); main.append(details);
     }
-    const price = node('div', 'item-price', money(item.total)); price.append(node('span', 'item-unit', `${money(item.unitPrice)} × ${item.quantity} ${item.unit || '项'}`)); row.append(main, price); return row;
+    const price = node('div', 'item-price');
+    if (Number.isFinite(item.listPrice) && item.listPrice > item.total) price.append(node('del', 'item-list-price', `单独 ${money(item.listPrice)}`));
+    price.append(node('strong', '', money(item.total)), node('span', 'item-unit', `${money(item.unitPrice)} × ${item.quantity} ${item.unit || '项'}`)); row.append(main, price); return row;
   }));
   const pending = plan.pendingItems || [];
   $('pending-quote').hidden = !pending.length && !isPending(plan);
@@ -379,7 +395,7 @@ function renderDeliveryValue(plan) {
 }
 function renderComposition(plan) {
   $('composition-language').textContent = `服务语言：${languageText()}。所选语种、数量与服务范围均计入本次初步报价。`;
-  const rows = plan.items.map((item) => { const row = node('div', 'reuse-line'); const detail = node('div'); detail.append(node('strong', '', item.name), node('span', '', `${money(item.unitPrice)} × ${item.quantity} ${item.unit || '项'}`)); row.append(detail, node('b', '', money(item.total))); return row; });
+  const rows = plan.items.map((item) => { const row = node('div', 'reuse-line'); const detail = node('div'); detail.append(node('strong', '', item.name), node('span', '', `${money(item.unitPrice)} × ${item.quantity} ${item.unit || '项'}${Number.isFinite(item.listPrice) && item.listPrice > item.total ? ` · 单独参考 ${money(item.listPrice)}` : ''}`)); row.append(detail, node('b', '', money(item.total))); return row; });
   (plan.pendingItems || []).forEach((item) => { const row = node('div', 'reuse-line'); const detail = node('div'); detail.append(node('strong', '', item.name), node('span', '', `${item.quantity} ${item.unit || '项'} · 未计入小计`)); row.append(detail, node('b', '', '完善范围后估算')); rows.push(row); });
   $('composition-lines').replaceChildren(...rows);
   $('composition-total-label').textContent = priceLabel(plan);

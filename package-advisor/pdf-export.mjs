@@ -213,10 +213,12 @@ export async function createProposalPdf({ input, plan, source = '当前配置预
     const detailCount = list(item.pricingDetails).length;
     const groupHeight = Math.max(2, wrap(`${item.name}${item.required ? ' · 基础必需' : ''}`, tableWidths[0] - 16, 10.5).length) * 15.5 + 20 + detailCount * 42;
     if (groupHeight < PAGE[1] - 180 && y - groupHeight < BOTTOM) { newPage(); tableHeader(); }
-    tableRow([`${item.name}${item.required ? ' · 基础必需' : ''}`, `${item.quantity} ${item.unit || ''}`, money(item.unitPrice), money(item.total)]);
+    const standalone = Number.isFinite(item.listPrice) && item.listPrice > item.total ? ` · 单独参考 ${money(item.listPrice)}` : '';
+    tableRow([`${item.name}${item.required ? ' · 基础必需' : ''}${standalone}`, `${item.quantity} ${item.unit || ''}`, money(item.unitPrice), money(item.total)]);
     const details = list(item.pricingDetails).filter(detail => Number.isFinite(detail.unitPrice) && Number.isFinite(detail.quantity) && Number.isFinite(detail.amount));
     for (const detail of details) {
-      tableRow([`  ${detail.label || LANGUAGE_LABELS[detail.language] || detail.language || '费用构成'}`, `${detail.quantity}`, money(detail.unitPrice), money(detail.amount)], { detail: true });
+      const detailStandalone = Number.isFinite(detail.listPrice) && detail.listPrice > detail.amount ? `（单独参考 ${money(detail.listPrice)}）` : '';
+      tableRow([`  ${detail.label || LANGUAGE_LABELS[detail.language] || detail.language || '费用构成'}${detailStandalone}`, `${detail.quantity}`, money(detail.unitPrice), money(detail.amount)], { detail: true });
     }
     if (details.length && Math.abs(details.reduce((amount, detail) => amount + detail.amount, 0) - item.total) > 0.01) {
       tableRow(['  拆分说明待顾问核对，本项以服务行金额为准。', '', '', ''], { detail: true });
