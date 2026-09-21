@@ -370,13 +370,23 @@ class HyMTOfflineTranslator:
         except (OSError, ValueError, KeyError, TypeError, OfflineTranslationError):
             try:
                 with _LOCK:
-                    value = self._engine(detected, target).translate(masked, detected, target)
-                if self._diagnostic_callback is not None:
-                    self._diagnostic_callback({'model_input': masked, 'raw_translation': value,
-                                               'source_language': detected, 'target_language': target,
-                                               'controlled_terms': dict(terms)})
-                value = _restore_table_edges(masked, value)
-                warnings = validate_result(masked, value, detected, target, quality_mode=self.quality_mode)
+                    engine = self._engine(detected, target)
+                    for attempt in range(2):
+                        value = engine.translate(masked, detected, target)
+                        if self._diagnostic_callback is not None:
+                            self._diagnostic_callback({'model_input': masked, 'raw_translation': value,
+                                                       'source_language': detected, 'target_language': target,
+                                                       'controlled_terms': dict(terms)})
+                        value = _restore_table_edges(masked, value)
+                        try:
+                            warnings = validate_result(masked, value, detected, target, quality_mode=self.quality_mode)
+                            break
+                        except OfflineTranslationError as error:
+                            # The pinned model occasionally emits a malformed
+                            # placeholder on one decode. Retry that exact block
+                            # once; other structural failures remain fail-closed.
+                            if ("protected placeholder" not in str(error) or attempt == 1):
+                                raise
             except OfflineTranslationError:
                 raise
             except Exception as error:
