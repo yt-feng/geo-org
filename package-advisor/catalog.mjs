@@ -1286,3 +1286,50 @@ export const SOCIAL_CADENCE_FACTORS = { monthly: 1, weekly: 2, daily: 4, realtim
 export const ESTIMATE_NOTICE = '初步报价，实际以正式报价单为准。';
 
 export const PLATFORM_LABELS = { linkedin: 'LinkedIn', reddit: 'Reddit', youtube: 'YouTube', x: 'X', xiaohongshu: '小红书', douyin: '抖音', weibo: '微博', wechat: '微信' };
+
+// Customer-facing website service references. The crossed price is the
+// standalone reference; the package price is used when the website work is
+// included in a wider GEO plan. These are sales references, never internal
+// cost or margin data.
+export const WEBSITE_PROFILES = {
+  existing: {
+    high: {
+      label: '优化现有网站 · 完成度高', packagePrice: 24000, standalonePrice: 30000,
+      description: '保留现有网站与内容基础，集中修复结构、SEO、GEO入口和首期维护。',
+      deliverables: ['现有网站结构与技术优化', 'SEO基础修复与索引检查', 'GEO页面、FAQ与知识入口优化', '首期维护与定时更新安排'],
+      components: [
+        ['网站结构与技术优化', 10000, 12000], ['SEO基础修复', 6000, 8000],
+        ['GEO页面与FAQ优化', 6000, 7000], ['维护与定时更新（首期）', 2000, 3000],
+      ],
+    },
+    medium: {
+      label: '优化现有网站 · 完成度中', packagePrice: 42000, standalonePrice: 55000,
+      description: '适合已有官网但结构、内容和技术基础需要系统整理的项目。',
+      deliverables: ['现有网站结构重整与技术修复', '页面框架与知识架构校准', 'SEO基础建设与页面优化', 'GEO页面、FAQ与证据入口优化', '首期维护与定时更新安排'],
+      components: [
+        ['结构与技术优化', 16000, 20000], ['页面框架与知识架构', 8000, 10000],
+        ['SEO基础建设', 8000, 10000], ['GEO页面与FAQ优化', 7000, 10000], ['维护与定时更新（首期）', 3000, 5000],
+      ],
+    },
+    low: {
+      label: '优化现有网站 · 完成度低', packagePrice: 58000, standalonePrice: 75000,
+      description: '适合网站资料、结构或技术基础不足，需要边整理边重构的项目。',
+      deliverables: ['现有网站可用性与资料盘点', '核心页面与网站框架重构', 'SEO技术与内容基础建设', 'GEO页面、FAQ与证据入口建设', '首期维护与定时更新安排'],
+      components: [
+        ['网站盘点与框架重构', 22000, 30000], ['技术框架与知识架构', 10000, 12000],
+        ['SEO基础建设', 10000, 12000], ['GEO页面与FAQ建设', 10000, 12000], ['维护与定时更新（首期）', 6000, 9000],
+      ],
+    },
+  },
+  rebuild: {
+    full: {
+      label: '重新建站 · GEO基础站', packagePrice: 78000, standalonePrice: 100000,
+      description: '从网站框架、页面、SEO与GEO入口重新建设，含首期维护和定时更新安排。',
+      deliverables: ['网站建设与页面迁移', '技术框架与知识架构', 'SEO基础建设与索引配置', 'GEO页面、FAQ与证据入口建设', '首期维护与定时更新安排'],
+      components: [
+        ['网站建设与页面迁移', 45000, 60000], ['技术框架与知识架构', 12000, 15000],
+        ['SEO基础建设', 8000, 10000], ['GEO页面与FAQ建设', 8000, 10000], ['维护与定时更新（首期）', 5000, 5000],
+      ],
+    },
+  },
+};

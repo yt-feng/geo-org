@@ -60,6 +60,23 @@
               </div>
               <div class="chinese-base" id="chinese-base" hidden><strong>¥50,000 <span>/ 季度基础包</span></strong><p>每单元：1 条产品线、3 个场景、3 类客群、最多 30 个去重意图主题。超范围按标准单元核算，下面会展开计算。</p></div>
             </fieldset>
+            <fieldset class="control-group website-group">
+              <legend class="control-label"><span class="control-number">2</span> 网站基础（必选）</legend>
+              <p class="field-help">网站是 GEO 交付的承接入口。请选择优化现有网站，或从头建设一个适合 SEO 与 GEO 的基础站；这项服务会自动计入每套方案。</p>
+              <div class="website-switch" role="radiogroup" aria-label="网站服务方式">
+                <label class="choice"><input type="radio" name="website-mode" value="existing" checked><span><strong>优化现有网站</strong><small>按现有网站完成度估算通用初步价</small></span><span class="radio-mark" aria-hidden="true"></span></label>
+                <label class="choice"><input type="radio" name="website-mode" value="rebuild"><span><strong>重新建站</strong><small>网站建设、框架、SEO、GEO与首期维护打包</small></span><span class="radio-mark" aria-hidden="true"></span></label>
+              </div>
+              <div id="website-completion-wrap" class="website-completion">
+                <p class="control-label">现有网站完成度</p>
+                <div class="website-completion-options" role="radiogroup" aria-label="现有网站完成度">
+                  <label><input type="radio" name="website-completion" value="high"><span>高<small>结构和内容基础较完整</small></span></label>
+                  <label><input type="radio" name="website-completion" value="medium" checked><span>中<small>有官网，但需要系统整理</small></span></label>
+                  <label><input type="radio" name="website-completion" value="low"><span>低<small>资料、结构或技术基础不足</small></span></label>
+                </div>
+              </div>
+              <p class="website-price-note" id="website-price-note">当前按“完成度中”估算；页面明细会同时显示单独购买参考价和组合优惠价。</p>
+            </fieldset>
             <fieldset class="control-group goal-group">
               <legend class="control-label">这次最想解决什么？</legend>
               <label class="choice"><input type="radio" name="goal" value="visibility" checked><span class="choice-icon" aria-hidden="true">◎</span><span><strong>让目标客户更容易找到我</strong><small>先诊断 AI 如何介绍品牌，再补关键内容</small></span><span class="radio-mark" aria-hidden="true"></span></label>
@@ -67,7 +84,7 @@
               <label class="choice"><input type="radio" name="goal" value="authority"><span class="choice-icon" aria-hidden="true">↗</span><span><strong>建立当地市场的信任</strong><small>结合可信内容、行业来源与媒体沟通</small></span><span class="radio-mark" aria-hidden="true"></span></label>
             </fieldset>
             <div class="control-group budget-group">
-              <label class="control-label" for="budget"><span class="control-number">2</span><span id="budget-label">本期项目预算</span></label>
+              <label class="control-label" for="budget"><span class="control-number">3</span><span id="budget-label">本期项目预算</span></label>
               <div class="budget-bands" aria-label="选择预算档位">
                 <button type="button" class="budget-band" data-budget-band="light" aria-pressed="false"><span class="band-mark" aria-hidden="true"></span><span><strong><span class="band-title">轻量起步</span><em>¥5,000–30,000</em></strong><small>灵活专项 · 先完成一项重点工作</small></span></button>
                 <button type="button" class="budget-band active" data-budget-band="system" aria-pressed="true"><span class="band-mark" aria-hidden="true"></span><span><strong><span class="band-title">系统建设</span><em>¥30,000–150,000</em></strong><small>首期建设 · 按需组合诊断、内容与复测</small></span></button>
@@ -84,7 +101,7 @@
               <p class="field-help" id="budget-help">预算是服务配置的上限参考，不必一次用满。第三方媒体及平台采购另行确认。</p>
             </div>
             <fieldset class="control-group scope-group">
-              <legend class="control-label"><span class="control-number">3</span> 服务范围</legend>
+              <legend class="control-label"><span class="control-number">4</span> 服务范围</legend>
               <div class="scope-inputs"><label for="scope-product-lines">产品线<input type="number" id="scope-product-lines" min="1" max="100" step="1" value="1"><small>独立系列，如工业压缩机</small></label><label for="scope-scenarios">每产品线场景数<input type="number" id="scope-scenarios" min="1" max="100" step="1" value="3"><small>如新厂采购、旧机替换</small></label><label for="scope-audiences">每产品线客群数<input type="number" id="scope-audiences" min="1" max="100" step="1" value="3"><small>如采购、技术负责人</small></label><label for="scope-intents">全项目意图主题<input type="number" id="scope-intents" min="1" max="1000" step="1" value="30"><small>全项目总数，如选型主题</small></label></div>
               <p class="field-help">先填大致需求即可。产品线是独立产品系列；场景是使用或采购情境；客群是参与决策的人群。</p>
               <p class="scope-status" id="scope-status">1 条产品线、3 个场景、3 类客群、30 个需求主题，待确认优先范围。</p>

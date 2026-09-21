@@ -186,6 +186,22 @@ test('the Chinese quarterly base is exactly one 50000 unit and never borrows ove
   }
 });
 
+test('website foundation carries a numeric package price and standalone reference breakdown', () => {
+  const base = { ...INPUT, market: 'overseas', budget: 200000, website: { mode: 'rebuild', completion: 'full' } };
+  for (const plan of planner.createRecommendation(base).plans) {
+    const website = plan.items.find(item => item.id === 'WEBSITE_SCOPE');
+    assert.ok(website);
+    assert.equal(website.total, 78000);
+    assert.equal(website.listPrice, 100000);
+    assert.equal(website.pricingDetails.reduce((sum, detail) => sum + detail.amount, 0), website.total);
+    assert.ok(website.pricingDetails.some(detail => detail.label.includes('网站建设')));
+    assert.ok(website.pricingDetails.some(detail => detail.label.includes('维护')));
+  }
+  const existing = planner.createRecommendation({ ...base, website: { mode: 'existing', completion: 'high' } }).plans[0].items.find(item => item.id === 'WEBSITE_SCOPE');
+  assert.equal(existing.total, 24000);
+  assert.equal(existing.listPrice, 30000);
+});
+
 test('Chinese scope growth follows confirmed unit arithmetic rather than duplicating every topic by scene and audience', () => {
   for (const [scope, units] of [
     [{ productLines: 1, scenarios: 3, audiences: 3, intents: 30 }, 1],
