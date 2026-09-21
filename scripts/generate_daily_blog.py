@@ -389,7 +389,7 @@ def write_indexes(posts: List[Dict[str, str]], out_dir: Path) -> None:
 
 
 def localize_reviewed_article(topic, sources, api_key, original, audit_dir):
-    """Review independent translations concurrently; return only a complete pair."""
+    """Localize the reviewed source concurrently with nonblocking quality notes."""
     with ThreadPoolExecutor(max_workers=2, thread_name_prefix="insight-locale") as executor:
         pending = {lang: executor.submit(insight_pipeline.produce_article,
             topic, sources, api_key, lang=lang, original=original,
@@ -554,7 +554,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
             audit_path=audit_dir / "zh.json", resume_audit=resume_audit, editorial_revision=editorial_revision)
     articles = localize_with_source_recovery(topic, sources, api_key, articles["zh"], audit_dir)
     if set(articles) != {"zh", "en", "ar"}:
-        raise RuntimeError("All three reviewed languages are required before writing output")
+        raise RuntimeError("All three complete languages are required before writing output")
     author, initials = gb.deterministic_author(topic.title)
     publish_date = gb.today_publish_date()
     image = gb.image_url(topic)

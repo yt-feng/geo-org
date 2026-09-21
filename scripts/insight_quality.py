@@ -409,6 +409,47 @@ def _shape(parser: _FragmentParser) -> dict[str, Any]:
     }
 
 
+def validate_translation_publication(article, sources, lang, source_article):
+    """Publish readable local translations; report stylistic/semantic diagnostics.
+
+    The Chinese original has its own editorial gate. Localization must not send
+    it back through paid editorial scoring or reject it for ordinary wording.
+    """
+    diagnostics = validate_insight(article, sources, lang=lang, source_article=source_article)
+    errors = []
+    if not isinstance(article, Mapping) or not isinstance(source_article, Mapping):
+        return {"passed": False, "errors": ["Translation and source must be objects."], "warnings": [], "metrics": {}}
+    for key in ("title", "excerpt", "body_html"):
+        if not isinstance(article.get(key), str) or not article[key].strip():
+            errors.append(f"Translation requires a nonempty {key}.")
+    body = article.get("body_html") if isinstance(article.get("body_html"), str) else ""
+    original_body = source_article.get("body_html") if isinstance(source_article.get("body_html"), str) else ""
+    target, source = _parse(body), _parse(original_body)
+    errors.extend(target.errors)
+    if source.errors:
+        errors.append("Source article HTML is invalid.")
+    source_nodes, target_nodes = source.root.descendants(), target.root.descendants()
+    if [(node.tag, node.attrs) for node in source_nodes] != [(node.tag, node.attrs) for node in target_nodes]:
+        errors.append("Translation changed the source HTML structure or links.")
+    if len(source_nodes) == len(target_nodes):
+        for original, translated in zip(source_nodes, target_nodes):
+            if original.tag not in {"p", "li", "h2", "h3", "h4", "td", "th", "caption"}:
+                continue
+            before = len(re.sub(r"\s+", "", original.text()))
+            after = len(re.sub(r"\s+", "", translated.text()))
+            if before and not after:
+                errors.append("Translation lost a nonempty content block.")
+            elif before >= 200 and after < before * 0.15:
+                errors.append("Translation lost most of a substantial content block.")
+    if not target.root.text().strip():
+        errors.append("Translation has no visible body text.")
+    errors = list(dict.fromkeys(errors))
+    warnings = [value for value in diagnostics["errors"] if value not in errors]
+    metrics = {**diagnostics["metrics"], "semantic_review_required": False,
+               "publication_policy": "readable-translation-v1", "quality_warning_count": len(warnings)}
+    return {"passed": not errors, "errors": errors, "warnings": warnings, "metrics": metrics}
+
+
 def validate_insight(
     article: Mapping[str, Any],
     sources: list[Mapping[str, Any]],
