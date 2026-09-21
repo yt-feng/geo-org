@@ -469,6 +469,10 @@ def public_sources(sources: list[dict]) -> list[dict]:
 
 
 def review_errors(review: dict) -> list[str]:
+    if review.get("review_status") == "unavailable":
+        if review.get("reason") != "invalid_json" or not isinstance(review.get("error"), str) or not review["error"].strip():
+            return ["unavailable review record is incomplete"]
+        return []
     errors = []
     scores = review.get("scores", {})
     if not isinstance(scores, dict) or any(type(scores.get(key)) is not int or not 0 <= scores[key] <= 5 for key in SCORE_KEYS):
@@ -967,12 +971,33 @@ def _format_repair_fact_failures(review: dict) -> list[str]:
 def _saved_pass_review_errors(review: dict, sources: list[dict], required: list[dict]) -> list[str]:
     if not isinstance(review, dict):
         return ["saved pass requires a complete independent review"]
+    if review.get("review_status") == "unavailable":
+        return review_errors(review) if not _publishable_review_fallback(review, required) else []
     allowed = {source["id"] for source in sources}
     return list(dict.fromkeys(
         _review_contract_errors(review, required, allowed_source_ids=allowed)
         + _claim_review_errors(review, allowed) + _blocker_check_errors(review, required)
         + review_errors(review) + _format_repair_fact_failures(review)
     ))
+
+
+def _json_review_failure(error: Exception) -> bool:
+    """Recognize only malformed model JSON, not provider outages or review findings."""
+    message = str(error)
+    return "not valid JSON" in message or "response must be a JSON object" in message
+
+
+def _publishable_review_fallback(review: dict, required: list[dict] | None = None) -> bool:
+    return (isinstance(review, dict) and review.get("review_status") == "unavailable"
+            and review.get("reason") == "invalid_json" and not (required or []))
+
+
+def _unavailable_review(error: Exception) -> dict:
+    # Do not invent scores or claim checks. Structural/source gates still run;
+    # the missing semantic review is visible in the saved audit and article
+    # quality metadata so it can be revisited on a later run.
+    return {"review_status": "unavailable", "reason": "invalid_json",
+            "error": str(error)[:500], "issues": [], "blockers": [], "claim_checks": []}
 
 
 def validate_passed_chinese_audit(audit: dict, topic: gb.TopicRow) -> dict:
@@ -1125,10 +1150,12 @@ def reuse_passed_chinese_audit(topic: gb.TopicRow, sources: list[dict], api_key:
     # Construct quality from verified gates; ignore any caller-supplied quality.
     article = dict(article)
     article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
-                          "scores": last["review"]["scores"], "revisions": last["revision"],
-                          "review_type": "automated editorial review"}
+                          "revisions": last["revision"],
+                          "review_type": "automated editorial review" if last["review"].get("review_status") != "unavailable"
+                          else "structural publish fallback after invalid review JSON",
+                          **({"scores": last["review"]["scores"]} if "scores" in last["review"] else {})}
     mode = "reused" if record["mode"] == "validated_passed_chinese" else "fresh_review"
-    print(f"Insight zh: {mode} passed; revision={last['revision']}; scores={json.dumps(last['review']['scores'])}", flush=True)
+    print(f"Insight zh: {mode} passed; revision={last['revision']}; review={json.dumps(last['review'].get('scores', 'unavailable'), ensure_ascii=False)}", flush=True)
     return article
 
 
@@ -1316,15 +1343,29 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             if structural["passed"]:
                 attempt["review_state"] = "pending"
                 write_audit(audit_path, audit)
-                review = review_article(article, sources, api_key, lang, original,
-                                        required_fixes=feedback.get("required_fixes", []))
+                required_fixes = feedback.get("required_fixes", [])
+                try:
+                    review = review_article(article, sources, api_key, lang, original,
+                                            required_fixes=required_fixes)
+                except Exception as exc:
+                    # A malformed review payload is an integration failure, not
+                    # evidence that the article is bad. Keep hard structural and
+                    # source gates, publish with an explicit warning, and never
+                    # use this path when historical blockers need rechecking.
+                    if not _json_review_failure(exc) or required_fixes:
+                        raise
+                    review = _unavailable_review(exc)
+                    attempt["warnings"] = ["Independent semantic review unavailable: model returned invalid JSON; structural publication gates passed."]
+                    attempt["review_state"] = "unavailable"
+                else:
+                    attempt["review_state"] = "completed"
                 attempt["review"] = review
-                errors.extend(review_errors(review))
-                attempt["review_state"] = "completed"
+                if attempt["review_state"] == "completed":
+                    errors.extend(review_errors(review))
             # Auxiliary author-response formatting cannot prevent a sound draft
             # from receiving its independent factual and editorial review. Repair
             # it once only when the article itself already passes every gate.
-            if not errors and metadata_errors and lang == "zh":
+            if not errors and metadata_errors and lang == "zh" and attempt["review_state"] == "completed":
                 attempt["metadata_state"] = "repair_pending"
                 write_audit(audit_path, audit)
                 metadata_repair = _repair_revision_metadata(article, raw.get("revision_response"), feedback, api_key, lang)
@@ -1339,9 +1380,11 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             write_audit(audit_path, audit)
             if not errors:
                 article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
-                                      "scores": review["scores"], "revisions": revision,
-                                      "review_type": "automated editorial review"}
-                print(f"Insight {lang}: revision {revision} passed; scores={json.dumps(review['scores'])}", flush=True)
+                                      "revisions": revision,
+                                      "review_type": "automated editorial review" if attempt["review_state"] == "completed"
+                                      else "structural publish fallback after invalid review JSON",
+                                      **({"scores": review["scores"]} if "scores" in review else {})}
+                print(f"Insight {lang}: revision {revision} passed; review={json.dumps(review.get('scores', 'unavailable'), ensure_ascii=False)}", flush=True)
                 return article
             feedback = _revision_feedback(audit)
             print(f"Insight {lang}: revision {revision} rejected: {json.dumps(errors, ensure_ascii=False)}", flush=True)

@@ -533,6 +533,23 @@ class ArticleNormalizationTests(unittest.TestCase):
         self.assertNotIn("style=", article["body_html"])
         self.assertIn("额外明示假设：成本1,200元，30天。", article["body_html"])
 
+    def test_invalid_review_json_uses_audited_structural_publish_fallback(self):
+        from test_insight_quality import SOURCES, valid_article
+        raw = valid_article()
+        sources = [{**source, "text": f"Source observation {source['id']}"} for source in SOURCES]
+        with tempfile.TemporaryDirectory() as directory:
+            audit_path = Path(directory) / "audit.json"
+            with patch.object(ip, "request_json", side_effect=[{"decision_question": "如何投入"}, raw]), \
+                 patch.object(ip, "validate_insight", return_value={"passed": True, "errors": [], "metrics": {}}), \
+                 patch.object(ip, "review_article", side_effect=RuntimeError("Insight zh-review failed: completion content is not valid JSON")):
+                article = ip.produce_article(ip.gb.TopicRow(694, "投入决策", {}, "Brand", "GEO"), sources, "test", audit_path=audit_path)
+            saved = json.loads(audit_path.read_text())
+        self.assertTrue(saved["passed"])
+        self.assertEqual(saved["attempts"][0]["review_state"], "unavailable")
+        self.assertEqual(saved["attempts"][0]["review"]["reason"], "invalid_json")
+        self.assertEqual(article["quality"]["review_type"], "structural publish fallback after invalid review JSON")
+        self.assertNotIn("scores", article["quality"])
+
 
 class ResumeTests(unittest.TestCase):
     def setUp(self):
