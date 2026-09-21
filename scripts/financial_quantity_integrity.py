@@ -31,17 +31,22 @@ SCALES = {
 SCALE = "(?:" + "|".join(re.escape(value) for value in sorted(SCALES, key=len, reverse=True)) + ")"
 CURRENCIES = {
     "USD": ("USD", "US$", "$", "US dollars", "U.S. dollars", "US dollar", "U.S. dollar", "dollars", "dollar", "美元", "美金", "달러", "دولار أمريكي", "دولار"),
-    "CNY": ("CNY", "RMB", "人民币", "元人民币", "元", "yuan", "renminbi", "Chinese yuan", "Chinese renminbi", "人民币元", "위안"),
-    "EUR": ("EUR", "€", "euros", "euro", "欧元", "유로"),
-    "GBP": ("GBP", "£", "pounds", "pound", "英镑"),
-    "JPY": ("JPY", "日元", "円", "yen"),
-    "HKD": ("HKD", "HK$", "港元", "港币"),
+    "CNY": ("CNY", "RMB", "人民币", "元人民币", "元", "yuan", "renminbi", "Chinese yuan", "Chinese renminbi", "人民币元", "위안", "يوان صيني", "اليوان الصيني", "يوان", "رنمينبي"),
+    "EUR": ("EUR", "€", "euros", "euro", "欧元", "유로", "يورو"),
+    "GBP": ("GBP", "£", "pounds", "pound", "英镑", "جنيه إسترليني", "جنيه استرليني"),
+    "JPY": ("JPY", "日元", "円", "yen", "ين ياباني", "ين"),
+    "HKD": ("HKD", "HK$", "港元", "港币", "دولار هونغ كونغ"),
 }
 ALIASES = {alias.casefold(): code for code, aliases in CURRENCIES.items() for alias in aliases}
 CURRENCY = "(?:" + "|".join(re.escape(s) for s in sorted(ALIASES, key=len, reverse=True)) + ")"
 MONTH_NAMES = "January February March April May June July August September October November December".split()
 MONTHS = {name.casefold(): i for i, name in enumerate(MONTH_NAMES, 1)}
 MONTHS.update({name[:3].casefold(): i for i, name in enumerate(MONTH_NAMES, 1)})
+for month, aliases in enumerate((
+        ("يناير",), ("فبراير",), ("مارس",), ("أبريل", "إبريل", "ابريل"),
+        ("مايو",), ("يونيو", "يونيه"), ("يوليو", "يوليه"), ("أغسطس", "اغسطس"),
+        ("سبتمبر",), ("أكتوبر", "اكتوبر"), ("نوفمبر",), ("ديسمبر",)), 1):
+    MONTHS.update({name: month for name in aliases})
 MONTH = "(?:" + "|".join(sorted(MONTHS, key=len, reverse=True)) + r")\.?"
 
 

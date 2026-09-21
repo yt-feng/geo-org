@@ -318,7 +318,7 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
         "thinking": {"type": os.environ.get("INSIGHT_REVIEW_THINKING", "enabled") if "review" in stage
-                     else os.environ.get("INSIGHT_THINKING", "enabled")},
+                     else os.environ.get("INSIGHT_THINKING", "disabled")},
         "response_format": {"type": "json_object"},
         "stream": True,
         "stream_options": {"include_usage": True},

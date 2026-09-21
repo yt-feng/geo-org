@@ -112,7 +112,7 @@ class StreamingTests(unittest.TestCase):
             result = ip.request_json("prompt", "key", stage="test-length", max_tokens=48000)
         self.assertEqual(result, {"complete": True})
         self.assertEqual([json.loads(call.args[0].data)["max_tokens"] for call in opener.call_args_list], [48000, 96000])
-        self.assertTrue(all(json.loads(call.args[0].data)["thinking"]["type"] == "enabled" for call in opener.call_args_list))
+        self.assertTrue(all(json.loads(call.args[0].data)["thinking"]["type"] == "disabled" for call in opener.call_args_list))
 
     def test_repeated_length_cutoff_stops_after_one_larger_attempt(self):
         cutoff = event({"content": '{"partial":true}'}, finish_reason="length") + "data: [DONE]\n\n"

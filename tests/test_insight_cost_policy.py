@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
 import tempfile
@@ -44,7 +45,7 @@ class CostPolicyTests(unittest.TestCase):
             "DEEPSEEK_MAX_RUN_REQUESTS": "12", "DEEPSEEK_MAX_RUN_TOKENS": "600000"})
         env.start(); self.addCleanup(env.stop)
         clock = patch.object(policy, "utcnow", return_value=self.instant("2026-09-21T18:17:00"))
-        clock.start(); self.addCleanup(clock.stop)
+        self.clock = clock.start(); self.addCleanup(clock.stop)
         self.payload = {"model": "deepseek-flash", "max_tokens": 1000,
             "messages": [{"role": "user", "content": "PRIVATE_SOURCE_SENTINEL"}]}
 
@@ -92,6 +93,31 @@ class CostPolicyTests(unittest.TestCase):
         with patch.object(policy, "utcnow", return_value=self.instant("2026-09-21T06:00:00")), self.assertRaises(policy.CostDeferredError):
             policy.begin_request("research-brief", self.payload, 1200)
         self.assertFalse(self.path.exists())
+
+    def test_concurrent_locale_requests_share_one_budget(self):
+        def admit(_):
+            try:
+                return policy.begin_request("locale-review", self.payload, 1200)
+            except policy.CostDeferredError:
+                return None
+        with patch.dict(os.environ, {"DEEPSEEK_MAX_RUN_REQUESTS": "7"}), ThreadPoolExecutor(max_workers=16) as executor:
+            tickets = list(executor.map(admit, range(32)))
+        self.assertEqual(len([ticket for ticket in tickets if ticket]), 7)
+        self.assertEqual(len(self.path.read_text().splitlines()), 7)
+
+    def test_provider_retry_rechecks_clock_before_network(self):
+        import insight_pipeline as pipeline
+        def fail_then_enter_peak(*args):
+            self.clock.return_value = self.instant("2026-09-22T01:00:00")
+            raise pipeline._CompletionError("temporary transport error")
+        with patch.object(pipeline, "_completion_attempt", side_effect=fail_then_enter_peak) as transport, \
+                patch.object(pipeline.gb, "RETRIES", 2), patch.object(pipeline.time, "sleep"):
+            with self.assertRaises(policy.CostDeferredError):
+                pipeline.request_json("Only a mocked request", "unused-test-key", stage="zh-draft-0", max_tokens=1000)
+        self.assertEqual(transport.call_count, 1)
+        events = [json.loads(line) for line in self.path.read_text().splitlines()]
+        self.assertEqual(len(events), 2)
+        self.assertFalse(events[-1]["usage_known"])
 
 
 if __name__ == "__main__":

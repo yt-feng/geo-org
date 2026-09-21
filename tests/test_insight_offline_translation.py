@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import insight_offline_translation as offline
 import insight_pipeline as ip
 import hymt_offline_translation as hymt
+from financial_quantity_integrity import quantity_issues
 from deepseek_cost_policy import CostDeferredError
 
 SOURCE = {"title": "Eco-GEO：标题", "excerpt": "预算为100元。",
@@ -38,6 +39,16 @@ class FakeTranslator:
 
 
 class OfflineArticleTests(unittest.TestCase):
+    def test_arabic_currency_and_date_aliases_preserve_quantity_identity(self):
+        for source, translated in (("预算为1000元。", "الميزانية 1000 يوان."),
+                                   ("2026年9月21日", "21 سبتمبر 2026"),
+                                   ("2026年9月", "سبتمبر 2026"),
+                                   ("100港元", "100 دولار هونغ كونغ")):
+            with self.subTest(source=source):
+                self.assertEqual(quantity_issues(source, translated, "zh", "ar"), [])
+        self.assertTrue(quantity_issues("1000元", "1000 دولار", "zh", "ar"))
+        self.assertTrue(quantity_issues("2026年9月21日", "22 سبتمبر 2026", "zh", "ar"))
+
     def test_preserves_complete_inline_context_html_numbers_urls_and_terms(self):
         translator = FakeTranslator()
         with tempfile.TemporaryDirectory() as directory:
@@ -93,7 +104,8 @@ class OfflineArticleTests(unittest.TestCase):
     def test_rejects_changed_html_url_term_number_and_retained_chinese(self):
         pairs = [('<strong>5%</strong>', '<em>5%</em>'),
                  ('<a href="https://example.org/a">来源</a>', '<a href="https://example.org/b">Source</a>'),
-                 ('GEO分析', 'SEO Analysis'), ('预算100元', 'Budget 900 yuan'), ('中文原文', '中文原文')]
+                 ('GEO分析', 'SEO Analysis'), ('预算100元', 'Budget 900 yuan'), ('中文原文', '中文原文'),
+                 ('来源[S1]', 'Source[S2]'), ('错误率≤5%', 'Error rate≥5%')]
         for source, result in pairs:
             with self.subTest(source=source), self.assertRaises(offline.OfflineTranslationError):
                 offline.validate_block(source, result, "en")
@@ -171,12 +183,13 @@ class PipelineCostBoundaryTests(unittest.TestCase):
             completion.assert_called_once_with("ticket", status="failed_unknown_usage")
 
     def test_review_thinking_remains_independent_of_drafting_setting(self):
-        with patch.dict(os.environ, {"INSIGHT_THINKING": "disabled", "INSIGHT_REVIEW_THINKING": "enabled"}), \
-                patch.object(ip, "begin_request") as admission, patch.object(ip, "complete_request"), \
-                patch.object(ip, "_completion_attempt", return_value=("{}", {})):
-            ip.request_json("prompt", "unused", stage="zh-draft")
-            ip.request_json("prompt", "unused", stage="en-review")
-            self.assertEqual([call.args[1]["thinking"]["type"] for call in admission.call_args_list], ["disabled", "enabled"])
+        for environment in ({}, {"INSIGHT_THINKING": "disabled", "INSIGHT_REVIEW_THINKING": "enabled"}):
+            with self.subTest(environment=environment), patch.dict(os.environ, environment, clear=True), \
+                    patch.object(ip, "begin_request") as admission, patch.object(ip, "complete_request"), \
+                    patch.object(ip, "_completion_attempt", return_value=("{}", {})):
+                ip.request_json("prompt", "unused", stage="zh-draft")
+                ip.request_json("prompt", "unused", stage="en-review")
+                self.assertEqual([call.args[1]["thinking"]["type"] for call in admission.call_args_list], ["disabled", "enabled"])
 
 
 if __name__ == "__main__":

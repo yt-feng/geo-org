@@ -57,7 +57,12 @@ def validate_block(source: str, translated: str, target: str) -> None:
         raise OfflineTranslationError("Offline translation changed a URL")
     if Counter(_TERM.findall(source)) != Counter(_TERM.findall(translated)):
         raise OfflineTranslationError("Offline translation changed a protected term")
+    if re.findall(r"\[S\d+\]", source) != re.findall(r"\[S\d+\]", translated):
+        raise OfflineTranslationError("Offline translation changed citation labels or their order")
     clean_source, clean_result = (unescape(_TAG.sub(" ", text)) for text in (source, translated))
+    operators = r"[=<>≤≥≠≈±×÷]"
+    if Counter(re.findall(operators, clean_source)) != Counter(re.findall(operators, clean_result)):
+        raise OfflineTranslationError("Offline translation changed comparison or formula operators")
     if _numbers(clean_source) != _numbers(clean_result):
         raise OfflineTranslationError("Offline translation changed numeric values within a text block")
     if re.search(r"[\u3400-\u9fff]", clean_result):
