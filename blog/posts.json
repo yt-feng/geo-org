@@ -1,5 +1,193 @@
 [
   {
+    "order": "713",
+    "row": "701",
+    "slug": "00701-b2b-geo-ea179009",
+    "title": "Eco-GEO：AI答案里那句品牌概括错了怎么办？B2B外贸80小时GEO排序规则（含整数口径反转点）",
+    "excerpt": "在AI答案里，买家读到的可能不是你的官网，而是模型对品牌的一句话概括。若这句话里的价格、认证、交期、MOQ是错的，那么“多发内容、多覆盖问题”只会把错误扩散到更多被引用的路径。本文给出一个可执行的排序规则：把严重事实错误率当事前准入门槛，先排除不合格方案，再用同口径（同问题集、同窗口、同分母）的“合格正确引用问题数”增量与完整工时成本比较A与B。适用于已有可独立核验官方事实源、能稳定抽出并人工复核目标问题的团队；尚无事实台账、或两轮采样方向不稳定的团队应先暂缓。所有阈值均为示意试验值，须以本场景基线校准。",
+    "category": "B2B外贸",
+    "tags": "品牌化GEO, 白帽GEO, B2B外贸, AI搜索, 品牌资产与AI引用, 竞争加剧期, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-22",
+    "image": "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00701-b2b-geo-ea179009/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-22T00:04:20+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "eCommerce Definitions",
+        "url": "https://www.trade.gov/ecommerce-definitions",
+        "publisher": "International Trade Administration",
+        "published": "",
+        "retrieved_at": "2026-09-22T00:04:21+00:00",
+        "evidence_kind": "government_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 4612,
+        "body_chars": 4612,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "trade.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "b2b_export"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Sector boundary: Business-to-business international trade differs from all cross-border consumer ecommerce; use shared planning guidance only within its stated B2B/B2C scope.",
+        "text_sha256": "27662d70e99474c5fa483793b1d9ef037355b7f5518d699d4fc5434aeebcbb63"
+      },
+      {
+        "id": "S3",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-22T00:04:21+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/April-2025/Introducing-Copilot-Search-in-Bing",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-22T00:04:21+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5456,
+        "body_chars": 5456,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "7e984e78bcd9398f245c3a3a7e688836cd2829bde76a155f55f5d5c1874607e4"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-22T00:04:23+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 10,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 5,
+            "headers": 6,
+            "cells": 24
+          },
+          {
+            "captions": 1,
+            "rows": 6,
+            "headers": 8,
+            "cells": 40
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "economics": 2,
+          "executive-summary": 1,
+          "method": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 6,
+          "S2": 2,
+          "S3": 7,
+          "S4": 2,
+          "S5": 3
+        },
+        "visible_character_count": 10141,
+        "zh_character_count": 7432,
+        "word_count": 1300,
+        "minimum_zh_characters": 2600,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 20,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "trade.gov"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 2,
+      "review_type": "structural publication fallback after semantic review warnings",
+      "warnings": [
+        "tradeoffs: 3/5 (minimum 4)",
+        "editorial total below 25/30",
+        "表2“共享前置工时H”行的公式与数值与本文模型不符。按本文自身设定（A单位成本=(H+48)/8；B可用工时=80−H，新增问题=(80−H)/2，B完整成本=80）复算得 p*=1280/[(80−H)(H+48)]：H=8→0.3175、H=12→0.3137、H=16→0.3125；而正文写的是 p*=8(H+68)÷(34(H+48))（该式只在H=12时偶然相等），并给出0.3193与0.3090。“方向随H升高而下降”可保留，但公式与三个数值须更正，并同步修正“把共享前置工时H从8提到16，期望反转点从0.3193降到0.3090”一句。",
+        "表2“A可修复缺口数”行“推荐反转点”与本节“约6个”自相矛盾且算术有误：在p=0.30的整数口径下B=80÷floor(10.2)=8.0，A=(12+6G)/G=6+12/G，交叉点在G=6（期望口径约6.5），而非“G=8附近”；其括注“G=7.5时A=B=7.5”不成立（G=7.5时A=7.6；B=7.5只在p=0.3137时出现，与该格声明的p=0.30不一致）。须统一为同一p、同一口径下的交叉点，并重述“G小于X时倾向B或暂缓”的X。",
+        "整数门槛与摘要、表2、执行路径第2步不一致。表2该格“p≥0.3235反转为B……等于0.3235时B成本≈7.27<7.5选B”用的是未取整的34×0.3235=10.999≈11，违反正文自身“不得先四舍五入百分比再决定行动”。按floor(34p)规则，B优当且仅当floor(34p)≥11，即p≥11/34≈0.32353；故在p=0.3235（<11/34）时合格数为10、B成本8.0>7.5，应选A，而文中却推荐B。须把门槛统一写为p≥11/34（≈0.32353）或相应调整区间上界，并保证摘要、表2该格、执行路径第2步三处严格/非严格不等号与取整规则完全一致。",
+        "historical blocker r1-blocker-1 remains unresolved: 方向已改为随H升高而下降，但“更正并复算示例”未完成：表2写出的公式p*=8(H+68)÷(34(H+48))与数值0.3193/0.3090，按本文A=(H+48)/8、B=80÷((80−H)p/2)复算应为p*=1280/[(80−H)(H+48)]，即0.3175/0.3137/0.3125；方向对、数值与公式仍错，故该历史问题未解决。"
+      ]
+    }
+  },
+  {
     "order": "712",
     "row": "700",
     "slug": "00700-geo-ae3cb4c1",
