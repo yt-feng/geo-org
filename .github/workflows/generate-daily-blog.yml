@@ -91,6 +91,7 @@ jobs:
           INSIGHT_MAX_REVISIONS: "2"
           INSIGHT_RESUME_MAX_ATTEMPTS: "3"
           INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS: "0"
+          INSIGHT_TRANSLATION_RETRIES: "2"
           INSIGHT_MIN_ZH_CHARS: "2600"
           INSIGHT_API_TIMEOUT: "300"
           PREVIEW_ONLY: ${{ inputs.preview }}

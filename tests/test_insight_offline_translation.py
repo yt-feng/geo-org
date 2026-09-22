@@ -293,7 +293,8 @@ class OfflinePipelineTests(unittest.TestCase):
                     "translation_provenance": {"paid_provider_requests": 0, "provider": "hymt-cpu",
                         "quality_warnings": [{"block": "excerpt", "warning": "numeric variation"}] if quality_warning else []}})
         with tempfile.TemporaryDirectory() as directory, \
-                patch.dict(os.environ, {"INSIGHT_MAX_REVISIONS": "5", "INSIGHT_OFFLINE_CHECKPOINT_DIR": directory}), \
+                patch.dict(os.environ, {"INSIGHT_MAX_REVISIONS": "5", "INSIGHT_OFFLINE_CHECKPOINT_DIR": directory,
+                                        "INSIGHT_TRANSLATION_RETRIES": "0"}), \
                 patch.object(ip, "translate_article_offline", side_effect=offline.OfflineTranslationError("local failure") if translation_failure else None,
                              return_value=raw) as translate, \
                 patch.object(ip, "validate_insight", return_value={"passed": True, "errors": [], "metrics": {}}), \
@@ -322,6 +323,22 @@ class OfflinePipelineTests(unittest.TestCase):
         self.assertTrue(audit["passed"])
         self.assertEqual(len(audit["attempts"]), 1)
         self.assertTrue(audit["attempts"][0]["warnings"])
+
+    def test_offline_translation_retries_from_checkpoint_after_transient_failure(self):
+        raw = copy.deepcopy(SOURCE)
+        raw.update({"title": "Eco-GEO: Title", "excerpt": "Budget 100 yuan", "tags": "GEO, Analysis",
+                    "translation_provenance": {"paid_provider_requests": 0, "provider": "hymt-cpu",
+                                                 "quality_warnings": []}})
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.dict(os.environ, {"INSIGHT_OFFLINE_CHECKPOINT_DIR": directory,
+                                        "INSIGHT_TRANSLATION_RETRIES": "2"}), \
+                patch.object(ip, "translate_article_offline", side_effect=[offline.OfflineTranslationError("temporary block failure"), raw]) as translate, \
+                patch.object(ip, "validate_insight", return_value={"passed": True, "errors": [], "metrics": {}}):
+            path = Path(directory) / "en.json"
+            article = ip.produce_article(ip.gb.TopicRow(2, "Example", {}, "Brand", "GEO"), [], "key",
+                                         lang="en", original=SOURCE, audit_path=path)
+        self.assertEqual(translate.call_count, 2)
+        self.assertEqual(article["quality"]["review_type"], "offline translation structure check")
 
     def test_offline_failure_stops_before_any_paid_review_or_fallback(self):
         self.assertFalse(self.run_pipeline(translation_failure=True)["passed"])

@@ -16,7 +16,7 @@ from pathlib import Path
 
 import generate_blog as gb
 from deepseek_cost_policy import begin_request, complete_request
-from insight_offline_translation import translate_article as translate_article_offline
+from insight_offline_translation import OfflineTranslationError, translate_article as translate_article_offline
 from insight_quality import DRAFT_REQUIREMENTS, REVIEW_RUBRIC, validate_insight, validate_translation_publication
 
 SCORE_KEYS = ("thesis", "evidence", "mechanism", "tradeoffs", "actionability", "originality")
@@ -379,6 +379,18 @@ def token_budget(name: str, default: int) -> int:
     if value <= 0:
         raise ValueError(f"{name} must be a positive integer")
     return value
+
+
+def translation_attempts() -> int:
+    """Return the bounded number of attempts for a checkpointed locale."""
+    raw = os.environ.get("INSIGHT_TRANSLATION_RETRIES", "2")
+    try:
+        retries = int(raw)
+    except ValueError:
+        raise ValueError("INSIGHT_TRANSLATION_RETRIES must be an integer from 0 to 3") from None
+    if not 0 <= retries <= 3:
+        raise ValueError("INSIGHT_TRANSLATION_RETRIES must be between 0 and 3")
+    return retries + 1
 
 
 def review_max_tokens() -> int:
@@ -1298,7 +1310,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
         if lang != "zh":
             # Repeating a deterministic translation must not repeat paid reviews.
             # Failures retain per-block checkpoints for a corrected-source rerun.
-            attempt_budget = 1
+            attempt_budget = translation_attempts()
         if lang == "zh" and resume_audit is not None and audit["attempts"]:
             # A failed run may already contain a structurally valid final draft and
             # a completed semantic review. Do not spend another paid draft/review
@@ -1343,8 +1355,14 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             if lang != "zh":
                 draft_origin = "offline_translation"
                 checkpoint_dir = Path(os.environ.get("INSIGHT_OFFLINE_CHECKPOINT_DIR", ".artifacts/offline-translations"))
-                raw = translate_article_offline(original, lang,
-                    checkpoint_path=checkpoint_dir / f"{topic.idx}-{lang}-{audit['source_article_sha256'][:16]}.json")
+                try:
+                    raw = translate_article_offline(original, lang,
+                        checkpoint_path=checkpoint_dir / f"{topic.idx}-{lang}-{audit['source_article_sha256'][:16]}.json")
+                except OfflineTranslationError as exc:
+                    if revision + 1 >= start_revision + attempt_budget:
+                        raise
+                    print(f"Insight {lang}: translation attempt {revision - start_revision + 1}/{attempt_budget} failed; retrying from checkpoint: {exc}", flush=True)
+                    continue
             elif draft_origin == "editorial_revision":
                 raw = editorial_revision
             else:
@@ -1385,6 +1403,9 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                 audit["passed"] = not errors
                 write_audit(audit_path, audit)
                 if errors:
+                    if revision + 1 < start_revision + attempt_budget:
+                        print(f"Insight {lang}: translation attempt {revision - start_revision + 1}/{attempt_budget} failed structural publication checks; retrying from checkpoint", flush=True)
+                        continue
                     raise InsightQualityError(f"{lang} translation cannot be published: invalid or missing content; inspect {audit_path}")
                 article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
                     "revisions": revision, "review_type": "offline translation structure check",
