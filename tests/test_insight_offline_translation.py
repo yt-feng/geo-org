@@ -251,6 +251,23 @@ class OfflineArticleTests(unittest.TestCase):
         self.assertEqual(engine.calls, 2)
         self.assertIn("GEO", result)
 
+    def test_publish_mode_retains_source_when_placeholder_decode_stays_invalid(self):
+        class BrokenEngine:
+            calls = 0
+
+            def translate(self, text, source, target):
+                self.calls += 1
+                return text.replace("__HYMTPH_0000__", "__HYMTPH_9999__")
+
+        engine = BrokenEngine()
+        with tempfile.TemporaryDirectory() as directory:
+            translator = hymt.HyMTOfflineTranslator(cache_dir=Path(directory), quality_mode="publish",
+                                                     engine_factory=lambda *_: engine)
+            result = translator.translate("GEO分析[S1]", "en", source="zh")
+        self.assertEqual(engine.calls, 2)
+        self.assertEqual(result, "GEO分析[S1]")
+        self.assertTrue(any("retained source text" in item["warning"] for item in translator.quality_warnings))
+
     def test_publish_mode_still_stops_empty_structurally_broken_or_collapsed_output(self):
         pairs = [("正文", ""), ("正文", "..."), ('<strong>正文</strong>', '<em>Text</em>'),
                  ('<a href="https://example.org/a">来源</a>', '<a href="https://example.org/b">Source</a>'),

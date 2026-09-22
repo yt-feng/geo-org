@@ -385,8 +385,17 @@ class HyMTOfflineTranslator:
                             # The pinned model occasionally emits a malformed
                             # placeholder on one decode. Retry that exact block
                             # once; other structural failures remain fail-closed.
-                            if ("protected placeholder" not in str(error) or attempt == 1):
+                            if "protected placeholder" not in str(error):
                                 raise
+                            if attempt == 1:
+                                if self.quality_mode != "publish":
+                                    raise
+                                # Never publish a fabricated resource-bearing
+                                # translation. Keep this block source-faithful
+                                # and let the HTML adapter record a warning.
+                                value = core
+                                warnings = ["Hy-MT2 protected placeholder fallback retained source text"]
+                                break
             except OfflineTranslationError:
                 raise
             except Exception as error:
