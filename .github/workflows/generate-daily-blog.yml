@@ -125,6 +125,7 @@ jobs:
 
       - name: Preserve completed offline translation checkpoints
         if: always()
+        continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: .artifacts/offline-translations
@@ -136,6 +137,7 @@ jobs:
 
       - name: Save research and review artifacts
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: daily-insight-review-${{ github.run_id }}
