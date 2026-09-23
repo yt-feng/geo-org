@@ -9,3 +9,12 @@ __pycache__/
 api_key/
 contact-service/wrangler.jsonc
 contact-service/wrangler.local.jsonc
+
+# Publish output and private deployment artifacts
+_site/
+site-build-report.json
+analytics-service/wrangler.runtime.json
+analytics-service/.secrets.json
+node_modules/
+browser-artifacts/
+.build-deps/

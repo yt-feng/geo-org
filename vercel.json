@@ -1,121 +1,16 @@
 {
   "headers": [
-    {
-      "source": "/jianong/",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow, noarchive, nosnippet"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://brain-api.eco-geo.org; connect-src 'self' https://brain-api.eco-geo.org; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
-        }
-      ]
-    },
-    {
-      "source": "/package-advisor/",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow, noarchive, nosnippet"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://recommend.eco-geo.org; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto:"
-        }
-      ]
-    },
-    {
-      "source": "/package-advisor/:path*",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow, noarchive, nosnippet"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://recommend.eco-geo.org; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto:"
-        }
-      ]
-    },
-    {
-      "source": "/jianong",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow, noarchive, nosnippet"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://brain-api.eco-geo.org; connect-src 'self' https://brain-api.eco-geo.org; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
-        }
-      ]
-    },
-    {
-      "source": "/jianong/:path*",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow, noarchive, nosnippet"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://brain-api.eco-geo.org; connect-src 'self' https://brain-api.eco-geo.org; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
-        }
-      ]
-    }
+    {"source":"/jianong/","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow, noarchive, nosnippet"},{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"},{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://brain-api.eco-geo.org; connect-src 'self' https://brain-api.eco-geo.org; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"}]},
+    {"source":"/package-advisor/","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow, noarchive, nosnippet"},{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"},{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://recommend.eco-geo.org https://metrics.eco-geo.org; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto:"}]},
+    {"source":"/package-advisor/:path*","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow, noarchive, nosnippet"},{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"},{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://recommend.eco-geo.org https://metrics.eco-geo.org; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto:"}]},
+    {"source":"/jianong","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow, noarchive, nosnippet"},{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"},{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://brain-api.eco-geo.org; connect-src 'self' https://brain-api.eco-geo.org; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"}]},
+    {"source":"/jianong/:path*","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow, noarchive, nosnippet"},{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"},{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://brain-api.eco-geo.org; connect-src 'self' https://brain-api.eco-geo.org; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"}]},
+    {"source":"/observatory/:path*","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow, noarchive"},{"key":"Cache-Control","value":"no-store"},{"key":"Referrer-Policy","value":"no-referrer"},{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self'; connect-src https://metrics.eco-geo.org; style-src 'self' 'unsafe-inline'; img-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"}]}
   ],
-  "redirects": [
-    {
-      "source": "/jianong",
-      "destination": "https://jianong.eco-geo.org/",
-      "permanent": false
-    },
-    {
-      "source": "/jianong/:path*",
-      "destination": "https://jianong.eco-geo.org/:path*",
-      "permanent": false
-    }
-  ]
+  "redirects":[{"source":"/jianong","destination":"https://jianong.eco-geo.org/","permanent":false},{"source":"/jianong/:path*","destination":"https://jianong.eco-geo.org/:path*","permanent":false}],
+  "$schema":"https://openapi.vercel.sh/vercel.json",
+  "framework":null,
+  "installCommand":"pip3 install --disable-pip-version-check --target .build-deps -r build-requirements.txt",
+  "buildCommand":"PYTHONPATH=.build-deps python3 scripts/build_site.py",
+  "outputDirectory":"_site"
 }

@@ -1,0 +1,11 @@
+{
+  "name": "eco-geo-analytics",
+  "main": "worker.mjs",
+  "account_id": "8182ec40eab8c484e11ebf5d6a516fbd",
+  "compatibility_date": "2026-09-20",
+  "workers_dev": false,
+  "routes": [{"pattern": "metrics.eco-geo.org", "custom_domain": true}],
+  "triggers": {"crons": ["17 3 * * *"]},
+  "observability": {"enabled": false},
+  "d1_databases": [{"binding": "DB", "database_name": "eco-geo-analytics", "database_id": "SET_BY_DEPLOY_SCRIPT"}]
+}

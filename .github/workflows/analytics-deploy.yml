@@ -1,0 +1,30 @@
+name: Deploy Private Analytics
+on:
+  push:
+    branches: [main]
+    paths: ['analytics-service/**', '.github/workflows/analytics-deploy.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: analytics-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      ANALYTICS_PIN: ${{ secrets.ANALYTICS_PIN }}
+      ANALYTICS_SECRET: ${{ secrets.ANALYTICS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Validate credentials are configured (values are never printed)
+        run: |
+          node -e 'for(const n of ["CLOUDFLARE_API_TOKEN","ANALYTICS_PIN","ANALYTICS_SECRET"]){if(!process.env[n]){console.error("Missing GitHub Actions secret: "+n);process.exitCode=1}}'
+      - name: Test worker security and storage
+        run: node --test tests/test-analytics-worker.mjs
+      - name: Provision isolated D1 and deploy authenticated Worker
+        run: node analytics-service/deploy.mjs
