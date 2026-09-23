@@ -1,5 +1,552 @@
 [
   {
+    "order": "714",
+    "row": "702",
+    "slug": "00702-ai-geo-e23caaaa",
+    "title": "Eco-GEO：Brand development through offline storesGEO: Before turning customer cases into verifiable evidence, decide first whether to make comparisons",
+    "excerpt": "For those offline stores where there is one independent source of official facts, but customer cases remain vague descriptions, the starting point for brand GEO is not “being mentioned by AI”. This article treats the high rate of factual errors as a pre-checking threshold, comparing two mutually exclusive paths using the same set of questions, the same time window, and the same denominator for “the increment in the number of correctly cited issues.” It also provides a ledger that closes each item under the same time constraints, along with integer counting thresholds and the bidirectional sensitivity of unit cost when it rises to 30 hours per item. All costs and values are illustrative assumptions, not industry benchmarks.",
+    "category": "Brand GEO",
+    "tags": "Branded GEO, white hat GEO, physical stores, brand perception building, AI search optimization, brand evidence chain, Eco-GEO, GEO services",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-24",
+    "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/en/blog/articles/00702-ai-geo-e23caaaa/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:29+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+        "url": "https://support.google.com/business/answer/7091?hl=en",
+        "publisher": "Google",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:29+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 3585,
+        "body_chars": 3585,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "physical_retail"
+        ],
+        "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+        "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040"
+      },
+      {
+        "id": "S3",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:30+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/April-2025/Introducing-Copilot-Search-in-Bing",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:30+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5456,
+        "body_chars": 5456,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "7e984e78bcd9398f245c3a3a7e688836cd2829bde76a155f55f5d5c1874607e4"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:31+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "en",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "h2_count": 10,
+        "table_count": 3,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 6,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 6,
+            "headers": 8,
+            "cells": 40
+          },
+          {
+            "captions": 1,
+            "rows": 5,
+            "headers": 6,
+            "cells": 24
+          }
+        ],
+        "role_counts": {
+          "action-plan": 2,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "economics": 1,
+          "executive-summary": 1,
+          "method": 1,
+          "segmentation": 1,
+          "tradeoffs": 1
+        },
+        "citation_id_counts": {
+          "S1": 3,
+          "S2": 3,
+          "S3": 4,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 23019,
+        "zh_character_count": 1702,
+        "word_count": 4240,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 3,
+        "valid_citation_count": 12,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "support.google.com"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 10,
+            "table_count": 3,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 6,
+                "cells": 18
+              },
+              {
+                "captions": 1,
+                "rows": 6,
+                "headers": 8,
+                "cells": 40
+              },
+              {
+                "captions": 1,
+                "rows": 5,
+                "headers": 6,
+                "cells": 24
+              }
+            ],
+            "role_counts": {
+              "action-plan": 2,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "method": 1,
+              "segmentation": 1,
+              "tradeoffs": 1
+            },
+            "citation_id_counts": {
+              "S1": 3,
+              "S2": 3,
+              "S3": 4,
+              "S4": 1,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {
+                "30": 1
+              },
+              "translated": {
+                "30": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 10,
+                "1": 22,
+                "10": 10,
+                "10%": 1,
+                "11": 4,
+                "12": 6,
+                "12%": 6,
+                "13": 5,
+                "2": 36,
+                "20": 35,
+                "25": 9,
+                "252000": 1,
+                "3": 27,
+                "30": 7,
+                "4": 10,
+                "40": 15,
+                "5": 1,
+                "60": 9,
+                "8": 2,
+                "8%": 8,
+                "80": 17
+              },
+              "translated": {
+                "0": 10,
+                "1": 24,
+                "10": 10,
+                "10%": 1,
+                "11": 4,
+                "12": 6,
+                "12%": 6,
+                "13": 5,
+                "2": 37,
+                "20": 35,
+                "25": 9,
+                "252000": 1,
+                "3": 28,
+                "30": 7,
+                "4": 10,
+                "40": 15,
+                "5": 2,
+                "60": 9,
+                "8": 2,
+                "8%": 8,
+                "80": 17
+              },
+              "missing": {},
+              "added": {
+                "1": 2,
+                "2": 1,
+                "3": 1,
+                "5": 1
+              },
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 15,
+                    "path": "/section[4]/table[1]/caption[1]",
+                    "fragment_index": 1,
+                    "tag": "caption",
+                    "text": "表一 按可观测条件划分的三类门店与对应资源去向（阈值均为建议试验值，须按本场景基线校准）",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 15,
+                    "path": "/section[4]/table[1]/caption[1]",
+                    "fragment_index": 1,
+                    "tag": "caption",
+                    "text": "Table 1: Three categories of stores by observable conditions and corresponding resource destinations (all thresholds are recommended test values and must be calibrated according to the baseline of this scenario)",
+                    "numbers": {
+                      "1": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "1": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 28,
+                    "path": "/section[4]/table[1]/tbody[1]/tr[2]/td[1]",
+                    "fragment_index": 1,
+                    "tag": "td",
+                    "text": "S-b 有事实源，问题池大（如>60个可测问题），但合规证据条目<5条",
+                    "numbers": {
+                      "5": 1,
+                      "60": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 28,
+                    "path": "/section[4]/table[1]/tbody[1]/tr[2]/td[1]",
+                    "fragment_index": 1,
+                    "tag": "td",
+                    "text": "S-b has factual sources, with a large pool of questions (e.g., >60 measurable questions), but only 5 compliance evidence entries <5.",
+                    "numbers": {
+                      "5": 2,
+                      "60": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "5": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 33,
+                    "path": "/section[4]/table[1]/tbody[1]/tr[2]/td[6]",
+                    "fragment_index": 1,
+                    "tag": "td",
+                    "text": "A完成后若4周内合格证据条目仍<2条，转C暂缓规模化",
+                    "numbers": {
+                      "2": 1,
+                      "4": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 33,
+                    "path": "/section[4]/table[1]/tbody[1]/tr[2]/td[6]",
+                    "fragment_index": 1,
+                    "tag": "td",
+                    "text": "If, after completion, there are still 2 <2 valid evidence entries within 4 weeks, then proceed to C with a delay in scale-up.",
+                    "numbers": {
+                      "2": 2,
+                      "4": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "2": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 40,
+                    "path": "/section[4]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "这张表改变决策的方式在于：它先回答“谁根本不该进入A／B比较”。S-c不是低优先级，而是精度不足，比较本身不成立；S-b不是“先做品牌、后做内容”的通用建议，而是把证据采集从内容发布里拆成A内部的独立任务，并把4周内合格条目仍少于2条设为转暂缓的停止线。注意表一的停止条件是干预前检测，因此不会出现“B还没开始就要求停止B”这类动作错位；干预后的表现放在“可扩大条件”一列。",
+                    "numbers": {
+                      "2": 1,
+                      "4": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 40,
+                    "path": "/section[4]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "The way this table changes decision-making is that it first answers “who shouldn’t enter the A/B comparison at all.” S-c isn’t a low-priority issue; rather, it involves insufficient accuracy, and the comparison itself isn’t valid. S-b isn’t a general advice for “first building the brand, then content”; instead, it involves separating evidence collection from content publishing into independent tasks within A. The fact that fewer than two qualified entries are still found within 4 weeks is set as a stopgap until further action can be taken. Note that the stop condition in Table 1 is  before  intervention, so there won’t be situations where “B stops before it even starts.” Performance after intervention is listed under “Possible Expansion Conditions.”",
+                    "numbers": {
+                      "1": 1,
+                      "4": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "2": 1
+                  },
+                  "added": {
+                    "1": 1
+                  }
+                }
+              ],
+              "block_differences_total": 6,
+              "block_differences_truncated": true
+            }
+          }
+        },
+        "publication_policy": "readable-translation-v1",
+        "quality_warning_count": 1
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "title",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.8",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.8",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.14",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.14",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.18",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.18",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.22",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.36",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.36",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.78",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.78",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.146",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.146",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.166",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.166",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.204",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.204",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.216",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.216",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.220",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.220",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.230",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.230",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.482",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.482",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.674",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.732",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.732",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "713",
     "row": "701",
     "slug": "00701-b2b-geo-ea179009",

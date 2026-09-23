@@ -1,5 +1,202 @@
 [
   {
+    "order": "714",
+    "row": "702",
+    "slug": "00702-ai-geo-e23caaaa",
+    "title": "Eco-GEO：线下门店做品牌化GEO：把客户案例变成可核验证据前，先决定要不要比较",
+    "excerpt": "对已有一处可独立核验官方事实源、但客户案例仍是模糊叙述的线下门店，品牌化GEO的起点不是“被AI提到”。本文把严重事实错误率当做事前排除门槛，用同一问题集、同一时间窗、同一分母下的“合格正确引用问题数增量”比较两条互斥路径，并给出同工时约束下逐项闭合的账本、整数计数门槛与单位成本升到30小时/个时的双向敏感性。所有成本与数值均为示意假设，非行业基准。",
+    "category": "线下门店",
+    "tags": "品牌化GEO, 白帽GEO, 线下门店, 品牌心智建设, AI搜索优化, 品牌证据链, Eco-GEO, GEO服务",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-24",
+    "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00702-ai-geo-e23caaaa/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:29+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+        "url": "https://support.google.com/business/answer/7091?hl=en",
+        "publisher": "Google",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:29+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 3585,
+        "body_chars": 3585,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "physical_retail"
+        ],
+        "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+        "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040"
+      },
+      {
+        "id": "S3",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:30+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/April-2025/Introducing-Copilot-Search-in-Bing",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:30+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5456,
+        "body_chars": 5456,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "7e984e78bcd9398f245c3a3a7e688836cd2829bde76a155f55f5d5c1874607e4"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-23T21:34:31+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 10,
+        "table_count": 3,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 6,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 6,
+            "headers": 8,
+            "cells": 40
+          },
+          {
+            "captions": 1,
+            "rows": 5,
+            "headers": 6,
+            "cells": 24
+          }
+        ],
+        "role_counts": {
+          "action-plan": 2,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "economics": 1,
+          "executive-summary": 1,
+          "method": 1,
+          "segmentation": 1,
+          "tradeoffs": 1
+        },
+        "citation_id_counts": {
+          "S1": 3,
+          "S2": 3,
+          "S3": 4,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 8444,
+        "zh_character_count": 6477,
+        "word_count": 1145,
+        "minimum_zh_characters": 2600,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 3,
+        "valid_citation_count": 12,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "support.google.com"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 2,
+      "review_type": "structural publication fallback after semantic review warnings",
+      "warnings": [
+        "tradeoffs: 3/5 (minimum 4)",
+        "actionability: 3/5 (minimum 4)",
+        "originality: 3/5 (minimum 4)",
+        "editorial total below 25/30",
+        "同工时约束下A／B比较逻辑退化，且表二推荐与'等成本归一'结论冲突（对应历史r1-blocker-3，未决）：C_A=C0+q_A×20、C_B=C0+q_B×20且A、B共用同一单位成本20小时／个时，q只由投入预算决定，q大者成本必高，故第3步'q_A>q_B且A成本不低于B→选A'的成本条件恒真，规则实质退化为'增量大者胜'；这与同规则'增量优势来自对方剩余工时闲置不计价值则转暂缓'以及'等成本归一'段（情境1b填满后3=3→暂缓）直接冲突。结果是情境1'推荐A'、情境2'推荐B'仅源于把对方剩余工时闲置不计价值——正是文中自称要避免的隐含假设。必须修正支配条件（应为'增量不低且成本不高于对方'）或删除表二非平局推荐、统一以等成本归一结论为准。",
+        "'等成本归一的说明'段末句与同段前句互相否定：段首承认情境1的A推荐依赖'B余下40小时闲置且不计价值'，段末却称'q_A>q_B且A成本不低于B时推荐A不依赖闲置假设'，而情境1恰满足该条件；应作'不高于'。同一'不低于'条件复现于行动清单第3步，导致有序决策规则内部不可执行（(a)与(c)对情境1同时成立且未定优先级）。须一并修正措辞并明确分支优先级。",
+        "unsupported claim: 摘要称'单位成本升到30小时/个时的双向敏感性'",
+        "historical blocker r1-blocker-3 remains unresolved: 虽新增情境1b等成本比较并显式声明'B余下40小时闲置且不计价值'，但表二情境1仍写'推荐A'、情境2仍写'推荐B'，而'等成本归一'段得出3=3→转暂缓，两者未统一；且同段'A的成本不低于B'与'B余下40小时闲置不计价值'直接冲突，第3步沿用同一错误条件，口径与推荐仍不一致。"
+      ]
+    }
+  },
+  {
     "order": "713",
     "row": "701",
     "slug": "00701-b2b-geo-ea179009",
