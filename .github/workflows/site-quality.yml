@@ -1,0 +1,46 @@
+name: SEO and Analytics Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: python -m pip install -r build-requirements.txt
+      - run: python scripts/build_site.py
+      - run: python -m unittest discover -s tests -p 'test_site_build.py'
+      - run: node --test tests/test-analytics-worker.mjs
+      - name: Check browser script syntax
+        run: |
+          node --check assets/analytics.js
+          node --check observatory/app.js
+          node --check _site/package-advisor/app.mjs
+      - name: Upload build audit (not publicly deployed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-build-audit
+          path: site-build-report.json
+          retention-days: 14
+      - name: Install browser test dependencies
+        run: |
+          python -m pip install playwright==1.58.0
+          python -m playwright install --with-deps chromium
+      - name: Browser smoke tests (isolated test data)
+        run: python tests/site_browser_check.py
+      - name: Upload browser test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-evidence
+          path: browser-artifacts/
+          retention-days: 14
