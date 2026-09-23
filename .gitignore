@@ -17,3 +17,4 @@ analytics-service/wrangler.runtime.json
 analytics-service/.secrets.json
 node_modules/
 browser-artifacts/
+.build-deps/

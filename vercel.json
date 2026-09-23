@@ -10,6 +10,7 @@
   "redirects":[{"source":"/jianong","destination":"https://jianong.eco-geo.org/","permanent":false},{"source":"/jianong/:path*","destination":"https://jianong.eco-geo.org/:path*","permanent":false}],
   "$schema":"https://openapi.vercel.sh/vercel.json",
   "framework":null,
-  "buildCommand":"python3 -m pip install -r build-requirements.txt && python3 scripts/build_site.py",
+  "installCommand":"pip3 install --disable-pip-version-check --target .build-deps -r build-requirements.txt",
+  "buildCommand":"PYTHONPATH=.build-deps python3 scripts/build_site.py",
   "outputDirectory":"_site"
 }
