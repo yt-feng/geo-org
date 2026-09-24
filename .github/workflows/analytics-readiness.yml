@@ -1,0 +1,57 @@
+name: Analytics activation and live readiness
+on:
+  pull_request:
+    paths: ['scripts/setup_analytics.py', 'scripts/verify_live_site.py', 'tests/test_analytics_ops.py', '.github/workflows/analytics-readiness.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/setup_analytics.py', 'scripts/verify_live_site.py', 'tests/test_analytics_ops.py', '.github/workflows/analytics-readiness.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test local activation and readiness logic (no credentials)
+        run: python -m unittest discover -s tests -p 'test_analytics_ops.py' -v
+      - name: Read-only checks of real production endpoints
+        run: |
+          set +e
+          python scripts/verify_live_site.py --report .artifacts/live-readiness.json
+          code=$?
+          set -e
+          if [ "$code" -eq 2 ]; then
+            echo '::warning::Static checks passed but the analytics backend is NOT ready. Login and ingestion remain unverified; missing authorization must be completed locally.'
+          elif [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
+      - name: Publish explicit readiness report
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('.artifacts/live-readiness.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('## Production readiness (not deployment confirmation)\n\n')
+              if not p.exists():
+                  out.write('No live report was produced. Readiness is unknown.\n')
+              else:
+                  d=json.loads(p.read_text())
+                  out.write('**Overall: '+d['overall']+'**\n\n')
+                  out.write('Authentication: '+d['authentication']+'; ingestion: '+d['event_ingestion']+'\n\n')
+                  out.write('| Check | Result |\n|---|---|\n')
+                  for c in d['checks']:
+                      out.write('| '+c['check']+' | '+c['status']+' |\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-readiness
+          path: .artifacts/live-readiness.json
+          retention-days: 14
