@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import io
 import json
 import os
 import re
@@ -649,6 +650,37 @@ def extract_body(document: str) -> tuple[str, dict[str, str]]:
     return parser.body(), metadata
 
 
+def extract_pdf_body(raw: bytes) -> tuple[str, dict[str, str]]:
+    """Extract bounded, selectable text from a publisher PDF.
+
+    Image-only documents remain unsupported: no OCR is inferred or presented
+    as publisher text. The byte and page limits keep parsing bounded.
+    """
+    if not raw.startswith(b"%PDF-"):
+        raise ResearchError("Response declared PDF but does not contain a PDF header")
+    try:
+        from pypdf import PdfReader
+
+        reader = PdfReader(io.BytesIO(raw), strict=False)
+        if reader.is_encrypted:
+            raise ResearchError("PDF is encrypted and cannot be read without a password")
+        page_count = len(reader.pages)
+        if page_count == 0:
+            raise ResearchError("PDF has no pages")
+        if page_count > 300:
+            raise ResearchError(f"PDF has {page_count} pages; maximum is 300")
+        body = _BodyParser.normalize([page.extract_text() or "" for page in reader.pages])
+        if not body:
+            raise ResearchError("PDF contains no selectable text")
+        info = reader.metadata
+        title = str(info.title or "").strip() if info else ""
+        return body, ({"title": title} if title else {})
+    except ResearchError:
+        raise
+    except Exception as exc:
+        raise ResearchError(f"PDF text extraction failed: {type(exc).__name__}: {exc}") from exc
+
+
 def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tuple[str, str, dict[str, str], str]:
     url = validate_source_url(str(source.get("url", "")))
     if source.get("_fixture_path"):
@@ -660,7 +692,7 @@ def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tu
     else:
         request = urllib.request.Request(url, headers={
             "User-Agent": "Eco-GEO-EditorialBot/2.0 (+https://eco-geo.org/)",
-            "Accept": "text/html,application/xhtml+xml,text/plain;q=0.8",
+            "Accept": "text/html,application/xhtml+xml,application/pdf,text/plain;q=0.8",
             "Accept-Encoding": "identity",
         })
         opener = urllib.request.build_opener(_SafeRedirect())
@@ -669,7 +701,7 @@ def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tu
             if getattr(response, "status", 200) != 200:
                 raise ResearchError(f"Source returned status {response.status}")
             content_type = response.headers.get_content_type()
-            if content_type not in {"text/html", "application/xhtml+xml", "text/plain"}:
+            if content_type not in {"text/html", "application/xhtml+xml", "text/plain", "application/pdf"}:
                 raise ResearchError(f"Unsupported source content type: {content_type}")
             length = response.headers.get("Content-Length")
             if length and int(length) > max_bytes:
@@ -679,11 +711,15 @@ def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tu
         method = "https_fetch"
     if len(raw) > max_bytes:
         raise ResearchError("Source response exceeds the byte limit")
-    document = raw.decode(charset, errors="replace")
-    if content_type in {"text/html", "application/xhtml+xml"}:
-        body, metadata = extract_body(document)
+    if content_type == "application/pdf":
+        body, metadata = extract_pdf_body(raw)
+        method = "https_pdf_text"
     else:
-        body, metadata = _BodyParser.normalize([document]), {}
+        document = raw.decode(charset, errors="replace")
+        if content_type in {"text/html", "application/xhtml+xml"}:
+            body, metadata = extract_body(document)
+        else:
+            body, metadata = _BodyParser.normalize([document]), {}
     return body, url, metadata, method
 
 
@@ -774,7 +810,9 @@ def industry_search_plan(topic: Any) -> dict[str, Any]:
 
 
 def _industry_mentions(text: str, industries: set[str]) -> set[str]:
-    text = text.lower()
+    # Publisher PDFs often wrap a phrase across lines; normalize whitespace so
+    # line breaks do not hide otherwise present industry wording.
+    text = re.sub(r"\s+", " ", text).lower()
     matches = {industry for industry in industries
                if any(_matches(alias, text) for alias in INDUSTRY_ALIASES.get(industry, (industry,)))}
     if "b2b_export" in matches and not any(_matches(term, text) for term in
