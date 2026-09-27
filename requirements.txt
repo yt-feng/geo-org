@@ -1,2 +1,4 @@
 openpyxl>=3.1,<4
-pypdf>=5.0,<7
+# PDF text participates in source SHA256/resume identity across scheduled runs.
+# Parser upgrades must be deliberate and pass the PDF/recovery regressions.
+pypdf==6.19.0
