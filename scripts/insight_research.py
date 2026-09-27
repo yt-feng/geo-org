@@ -658,6 +658,10 @@ def extract_pdf_body(raw: bytes) -> tuple[str, dict[str, str]]:
     """
     if not raw.startswith(b"%PDF-"):
         raise ResearchError("Response declared PDF but does not contain a PDF header")
+    # pypdf deliberately repairs some incomplete files. A downloaded research
+    # source must be complete; a repaired prefix is not the publisher document.
+    if not raw.rstrip().endswith(b"%%EOF"):
+        raise ResearchError("PDF text extraction failed: incomplete PDF (missing end marker)")
     try:
         from pypdf import PdfReader
 
@@ -687,7 +691,8 @@ def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tu
         fixture = Path(source["_fixture_path"])
         with fixture.open("rb") as file:
             raw = file.read(max_bytes + 1)
-        content_type = "text/html" if fixture.suffix.lower() in {".html", ".htm"} else "text/plain"
+        content_type = {".html": "text/html", ".htm": "text/html", ".pdf": "application/pdf"}.get(
+            fixture.suffix.lower(), "text/plain")
         charset, method = "utf-8", "local_fixture"
     else:
         request = urllib.request.Request(url, headers={
@@ -711,9 +716,12 @@ def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tu
         method = "https_fetch"
     if len(raw) > max_bytes:
         raise ResearchError("Source response exceeds the byte limit")
-    if content_type == "application/pdf":
+    # A PDF signature takes precedence over an erroneous text MIME type. Never
+    # decode binary PDF objects as if they were selectable publisher text.
+    if content_type == "application/pdf" or raw.startswith(b"%PDF-"):
         body, metadata = extract_pdf_body(raw)
-        method = "https_pdf_text"
+        if method != "local_fixture":
+            method = "https_pdf_text"
     else:
         document = raw.decode(charset, errors="replace")
         if content_type in {"text/html", "application/xhtml+xml"}:

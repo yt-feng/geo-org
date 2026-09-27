@@ -1,0 +1,47 @@
+name: Daily research preflight
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/insight_research.py'
+      - 'scripts/check_daily_research.py'
+      - 'requirements.txt'
+      - '.github/workflows/daily-research-check.yml'
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'Pending topics to check (1 to 5); no drafting or publication'
+        default: '3'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    name: Verify upcoming source evidence
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements.txt
+      - name: Read original sources for upcoming topics
+        env:
+          TOPIC_COUNT: ${{ inputs.count || '3' }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          NEWS_MAX_ITEMS: '3'
+          TAVILY_MAX_QUERIES: '3'
+          TAVILY_MAX_RESULTS: '3'
+        run: python scripts/check_daily_research.py --count "$TOPIC_COUNT"
+      - name: Save source provenance and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-research-preflight-${{ github.run_id }}
+          path: .artifacts/research-preflight.json
+          include-hidden-files: true
+          retention-days: 14
