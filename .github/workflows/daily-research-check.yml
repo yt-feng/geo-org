@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/insight_research.py'
       - 'scripts/check_daily_research.py'
+      - 'scripts/research_source_catalog.py'
+      - 'scripts/research_source_catalog_seed.json'
       - 'requirements.txt'
       - '.github/workflows/daily-research-check.yml'
   workflow_dispatch:
@@ -13,6 +15,10 @@ on:
         description: 'Pending topics to check (1 to 5); no drafting or publication'
         default: '3'
         type: string
+      discovery:
+        description: 'Search for new leads; false re-fetches saved original sources only'
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -29,19 +35,39 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -r requirements.txt
+      - name: Restore previously verified industry source candidates
+        uses: actions/cache/restore@v4
+        with:
+          path: .artifacts/research-source-catalog.json
+          key: geo-research-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: geo-research-catalog-v1-
       - name: Read original sources for upcoming topics
         env:
+          RESEARCH_CATALOG_PATH: .artifacts/research-source-catalog.json
+          DISCOVERY_ENABLED: ${{ github.event_name != 'workflow_dispatch' || inputs.discovery }}
           TOPIC_COUNT: ${{ inputs.count || '3' }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           NEWS_MAX_ITEMS: '3'
           TAVILY_MAX_QUERIES: '3'
           TAVILY_MAX_RESULTS: '3'
-        run: python scripts/check_daily_research.py --count "$TOPIC_COUNT"
+        run: |
+          args=()
+          if [ "$DISCOVERY_ENABLED" = "false" ]; then args+=(--without-discovery); fi
+          python scripts/check_daily_research.py --count "$TOPIC_COUNT" "${args[@]}"
+      - name: Preserve successful source reads even if another topic failed
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: .artifacts/research-source-catalog.json
+          key: geo-research-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Save source provenance and failures
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: daily-research-preflight-${{ github.run_id }}
-          path: .artifacts/research-preflight.json
+          path: |
+            .artifacts/research-preflight.json
+            .artifacts/research-source-catalog.json
           include-hidden-files: true
           retention-days: 14

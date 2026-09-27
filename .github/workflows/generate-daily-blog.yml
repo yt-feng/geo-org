@@ -70,6 +70,13 @@ jobs:
           restore-keys: |
             geo-offline-fragments-${{ hashFiles('scripts/insight_offline_translation.py', 'scripts/hymt_translation_model_manifest.json') }}-
 
+      - name: Restore previously verified industry source candidates
+        uses: actions/cache/restore@v4
+        with:
+          path: .artifacts/research-source-catalog.json
+          key: geo-research-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: geo-research-catalog-v1-
+
       - name: Set up pinned offline translation on CPU
         uses: ./.github/actions/setup-offline-translation
         with:
@@ -77,6 +84,7 @@ jobs:
 
       - name: Generate one researched insight
         env:
+          RESEARCH_CATALOG_PATH: .artifacts/research-source-catalog.json
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           SITE_URL: https://eco-geo.org
@@ -125,6 +133,14 @@ jobs:
           fi
           python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog "${args[@]}"
 
+      - name: Preserve verified research candidates even after generation failure
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: .artifacts/research-source-catalog.json
+          key: geo-research-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+
       - name: Preserve completed offline translation checkpoints
         if: always()
         continue-on-error: true
@@ -153,11 +169,14 @@ jobs:
         id: commit
         env:
           GH_TOKEN: ${{ github.token }}
+          RESEARCH_CATALOG_PATH: .artifacts/research-source-catalog.json
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python scripts/research_source_catalog.py
           git add blog en ar sitemap.xml index.html robots.txt llms.txt about editorial-policy privacy terms contact resources
+          git add scripts/research_source_catalog_seed.json
           if git diff --cached --quiet; then
             echo "No generated blog changes to commit."
           else

@@ -16,6 +16,8 @@ RESEARCH_MIN_BODY_CHARS: default 900 (at least 300).
 RESEARCH_MAX_SOURCE_CHARS: default 10000 (at most 10000).
 RESEARCH_FETCH_TIMEOUT: seconds per request, default 20 (maximum 45).
 RESEARCH_MAX_RESPONSE_BYTES: default 2500000 (maximum 4000000).
+RESEARCH_CATALOG_PATH: optional metadata-only candidate cache. Production restores
+it across runs and still re-fetches every original before it can supply evidence.
 Industry topics require at least one matching industry source body. General AI
 search/marketing sources cannot satisfy this additional evidence requirement.
 """
@@ -891,7 +893,8 @@ def _load_candidates(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> lis
         if not isinstance(entries, list):
             raise ResearchError("RESEARCH_SOURCE_FILE must contain a sources list")
     else:
-        entries = DEFAULT_SOURCES
+        from research_source_catalog import candidates as historical_candidates
+        entries = [*DEFAULT_SOURCES, *historical_candidates()]
         path = None
     topic_text = _topic_text(topic)
     industries = topic_industries(topic)
@@ -1078,6 +1081,11 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                 "excerpt_truncated": excerpt_start > 0 or len(excerpt) < len(body),
                 "text_sha256": digest,
             })
+            # Preserve successful industry reads even if a later source,
+            # drafting, translation or publication step fails. These receipts
+            # are future discovery candidates only; their bodies are never saved.
+            from research_source_catalog import remember
+            remember(pack[-1])
             publisher_domains = {item["publisher_domain"] for item in pack}
             covered_industries = {industry for item in pack for industry in item["industries"]}
             if len(pack) >= maximum and len(publisher_domains) >= domains_min and covered_industries >= industries:
@@ -1212,6 +1220,8 @@ def reread_research_pack(audit_sources: Sequence[Mapping[str, Any]]) -> list[dic
                 "excerpt_truncated": start > 0 or end < len(body),
                 "text_sha256": source["text_sha256"],
             })
+            from research_source_catalog import remember
+            remember(pack[-1])
         except (OSError, ValueError, LookupError, ResearchError) as exc:
             if isinstance(exc, ResearchError) and str(exc).startswith("Cannot resume research:"):
                 raise
