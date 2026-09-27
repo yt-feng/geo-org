@@ -1,6 +1,8 @@
 name: Daily research preflight
 
 on:
+  schedule:
+    - cron: '47 16 * * *' # Verify five upcoming topics before the 18:17 UTC generator.
   pull_request:
     paths:
       - 'scripts/insight_research.py'
@@ -13,7 +15,7 @@ on:
     inputs:
       count:
         description: 'Pending topics to check (1 to 5); no drafting or publication'
-        default: '3'
+        default: '5'
         type: string
       discovery:
         description: 'Search for new leads; false re-fetches saved original sources only'
@@ -22,6 +24,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: daily-research-preflight-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   research:
@@ -36,6 +42,9 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install -r requirements.txt
       - name: Restore previously verified industry source candidates
+        # Actions caches are branch-scoped: PR snapshots cannot replace main's
+        # rolling history. Main's preflight and generator share this prefix.
+        continue-on-error: true
         uses: actions/cache/restore@v4
         with:
           path: .artifacts/research-source-catalog.json
@@ -45,7 +54,7 @@ jobs:
         env:
           RESEARCH_CATALOG_PATH: .artifacts/research-source-catalog.json
           DISCOVERY_ENABLED: ${{ github.event_name != 'workflow_dispatch' || inputs.discovery }}
-          TOPIC_COUNT: ${{ inputs.count || '3' }}
+          TOPIC_COUNT: ${{ inputs.count || '5' }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           NEWS_MAX_ITEMS: '3'
           TAVILY_MAX_QUERIES: '3'

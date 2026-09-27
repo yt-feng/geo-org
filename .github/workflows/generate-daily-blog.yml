@@ -43,6 +43,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # A scheduled run queued behind another publisher must select its
+          # next article from main at job start, not the older cron-event SHA.
+          ref: ${{ github.event_name == 'schedule' && 'main' || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -71,6 +74,7 @@ jobs:
             geo-offline-fragments-${{ hashFiles('scripts/insight_offline_translation.py', 'scripts/hymt_translation_model_manifest.json') }}-
 
       - name: Restore previously verified industry source candidates
+        continue-on-error: true
         uses: actions/cache/restore@v4
         with:
           path: .artifacts/research-source-catalog.json
