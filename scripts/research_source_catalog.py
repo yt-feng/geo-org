@@ -110,6 +110,11 @@ def records(*, extra: dict | None = None) -> list[dict]:
     if path is None:
         return []
     entries = [*_read_records(SEED_PATH), *_read_records(POSTS_PATH, posts=True), *_read_records(path)]
+    # Separate producer snapshots prevent a slower generator overwriting the
+    # newer preflight history. Both workflows restore both fixed cache paths.
+    peer = os.environ.get("RESEARCH_CATALOG_PEER_PATH", "").strip()
+    if peer:
+        entries.extend(_read_records(Path(peer)))
     if extra is not None:
         entries.append(extra)
     unique = {}
@@ -142,7 +147,9 @@ def candidates() -> list[dict]:
         grouped.setdefault(record["url"], []).append(record)
     result = []
     for receipts in grouped.values():
-        candidate = {key: receipts[0][key] for key in ("url", "title", "published") if key in receipts[0]}
+        # A past publication date is not a new read of the page's date metadata.
+        # Do not let a historical receipt become a curated date fallback.
+        candidate = {key: receipts[0][key] for key in ("url", "title")}
         candidate["industries"] = sorted({industry for row in receipts for industry in row["industries"]})
         scopes = []
         for scope in sorted({row["scope_notes"] for row in receipts}, key=len, reverse=True):

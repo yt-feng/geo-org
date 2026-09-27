@@ -62,6 +62,7 @@ TRUSTED_HOSTS = {
     "www.mca.org.uk": ("mca.org.uk", "Management Consultancies Association", "industry_association_research"),
     "www.wipo.int": ("wipo.int", "World Intellectual Property Organization", "institutional_research"),
     "www.nist.gov": ("nist.gov", "National Institute of Standards and Technology", "government_research"),
+    "nvlpubs.nist.gov": ("nist.gov", "National Institute of Standards and Technology", "government_research"),
     "ai-challenges.nist.gov": ("nist.gov", "National Institute of Standards and Technology", "government_research"),
     "single-market-economy.ec.europa.eu": ("europa.eu", "European Commission", "regulatory_documentation"),
     "www.ilo.org": ("ilo.org", "International Labour Organization", "institutional_research"),
@@ -80,6 +81,18 @@ RESEARCH_PAPER_SCOPE = (
 )
 
 DEFAULT_SOURCES = [
+    {
+        "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+        "title": "Consumer IoT Cybersecurity",
+        "industries": ["smart_hardware"],
+        "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness.",
+    },
+    {
+        "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.500-322.pdf",
+        "title": "Evaluation of Cloud Computing Services Based on NIST SP 800-145",
+        "industries": ["cloud_computing"],
+        "scope_notes": "NIST SP 500-322, February 2018, US cloud-service definitions and evaluation framework. Historical technical categorisation guidance is not a current cloud market survey, vendor recommendation, Chinese procurement rule or evidence of GEO outcomes. Only the extracted excerpt is evidence, not unread pages.",
+    },
     {
         "url": GOOGLE_BASELINE_URL,
         "title": "AI features and your website",

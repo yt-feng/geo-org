@@ -43,16 +43,25 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - name: Restore previously verified industry source candidates
         # Actions caches are branch-scoped: PR snapshots cannot replace main's
-        # rolling history. Main's preflight and generator share this prefix.
+        # rolling history. Each producer has its own snapshot and reads both.
         continue-on-error: true
         uses: actions/cache/restore@v4
         with:
-          path: .artifacts/research-source-catalog.json
-          key: geo-research-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: geo-research-catalog-v1-
+          path: .artifacts/research-catalog-preflight.json
+          key: geo-research-catalog-preflight-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: geo-research-catalog-preflight-v1-
+      - name: Restore verified sources from the other catalog producer
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: .artifacts/research-catalog-generator.json
+          key: geo-research-catalog-generator-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: geo-research-catalog-generator-v1-
+
       - name: Read original sources for upcoming topics
         env:
-          RESEARCH_CATALOG_PATH: .artifacts/research-source-catalog.json
+          RESEARCH_CATALOG_PATH: .artifacts/research-catalog-preflight.json
+          RESEARCH_CATALOG_PEER_PATH: .artifacts/research-catalog-generator.json
           DISCOVERY_ENABLED: ${{ github.event_name != 'workflow_dispatch' || inputs.discovery }}
           TOPIC_COUNT: ${{ inputs.count || '5' }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
@@ -68,8 +77,8 @@ jobs:
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
-          path: .artifacts/research-source-catalog.json
-          key: geo-research-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/research-catalog-preflight.json
+          key: geo-research-catalog-preflight-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Save source provenance and failures
         if: always()
         uses: actions/upload-artifact@v4
@@ -77,6 +86,7 @@ jobs:
           name: daily-research-preflight-${{ github.run_id }}
           path: |
             .artifacts/research-preflight.json
-            .artifacts/research-source-catalog.json
+            .artifacts/research-catalog-preflight.json
+            .artifacts/research-catalog-generator.json
           include-hidden-files: true
           retention-days: 14

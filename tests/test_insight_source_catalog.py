@@ -128,6 +128,13 @@ class SourceCatalogTests(unittest.TestCase):
             with self.assertRaisesRegex(research.ResearchError, "Missing industry evidence: supply_chain"):
                 research.build_research_pack(self.topic, [])
 
+    def test_historical_date_cannot_supply_missing_current_page_date(self):
+        self.save(self.cache, [self.receipt()])
+        candidate = catalog.candidates()[0]
+        self.assertNotIn("published", candidate)
+        published, note = research._publication_metadata({"publication_date_status": "absent"}, candidate)
+        self.assertEqual(published, "")
+
     def test_explicit_source_file_retains_its_exclusive_scope(self):
         self.save(self.cache, [self.receipt()])
         config = self.root / "explicit.json"
@@ -142,6 +149,25 @@ class SourceCatalogTests(unittest.TestCase):
         catalog.promote()
         self.cache.unlink()
         self.assertEqual({r["url"] for r in catalog.records()}, {seed["url"], new["url"]})
+
+    def test_late_generator_snapshot_cannot_hide_new_preflight_receipt(self):
+        base = self.receipt()
+        future = self.receipt("https://www.oecd.org/future-industry.pdf")
+        today = self.receipt("https://www.oecd.org/today.pdf")
+        preflight = self.root / "preflight.json"
+        # Independent runners restored the same base. Preflight finishes first;
+        # the slow generator finishes last with an older snapshot plus today.
+        self.save(preflight, [base, future])
+        self.save(self.cache, [base, today])
+        with mock.patch.dict(os.environ, {"RESEARCH_CATALOG_PEER_PATH": str(preflight)}):
+            self.assertEqual({r["url"] for r in catalog.records()},
+                             {base["url"], future["url"], today["url"]})
+            catalog.remember(today)
+            catalog.promote()
+        self.cache.unlink()
+        preflight.unlink()
+        self.assertEqual({r["url"] for r in catalog.records()},
+                         {base["url"], future["url"], today["url"]})
 
     def test_atomic_write_failure_keeps_previous_receipts(self):
         self.save(self.cache, [self.receipt()])
