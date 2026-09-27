@@ -121,6 +121,42 @@ class PDFResearchTests(unittest.TestCase):
                 self.assertRaisesRegex(research.ResearchError, "allowlist"):
             research._fetch_source({"url": self.url}, 100000, 7)
 
+    def test_changing_search_results_cannot_remove_independent_industry_fallbacks(self):
+        topic = daily.gb.TopicRow(706, "Legal services GEO", {"行业": "法律服务"}, "法律服务", "GEO")
+        curated = [s for s in research.DEFAULT_SOURCES if "legal_services" in s.get("industries", [])]
+        self.assertGreaterEqual(len({research.TRUSTED_HOSTS[research.urllib.parse.urlsplit(s["url"]).hostname][0]
+                                     for s in curated}), 2)
+        failed_search = [
+            {"url": "https://www.oecd.org/blocked-justice.html", "title": "Legal services research"},
+            {"url": "https://www.oecd.org/oversized-legal-services.pdf", "title": "Legal services research"},
+        ]
+        fetched = []
+        deny_oecd = False
+
+        def fetch(source, *_):
+            url = source["url"]
+            fetched.append(url)
+            if url in {item["url"] for item in failed_search}:
+                raise research.ResearchError("Source response exceeds the byte limit" if url.endswith(".pdf") else "HTTP Error 403")
+            if deny_oecd and "www.oecd.org/" in url:
+                raise research.ResearchError("HTTP Error 403")
+            body = (("Synthetic legal services client-choice evidence. " if source.get("_matched_industries") else "Synthetic general search evidence. ")
+                    + url + " ") * 30
+            anchor = source.get("excerpt_anchor", "")
+            return anchor + " " + body, url, {}, "https_pdf_text" if url.endswith(".pdf") else "https_fetch"
+
+        with mock.patch.object(research, "_fetch_source", side_effect=fetch):
+            for leads in ([], failed_search, list(reversed(failed_search))):
+                for deny_oecd in (False, True):
+                    with self.subTest(leads=len(leads), oecd_unavailable=deny_oecd):
+                        pack = research.build_research_pack(topic, leads)
+                        industry = [s for s in pack if "legal_services" in s["industries"]]
+                        self.assertTrue(industry)
+                        self.assertTrue(any(s["url"] in {entry["url"] for entry in curated} for s in industry))
+                        if deny_oecd:
+                            self.assertTrue(any(s["publisher_domain"] == "gov.uk" for s in industry))
+            self.assertTrue(all("industry_context" == s["evidence_role"] for s in industry))
+
     def test_industry_replay_repeated_day_next_topic_and_failure_recovery(self):
         # Replay 9/24-25: the HTML source is forbidden, but the alternative is
         # a complete PDF. Simulate subsequent schedules and a different industry.
