@@ -1,5 +1,768 @@
 [
   {
+    "order": "715",
+    "row": "706",
+    "slug": "00706-ai-geo-ai-231b90c4",
+    "title": "Eco-GEO：الجدل حول AI: نفس المجموعة من الأشخاص، هل يجب أن يتم تأسيس الحقائق أولاً أم توسيع المعايير أولاً؟ – قواعد الاختيار التي يمكن تغييرها في فرق الخدمات القانونية",
+    "excerpt": "بالنسبة للفرق التي تعمل في مرحلة التحضير للتمويل أو الإدراج في البورصة، والتي لديها فريق قانوني يمكنه التحقق من الحقائق الرسمية بشكل مستقل، فإن السؤال الحقيقي ليس \"هل يجب القيام بعملية ترويج العلامة التجاريةGEO أم لا\"، بل ما هو الخيار الأفضل الذي يجب اتخاذه من قبل نفس الفريق في نفس الفترة الزمنية. يقدم هذا المقال ترتيبًا يمكن تغييره: أولاً، يتم قياس معدل الأخطاء في الحقائق المؤكدة، ثم يتم مقارنة تكلفة العمل المطلوب لتحديد القيمة الصحيحة. ينطبق هذا الترتيب على الفرق التي يمكنها جمع الحقائق ومراجعتها يدويًا بشكل مستقر، وعلى الفرق التي لا تمتلك سجلات حقوقية أو التي تكون اتجاهات الاقتباس لديها غير مستقرة. جميع الأرقام في النص، باستثناء تلك المشار إليها بعلامات، هي افتراضات توضيحية وليست معايير صناعية.",
+    "category": "GEO للعلامات التجارية",
+    "tags": "العلامة التجارية GEO، القبعة البيضاء GEO، الخدمات القانونية، استخدام AI في البحث والاقتباس، فترة الاستعداد لإصدار الأسهم، قواعد اتخاذ القرارات، Eco-GEO، خدمات GEO، تحسين البحث باستخدام AI.",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-28",
+    "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/ar/blog/articles/00706-ai-geo-ai-231b90c4/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:44+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:45+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S3",
+        "title": "CMA publishes review of progress in legal services sector",
+        "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+        "publisher": "UK Government",
+        "published": "2020-12-17",
+        "retrieved_at": "2026-09-27T17:14:46+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 5527,
+        "body_chars": 5527,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "gov.uk",
+        "evidence_role": "industry_context",
+        "industries": [
+          "legal_services"
+        ],
+        "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+        "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+        "url": "https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:47+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 6082,
+        "body_chars": 6082,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "4bfdc19a9a5b2b077fa2bdc9818cde9f4af6b8c63983cdb48bcdc81b38e0e4ea"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:48+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "ar",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "h2_count": 10,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 7,
+            "cells": 21
+          },
+          {
+            "captions": 1,
+            "rows": 6,
+            "headers": 7,
+            "cells": 35
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "economics": 1,
+          "executive-summary": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S2": 4,
+          "S3": 1,
+          "S4": 3
+        },
+        "visible_character_count": 17896,
+        "zh_character_count": 2372,
+        "word_count": 3698,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 10,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "blogs.bing.com",
+          "developers.google.com",
+          "gov.uk"
+        ],
+        "unique_cited_sources": 4,
+        "unique_cited_domains": 4,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 10,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 7,
+                "cells": 21
+              },
+              {
+                "captions": 1,
+                "rows": 6,
+                "headers": 7,
+                "cells": 35
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 2,
+              "S2": 4,
+              "S3": 1,
+              "S4": 3
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 2,
+                "0.08": 1,
+                "0.12": 1,
+                "0.24": 1,
+                "0.5": 6,
+                "0.6": 2,
+                "1": 4,
+                "10": 17,
+                "10%": 1,
+                "12%": 2,
+                "2": 16,
+                "2.09": 1,
+                "2.5": 1,
+                "2.86": 3,
+                "20": 9,
+                "2020": 2,
+                "22": 12,
+                "25": 45,
+                "26": 2,
+                "28": 2,
+                "3": 30,
+                "3.98": 1,
+                "30": 9,
+                "30.4": 1,
+                "4": 9,
+                "40": 5,
+                "42": 3,
+                "46.3": 1,
+                "5": 8,
+                "5.2": 1,
+                "5.33": 1,
+                "5.71": 2,
+                "50": 2,
+                "6": 18,
+                "6.26": 1,
+                "60": 1,
+                "7": 13,
+                "7.14": 2,
+                "7.5": 2,
+                "70%": 5,
+                "8": 17,
+                "8%": 1,
+                "80": 2
+              },
+              "translated": {
+                "0": 2,
+                "0.08": 1,
+                "0.12": 1,
+                "0.24": 1,
+                "0.5": 6,
+                "0.6": 2,
+                "1": 4,
+                "10": 17,
+                "10%": 1,
+                "12%": 2,
+                "2": 11,
+                "2.09": 1,
+                "2.5": 1,
+                "2.86": 3,
+                "20": 9,
+                "2020": 2,
+                "22": 12,
+                "25": 44,
+                "26": 2,
+                "28": 2,
+                "3": 29,
+                "3.98": 1,
+                "30": 9,
+                "30.4": 1,
+                "4": 9,
+                "40": 5,
+                "42": 3,
+                "46.3": 1,
+                "5": 8,
+                "5.2": 1,
+                "5.33": 1,
+                "5.71": 2,
+                "50": 2,
+                "6": 16,
+                "6.26": 1,
+                "60": 1,
+                "7": 13,
+                "7.14": 2,
+                "7.5": 2,
+                "70%": 5,
+                "8": 17,
+                "8%": 1,
+                "80": 2
+              },
+              "missing": {
+                "2": 5,
+                "25": 1,
+                "3": 1,
+                "6": 2
+              },
+              "added": {},
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 2,
+                    "path": "/section[1]/p[1]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "对处在融资或IPO准备期、已有可独立核验官方事实源（监管注册信息、公开计费说明、公开业绩口径）、且能稳定抽出并人工复核目标问题集的法律服务团队，本期真正的决策不是\"要不要做品牌化GEO\"，而是同一批人（本示例按约三人、可投入约40个当量工时）在同一个2周观察窗里，先做哪一项。三个互斥选项：A＝事实与证据底座（统一服务范围、计费方式、律师资质、公开业绩口径，并修复已核实的严重错误）；B＝把品牌定位压成一组可被引用的标准答案题面并扩写覆盖；C＝暂缓，只支付基线采样与监测工时。三项结论如下。",
+                    "numbers": {
+                      "2": 1,
+                      "40": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 2,
+                    "path": "/section[1]/p[1]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "بالنسبة للفرق القانونية التي تكون في مرحلة التحضير للتمويل أو الإدراج في البورصة، ولديها مصادر رسمية قابلة للتحقق منها بشكل مستقل (معلومات التسجيل التنظيمي، تعليمات التسعير العلنية، معايير الأداء العلنية)، والتي يمكنها جمع وتدقيق مجموعة المشكلات المستهدفة يدويًا بانتظام، فإن القرار الحقيقي في هذه الحالة ليس \"هل يجب أم لا القيام بالعملية التجاريةGEO\"، بل ما هو الذي يمكن أن يقوم به نفس الأشخاص (في هذا المثال، حوالي ثلاثة أشخاص، يمكن استخدام حوالي 40 ساعة عمل) خلال فترة ملاحظة مدتها أسبوعين، وما هو الذي يجب القيام به أولاً. هناك ثلاثة خيارات متعارضة: A = أساس الحقائق والأدلة (نطاق الخدمة الموحد، طريقة التسعير، مؤهلات المحامين، معايير الأداء العلنية، وإصلاح الأخطاء الخطيرة التي تم التحقق منها)؛ B = تحويل العلامة التجارية إلى مجموعة من الإجابات القياسية يمكن الاستشهاد بها وتوسيعها لتغطية المزيد من الأمور؛ C = تأجيل العملية لفترة، دفع فقط تكاليف الجزء الأساسي من العملية والوقت اللازم للمراقبة. النتائج الثلاثة كالتالي.",
+                    "numbers": {
+                      "40": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "2": 1
+                  },
+                  "added": {}
+                },
+                {
+                  "source": {
+                    "block_index": 6,
+                    "path": "/h2[1]",
+                    "fragment_index": 1,
+                    "tag": "h2",
+                    "text": "一、机制起点：被引用是可干预的通道，但通道不等于结果",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 6,
+                    "path": "/h2[1]",
+                    "fragment_index": 1,
+                    "tag": "h2",
+                    "text": "١. نقطة البداية في الآلية: ما يُستشهد به هو قناة قابلة للتعديل، لكن القناة لا تعادل النتيجة.",
+                    "numbers": {
+                      "1": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "1": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 15,
+                    "path": "/p[7]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "把机制落到本场景，A 与 B 消耗的是同一批人的同一段观察窗容量。绑定约束是同一批约三人、当期可投入约40个当量工时的内容与市场团队，其中共同前置约10小时（基线采样6小时、监测与复核4小时）不可省。若不做算术，A 与 B 相加约60小时看似小于一个\"80小时\"的额度，但真正的约束是人手在2周内的可支配当量、以及干预与观察必须在同一窗口内完成：先把 A 做到能测、再回头做 B，就跨出了同一观察窗，B 的效果无法与 A 的起点做同口径比较，因此\"两个都做\"并不成立。下文所有工时均按含共同前置的同一口径列出，表注中不再重复。",
+                    "numbers": {
+                      "10": 1,
+                      "2": 1,
+                      "4": 1,
+                      "40": 1,
+                      "6": 1,
+                      "60": 1,
+                      "80": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 15,
+                    "path": "/p[7]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "يتم تطبيق الآلية في هذا السيناريو، حيث يستهلك كل من A وB نفس مجموعة الأشخاص ونفس الفترة الزمنية للمراقبة. القيود المفروضة هي ، وهي تتعلق بمجموعة من ثلاثة أشخاص فقط، ويُمكن استخدام حوالي 40 ساعة عمل في هذه الفترة، بالإضافة إلى فريق السوق . يتم تخصيص حوالي 10 ساعات مسبقة (6 ساعات للتحليل الأساسي، و4 ساعات للمراقبة والتدقيق)، ولا يمكن تخطيها. إذا لم نقم بالحسابات، فإن مجموع ساعات العمل لكل من A وB يبلغ حوالي 60 ساعة، وهو ما يبدو أقل من الحد الأقصى البالغ 80 ساعة، لكن القيود الحقيقية تتمثل في عدد الأشخاص الذين يمكنهم العمل خلال أسبوعين، وكذلك ضرورة إكمال العمليات التدخلية والمراقبة في نفس الفترة الزمنية. يجب أن يتم إجراء A أولاً، ثم B، حتى يتم الوصول إلى نفس الفترة الزمنية للمراقبة، ولا يمكن مقارنة نتائج B مع نقطة البداية لA. لذلك، فإن \"إجراء كلا العمليات\" غير ممكن. جميع ساعات العمل المذكورة في النص تُعرض وفقًا للـ، بما في ذلك الوقت المسبق ، ولن يتم تكرار الإشارات في الجداول.",
+                    "numbers": {
+                      "10": 1,
+                      "4": 1,
+                      "40": 1,
+                      "6": 1,
+                      "60": 1,
+                      "80": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "2": 1
+                  },
+                  "added": {}
+                },
+                {
+                  "source": {
+                    "block_index": 17,
+                    "path": "/table[1]/caption[1]",
+                    "fragment_index": 1,
+                    "tag": "caption",
+                    "text": "表一：同一批人、同一观察窗下三种行动的适用条件、触发指标与取舍（阈值均为建议试验值，须经2周基线校准；资源强度均按含共同前置的同一口径）",
+                    "numbers": {
+                      "2": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 17,
+                    "path": "/table[1]/caption[1]",
+                    "fragment_index": 1,
+                    "tag": "caption",
+                    "text": "الجدول الأول: شروط تطبيق ثلاثة أنواع من الإجراءات من قبل نفس المجموعة، تحت نفس نافذة المراقبة، والمؤشرات التي تحفز تنفيذها والعتبات المستخدمة (جميع العتبات هي قيم تجريبية مقترحة، ويجب تصحيحها خلال أسبوعين على أساس خط الأساس؛ قوة الموارد تُحسب وفقًا للمعايير نفسها بما في ذلك الموارد المشتركة).",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "2": 1
+                  },
+                  "added": {}
+                }
+              ],
+              "block_differences_total": 10,
+              "block_differences_truncated": true
+            }
+          }
+        },
+        "publication_policy": "readable-translation-v1",
+        "quality_warning_count": 1
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "body_html.8",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.8",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.8",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.30",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.30",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.38",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.38",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.38",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.46",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.46",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.46",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.58",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.58",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.58",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.66",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.66",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.70",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.70",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.70",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.76",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.76",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.128",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.128",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.128",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.160",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.176",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.176",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.188",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.188",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.192",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.218",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.218",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.218",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.230",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.320",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.336",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.336",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.336",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.352",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.356",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.360",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.420",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.424",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.428",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.442",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.446",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.446",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.446",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.450",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.450",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.450",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.454",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.454",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.454",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.462",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.462",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.462",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.466",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.466",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.466",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.474",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.474",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.474",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.490",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.500",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.500",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.500",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.508",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.508",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.512",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.512",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.512",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.526",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.526",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.526",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.530",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.530",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.530",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "714",
     "row": "702",
     "slug": "00702-ai-geo-e23caaaa",
