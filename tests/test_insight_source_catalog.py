@@ -55,6 +55,17 @@ class SourceCatalogTests(unittest.TestCase):
         self.assertEqual({r["url"] for r in catalog.records()}, {first["url"], second["url"], third["url"]})
         self.assertTrue(all(set(r) <= set(catalog.FIELDS) for r in catalog.records()))
 
+    def test_every_entry_point_reads_checked_history_without_cache_environment(self):
+        seed, published = self.receipt(), self.receipt("https://www.oecd.org/published.pdf")
+        self.save(self.seed, [seed])
+        self.posts.write_text(json.dumps([{"sources": [published, {"url": "https://www.oecd.org/citation-only"}]}]))
+        with mock.patch.dict(os.environ, {}, clear=True):
+            candidates = research._load_candidates(self.topic, [])
+            self.assertTrue({seed["url"], published["url"]} <= {r["url"] for r in candidates})
+            self.assertNotIn("https://www.oecd.org/citation-only", {r["url"] for r in candidates})
+            catalog.remember(self.receipt("https://www.oecd.org/no-cache-write.pdf"))
+        self.assertFalse(self.cache.exists())
+
     def test_invalid_generated_untrusted_future_or_incomplete_receipts_are_never_candidates(self):
         mutations = [("retrieval_method", "generated"), ("retrieval_method", "local_fixture"),
                      ("url", "https://untrusted.example/source"), ("url", "http://www.oecd.org/source"),

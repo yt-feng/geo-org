@@ -107,9 +107,12 @@ def _read_records(path: Path, *, posts: bool = False) -> list:
 def records(*, extra: dict | None = None) -> list[dict]:
     """Merge checked seeds, publication receipts and a failed-run cache safely."""
     path = cache_path()
-    if path is None:
-        return []
-    entries = [*_read_records(SEED_PATH), *_read_records(POSTS_PATH, posts=True), *_read_records(path)]
+    # Checked history is shared by every research entry point, including CLI
+    # and sample generation. The optional environment path controls caching,
+    # not whether those workflows can discover known original sources.
+    entries = [*_read_records(SEED_PATH), *_read_records(POSTS_PATH, posts=True)]
+    if path is not None:
+        entries.extend(_read_records(path))
     # Separate producer snapshots prevent a slower generator overwriting the
     # newer preflight history. Both workflows restore both fixed cache paths.
     peer = os.environ.get("RESEARCH_CATALOG_PEER_PATH", "").strip()
