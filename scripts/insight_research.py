@@ -82,18 +82,6 @@ RESEARCH_PAPER_SCOPE = (
 
 DEFAULT_SOURCES = [
     {
-        "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
-        "title": "Consumer IoT Cybersecurity",
-        "industries": ["smart_hardware"],
-        "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness.",
-    },
-    {
-        "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.500-322.pdf",
-        "title": "Evaluation of Cloud Computing Services Based on NIST SP 800-145",
-        "industries": ["cloud_computing"],
-        "scope_notes": "NIST SP 500-322, February 2018, US cloud-service definitions and evaluation framework. Historical technical categorisation guidance is not a current cloud market survey, vendor recommendation, Chinese procurement rule or evidence of GEO outcomes. Only the extracted excerpt is evidence, not unread pages.",
-    },
-    {
         "url": GOOGLE_BASELINE_URL,
         "title": "AI features and your website",
         "tags": ["geo", "AI搜索", "AI search", "seo", "引用", "索引", "可见度", "监测", "技术", "结构化"],
@@ -1069,8 +1057,10 @@ def build_research_pack(topic: Any, news_items: Sequence[Mapping[str, Any]]) -> 
                 "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness."
                 if matched_industries else
                 "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion."
-            )) + " ".join(" Sector boundary: " + INDUSTRY_SCOPE_NOTES[industry]
-                          for industry in sorted(matched_industries) if industry in INDUSTRY_SCOPE_NOTES)
+            ))
+            for industry in sorted(matched_industries):
+                if industry in INDUSTRY_SCOPE_NOTES:
+                    scope_notes = _with_publication_note(scope_notes, "Sector boundary: " + INDUSTRY_SCOPE_NOTES[industry])
             if evidence_kind == "research_paper":
                 scope_notes = _with_publication_note(scope_notes, RESEARCH_PAPER_SCOPE)
             pack.append({

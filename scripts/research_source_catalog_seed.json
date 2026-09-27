@@ -81,6 +81,46 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+      "title": "Consumer IoT Cybersecurity",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2021-11-09",
+      "retrieved_at": "2026-09-27T17:35:45+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "smart_hardware"
+      ],
+      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
+      "body_chars": 3490,
+      "excerpt_start": 0,
+      "excerpt_end": 3490,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+      "title": "NIST SP 500-292",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:36:03+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
+      "body_chars": 75496,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
     }
   ]
 }

@@ -213,6 +213,23 @@ class SourceCatalogTests(unittest.TestCase):
             catalog.remember(self.receipt())
         self.assertEqual(self.cache.read_bytes(), before)
 
+    def test_new_daily_read_does_not_append_the_same_scope_boundary_again(self):
+        receipt = self.receipt()
+        receipt["industries"] = ["smart_hardware"]
+        receipt["scope_notes"] += " Sector boundary: " + research.INDUSTRY_SCOPE_NOTES["smart_hardware"]
+        self.save(self.cache, [receipt])
+        topic = SimpleNamespace(title="智能硬件 GEO", category="智能硬件", keywords="GEO", context={"行业": "智能硬件"})
+        generic = [{"url": f"https://{host}/general", "title": "GEO evidence", "tags": ["GEO"]}
+                   for host in ("developers.google.com", "blogs.bing.com")]
+        def fetch(source, *_):
+            return (f"Synthetic smart devices source {source['url']}. " * 40,
+                    source["url"], {}, "https_fetch")
+        with mock.patch.object(research, "DEFAULT_SOURCES", generic), mock.patch.object(research, "_fetch_source", side_effect=fetch):
+            for _ in range(3):
+                pack = research.build_research_pack(topic, [])
+                industry = next(r for r in pack if r["industries"])
+                self.assertEqual(industry["scope_notes"], receipt["scope_notes"])
+
     def test_one_frequent_industry_cannot_displace_all_other_industries(self):
         rows = [self.receipt(f"https://www.oecd.org/supply-{i}.pdf") for i in range(12)]
         gaming = self.receipt("https://www.oecd.org/gaming.pdf")
