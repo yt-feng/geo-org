@@ -559,7 +559,7 @@ class ResearchTests(unittest.TestCase):
         self.assertEqual(method, "https_fetch")
         self.assertEqual(opener.open.call_args.kwargs["timeout"], 7)
 
-    def test_pdf_is_not_misread_as_html(self):
+    def test_incomplete_pdf_is_rejected_instead_of_misread_as_html(self):
         response = io.BytesIO(b"%PDF-1.7")
         response.headers = Message()
         response.headers["Content-Type"] = "application/pdf"
@@ -568,7 +568,7 @@ class ResearchTests(unittest.TestCase):
         opener = mock.Mock()
         opener.open.return_value = response
         with mock.patch.object(research.urllib.request, "build_opener", return_value=opener):
-            with self.assertRaisesRegex(research.ResearchError, "content type"):
+            with self.assertRaisesRegex(research.ResearchError, "incomplete PDF"):
                 research._fetch_source({"url": "https://www.bcg.com/paper.pdf"}, 10000, 7)
 
     def test_publication_conflict_is_empty_and_scope_note_survives_build(self):

@@ -21,6 +21,7 @@ on:
 permissions:
   contents: write
   actions: write
+  checks: read
 
 concurrency:
   group: generate-daily-blog
@@ -150,6 +151,8 @@ jobs:
       - name: Commit generated article
         if: ${{ inputs.preview != true }}
         id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -159,7 +162,8 @@ jobs:
             echo "No generated blog changes to commit."
           else
             git commit -m "Generate daily blog article"
-            git push origin HEAD:main
+            python scripts/publish_checked_article.py \
+              --branch "automation/daily-article-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 

@@ -51,6 +51,7 @@ TRUSTED_HOSTS = {
     "www.ers.usda.gov": ("usda.gov", "USDA Economic Research Service", "government_research"),
     "www.samr.gov.cn": ("samr.gov.cn", "State Administration for Market Regulation", "regulatory_documentation"),
     "www.gov.cn": ("gov.cn", "State Council of the People's Republic of China", "government_documentation"),
+    "www.gov.uk": ("gov.uk", "UK Government", "government_research"),
     "www.stats.gov.cn": ("stats.gov.cn", "National Bureau of Statistics of China", "government_research"),
     "www.mofcom.gov.cn": ("mofcom.gov.cn", "Ministry of Commerce of China", "government_documentation"),
     "www.trade.gov": ("trade.gov", "International Trade Administration", "government_documentation"),
@@ -320,6 +321,16 @@ INDUSTRY_SCOPE_NOTES = {
 }
 
 DEFAULT_SOURCES.extend([
+    # Keep independently hosted industry originals available when tomorrow's
+    # search results contain only blocked HTML or oversized PDF alternatives.
+    {"url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/03/protecting-and-promoting-competition-in-response-to-disruptive-innovations-in-legal-services_6ee10319/ca47c852-en.pdf",
+     "title": "Protecting and Promoting Competition in Response to Disruptive Innovations in Legal Services",
+     "tags": ["法律", "客户", "信息", "竞争", "证据"], "industries": ["legal_services"],
+     "scope_notes": "OECD Secretariat discussion paper from 2016 about legal-service innovation and regulation. Historical, multi-jurisdiction analysis; use only the retrieved excerpt with its stated period and geography. It is not current Chinese legal-sector data, an endorsement, or measured GEO effectiveness."},
+    {"url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+     "title": "CMA publishes review of progress in legal services sector",
+     "tags": ["法律", "客户", "信息", "信任", "证据"], "industries": ["legal_services"], "published": "2020-12-17",
+     "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects."},
     {"url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
      "title": "直播电商监督管理办法", "tags": ["直播", "信任", "内容", "治理"], "industries": ["livestream_commerce"], "published": "2026-01-07",
      "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction."},
@@ -658,6 +669,10 @@ def extract_pdf_body(raw: bytes) -> tuple[str, dict[str, str]]:
     """
     if not raw.startswith(b"%PDF-"):
         raise ResearchError("Response declared PDF but does not contain a PDF header")
+    # pypdf deliberately repairs some incomplete files. A downloaded research
+    # source must be complete; a repaired prefix is not the publisher document.
+    if not raw.rstrip().endswith(b"%%EOF"):
+        raise ResearchError("PDF text extraction failed: incomplete PDF (missing end marker)")
     try:
         from pypdf import PdfReader
 
@@ -687,7 +702,8 @@ def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tu
         fixture = Path(source["_fixture_path"])
         with fixture.open("rb") as file:
             raw = file.read(max_bytes + 1)
-        content_type = "text/html" if fixture.suffix.lower() in {".html", ".htm"} else "text/plain"
+        content_type = {".html": "text/html", ".htm": "text/html", ".pdf": "application/pdf"}.get(
+            fixture.suffix.lower(), "text/plain")
         charset, method = "utf-8", "local_fixture"
     else:
         request = urllib.request.Request(url, headers={
@@ -711,9 +727,12 @@ def _fetch_source(source: Mapping[str, Any], max_bytes: int, timeout: int) -> tu
         method = "https_fetch"
     if len(raw) > max_bytes:
         raise ResearchError("Source response exceeds the byte limit")
-    if content_type == "application/pdf":
+    # A PDF signature takes precedence over an erroneous text MIME type. Never
+    # decode binary PDF objects as if they were selectable publisher text.
+    if content_type == "application/pdf" or raw.startswith(b"%PDF-"):
         body, metadata = extract_pdf_body(raw)
-        method = "https_pdf_text"
+        if method != "local_fixture":
+            method = "https_pdf_text"
     else:
         document = raw.decode(charset, errors="replace")
         if content_type in {"text/html", "application/xhtml+xml"}:
