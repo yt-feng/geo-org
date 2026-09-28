@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from html import unescape
 from unittest.mock import patch, Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -39,6 +40,86 @@ class FakeTranslator:
 
 
 class OfflineArticleTests(unittest.TestCase):
+    def test_real_partial_comparison_is_safe_when_joined_to_next_block_tag(self):
+        fixture = json.loads((Path(__file__).parent / "fixtures" /
+            "translation-angle-assembly-36351630936.json").read_text())
+        source, raw = fixture["source"], fixture["translation"]
+        # This exact production block passed in isolation, then failed only when
+        # its '<threshold' swallowed the next paragraph's closing delimiter.
+        offline.validate_block(source, raw, "en", quality_mode="publish")
+        with self.assertRaisesRegex(offline.OfflineTranslationError, "HTML tags"):
+            offline.validate_block(source + "</p>", raw + "</p>", "en", quality_mode="publish")
+        original = {"title": "Example", "excerpt": "An example", "tags": "GEO",
+                    "body_html": "<p>" + source + "</p><p>Next paragraph.</p>"}
+
+        class ReplayTranslator(FakeTranslator):
+            def translate(self, text, target, source):
+                self.calls.append(text)
+                return raw if text == fixture["source"] else text
+
+        with tempfile.TemporaryDirectory() as directory:
+            result = offline.translate_article(original, "en", checkpoint_path=Path(directory) / "checkpoint.json",
+                                               translator=ReplayTranslator())
+        self.assertIn("&lt;threshold 5", result["body_html"])
+        self.assertNotIn("<threshold", result["body_html"])
+        self.assertEqual(offline._TAG.findall(original["body_html"]), offline._TAG.findall(result["body_html"]))
+        self.assertEqual(unescape(offline._TAG.sub("", result["body_html"])),
+                         unescape(offline._TAG.sub("", raw)) + "Next paragraph.")
+        self.assertEqual(result["translation_provenance"]["escaped_text_angle_blocks"], 1)
+
+    def test_old_verified_checkpoint_is_encoded_without_retranslation_and_stays_stable(self):
+        original = {"title": "Example", "excerpt": "An example", "tags": "GEO",
+                    "body_html": '<p><strong>5</strong>; value &lt;threshold 5</p>'}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "checkpoint.json"
+            offline.translate_article(original, "en", checkpoint_path=path, translator=FakeTranslator())
+            state = json.loads(path.read_text())
+            # Recreate the earlier valid per-block cache, including its matching
+            # hash, rather than allowing corrupt checkpoint contents to pass.
+            block_key = next(key for key in state["blocks"] if key.startswith("body_html."))
+            cached = state["blocks"][block_key]
+            cached["translation"] = cached["translation"].replace("&lt;threshold", "<threshold")
+            cached["translation_sha256"] = offline.digest(cached["translation"])
+            path.write_text(json.dumps(state))
+            for expected_changes in (1, 0):
+                translator = FakeTranslator(fail_at=1)
+                result = offline.translate_article(original, "en", checkpoint_path=path, translator=translator)
+                self.assertEqual(translator.calls, [])
+                self.assertEqual(result["body_html"], original["body_html"])
+                self.assertEqual(result["translation_provenance"]["escaped_text_angle_blocks"], expected_changes)
+                stored = json.loads(path.read_text())["blocks"][block_key]
+                self.assertEqual(stored["translation_sha256"], offline.digest(stored["translation"]))
+
+    def test_encoding_preserves_entities_operators_and_protected_inline_tags(self):
+        source = '<strong title="x > y">5</strong><a href="https://example.org?a=1&amp;b=2">[S1]</a>; x &lt;5, y &gt;3, z≤7'
+        translated = source.replace("x &lt;5", "x <5").replace("y &gt;3", "y >3")
+        offline.validate_block(source, translated, "en")
+        result = offline._encode_fragment_text_angles(source, translated)
+        self.assertEqual(result, source)
+        self.assertEqual(offline._encode_fragment_text_angles(source, result), result)
+        self.assertNotIn("&amp;lt;", result)
+        offline.validate_block(source, result, "en")
+
+    def test_partial_angle_before_inline_markup_cannot_swallow_the_protected_tag(self):
+        source = 'value &lt;threshold 5; <strong>5</strong> and <a href="https://example.org">[S1]</a>'
+        raw = source.replace('&lt;threshold', '<threshold')
+        encoded = offline._encode_fragment_text_angles(source, raw)
+        self.assertEqual(encoded, source)
+        offline.validate_block(source, encoded, 'en')
+
+    def test_encoding_cannot_hide_added_removed_or_changed_html(self):
+        original = {"title": "Example", "excerpt": "An example", "tags": "GEO",
+                    "body_html": "<p><strong>5</strong></p>"}
+        for translation in ('<em>5</em>', '<strong class="changed">5</strong>', '<strong>5',
+                            '<strong>5</strong><script>alert(1)</script>', '<strong>5</strong><!-- added -->'):
+            class BrokenTranslator(FakeTranslator):
+                def translate(self, text, target, source):
+                    return translation if text == '<strong>5</strong>' else text
+            with self.subTest(translation=translation), tempfile.TemporaryDirectory() as directory:
+                with self.assertRaisesRegex(offline.OfflineTranslationError, "HTML tags"):
+                    offline.translate_article(original, "en", checkpoint_path=Path(directory) / "checkpoint.json",
+                                              translator=BrokenTranslator())
+
     def test_domain_noun_glossary_preserves_full_sentence_quantities_and_opaque_resources(self):
         source = '<p>先核对事实，再扩大内容投入，预算为1000元，错误率≤5%。<a href="https://example.org/内容投资" title="内容投入">内容投资</a></p>'
         for target, noun in (("en", "content investment"), ("ar", "الاستثمار في المحتوى")):
