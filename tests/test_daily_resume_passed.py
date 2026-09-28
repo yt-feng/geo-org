@@ -206,6 +206,37 @@ class PassedChineseResumeTests(unittest.TestCase):
         self.assertTrue(validated["full_fingerprint_verified"])
         self.assertEqual(validated["required_blockers"][0]["id"], "r0-blocker-1")
 
+    def test_production_row706_false_passes_remain_blocked_when_saved_or_exhausted(self):
+        fixture = json.loads((Path(__file__).parent / "fixtures" /
+                              "row706-publication-fallback-reviews.json").read_text())
+        self.assertEqual(len(fixture["cases"]), 2)
+        for case, error_count in zip(fixture["cases"], (15, 7)):
+            with self.subTest(run=case["run_url"]):
+                self.assertTrue(case["original_passed"])
+                audit = {"version": "insights-v3", "row": case["row"], "language": "zh",
+                         "passed": True, "sources": case["sources"],
+                         "attempts": copy.deepcopy(case["attempts"])}
+                last = audit["attempts"][-1]
+                self.assertEqual(last["errors"], [])
+                self.assertEqual(last["review_state"], "completed_with_warnings")
+                self.assertTrue(last["review"]["publication_fallback"])
+                required = ip._prior_publication_blockers(audit, last)
+                expected = case["expected_blocking_errors"]
+                self.assertEqual(len(expected), error_count)
+                with mock.patch.object(ip, "request_json", side_effect=AssertionError("No model calls")):
+                    # This is the saved-pass validator's exact semantic gate.
+                    self.assertEqual(ip._saved_pass_review_errors(last["review"], audit["sources"], required), expected)
+                    # The same real review cannot be cleared when new/resumed
+                    # drafting reaches its revision budget either.
+                    with self.assertRaises(ip.InsightQualityError):
+                        ip._structural_publication_fallback(audit, last, self.article,
+                            {"passed": True, "errors": [], "metrics": {}}, [],
+                            audit_path=self.destination, lang="zh", revision=last["revision"])
+                saved = json.loads(self.destination.read_text())
+                self.assertFalse(saved["passed"])
+                self.assertEqual(saved["attempts"][-1]["errors"], expected)
+                self.assertEqual(saved["attempts"][-1]["review"], case["attempts"][-1]["review"])
+
     def test_same_draft_format_repair_cannot_erase_a_factual_blocker(self):
         self.audit["attempts"][-1]["review"]["format_repair"] = {
             "errors": ["Missing source ID"], "original_review": {"blockers": [],
