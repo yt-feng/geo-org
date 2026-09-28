@@ -1,5 +1,9 @@
 """Shared reading styles for long-form analytical exhibits in all locales."""
 
+ARABIC_TABLE_MATH_CSS = """
+html[lang="ar"] .content table[data-role="economics"] :is(th,td)[dir="ltr"]{unicode-bidi:isolate}
+"""
+
 INSIGHT_CSS = """
 html[lang="en"] article>h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08}
 .content{overflow-wrap:anywhere}
@@ -17,4 +21,4 @@ html[lang="en"] article>h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08}
 .content h3{font-size:22px;margin:28px 0 12px;line-height:1.4}
 .source-list li{font-size:14px;margin:14px 0;overflow-wrap:anywhere}
 @media(max-width:640px){.content{font-size:17px}.content h2{font-size:26px;line-height:1.35}.content [data-role="executive-summary"]{padding:16px}.content table{font-size:14px}.content th,.content td{padding:11px;min-width:125px}}
-"""
+""" + ARABIC_TABLE_MATH_CSS

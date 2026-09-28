@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from xml.etree import ElementTree as ET
 from bs4 import BeautifulSoup
+from insight_styles import ARABIC_TABLE_MATH_CSS
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = 'https://eco-geo.org'
@@ -67,11 +68,32 @@ def cards(posts, prefix, heading):
         parts.append(f'<article><small>{html.escape(str(p.get("date","")))}</small><h3><a href="{href}">{html.escape(p["title"])}</a></h3><p>{html.escape(p.get("excerpt", "")[:180])}</p></article>')
     return ''.join(parts)+'</div></section>'
 
+def isolate_arabic_table_math(soup):
+    """Keep mathematical cells LTR without changing Arabic prose or column order.
+
+    Apply display metadata only to the publication copy. In particular, numeric
+    division such as 30 ÷ 5 otherwise displays its operands in reverse under RTL.
+    Mixed Arabic explanations need their inherited direction, even in a formula
+    column; never force the entire table or a positional column to LTR.
+    """
+    changed = False
+    for cell in soup.select('.content table[data-role="economics"] th, .content table[data-role="economics"] td'):
+        text = cell.get_text().strip()
+        if (not cell.has_attr('dir') and re.search(r'\d', text)
+                and re.fullmatch(r'[\dA-Za-z\s/÷×+−\-=＝＋≤≥<>≈±().,%‰:;\[\]،，٫٬]+', text)):
+            cell['dir'] = 'ltr'
+            changed = True
+    if changed:
+        style = soup.new_tag('style', id='eco-arabic-table-math')
+        style.string = ARABIC_TABLE_MATH_CSS
+        soup.head.append(style)
+
 def optimize(root, rel, posts, title_counts, paths):
     path=root/rel; raw=path.read_text(encoding='utf-8');s=BeautifulSoup(raw,'html.parser')
     if not s.head or not s.body: return None
     lang=language(rel);prefix=LOCALES[lang];labels=LABELS[lang];hidden=unlisted(rel,s);url=canonical(rel)
     if rel.parts[0] == 'jianong': return None  # Separate checkout domain and security boundary.
+    if lang == 'ar':isolate_arabic_table_math(s)
     is_article='articles' in rel.parts
     post=next((p for p in posts[lang] if p['slug']==rel.parent.name),None) if is_article else None
     title=s.title.get_text(' ',strip=True) if s.title else (s.h1.get_text(' ',strip=True) if s.h1 else 'Eco GEO')
