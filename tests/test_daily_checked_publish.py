@@ -47,10 +47,13 @@ class CheckedPublishTests(unittest.TestCase):
                      "status": "completed", "conclusion": self.result}
             return json.dumps([old] if self.lists == 1 else [old, fresh])
         if args[:2] == ("gh", "api"):
+            if "/statuses?" in args[2]:
+                return json.dumps([{"id": 111, "context": module.STATUS_CONTEXT,
+                    "state": self.status_result, "creator": {"id": self.status_creator},
+                    "target_url": f"https://github.com/test/repo/actions/runs/{self.status_run}"}])
             if "/status?" in args[2]:
                 return json.dumps({"sha": self.status_sha, "statuses": [{
-                    "context": module.STATUS_CONTEXT, "state": self.status_result,
-                    "creator": {"id": self.status_creator},
+                    "id": 111, "context": module.STATUS_CONTEXT, "state": self.status_result,
                     "target_url": f"https://github.com/test/repo/actions/runs/{self.status_run}"}]})
             check = {"name": module.CHECK_NAME, "head_sha": self.check_sha,
                      "app": {"id": self.check_app}, "status": "completed",

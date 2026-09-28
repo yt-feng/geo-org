@@ -67,10 +67,20 @@ def publish(repo, branch, *, run=command, sleep=time.sleep,
                             if item.get("context") == STATUS_CONTEXT]
                 expected_url = f"https://github.com/{repo}/actions/runs/{candidate['databaseId']}"
                 if (len(required) != 1 or required[0].get("state") != "success" or
-                        required[0].get("creator", {}).get("id") != 41898282 or
                         required[0].get("target_url") != expected_url or
                         statuses.get("sha") != sha):
                     raise RuntimeError("Required commit status is absent, stale or unsuccessful; main unchanged")
+                # Combined statuses omit creator. Bind its exact status ID to
+                # the full status record rather than guessing its author.
+                history = json.loads(run("gh", "api",
+                    f"repos/{repo}/commits/{sha}/statuses?per_page=100"))
+                authored = [item for item in history if item.get("id") == required[0].get("id")
+                            and item.get("context") == STATUS_CONTEXT
+                            and item.get("state") == "success"
+                            and item.get("target_url") == expected_url
+                            and item.get("creator", {}).get("id") == 41898282]
+                if len(authored) != 1:
+                    raise RuntimeError("Required commit status has an untrusted source; main unchanged")
                 # A concurrent main update is rejected by this ordinary push.
                 # Keep the staging branch and article for recovery on any failure.
                 run("git", "push", "origin", f"{sha}:refs/heads/main")
