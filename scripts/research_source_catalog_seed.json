@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "metadata_only": true,
+  "sources": [
+    {
+      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+      "title": "CMA publishes review of progress in legal services sector",
+      "publisher": "UK Government",
+      "publisher_domain": "gov.uk",
+      "published": "2020-12-17",
+      "retrieved_at": "2026-09-27T17:10:22+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0",
+      "body_chars": 5527,
+      "excerpt_start": 0,
+      "excerpt_end": 5527,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+      "title": "Promoting resilience and preparedness in supply chains (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:10:32+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24",
+      "body_chars": 172554,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
+      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-12-01",
+      "retrieved_at": "2026-09-27T17:10:38+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
+      "body_chars": 31831,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/web-publications/world-intellectual-property-report-2024/en/5-leveraging-local-know-how-to-develop-video-game-hubs.html",
+      "title": "World Intellectual Property Report 2024 - 5 Leveraging local know-how to develop video game hubs",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:10:39+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "1df41095c7e717d49d74287b1b0972726fa8ec9ab398505c3ef635fb615ceb7d",
+      "body_chars": 60454,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+      "title": "Consumer IoT Cybersecurity",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2021-11-09",
+      "retrieved_at": "2026-09-27T17:35:45+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "smart_hardware"
+      ],
+      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
+      "body_chars": 3490,
+      "excerpt_start": 0,
+      "excerpt_end": 3490,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+      "title": "NIST SP 500-292",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:36:03+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
+      "body_chars": 75496,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    }
+  ]
+}
