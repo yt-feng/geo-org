@@ -36,6 +36,19 @@ class ResearchPreflightTests(unittest.TestCase):
             self.assertEqual(posts.read_bytes(), before)
             self.assertEqual(list(root.iterdir()), [posts])
 
+    def test_saved_source_replay_never_calls_news_or_search_discovery(self):
+        topic = preflight.daily.gb.TopicRow(706, "Source replay", {}, "GEO", "GEO")
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(preflight.daily.gb, "read_topics", return_value=[topic]), \
+                mock.patch.object(preflight.daily, "fetch_news_items") as news, \
+                mock.patch.object(preflight.daily, "fetch_tavily_market_items") as search, \
+                mock.patch.object(preflight.daily, "build_research_pack", return_value=[]) as research:
+            result = preflight.check_pending_topics(Path("input.xlsx"), Path(directory), 1, discover=False)
+        news.assert_not_called()
+        search.assert_not_called()
+        research.assert_called_once_with(topic, [])
+        self.assertFalse(result["discovery_enabled"])
+
     def test_count_is_bounded_before_reading_backlog(self):
         with mock.patch.object(preflight.daily.gb, "read_topics") as read:
             for count in (0, 6):

@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: editorial-regressions-${{ github.ref }}
@@ -22,15 +23,32 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Mark the actual checked-out commit as awaiting verification
+        id: identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          test "$sha" = "$GITHUB_SHA"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          gh api --method POST "repos/$GH_REPO/statuses/$sha" \
+            -f state=pending -f context='Editorial verified commit' \
+            -f description='Editorial verification is running' \
+            -f target_url="$GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null
       - uses: actions/setup-python@v5
+        id: python
         with:
           python-version: '3.11'
       - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: '22.16.0'
       - name: Install production editorial and site dependencies
+        id: dependencies
         run: python -m pip install -r requirements.txt -r build-requirements.txt
       - name: Build and verify the actual generated site
+        id: verify
         run: |
           python scripts/build_site.py
           python -m unittest discover -s tests -p 'test_*.py' -v
@@ -38,3 +56,19 @@ jobs:
           node --check assets/analytics.js
           node --check observatory/app.js
           node --check _site/package-advisor/app.mjs
+      # workflow_dispatch job checks cannot satisfy repository rulesets. A
+      # separate commit status reports these actual tests through the supported
+      # commit-status API; it never substitutes an unconditional success.
+      - name: Report the verified commit result
+        if: ${{ always() && steps.identity.outputs.sha != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TESTED_SHA: ${{ steps.identity.outputs.sha }}
+          IDENTITY_OUTCOME: ${{ steps.identity.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          NODE_OUTCOME: ${{ steps.node.outcome }}
+          DEPENDENCIES_OUTCOME: ${{ steps.dependencies.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          JOB_STATUS: ${{ job.status }}
+        run: python scripts/report_editorial_status.py
