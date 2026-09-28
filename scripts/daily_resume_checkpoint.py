@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from urllib.parse import urlencode
 import zipfile
 
 WORKFLOW = '.github/workflows/generate-daily-blog.yml'
@@ -35,9 +36,9 @@ CONTEXT = Path('.artifacts/resume-context.json')
 DECISION = Path('.artifacts/resume-selection.json')
 PRODUCTION_STEP = 'Generate one researched insight (production)'
 PREVIEW_STEP = 'Generate one researched insight (preview)'
+PRODUCER_JOB = 'name: Generate one new article'
 PRODUCER_CONTRACT = (
     '# daily-resume-schema: daily-resume-v1',
-    'name: Generate one new article',
     'run: python scripts/daily_resume_checkpoint.py --package "$RUNNER_TEMP/daily-checkpoint"',
     'name: daily-insight-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}',
     'path: ${{ runner.temp }}/daily-checkpoint/',
@@ -268,7 +269,7 @@ def has_producer(api, repo, run, cache):
             raise ValueError('Workflow definition size mismatch')
         lines = {line.strip() for line in data.decode('utf-8').splitlines()}
         present = [line in lines for line in PRODUCER_CONTRACT]
-        if any(present) and not all(present):
+        if any(present) and (not all(present) or PRODUCER_JOB not in lines):
             raise ValueError('Unknown or partial checkpoint producer contract')
         cache[head] = all(present)
     return cache[head]
@@ -302,10 +303,26 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
     """Select the newest coherent main failure; discovery errors never start fresh work."""
     import generate_daily_blog as daily
     api = api or GitHub(repo)
-    now = now or datetime.now(timezone.utc)
+    now = (now or datetime.now(timezone.utc)).replace(microsecond=0)
+    cutoff = now-timedelta(days=14)
     expected = topic_identity(topic)
     Path(destination).mkdir(parents=True, exist_ok=True)
-    runs = api.json(f'repos/{repo}/actions/workflows/generate-daily-blog.yml/runs?branch=main&status=completed&per_page={MAX_RUNS}')['workflow_runs']
+    # Match the API's creation-time search, including its total_count. Looking
+    # at the last returned updated_at cannot prove coverage: old runs can rerun.
+    query = urlencode({'branch': 'main', 'status': 'completed', 'per_page': MAX_RUNS,
+                       'created': f'{cutoff.isoformat()}..{now.isoformat()}'})
+    inventory = api.json(f'repos/{repo}/actions/workflows/generate-daily-blog.yml/runs?{query}')
+    runs, total = inventory.get('workflow_runs'), inventory.get('total_count')
+    if (not isinstance(runs, list) or type(total) is not int or total < len(runs)
+            or len(runs) > MAX_RUNS or len({run['id'] for run in runs}) != len(runs)):
+        raise ValueError('Incomplete or invalid workflow run inventory')
+    if total != len(runs):
+        # Even a matching candidate is unsafe: an omitted older-created run
+        # could have rerun later and contain newer findings or an exhausted count.
+        message = 'Automatic resume search budget exhausted before covering the 14-day creation window; no paid fresh run was started'
+        save_json(DECISION, {'action': 'search_budget_exhausted', 'topic': expected,
+                            'returned_runs': len(runs), 'total_runs': total, 'reason': message})
+        raise RuntimeError(message)
     trusted = []
     for run in runs[:MAX_RUNS]:
         if (str(run['id']) == str(current_run_id) or run.get('status') != 'completed'
@@ -314,8 +331,8 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
                 or run.get('repository', {}).get('full_name') != repo
                 or run.get('event') not in ('schedule', 'workflow_dispatch')):
             continue
-        updated = datetime.fromisoformat(run['updated_at'].replace('Z', '+00:00'))
-        if now-timedelta(days=14) <= updated <= now:
+        created = datetime.fromisoformat(run['created_at'].replace('Z', '+00:00'))
+        if cutoff <= created <= now:
             trusted.append(run)
     trusted.sort(key=lambda row: (row['updated_at'], row['id']), reverse=True)
     downloads = 0

@@ -40,7 +40,12 @@ and research afresh; the decision is saved in `.artifacts/resume-selection.json`
 Fetch failures, malformed provenance and access-check pages fail without
 starting fresh paid work. Explicit manual resumes continue to reject drift.
 
-Discovery is bounded to 14 days, 30 returned runs, 10 artifact lookups, three
+Discovery covers runs created in the previous 14 days, using GitHub's server-side
+creation filter and total count. An older run's recent rerun does not extend
+this window. If 30 results do not cover the whole window, selection stops before
+choosing any checkpoint or declaring there is no saved history. An omitted
+older-created run may have rerun recently and contain the latest findings.
+Discovery is bounded to 30 returned runs, 10 artifact lookups, three
 archive downloads, 120 seconds total and 30 seconds per API request. Archives
 are capped at 10 MB compressed, 30.1 MB expanded and 10 MB per audit, with at most
 four files. ZIP paths, duplicate names, symlinks, missing files and checksum

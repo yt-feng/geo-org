@@ -29,10 +29,11 @@ class API:
         self.calls.append(path)
         if '/contents/' in path:
             head = path.split('?ref=')[1]
-            body = b'name: Legacy daily generation\n' if head in self.legacy_heads else '\n'.join(cp.PRODUCER_CONTRACT).encode()
+            body = ((Path(__file__).parent/'fixtures/daily-workflow-before-checkpoints.yml').read_bytes()
+                    if head in self.legacy_heads else '\n'.join((cp.PRODUCER_JOB, *cp.PRODUCER_CONTRACT)).encode())
             return {'type': 'file', 'encoding': 'base64', 'size': len(body), 'content': base64.b64encode(body).decode()}
         if '/workflows/' in path:
-            return {'workflow_runs': self.runs}
+            return {'workflow_runs': self.runs[:cp.MAX_RUNS], 'total_count': len(self.runs)}
         run_id = int(path.split('/runs/')[1].split('/')[0])
         if '/jobs?' in path:
             run = next(run for run in self.runs if run['id'] == run_id)
@@ -65,6 +66,7 @@ class AutoResumeTests(unittest.TestCase):
 
     def run_record(self, run_id, *, attempt=1, age=1):
         return {'id': run_id, 'run_attempt': attempt, 'updated_at': (self.now-timedelta(days=age)).isoformat(),
+                'created_at': (self.now-timedelta(days=age)).isoformat(),
                 'head_sha': f'{run_id:040x}', 'status': 'completed', 'conclusion': 'failure', 'event': 'schedule',
                 'head_branch': 'main', 'path': cp.WORKFLOW, 'repository': {'full_name': 'owner/repo'}}
 
@@ -171,7 +173,7 @@ class AutoResumeTests(unittest.TestCase):
             artifact, blob = self.bundle(r, topic=topic, mutate=preview if kind=='preview' else None)
             if kind == 'expired': artifact['expired'] = True
             if kind == 'attempt': artifact['name'] = 'daily-insight-checkpoint-100-0'
-            if kind == 'age': r['updated_at'] = (self.now-timedelta(days=15)).isoformat()
+            if kind == 'age': r['created_at'] = (self.now-timedelta(days=15)).isoformat()
             if kind == 'branch': r['head_branch'] = 'untrusted'
             if kind == 'repository': r['repository']['full_name'] = 'other/repo'
             if kind == 'workflow': r['path'] = '.github/workflows/other.yml'
@@ -209,6 +211,37 @@ class AutoResumeTests(unittest.TestCase):
             with mock.patch.object(api, 'json', side_effect=lambda path: response if '/contents/' in path else original(path)), \
                     self.assertRaises(ValueError):
                 cp.select(self.topic, repo='owner/repo', current_run_id='300', destination=self.root/'bad-contract', api=api, now=self.now)
+
+    def test_truncated_inventory_cannot_reset_the_hidden_continuation_budget(self):
+        newer = [self.run_record(n) for n in range(400, 430)]
+        for run in newer: run['conclusion'] = 'success'
+        exhausted = self.run_record(100, age=2)
+        api = API([*newer, exhausted], {100: self.bundle(exhausted, count=2)})
+        with self.assertRaisesRegex(RuntimeError, 'before covering the 14-day creation window'):
+            cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                      destination=self.root/'truncated', api=api, now=self.now)
+        receipt = json.loads(cp.DECISION.read_text())
+        self.assertEqual(receipt['action'], 'search_budget_exhausted')
+        self.assertEqual((receipt['returned_runs'], receipt['total_runs']), (30, 31))
+        self.assertIn('created=', api.calls[0])
+        self.assertEqual(len(api.calls), 1)
+        # Creation-order pages can hide an older-created, more recently rerun
+        # checkpoint. A matching first-page audit must not roll back that count.
+        known = self.run_record(500, age=0)
+        exhausted['updated_at'] = self.now.isoformat()
+        api = API([known, *newer[:29], exhausted],
+                  {500: self.bundle(known), 100: self.bundle(exhausted, count=2)})
+        with self.assertRaisesRegex(RuntimeError, 'before covering the 14-day creation window'):
+            cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                      destination=self.root/'apparently-latest', api=api, now=self.now)
+        self.assertEqual(len(api.calls), 1)
+
+    def test_missing_count_cannot_prove_an_empty_window(self):
+        api = mock.Mock()
+        api.json.return_value = {'workflow_runs': []}
+        with self.assertRaisesRegex(ValueError, 'workflow run inventory'):
+            cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                      destination=self.root/'unknown-coverage', api=api, now=self.now)
 
     def test_actual_production_workflow_declares_the_discovered_contract(self):
         body = (Path(__file__).resolve().parents[1]/cp.WORKFLOW).read_bytes()
