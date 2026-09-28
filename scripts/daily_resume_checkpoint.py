@@ -37,6 +37,7 @@ PRODUCTION_STEP = 'Generate one researched insight (production)'
 PREVIEW_STEP = 'Generate one researched insight (preview)'
 PRODUCER_CONTRACT = (
     '# daily-resume-schema: daily-resume-v1',
+    'name: Generate one new article',
     'run: python scripts/daily_resume_checkpoint.py --package "$RUNNER_TEMP/daily-checkpoint"',
     'name: daily-insight-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}',
     'path: ${{ runner.temp }}/daily-checkpoint/',
