@@ -1,5 +1,185 @@
 [
   {
+    "order": "715",
+    "row": "706",
+    "slug": "00706-ai-geo-ai-231b90c4",
+    "title": "Eco-GEO：法律服务AI引用先修事实还是扩覆盖——把工时、证据和可行性放在同一口径下",
+    "excerpt": "法律服务团队如何在有限工时内选择先修事实还是扩展AI引用覆盖？本文用固定25题、40小时容量和显式证据门槛，区分可行性、正确引用增量与单位工时成本。示例数字均为假设，来源结果不直接外推到中国法律服务。",
+    "category": "法律服务",
+    "tags": "品牌化GEO, 白帽GEO, 法律服务, AI搜索引用, 融资IPO准备期, 决策规则, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-28",
+    "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00706-ai-geo-ai-231b90c4/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:44+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+        "url": "https://arxiv.org/html/2605.25517v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:45+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 7771,
+        "excerpt_end": 17771,
+        "body_chars": 31300,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+      },
+      {
+        "id": "S3",
+        "title": "CMA publishes review of progress in legal services sector",
+        "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+        "publisher": "UK Government",
+        "published": "2020-12-17",
+        "retrieved_at": "2026-09-27T17:14:46+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 5527,
+        "body_chars": 5527,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "gov.uk",
+        "evidence_role": "industry_context",
+        "industries": [
+          "legal_services"
+        ],
+        "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+        "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+        "url": "https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:47+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 6082,
+        "body_chars": 6082,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "4bfdc19a9a5b2b077fa2bdc9818cde9f4af6b8c63983cdb48bcdc81b38e0e4ea"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-09-27T17:14:48+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "review_type": "authored editorial correction and manual source review",
+      "repair_record": "docs/editorial-repairs/00706-2026-09-28.json",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 10,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 7,
+            "cells": 21
+          },
+          {
+            "captions": 1,
+            "rows": 6,
+            "headers": 7,
+            "cells": 35
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "economics": 1,
+          "executive-summary": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S2": 4,
+          "S3": 1,
+          "S4": 3
+        },
+        "visible_character_count": 7728,
+        "zh_character_count": 5814,
+        "word_count": 1070,
+        "minimum_zh_characters": 2600,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 10,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "blogs.bing.com",
+          "developers.google.com",
+          "gov.uk"
+        ],
+        "unique_cited_sources": 4,
+        "unique_cited_domains": 4,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "automated_semantic_review_reused": false,
+      "body_sha256": "f39b2926ed7cadc88d48dc7cc7b162fca7837f8d7b16c29ebe4823dca15b7c5a",
+      "localization_method": "original Chinese editorial correction",
+      "paid_provider_requests_for_correction": 0,
+      "warnings": []
+    }
+  },
+  {
     "order": "714",
     "row": "702",
     "slug": "00702-ai-geo-e23caaaa",

@@ -1,0 +1,196 @@
+{
+  "record_type": "manual_source_review_and_editorial_correction",
+  "version": 1,
+  "row": 706,
+  "slug": "00706-ai-geo-ai-231b90c4",
+  "corrected_on": "2026-09-28",
+  "original_run": "https://github.com/yt-feng/geo-org/actions/runs/36336166505",
+  "original_staged_commit": "c51c36bb",
+  "original_audit_sha256": "eb86bacd396e82e625817233c7ba749a5bd0d712756a37c47e16eb280f41b707",
+  "original_audit_status": {
+    "stored_passed": true,
+    "publication_fallback": true,
+    "original_final_score": 22,
+    "known_blockers": 15,
+    "assessment": "The prior fallback pass is not semantic approval. Original audit and translation checkpoints are preserved unchanged as historical artifacts."
+  },
+  "paid_provider_requests_for_correction": 0,
+  "method": "Authored correction of the generated paragraphs and tables, manual repair of English/Arabic passages, direct arithmetic verification and inspection of S2 Table 2. This is not a new automated model review or HyMT translation pass.",
+  "source_receipts": [
+    {
+      "id": "S1",
+      "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+      "url": "https://developers.google.com/search/docs/appearance/ai-features",
+      "publisher": "Google Search Central",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:14:44+00:00",
+      "evidence_kind": "platform_documentation",
+      "excerpt_start": 0,
+      "excerpt_end": 5468,
+      "body_chars": 5468,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "google.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+      "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+    },
+    {
+      "id": "S2",
+      "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+      "url": "https://arxiv.org/html/2605.25517v1",
+      "publisher": "arXiv authors",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:14:45+00:00",
+      "evidence_kind": "research_paper",
+      "excerpt_start": 7771,
+      "excerpt_end": 17771,
+      "body_chars": 31300,
+      "excerpt_truncated": true,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "arxiv.org",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "Controlled comparisons of supplied source variants, not a live search-index experiment. Use exact per-model table values in the read excerpt; reported odds ratios are odds multipliers, not citation probabilities or percentage-point gains. Model-specific results and estimation warnings must not be merged into a universal effect. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+      "text_sha256": "21f9b87abc847d5b7a1138861552dce463b6b3cb1887c8b6d83d6090a752a094"
+    },
+    {
+      "id": "S3",
+      "title": "CMA publishes review of progress in legal services sector",
+      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+      "publisher": "UK Government",
+      "published": "2020-12-17",
+      "retrieved_at": "2026-09-27T17:14:46+00:00",
+      "evidence_kind": "government_research",
+      "excerpt_start": 0,
+      "excerpt_end": 5527,
+      "body_chars": 5527,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "gov.uk",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0"
+    },
+    {
+      "id": "S4",
+      "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+      "url": "https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/",
+      "publisher": "Microsoft Bing",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:14:47+00:00",
+      "evidence_kind": "platform_announcement",
+      "excerpt_start": 0,
+      "excerpt_end": 6082,
+      "body_chars": 6082,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "bing.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+      "text_sha256": "4bfdc19a9a5b2b077fa2bdc9818cde9f4af6b8c63983cdb48bcdc81b38e0e4ea"
+    },
+    {
+      "id": "S5",
+      "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+      "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+      "publisher": "BCG",
+      "published": "",
+      "retrieved_at": "2026-09-27T17:14:48+00:00",
+      "evidence_kind": "consulting_analysis",
+      "excerpt_start": 0,
+      "excerpt_end": 9276,
+      "body_chars": 9276,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "bcg.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+    }
+  ],
+  "source_retention_note": "Original production audit stores retrieval metadata and text hashes, not third-party bodies. Original dates and excerpt ranges are preserved; no source is labeled freshly retrieved.",
+  "corrections": [
+    {
+      "issue": "Inconsistent A/B costs, Q increments and shared preliminary work across table columns",
+      "resolution": "Fixed A total=30 including10 shared hours, A increment=5. B total=20+x including10 shared hours, B increment=7. Only x varies:0,8,20. Costs A=6; B≈2.86,4,5.71. No measured counts are mixed with illustrative expectations."
+    },
+    {
+      "issue": "Cost equality used without capacity; single-path choice falsely justified as budget exclusivity",
+      "resolution": "x=22 solves30/5=(20+x)/7 but needs42>40 hours. Feasible B domain0≤x≤20; x>20 excludesB while feasible A remains. Shared A+B costs10+20+10=40, so one intervention is an explicit trial-design assumption. Shared A+B total40 applies only at x=0; otherwise40+x needs its own capacity check."
+    },
+    {
+      "issue": "e/Ev thresholds disagreed between columns, body and actions",
+      "resolution": "All sensitivity columns fix e=2/25,Ev=8,g=0.6. B requires e<3/25,Ev≥8 items per25 questions,g≥0.5, sufficient40-hour capacity and positive increment. All paths check capacity before cost. Integer error counts cannot equal2.5."
+    },
+    {
+      "issue": "S2 table ranges omitted large/censored values; model names assigned from flattened group headings",
+      "resolution": "Six model columns. Finite evidence odds ratios2.09–46.3 plus one>10000; price6.26–36.1 plus two>10000; depth3.98–1480 plus one>10000. No per-model attribution, no probability interpretation, no exact estimate for>10000.",
+      "source": "https://arxiv.org/html/2605.25517v1"
+    },
+    {
+      "issue": "S2 organization and consistency rows wrongly characterized as near1 or reversed",
+      "resolution": "Only structured/dense includes values below1; organization and consistency also have clearly above1 values. Convergence warnings, model variation and limited B2C two-source setting remain explicit."
+    },
+    {
+      "issue": "S3 called ten years old",
+      "resolution": "Explicit2020 date and England/Wales jurisdiction; not extrapolated to China or AI citations.",
+      "source": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector"
+    },
+    {
+      "issue": "Hypotheses described as established causal chains; post-intervention effects promised from baseline alone",
+      "resolution": "Hypotheses need comparable intervention observations in addition to a2-week baseline. Schedule is baseline2weeks, intervention observation2weeks, ledger reviewweek5.40-hour total covers baseline and intervention. S2 did not test publication volume; no claim about its effect is drawn."
+    },
+    {
+      "issue": "Q counted as a rate; incomplete cost ledger and undefined final minimum thresholds",
+      "resolution": "Q is a question count; rate isQ/25. Shared work counted once; unused capacity is not incurred effort. No new6-hour/minimum-question threshold; chooseC if no feasible positive-increment path."
+    },
+    {
+      "issue": "Untranslated Chinese and wrong conditions/units in English/Arabic output",
+      "resolution": "Replaced all Chinese body fallbacks, corrected Ev evidence-item units and reversed applicability condition, and aligned every table cell, inequality and capacity decision with corrected Chinese. Manual edits are not attributed to HyMT."
+    }
+  ],
+  "independent_review": {
+    "mathematics": {
+      "status": "independently_reviewed",
+      "reviewer": "separate agent poly_repair",
+      "method": "Static Chinese/English/Arabic body and table comparison, independent arithmetic and actual-page tests; no claim of new source retrieval or automated model scoring.",
+      "findings": "No blocking discrepancy after the final x=0/40+x clarification."
+    },
+    "source_and_public_page": {
+      "status": "source_and_mathematics_reviewed",
+      "reviewer": "separate parent agent",
+      "method": "New direct viewing of four original webpages, including S2 Table2 and S3date/jurisdiction, plus independent arithmetic; not reconstructed original retrieval excerpts. Public browser acceptance remains pending."
+    }
+  },
+  "articles": {
+    "zh": {
+      "body_sha256": "f39b2926ed7cadc88d48dc7cc7b162fca7837f8d7b16c29ebe4823dca15b7c5a",
+      "publication_structure_passed": true,
+      "automated_diagnostics": [],
+      "remaining_diagnostic_assessment": "No structural diagnostics."
+    },
+    "en": {
+      "body_sha256": "88c85b75683f70e10e6adee180a5bc2de0506e6df1b7cb07b1b3ee372d86dd28",
+      "publication_structure_passed": true,
+      "automated_diagnostics": [
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "remaining_diagnostic_assessment": "Numeric token counter differs for spelled-out numbers, numbering labels and rephrased repeated values; table formulas, inequalities and decisions were checked separately. No old semantic score or fallback approval is reused."
+    },
+    "ar": {
+      "body_sha256": "0098c330193ac703ad99740aeda7177d6c5dd78f767bfdb8346aafdd69f0d73b",
+      "publication_structure_passed": true,
+      "automated_diagnostics": [
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "remaining_diagnostic_assessment": "Numeric token counter differs for spelled-out numbers, numbering labels and rephrased repeated values; table formulas, inequalities and decisions were checked separately. No old semantic score or fallback approval is reused."
+    }
+  }
+}
