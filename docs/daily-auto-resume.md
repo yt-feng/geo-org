@@ -21,6 +21,10 @@ requires the versioned producer marker, seal command and attempt-bound upload
 contract. Definitions are cached by SHA. Proven legacy failures do not consume
 artifact lookups, so pre-feature failures cannot prevent the first checkpoint
 from being created. Unreadable or partial producer definitions fail closed.
+For a capable run with no checkpoint, the exact attempt's jobs must prove the
+production generation step was skipped, or that it was a preview. A started or
+unknown production step stops selection with a run/attempt receipt, because
+seal/upload failure must not discard newer findings or reset an older budget.
 A saved Chinese pass must pass the current saved-pass validator, including
 known factual and historical blockers. The existing first-invalid-JSON fallback
 with no known or historical findings remains unchanged and visibly recorded;

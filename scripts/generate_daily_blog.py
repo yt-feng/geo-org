@@ -516,6 +516,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     import daily_resume_checkpoint as checkpoint
     if auto_resume or save_checkpoint:
         checkpoint.CONTEXT.unlink(missing_ok=True)
+        checkpoint.DECISION.unlink(missing_ok=True)
     topics = gb.read_topics(excel_path, start_row=start_row, limit=0)
     posts = load_posts(out_dir)
     topic = select_next_topic(topics, posts, out_dir)
@@ -543,8 +544,9 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         try:
             selected = checkpoint.select(topic, repo=repo, current_run_id=run_id, destination=destination)
         except Exception as exc:
-            checkpoint.save_json(checkpoint.DECISION, {'action': 'selection_failed', 'topic': checkpoint.topic_identity(topic),
-                                                     'reason': str(exc)[:500]})
+            if not checkpoint.DECISION.exists():
+                checkpoint.save_json(checkpoint.DECISION, {'action': 'selection_failed', 'topic': checkpoint.topic_identity(topic),
+                                                         'reason': str(exc)[:500]})
             raise
         if selected['action'] == 'resume':
             resume_dir = Path(selected['resume_dir'])

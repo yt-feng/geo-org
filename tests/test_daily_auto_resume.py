@@ -34,6 +34,11 @@ class API:
         if '/workflows/' in path:
             return {'workflow_runs': self.runs}
         run_id = int(path.split('/runs/')[1].split('/')[0])
+        if '/jobs?' in path:
+            run = next(run for run in self.runs if run['id'] == run_id)
+            return {'total_count': 1, 'jobs': [{'name': 'Generate one new article', 'run_id': run_id,
+                    'run_attempt': run['run_attempt'], 'status': 'completed',
+                    'steps': [{'name': cp.PRODUCTION_STEP, 'status': 'completed', 'conclusion': 'skipped'}]}]}
         return {'artifacts': [self.bundles[run_id][0]] if run_id in self.bundles else []}
 
     def read(self, path, limit):
@@ -211,6 +216,40 @@ class AutoResumeTests(unittest.TestCase):
         api.json.return_value = {'type': 'file', 'encoding': 'base64', 'size': len(body),
                                  'content': base64.b64encode(body).decode()}
         self.assertTrue(cp.has_producer(api, 'owner/repo', self.run_record(100), {}))
+
+    def test_newer_missing_checkpoint_cannot_erase_findings_or_reset_an_older_count(self):
+        old, new = self.run_record(100, age=2), self.run_record(200)
+        for step in ({'name': cp.PRODUCTION_STEP, 'status': 'completed', 'conclusion': 'failure'},
+                     {'name': cp.PRODUCTION_STEP, 'status': 'queued'}, {}):
+            api = API([new, old], {100: self.bundle(old)})
+            original = api.json
+            def response(path):
+                result = original(path)
+                if '/jobs?' in path: result['jobs'][0]['steps'] = [step]
+                return result
+            with mock.patch.object(api, 'json', side_effect=response), self.assertRaisesRegex(ValueError, 'Run 200 attempt 1'):
+                cp.select(self.topic, repo='owner/repo', current_run_id='300', destination=self.root/'missing-newer', api=api, now=self.now)
+            self.assertFalse(any('/runs/100/artifacts' in path for path in api.calls))
+            receipt = json.loads(cp.DECISION.read_text())
+            self.assertEqual(receipt['action'], 'checkpoint_missing')
+            self.assertEqual(receipt['run_id'], 200)
+
+    def test_proven_setup_failure_or_preview_does_not_hide_an_older_checkpoint(self):
+        old, new = self.run_record(100, age=2), self.run_record(200)
+        for preview in (False, True):
+            api = API([new, old], {100: self.bundle(old, count=1)})
+            original = api.json
+            def response(path):
+                result = original(path)
+                if preview and '/jobs?' in path:
+                    result['jobs'][0]['steps'] = [{'name': cp.PREVIEW_STEP, 'status': 'completed', 'conclusion': 'failure'}]
+                return result
+            with mock.patch.object(api, 'json', side_effect=response):
+                selected = cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                                     destination=self.root/f'setup-{preview}', api=api, now=self.now)
+            self.assertEqual(selected['run_id'], 100)
+            self.assertEqual(selected['automatic_resumes'], 2)
+            self.assertEqual(selected['skipped'][0]['reason'], 'preview_only_no_checkpoint' if preview else 'verified_setup_only')
 
     def test_archive_hash_and_expanded_size_are_checked(self):
         run = self.run_record(100)

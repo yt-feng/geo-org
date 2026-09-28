@@ -95,7 +95,7 @@ jobs:
         with:
           targets: en,ar
 
-      - name: Generate one researched insight
+      - name: ${{ inputs.preview == true && 'Generate one researched insight (preview)' || 'Generate one researched insight (production)' }}
         env:
           RESEARCH_CATALOG_PATH: .artifacts/research-catalog-generator.json
           RESEARCH_CATALOG_PEER_PATH: .artifacts/research-catalog-preflight.json

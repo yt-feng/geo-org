@@ -33,11 +33,14 @@ MAX_ARTIFACT_LOOKUPS = 10
 MAX_DOWNLOADS = 3
 CONTEXT = Path('.artifacts/resume-context.json')
 DECISION = Path('.artifacts/resume-selection.json')
+PRODUCTION_STEP = 'Generate one researched insight (production)'
+PREVIEW_STEP = 'Generate one researched insight (preview)'
 PRODUCER_CONTRACT = (
     '# daily-resume-schema: daily-resume-v1',
     'run: python scripts/daily_resume_checkpoint.py --package "$RUNNER_TEMP/daily-checkpoint"',
     'name: daily-insight-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}',
     'path: ${{ runner.temp }}/daily-checkpoint/',
+    "- name: ${{ inputs.preview == true && 'Generate one researched insight (preview)' || 'Generate one researched insight (production)' }}",
 )
 
 
@@ -270,6 +273,30 @@ def has_producer(api, repo, run, cache):
     return cache[head]
 
 
+def absent_checkpoint_reason(api, repo, run):
+    """Absence is safe only when this exact attempt proves no production work."""
+    response = api.json(f'repos/{repo}/actions/runs/{run["id"]}/attempts/{run["run_attempt"]}/jobs?per_page=100')
+    jobs = response.get('jobs')
+    if not isinstance(jobs, list) or type(response.get('total_count')) is not int or response['total_count'] != len(jobs):
+        raise ValueError('Incomplete attempt jobs inventory')
+    workers = [job for job in jobs if job.get('name') == 'Generate one new article']
+    if len(workers) != 1:
+        raise ValueError('Cannot prove whether the generation job started')
+    job = workers[0]
+    if (job.get('run_id') != run['id'] or job.get('run_attempt') != run['run_attempt']
+            or job.get('status') != 'completed' or not isinstance(job.get('steps'), list)):
+        raise ValueError('Generation job identity or terminal state is unknown')
+    steps = [step for step in job['steps'] if step.get('name') in (PRODUCTION_STEP, PREVIEW_STEP)]
+    if len(steps) != 1:
+        raise ValueError('Generation scope or start state is unknown')
+    step = steps[0]
+    if step['name'] == PREVIEW_STEP:
+        return 'preview_only_no_checkpoint'
+    if step.get('status') == 'completed' and step.get('conclusion') == 'skipped':
+        return 'verified_setup_only'
+    raise ValueError('Production generation started or its start state is unknown; saved findings may be missing')
+
+
 def select(topic, *, repo, current_run_id, destination, api=None, now=None):
     """Select the newest coherent main failure; discovery errors never start fresh work."""
     import generate_daily_blog as daily
@@ -303,7 +330,15 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
         artifacts = api.json(f'repos/{repo}/actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts']
         matches = [item for item in artifacts if item['name'] == expected_name and not item.get('expired')]
         if not matches:
-            continue  # Legacy / setup-only failures have no eligible checkpoint.
+            try:
+                reason = absent_checkpoint_reason(api, repo, run)
+            except Exception as exc:
+                message = f'Run {run["id"]} attempt {run["run_attempt"]} has no usable checkpoint: {exc}'
+                save_json(DECISION, {'action': 'checkpoint_missing', 'topic': expected,
+                                    'run_id': run['id'], 'run_attempt': run['run_attempt'], 'reason': message})
+                raise ValueError(message) from exc
+            skipped.append({'run_id': run['id'], 'reason': reason})
+            continue
         if len(matches) != 1 or not 0 < matches[0]['size_in_bytes'] <= MAX_ZIP:
             raise ValueError('Ambiguous or oversized automatic checkpoint')
         if downloads >= MAX_DOWNLOADS:
