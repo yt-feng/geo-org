@@ -1,5 +1,6 @@
 """Cross-day checkpoint selection uses real audit validators and bounded I/O."""
 import copy
+import base64
 from datetime import datetime, timedelta, timezone
 import io
 import json
@@ -19,12 +20,17 @@ daily, ip = fixtures.daily, fixtures.ip
 
 
 class API:
-    def __init__(self, runs, bundles):
+    def __init__(self, runs, bundles, *, legacy_heads=()):
         self.runs, self.bundles = runs, bundles
+        self.legacy_heads = set(legacy_heads)
         self.calls = []
 
     def json(self, path):
         self.calls.append(path)
+        if '/contents/' in path:
+            head = path.split('?ref=')[1]
+            body = b'name: Legacy daily generation\n' if head in self.legacy_heads else '\n'.join(cp.PRODUCER_CONTRACT).encode()
+            return {'type': 'file', 'encoding': 'base64', 'size': len(body), 'content': base64.b64encode(body).decode()}
         if '/workflows/' in path:
             return {'workflow_runs': self.runs}
         run_id = int(path.split('/runs/')[1].split('/')[0])
@@ -175,6 +181,36 @@ class AutoResumeTests(unittest.TestCase):
         runs = [self.run_record(n) for n in range(100, 111)]
         with self.assertRaisesRegex(RuntimeError, 'search budget exhausted'):
             self.choose(runs, {})
+
+    def test_eighteen_verified_legacy_failures_allow_first_checkpoint_bootstrap(self):
+        runs = [self.run_record(n) for n in range(100, 118)]
+        # Old reruns often share an event head; one definition read proves all.
+        for run in runs: run['head_sha'] = 'a'*40
+        api = API(runs, {}, legacy_heads=['a'*40])
+        result = cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                           destination=self.root/'bootstrap', api=api, now=self.now)
+        self.assertEqual(result['action'], 'fresh_no_checkpoint')
+        self.assertEqual(len(result['skipped']), 18)
+        self.assertEqual(sum('/contents/' in path for path in api.calls), 1)
+        self.assertFalse(any('/artifacts?' in path for path in api.calls))
+
+    def test_unreadable_or_partial_producer_contract_never_means_legacy(self):
+        run = self.run_record(100)
+        for response in ({'type': 'directory'}, {'type': 'file', 'encoding': 'base64', 'size': 10, 'content': '!'},
+                         {'type': 'file', 'encoding': 'base64', 'size': len(cp.PRODUCER_CONTRACT[0]),
+                          'content': base64.b64encode(cp.PRODUCER_CONTRACT[0].encode()).decode()}):
+            api = API([run], {})
+            original = api.json
+            with mock.patch.object(api, 'json', side_effect=lambda path: response if '/contents/' in path else original(path)), \
+                    self.assertRaises(ValueError):
+                cp.select(self.topic, repo='owner/repo', current_run_id='300', destination=self.root/'bad-contract', api=api, now=self.now)
+
+    def test_actual_production_workflow_declares_the_discovered_contract(self):
+        body = (Path(__file__).resolve().parents[1]/cp.WORKFLOW).read_bytes()
+        api = mock.Mock()
+        api.json.return_value = {'type': 'file', 'encoding': 'base64', 'size': len(body),
+                                 'content': base64.b64encode(body).decode()}
+        self.assertTrue(cp.has_producer(api, 'owner/repo', self.run_record(100), {}))
 
     def test_archive_hash_and_expanded_size_are_checked(self):
         run = self.run_record(100)

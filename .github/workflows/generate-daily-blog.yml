@@ -1,4 +1,5 @@
 name: Generate Daily Blog Article
+# daily-resume-schema: daily-resume-v1
 
 on:
   schedule:

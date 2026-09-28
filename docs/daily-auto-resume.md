@@ -16,8 +16,15 @@ and explicit legacy recovery.
 
 Only completed failure/cancellation runs of the exact daily workflow on main
 qualify. Legacy artifacts without this manifest are never guessed to be a
-checkpoint. A saved Chinese pass must pass the current complete independent
-review validator, including factual and historical blockers. A failed audit
+checkpoint. The selector reads the workflow definition at each event head and
+requires the versioned producer marker, seal command and attempt-bound upload
+contract. Definitions are cached by SHA. Proven legacy failures do not consume
+artifact lookups, so pre-feature failures cannot prevent the first checkpoint
+from being created. Unreadable or partial producer definitions fail closed.
+A saved Chinese pass must pass the current saved-pass validator, including
+known factual and historical blockers. The existing first-invalid-JSON fallback
+with no known or historical findings remains unchanged and visibly recorded;
+that unavailable review is not described as completed semantic approval. A failed audit
 must contain its brief, source identities and complete last draft. Known
 translation findings remain bound to the Chinese source and become required
 repairs. Restoring a checkpoint never changes a failure to a pass.
@@ -37,6 +44,8 @@ changes are rejected. Selection failures do not start a fresh paid draft.
 
 A chain allows at most two automatic continuations; each keeps the existing
 maximum of three additional draft attempts and current request/token budgets.
+This count applies inside the 14-day discoverable artifact window; it is not a
+permanent topic spending ledger after records expire.
 Once those continuations are exhausted, the saved history requires an authored
 repair or explicit manual continuation. An interruption before new drafting
 carries the unchanged selected history under the incremented count. A newer

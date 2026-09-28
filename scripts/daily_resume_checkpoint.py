@@ -6,12 +6,14 @@ remain available through the explicit manual resume path, never as implicit pass
 from __future__ import annotations
 
 import argparse
+import base64
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path
 import selectors
 import shutil
@@ -31,6 +33,12 @@ MAX_ARTIFACT_LOOKUPS = 10
 MAX_DOWNLOADS = 3
 CONTEXT = Path('.artifacts/resume-context.json')
 DECISION = Path('.artifacts/resume-selection.json')
+PRODUCER_CONTRACT = (
+    '# daily-resume-schema: daily-resume-v1',
+    'run: python scripts/daily_resume_checkpoint.py --package "$RUNNER_TEMP/daily-checkpoint"',
+    'name: daily-insight-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}',
+    'path: ${{ runner.temp }}/daily-checkpoint/',
+)
 
 
 def sha(data):
@@ -81,7 +89,7 @@ def validate_draft(audit, topic):
     """Validate checkpoint completeness, preserving failed factual findings."""
     import insight_pipeline as ip
     if audit.get('passed') is True:
-        # load_resume_audit strictly verified the original pass before attaching
+        # load_resume_audit validated the original saved pass before attaching
         # newly discovered translation obligations, which still require repair.
         return
     if (audit.get('version') != 'insights-v3' or type(audit.get('row')) is not int
@@ -235,6 +243,33 @@ def unpack(blob, destination):
     return manifest
 
 
+def has_producer(api, repo, run, cache):
+    """Prove legacy absence from the event's workflow, not today's checkout.
+
+    A scheduled job may check out a newer main, but GitHub still executes the
+    workflow definition at its event head. A missing/unreadable definition is
+    not proof of legacy; neither is a partial or unknown checkpoint contract.
+    """
+    head = run['head_sha']
+    if not re.fullmatch(r'[0-9a-f]{40,64}', head):
+        raise ValueError('Invalid workflow event head')
+    if head not in cache:
+        value = api.json(f'repos/{repo}/contents/{WORKFLOW}?ref={head}')
+        if (value.get('type') != 'file' or value.get('encoding') != 'base64'
+                or type(value.get('size')) is not int or not 0 < value['size'] <= 100_000
+                or not isinstance(value.get('content'), str)):
+            raise ValueError('Cannot establish checkpoint producer from workflow definition')
+        data = base64.b64decode(''.join(value['content'].split()), validate=True)
+        if len(data) != value['size']:
+            raise ValueError('Workflow definition size mismatch')
+        lines = {line.strip() for line in data.decode('utf-8').splitlines()}
+        present = [line in lines for line in PRODUCER_CONTRACT]
+        if any(present) and not all(present):
+            raise ValueError('Unknown or partial checkpoint producer contract')
+        cache[head] = all(present)
+    return cache[head]
+
+
 def select(topic, *, repo, current_run_id, destination, api=None, now=None):
     """Select the newest coherent main failure; discovery errors never start fresh work."""
     import generate_daily_blog as daily
@@ -257,7 +292,13 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
     trusted.sort(key=lambda row: (row['updated_at'], row['id']), reverse=True)
     downloads = 0
     skipped = []
-    for run in trusted[:MAX_ARTIFACT_LOOKUPS]:
+    capable, definitions = [], {}
+    for run in trusted:
+        if has_producer(api, repo, run, definitions):
+            capable.append(run)
+        else:
+            skipped.append({'run_id': run['id'], 'reason': 'verified_legacy_workflow'})
+    for run in capable[:MAX_ARTIFACT_LOOKUPS]:
         expected_name = f'daily-insight-checkpoint-{run["id"]}-{run["run_attempt"]}'
         artifacts = api.json(f'repos/{repo}/actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts']
         matches = [item for item in artifacts if item['name'] == expected_name and not item.get('expired')]
@@ -300,7 +341,7 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
                       'automatic_resumes': count+1, 'resume_dir': str(target), 'skipped': skipped}
             save_json(DECISION, result)
             return result
-    if len(trusted) > MAX_ARTIFACT_LOOKUPS:
+    if len(capable) > MAX_ARTIFACT_LOOKUPS:
         raise RuntimeError('Automatic resume search budget exhausted; no paid fresh run was started')
     result = {'action': 'fresh_no_checkpoint', 'topic': expected, 'automatic_resumes': 0, 'skipped': skipped}
     save_json(DECISION, result)
