@@ -1,0 +1,7 @@
+{
+  "original_run": "https://github.com/yt-feng/geo-org/actions/runs/36351630936",
+  "block_key": "body_html.282",
+  "source": "<strong>示意增量（非实测）。</strong>A：ΔQ_valid_A＝6个（≥门槛5，通过），c_A＝40÷6≈6.67小时/个。B基准情形（B自行承担其搜索写作）：取ΔQ_valid_B＝5个（＝门槛5，通过），c_B＝40÷5＝8.00小时/个，c_B＞c_A，选A；若ΔQ_valid_B升到6以上（如7），c_B＝40÷7≈5.71＜6.67，才反转为B。B复用A前置修复的对照情形：ΔQ_valid_B＝4个（＜门槛5，未通过，本轮不计入结论，无论c值），并标出32÷5＝6.40、32÷4＝8.00两处c值，仅作为门槛清零后的参考。",
+  "translation": "<strong> indicates incremental values (not actual measurements). </strong>A: ΔQ_valid_A = 6 units (≥threshold 5, passed); c_A = 40 ÷ 6 ≈ 6.67 hours/unit. B is the reference scenario (B bears its own search and writing costs): ΔQ_valid_B = 5 units (=threshold 5, passed); c_B = 40 ÷ 5 = 8.00 hours/unit. Since c_B > c_A, A is chosen. If ΔQ_valid_B rises above 6 (e.g., 7), then c_B = 40 ÷ 7 ≈ 5.71 < 6.67, and B becomes the option. B uses the pre-fixed repairs from A as a reference: ΔQ_valid_B = 4 units (<threshold 5, failed, not included in this round’s conclusion, regardless of c value). Two c values are marked: 32 ÷ 5 = 6.40 and 32 ÷ 4 = 8.00, used only as references after the threshold is cleared.",
+  "following_tag": "</p>"
+}

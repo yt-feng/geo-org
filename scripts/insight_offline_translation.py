@@ -88,6 +88,35 @@ def validate_block(source: str, translated: str, target: str, *, quality_mode: s
     return warnings
 
 
+def _encode_fragment_text_angles(source: str, fragment: str) -> str:
+    """Preserve exact source inline tokens and encode text delimiters around them.
+
+    A model may return an unterminated comparison such as ``<threshold 5``.
+    It is plain text in an isolated fragment, but when joined to ``</p>`` its
+    opening angle can consume the closing tag (or a later inline tag). Match each
+    source token literally and in order, rejecting missing/changed/added tokens
+    before encoding the intervening text. Existing entities are left alone, so
+    repeated checkpoint reads are stable. The full HTML check still runs later.
+    """
+    if not isinstance(fragment, str):
+        raise OfflineTranslationError("Offline translation is empty")
+    output, offset = [], 0
+    encode = lambda text: text.replace("<", "&lt;").replace(">", "&gt;")
+    def text_part(text: str) -> str:
+        if _TAG.search(text):
+            raise OfflineTranslationError("Offline translation changed HTML tags, attributes, or their order")
+        return encode(text)
+
+    for token in _TAG.findall(source):
+        position = fragment.find(token, offset)
+        if position < 0:
+            raise OfflineTranslationError("Offline translation changed HTML tags, attributes, or their order")
+        output.extend((text_part(fragment[offset:position]), token))
+        offset = position + len(token)
+    output.append(text_part(fragment[offset:]))
+    return "".join(output)
+
+
 def translate_article(original: dict, target: str, *, checkpoint_path: Path,
                       translator: HyMTOfflineTranslator | None = None, quality_mode: str = "publish") -> dict:
     if quality_mode not in ("strict", "publish"):
@@ -115,7 +144,7 @@ def translate_article(original: dict, target: str, *, checkpoint_path: Path,
         pass
     checkpoint["complete"] = False
     atomic_json(checkpoint_path, checkpoint)
-    stats = {"translated_blocks": 0, "reused_blocks": 0}
+    stats = {"translated_blocks": 0, "reused_blocks": 0, "escaped_text_angle_blocks": 0}
     quality_warnings = []
 
     def record_warnings(key: str, warnings: list[str]) -> None:
@@ -129,7 +158,15 @@ def translate_article(original: dict, target: str, *, checkpoint_path: Path,
         result = saved.get("translation")
         if saved.get("source_sha256") == block_hash and isinstance(result, str) and saved.get("translation_sha256") == digest(result):
             try:
-                warnings = validate_block(text, result, target, quality_mode=quality_mode)
+                encoded = _encode_fragment_text_angles(text, result) if key.startswith("body_html.") else result
+                warnings = validate_block(text, encoded, target, quality_mode=quality_mode)
+                if encoded != result:
+                    # The saved output hash was verified above. Upgrade its text
+                    # encoding without discarding an otherwise valid translation.
+                    result = encoded
+                    saved.update(translation=result, translation_sha256=digest(result))
+                    atomic_json(checkpoint_path, checkpoint)
+                    stats["escaped_text_angle_blocks"] += 1
                 stored_warnings = saved.get("quality_warnings", [])
                 stored_warnings = [warning for warning in stored_warnings if isinstance(warning, str)] if isinstance(stored_warnings, list) else []
                 record_warnings(key, warnings + stored_warnings)
@@ -139,7 +176,11 @@ def translate_article(original: dict, target: str, *, checkpoint_path: Path,
                 pass
         warning_start = len(getattr(translator, "quality_warnings", []))
         result = translator.translate(text, target, source="zh")
-        warnings = validate_block(text, result, target, quality_mode=quality_mode)
+        encoded = _encode_fragment_text_angles(text, result) if key.startswith("body_html.") else result
+        warnings = validate_block(text, encoded, target, quality_mode=quality_mode)
+        if encoded != result:
+            result = encoded
+            stats["escaped_text_angle_blocks"] += 1
         warnings.extend(entry["warning"] for entry in getattr(translator, "quality_warnings", [])[warning_start:])
         record_warnings(key, warnings)
         checkpoint["blocks"][key] = {"source_sha256": block_hash, "translation": result,
