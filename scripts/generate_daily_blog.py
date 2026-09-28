@@ -511,7 +511,11 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
                            preview_dir: Optional[Path] = None,
                            resume_dir: Optional[Path] = None,
                            editorial_revision_path: Optional[Path] = None,
-                           auto_resume: bool = False) -> bool:
+                           auto_resume: bool = False,
+                           save_checkpoint: bool = False) -> bool:
+    import daily_resume_checkpoint as checkpoint
+    if auto_resume or save_checkpoint:
+        checkpoint.CONTEXT.unlink(missing_ok=True)
     topics = gb.read_topics(excel_path, start_row=start_row, limit=0)
     posts = load_posts(out_dir)
     topic = select_next_topic(topics, posts, out_dir)
@@ -526,7 +530,6 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     if not api_key:
         raise RuntimeError("DEEPSEEK_API_KEY is required in repository secrets")
 
-    import daily_resume_checkpoint as checkpoint
     selected = None
     if auto_resume:
         if resume_dir is not None or editorial_revision_path is not None:
@@ -548,7 +551,8 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
             print(f"Automatically continuing topic {topic.idx} from run {selected['run_id']} attempt {selected['run_attempt']}.", flush=True)
         else:
             print("No eligible recent checkpoint; starting fresh research for the selected topic.", flush=True)
-    checkpoint.record_context(topic, preview=preview_dir is not None, selected=selected)
+    if auto_resume or save_checkpoint:
+        checkpoint.record_context(topic, preview=preview_dir is not None, selected=selected)
     resume_audit = load_resume_audit(resume_dir, topic) if resume_dir is not None else None
     editorial_revision = None
     if editorial_revision_path is not None:
@@ -643,6 +647,7 @@ def main() -> None:
     parser.add_argument("--preview-dir", type=Path, help="Write reviewed preview only; do not update the site")
     parser.add_argument("--resume-dir", type=Path, help="Resume the selected Chinese audit after source revalidation; verified passes continue to translation")
     parser.add_argument("--auto-resume", action="store_true", help="Discover a bounded, verified main-run checkpoint for the selected topic")
+    parser.add_argument("--save-checkpoint", action="store_true", help="Record the production topic identity for the final checkpoint artifact")
     parser.add_argument("--editorial-revision", type=Path, help="Review an authored repair of the resumed Chinese draft")
     args = parser.parse_args()
 
@@ -650,7 +655,7 @@ def main() -> None:
     if not excel_path.exists():
         raise FileNotFoundError(excel_path)
     generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run, args.preview_dir, args.resume_dir,
-                           args.editorial_revision, args.auto_resume)
+                           args.editorial_revision, args.auto_resume, args.save_checkpoint)
 
 
 if __name__ == "__main__":

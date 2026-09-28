@@ -46,7 +46,8 @@ class AutoResumeTests(unittest.TestCase):
         self.audit['attempts'][-1]['review']['blockers'] = ['The cost comparison still uses an infeasible option.']
         self.audit['attempts'][-1]['errors'] = ['The cost comparison still uses an infeasible option.']
         self.env = {'GITHUB_REPOSITORY': 'owner/repo', 'GITHUB_RUN_ID': '300', 'GITHUB_RUN_ATTEMPT': '1',
-                    'GITHUB_SHA': 'f'*40, 'GITHUB_REF': 'refs/heads/main', 'GITHUB_EVENT_NAME': 'schedule'}
+                    'GITHUB_SHA': 'f'*40, 'GITHUB_REF': 'refs/heads/main', 'GITHUB_EVENT_NAME': 'schedule',
+                    'RUNNER_TEMP': str(self.root)}
         self.addCleanup(mock.patch.stopall)
         mock.patch.object(cp, 'CONTEXT', self.root/'context.json').start()
         mock.patch.object(cp, 'DECISION', self.root/'decision.json').start()
@@ -98,6 +99,11 @@ class AutoResumeTests(unittest.TestCase):
         self.assertEqual(saved['attempts'], later['attempts'])
         self.assertIn('Newest blocker', str(ip._revision_feedback(saved)))
         self.assertFalse(any('/runs/100/' in path for path in api.calls))
+        with mock.patch.object(ip, 'request_json', side_effect=RuntimeError('before paid request')) as request:
+            with self.assertRaisesRegex(RuntimeError, 'before paid request'):
+                ip.produce_article(self.topic, self.sources, 'test', audit_path=self.root/'continued.json', resume_audit=saved)
+        self.assertEqual(request.call_count, 1)
+        self.assertEqual(request.call_args.kwargs['stage'], 'zh-draft-6')
 
     def test_complete_strict_pass_can_continue_after_a_later_stage_failed(self):
         audit = copy.deepcopy(self.audit)
@@ -219,6 +225,13 @@ class AutoResumeTests(unittest.TestCase):
                 cp.GitHub('owner/repo', seconds=seconds).read('fixture', limit)
             self.assertLess(time.monotonic()-began, 2)
             self.assertTrue(all(child.poll() is not None for child in children))
+
+    def test_no_pending_topic_clears_context_instead_of_sealing_old_work(self):
+        cp.save_json(cp.CONTEXT, {'old': 'context'})
+        with mock.patch.object(daily.gb, 'read_topics', return_value=[]), \
+                mock.patch.object(daily, 'load_posts', return_value=[]):
+            self.assertFalse(daily.generate_daily_article(Path('unused'), self.root/'blog', 2, False, save_checkpoint=True))
+        self.assertFalse(cp.CONTEXT.exists())
 
     def test_auto_source_drift_uses_fresh_research_but_fetch_failure_does_not(self):
         from insight_research import ResearchError, ResearchSourceDrift

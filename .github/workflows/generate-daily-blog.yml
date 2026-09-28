@@ -125,7 +125,7 @@ jobs:
           TAVILY_MAX_RESULTS: "3"
         run: |
           set -euo pipefail
-          args=()
+          args=(--save-checkpoint)
           if [ "$PREVIEW_ONLY" = "true" ]; then
             args+=(--preview-dir .artifacts/preview)
           fi
