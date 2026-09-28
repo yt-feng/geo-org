@@ -402,6 +402,10 @@ class ResearchError(RuntimeError):
     """The source pack cannot meet its evidence requirements."""
 
 
+class ResearchSourceDrift(ResearchError):
+    """A successfully reread original changed; old draft evidence cannot be reused."""
+
+
 def _integer(name: str, default: int, low: int, high: int) -> int:
     try:
         value = int(os.environ.get(name, str(default)))
@@ -1129,8 +1133,9 @@ def reread_research_pack(audit_sources: Sequence[Mapping[str, Any]]) -> list[dic
     timeout = _integer("RESEARCH_FETCH_TIMEOUT", 20, 1, 45)
     max_bytes = _integer("RESEARCH_MAX_RESPONSE_BYTES", 2500000, 10000, 4000000)
 
-    def invalid(message: str) -> ResearchError:
-        return ResearchError(f"Cannot resume research: {message}. Fresh research is required.")
+    def invalid(message: str, *, drift: bool = False) -> ResearchError:
+        error = ResearchSourceDrift if drift else ResearchError
+        return error(f"Cannot resume research: {message}. Fresh research is required.")
 
     if not isinstance(audit_sources, (list, tuple)) or not minimum <= len(audit_sources) <= maximum:
         raise invalid(f"audit must contain {minimum}–{maximum} source records")
@@ -1184,17 +1189,17 @@ def reread_research_pack(audit_sources: Sequence[Mapping[str, Any]]) -> list[dic
             # Pass only the validated URL; ignore any text or fixture path in
             # the audit, and use the regular bounded HTTPS fetching path.
             body, fetched_url, metadata, method = _fetch_source({"url": url}, max_bytes, timeout)
-            if fetched_url != url:
-                raise invalid(f"{source_id} source URL drifted after redirect")
-            if len(body) != source["body_chars"]:
-                raise invalid(f"{source_id} normalized source body length drifted")
             if re.search(r"access denied|just a moment|verify (?:you are|you're) human|robot check|page not found", metadata.get("title", ""), re.I):
                 raise invalid(f"{source_id} returned an error or access-check page")
+            if fetched_url != url:
+                raise invalid(f"{source_id} source URL drifted after redirect", drift=True)
+            if len(body) != source["body_chars"]:
+                raise invalid(f"{source_id} normalized source body length drifted", drift=True)
             start, end = source["excerpt_start"], source["excerpt_end"]
             excerpt = body[start:end]
             digest = hashlib.sha256(excerpt.encode("utf-8")).hexdigest()
             if digest != source["text_sha256"]:
-                raise invalid(f"{source_id} excerpt content drifted (SHA-256 mismatch)")
+                raise invalid(f"{source_id} excerpt content drifted (SHA-256 mismatch)", drift=True)
             industries = set(source.get("industries", []))
             if _industry_mentions(excerpt, industries) != industries:
                 raise invalid(f"{source_id} read excerpt no longer confirms its audited industry")

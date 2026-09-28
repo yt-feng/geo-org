@@ -705,9 +705,16 @@ class ResumeResearchTests(unittest.TestCase):
         body = self.bodies[url]
         self.bodies[url] = body[:200] + "X" + body[201:]
         with mock.patch.object(research, "_fetch_source", side_effect=self.fetch) as fetch:
-            with self.assertRaisesRegex(research.ResearchError, "S2 excerpt content drifted.*Fresh research"):
+            with self.assertRaisesRegex(research.ResearchSourceDrift, "S2 excerpt content drifted.*Fresh research"):
                 research.reread_research_pack(self.sources)
         self.assertEqual(fetch.call_count, 2)
+
+    def test_access_check_page_is_not_classified_as_changed_source_content(self):
+        with mock.patch.object(research, '_fetch_source', return_value=(
+                'short access page', self.urls[0], {'title': 'Just a moment'}, 'https_fetch')):
+            with self.assertRaises(research.ResearchError) as caught:
+                research.reread_research_pack(self.sources)
+        self.assertNotIsInstance(caught.exception, research.ResearchSourceDrift)
 
     def test_reread_does_not_relocate_an_old_excerpt_after_body_shift(self):
         url = self.urls[0]

@@ -504,7 +504,9 @@ def review_errors(review: dict) -> list[str]:
 
 def write_audit(path: Path, audit: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary = path.with_suffix(path.suffix + '.tmp')
+    temporary.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.replace(path)
 
 
 def _blocker_check_errors(review: dict, required_blockers: list[dict], *, format_only: bool = False) -> list[str]:

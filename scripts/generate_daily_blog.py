@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shutil
+import tempfile
 import time
 import urllib.parse
 import urllib.request
@@ -24,7 +25,7 @@ import authority_site
 import generate_blog as gb
 import i18n_site
 import insight_pipeline
-from insight_research import build_research_pack, industry_search_plan, reread_research_pack
+from insight_research import build_research_pack, industry_search_plan, reread_research_pack, ResearchSourceDrift
 
 
 GEO_EDITORIAL_STRATEGY = """
@@ -509,7 +510,8 @@ def load_resume_audit(resume_dir: Path, topic: gb.TopicRow) -> dict:
 def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_run: bool,
                            preview_dir: Optional[Path] = None,
                            resume_dir: Optional[Path] = None,
-                           editorial_revision_path: Optional[Path] = None) -> bool:
+                           editorial_revision_path: Optional[Path] = None,
+                           auto_resume: bool = False) -> bool:
     topics = gb.read_topics(excel_path, start_row=start_row, limit=0)
     posts = load_posts(out_dir)
     topic = select_next_topic(topics, posts, out_dir)
@@ -524,6 +526,29 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
     if not api_key:
         raise RuntimeError("DEEPSEEK_API_KEY is required in repository secrets")
 
+    import daily_resume_checkpoint as checkpoint
+    selected = None
+    if auto_resume:
+        if resume_dir is not None or editorial_revision_path is not None:
+            raise ValueError("Automatic and explicit resume cannot be combined")
+        if os.environ.get('GITHUB_REF') != 'refs/heads/main' or preview_dir is not None:
+            raise ValueError("Automatic resume is restricted to production main")
+        repo, run_id = os.environ.get('GITHUB_REPOSITORY'), os.environ.get('GITHUB_RUN_ID')
+        if not repo or not run_id:
+            raise ValueError("Automatic resume requires GitHub run identity")
+        destination = Path(tempfile.mkdtemp(prefix='daily-auto-resume-', dir=os.environ.get('RUNNER_TEMP')))
+        try:
+            selected = checkpoint.select(topic, repo=repo, current_run_id=run_id, destination=destination)
+        except Exception as exc:
+            checkpoint.save_json(checkpoint.DECISION, {'action': 'selection_failed', 'topic': checkpoint.topic_identity(topic),
+                                                     'reason': str(exc)[:500]})
+            raise
+        if selected['action'] == 'resume':
+            resume_dir = Path(selected['resume_dir'])
+            print(f"Automatically continuing topic {topic.idx} from run {selected['run_id']} attempt {selected['run_attempt']}.", flush=True)
+        else:
+            print("No eligible recent checkpoint; starting fresh research for the selected topic.", flush=True)
+    checkpoint.record_context(topic, preview=preview_dir is not None, selected=selected)
     resume_audit = load_resume_audit(resume_dir, topic) if resume_dir is not None else None
     editorial_revision = None
     if editorial_revision_path is not None:
@@ -535,9 +560,19 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         if not isinstance(editorial_revision, dict):
             raise ValueError("Editorial revision must be an article JSON object")
     if resume_audit is not None:
-        sources = reread_research_pack(resume_audit["sources"])
-        print(f"Resuming saved Chinese audit after revalidating {len(sources)} source bodies.", flush=True)
-    else:
+        try:
+            sources = reread_research_pack(resume_audit["sources"])
+        except ResearchSourceDrift as exc:
+            if not auto_resume:
+                raise
+            print(f"Source evidence changed; discarding automatic draft reuse and researching afresh: {exc}", flush=True)
+            selected = {**selected, 'action': 'fresh_source_drift', 'reason': str(exc)}
+            checkpoint.save_json(checkpoint.DECISION, selected)
+            checkpoint.record_context(topic, selected=selected)
+            resume_audit = None
+        else:
+            print(f"Resuming saved Chinese audit after revalidating {len(sources)} source bodies.", flush=True)
+    if resume_audit is None:
         # Discovery summaries are leads only; the research pack contains retrieved originals.
         leads = [*fetch_news_items(topic), *fetch_tavily_market_items(topic)]
         sources = build_research_pack(topic, leads)
@@ -607,6 +642,7 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--preview-dir", type=Path, help="Write reviewed preview only; do not update the site")
     parser.add_argument("--resume-dir", type=Path, help="Resume the selected Chinese audit after source revalidation; verified passes continue to translation")
+    parser.add_argument("--auto-resume", action="store_true", help="Discover a bounded, verified main-run checkpoint for the selected topic")
     parser.add_argument("--editorial-revision", type=Path, help="Review an authored repair of the resumed Chinese draft")
     args = parser.parse_args()
 
@@ -614,7 +650,7 @@ def main() -> None:
     if not excel_path.exists():
         raise FileNotFoundError(excel_path)
     generate_daily_article(excel_path, Path(args.out), args.start_row, args.dry_run, args.preview_dir, args.resume_dir,
-                           args.editorial_revision)
+                           args.editorial_revision, args.auto_resume)
 
 
 if __name__ == "__main__":
