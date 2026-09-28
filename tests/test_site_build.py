@@ -82,4 +82,26 @@ class BuildTests(unittest.TestCase):
    self.assertTrue(s.select_one('.eco-discovery'),path)
    self.assertTrue(s.select_one('#eco-discovery-schema'),path)
    for a in s.select('.eco-topic-links a'):self.assertTrue((OUT/a['href'].lstrip('/')/'index.html').exists(),a['href'])
+ def test_arabic_economics_formulas_are_isolated_without_reversing_prose_or_columns(self):
+  path='ar/blog/articles/00706-ai-geo-ai-231b90c4/index.html'
+  source=BeautifulSoup((ROOT/path).read_text(),'html.parser')
+  built=self.pages[path]
+  before=source.select_one('table[data-role="economics"]')
+  table=built.select_one('table[data-role="economics"]')
+  self.assertEqual(built.html.get('dir'),'rtl')
+  self.assertFalse(table.has_attr('dir'))
+  self.assertEqual([c.get_text() for c in before.select('th,td')],
+                   [c.get_text() for c in table.select('th,td')])
+  cells={c.get_text():c for c in table.select('th,td')}
+  for formula in ('30 ÷ 5','(20 + x) ÷ 7','20 ÷ 7 ≈ 2.86','28 ÷ 7 = 4.00',
+                  '40 ÷ 7 ≈ 5.71','2/25 = 0.08','A = 5, B = 7','6.00','8'):
+   self.assertEqual(cells[formula].get('dir'),'ltr',formula)
+  for cell in table.select('th,td'):
+   if re.search(r'[\u0620-\u064a]',cell.get_text()):
+    self.assertFalse(cell.has_attr('dir'),cell.get_text())
+  self.assertIn('unicode-bidi:isolate',built.select_one('#eco-arabic-table-math').get_text())
+  for lang in ('','en/'):
+   page=self.pages[lang+'blog/articles/00706-ai-geo-ai-231b90c4/index.html']
+   self.assertFalse(page.select_one('#eco-arabic-table-math'))
+   self.assertFalse(page.select('table[data-role="economics"] [dir="ltr"]'))
 if __name__=='__main__':unittest.main()
