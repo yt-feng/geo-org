@@ -879,15 +879,27 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
         original_format_errors = list(format_errors)
         # A format-only retry is still a fresh factual review of the same article;
         # no score, unsupported verdict or blocker is removed by application code.
-        review = request_json(
-            prompt + "\n上次审稿输出格式不合格，请重新完成同一篇文章的独立审稿。"
-            "只修正JSON契约，继续逐项核实同一证据；不得为格式通过提高分数、删除事实问题"
-            "或改低验收门槛。source_ids缺失或无效时重新核查该条论断的类型与真实支持，"
-            "不得编造ID或机械绑定无关来源；无支持的外部事实必须unsupported并保留为blocker。"
-            "格式问题：" + json.dumps(format_errors, ensure_ascii=False)
-            + "\n上次审稿结果（保留具体事实问题）：" + json.dumps(original_review, ensure_ascii=False),
-            api_key, stage=f"{lang}-review-format-repair", max_tokens=max_tokens,
-        )
+        try:
+            review = request_json(
+                prompt + "\n上次审稿输出格式不合格，请重新完成同一篇文章的独立审稿。"
+                "只修正JSON契约，继续逐项核实同一证据；不得为格式通过提高分数、删除事实问题"
+                "或改低验收门槛。source_ids缺失或无效时重新核查该条论断的类型与真实支持，"
+                "不得编造ID或机械绑定无关来源；无支持的外部事实必须unsupported并保留为blocker。"
+                "格式问题：" + json.dumps(format_errors, ensure_ascii=False)
+                + "\n上次审稿结果（保留具体事实问题）：" + json.dumps(original_review, ensure_ascii=False),
+                api_key, stage=f"{lang}-review-format-repair", max_tokens=max_tokens,
+            )
+        except Exception as exc:
+            if not _json_review_failure(exc):
+                raise
+            # This is not an absent first review: the first response already
+            # contains findings about this unchanged article. Keep them rather
+            # than turning the repair's bad JSON into an unavailable-review pass.
+            review = json.loads(json.dumps(original_review))
+            review["format_repair_error"] = str(exc)[:500]
+            original_blockers = review.get("blockers", [])
+            review["blockers"] = (original_blockers if isinstance(original_blockers, list) else []) + [
+                "Review format repair returned invalid JSON; earlier findings remain unverified"]
         format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
         if not isinstance(review.get("blockers"), list):
             review["blockers"] = ["editorial review blockers must be an array"]
@@ -983,14 +995,56 @@ def _format_repair_fact_failures(review: dict) -> list[str]:
 def _saved_pass_review_errors(review: dict, sources: list[dict], required: list[dict]) -> list[str]:
     if not isinstance(review, dict):
         return ["saved pass requires a complete independent review"]
+    blocking = _publication_blocking_errors(review, sources, required)
+    if blocking:
+        return blocking
     if _publishable_review_fallback(review, required):
         return []
+    return review_errors(review)
+
+
+def _publication_blocking_errors(review: dict, sources: list[dict], required: list[dict]) -> list[str]:
+    """Factual/semantic findings cannot become warnings when revisions run out.
+
+    Scores and ordinary editorial issues are publication preferences. Explicit
+    blockers, unsupported claims, malformed factual checks and unverified past
+    blockers remain hard gates, including for a saved fallback pass.
+    """
+    if not isinstance(review, dict):
+        return ["publication requires a complete independent review record"]
     allowed = {source["id"] for source in sources}
-    return list(dict.fromkeys(
-        _review_contract_errors(review, required, allowed_source_ids=allowed)
-        + _claim_review_errors(review, allowed) + _blocker_check_errors(review, required)
-        + review_errors(review) + _format_repair_fact_failures(review)
-    ))
+    if review.get("review_status") == "unavailable":
+        # Preserve the existing invalid-JSON fallback only when no known factual
+        # finding or historical verification obligation is being bypassed.
+        errors = review_errors(review) + _blocker_check_errors(review, required)
+        checks = review.get("claim_checks", [])
+        if isinstance(checks, list):
+            errors.extend(f"unsupported claim: {check.get('claim', '')}" for check in checks
+                          if isinstance(check, dict) and check.get("verdict") == "unsupported")
+    else:
+        errors = (_review_contract_errors(review, required, allowed_source_ids=allowed)
+                  + _claim_review_errors(review, allowed) + _blocker_check_errors(review, required))
+    blockers = review.get("blockers")
+    if not isinstance(blockers, list) or any(not isinstance(item, str) or not item.strip() for item in blockers):
+        errors.append("review blockers must be an array of nonempty strings")
+    else:
+        errors.extend(blockers)
+    try:
+        errors.extend(_format_repair_fact_failures(review))
+    except ValueError as exc:
+        errors.append(str(exc))
+    return list(dict.fromkeys(errors))
+
+
+def _prior_publication_blockers(audit: dict, attempt: dict) -> list[dict]:
+    required = []
+    for prior in audit["attempts"]:
+        if prior["revision"] >= attempt["revision"]:
+            continue
+        blockers = prior.get("review", {}).get("blockers", [])
+        required.extend({"id": f"r{prior['revision']}-blocker-{index}", "kind": "blocker", "problem": blocker}
+                        for index, blocker in enumerate(blockers, 1))
+    return required + cross_language_required_fixes(audit)
 
 
 def _json_review_failure(error: Exception) -> bool:
@@ -1000,9 +1054,9 @@ def _json_review_failure(error: Exception) -> bool:
 
 
 def _publishable_review_fallback(review: dict, required: list[dict] | None = None) -> bool:
-    if not isinstance(review, dict) or required:
+    if not isinstance(review, dict):
         return False
-    return ((review.get("review_status") == "unavailable" and review.get("reason") == "invalid_json")
+    return ((not required and review.get("review_status") == "unavailable" and review.get("reason") == "invalid_json")
             or review.get("publication_fallback") is True)
 
 
@@ -1017,16 +1071,22 @@ def _unavailable_review(error: Exception) -> dict:
 def _structural_publication_fallback(audit: dict, attempt: dict, article: dict,
                                      structural: dict, review_errors_list: list[str],
                                      *, audit_path: Path, lang: str, revision: int) -> dict:
-    """Publish a structurally valid draft while preserving semantic review warnings."""
+    """Publish only preference-level warnings after factual gates still pass."""
     warning_list = [str(item)[:500] for item in review_errors_list if str(item).strip()]
     review = attempt.get("review")
     if not isinstance(review, dict):
         raise ValueError("structural publication fallback requires the completed review record")
+    blocking = _publication_blocking_errors(review, audit["sources"], _prior_publication_blockers(audit, attempt))
+    if blocking:
+        attempt["errors"] = list(dict.fromkeys([*attempt.get("errors", []), *blocking]))
+        audit["passed"] = False
+        write_audit(audit_path, audit)
+        raise InsightQualityError("Cannot publish unresolved factual or semantic blockers; inspect " + str(audit_path))
     review["publication_fallback"] = True
-    review["fallback_reason"] = "semantic review findings are retained as warnings"
+    review["fallback_reason"] = "editorial preference warnings retained after factual gates passed"
     attempt["review_state"] = "completed_with_warnings"
     attempt["publication_fallback"] = {
-        "reason": "structural_gates_passed; semantic_review_warnings_retained",
+        "reason": "structural_and_factual_gates_passed; editorial_preference_warnings_retained",
         "warning_count": len(warning_list),
     }
     attempt["warnings"] = warning_list
@@ -1037,7 +1097,7 @@ def _structural_publication_fallback(audit: dict, attempt: dict, article: dict,
     article["quality"] = {
         "version": audit["version"], "metrics": structural["metrics"],
         "revisions": revision,
-        "review_type": "structural publication fallback after semantic review warnings",
+        "review_type": "structural publication fallback after editorial preference warnings",
         "warnings": warning_list,
     }
     print(f"Insight {lang}: structural publication fallback; warnings={len(warning_list)}", flush=True)
@@ -1311,7 +1371,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             # Repeating a deterministic translation must not repeat paid reviews.
             # Failures retain per-block checkpoints for a corrected-source rerun.
             attempt_budget = translation_attempts()
-        if lang == "zh" and resume_audit is not None and audit["attempts"]:
+        if lang == "zh" and resume_audit is not None and editorial_revision is None and audit["attempts"]:
             # A failed run may already contain a structurally valid final draft and
             # a completed semantic review. Do not spend another paid draft/review
             # cycle just because the review found warnings; publish that saved
@@ -1322,7 +1382,9 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                     and isinstance(saved_attempt.get("article"), dict)):
                 saved_article = normalize_article(saved_attempt["article"], lang)
                 saved_structure = validate_insight(saved_article, sources, lang=lang)
-                if saved_structure["passed"] and not saved_structure["errors"]:
+                if (saved_structure["passed"] and not saved_structure["errors"]
+                        and not _publication_blocking_errors(saved_attempt.get("review"), audit["sources"],
+                                                             _prior_publication_blockers(audit, saved_attempt))):
                     return _structural_publication_fallback(
                         audit, saved_attempt, saved_article, saved_structure,
                         saved_attempt["errors"], audit_path=audit_path, lang=lang,

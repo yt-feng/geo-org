@@ -1,0 +1,613 @@
+{
+  "description": "Minimal exact review records from two production row706 audits that falsely passed publication fallback. Bodies, paid-provider payloads and source excerpts are intentionally excluded. Prior blocker text and final reviews are verbatim; source identity fields and audit SHA256 preserve provenance.",
+  "cases": [
+    {
+      "run_url": "https://github.com/yt-feng/geo-org/actions/runs/36336166505",
+      "original_audit_sha256": "eb86bacd396e82e625817233c7ba749a5bd0d712756a37c47e16eb280f41b707",
+      "row": 706,
+      "original_passed": true,
+      "sources": [
+        {
+          "id": "S1",
+          "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+          "url": "https://developers.google.com/search/docs/appearance/ai-features"
+        },
+        {
+          "id": "S2",
+          "title": "What Gets Cited: Competitive GEO in AI Answer Engines",
+          "url": "https://arxiv.org/html/2605.25517v1"
+        },
+        {
+          "id": "S3",
+          "title": "CMA publishes review of progress in legal services sector",
+          "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector"
+        },
+        {
+          "id": "S4",
+          "title": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+          "url": "https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/"
+        },
+        {
+          "id": "S5",
+          "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+          "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you"
+        }
+      ],
+      "attempts": [
+        {
+          "revision": 0
+        },
+        {
+          "revision": 1,
+          "review": {
+            "blockers": [
+              "表二与第四节存在明确算术错误：第四节写“A 单位成本＝30÷5＝4.0”（30÷5=6.0）；同段写“B 总工时＝10＋20＋10＝40，B 单位成本＝40÷7≈4.29”（40÷7≈5.71，4.29 实为 30÷7）。公式与数值不自洽，须重算并统一“是否含共同前置”的口径。",
+              "反转点结论与所列输入不符：按 A=20 工时/Q=5、B=20 工时/Q=7 的口径，B 单位成本 (20+x)/7 与 A 的 4.0 相等时 x=8 小时；若两边都把共同前置 10 小时计入（A=30/5=6.0），相等点在 x=12 小时。文中“额外核对工时＝10小时处两方案相等”在任何一致口径下都不成立，导致“相等则执行 C 并加测”的规则被错误触发/漏触发，须重算反转点并同步表二“反转点与判定”列。",
+              "敏感性示例所处情境违反本文自身门槛：表二基准列 e=0.12（>0.10）、Ev=2（<3），按第三节与表一规则 B 不可行，但第四节仍在该情景下比较 A/B 并给出“额外核对<10小时则 B 更优”的建议。须把示例限定在 e≤阈值且 Ev≥阈值的通过情境，否则该示例不能作为选择依据。",
+              "S2 数值的逐模型归属不能成立：文章把 46.3 归为 GPT-5-Mini（“有证据”行）、3.98 归为 GPT-5-Mini（“深覆盖”行）、30.4 归为 GPT-5-Mini（“含价格”行），同一模型落在不同数值列；已读取表头有 8 个标签而每行只有 6 个数值，任何固定列序都无法同时支持文中全部归属。逐模型绑定数字属引用错位，须改为“多个模型取值区间（如 2.09–46.3）”并说明窗口截断与列序不可确认，或全部删除模型名。",
+              "核心前提“同一批80小时内的互斥取舍”与本文数字不自洽：表一/表二给出 A、B 各约 30 小时，两者相加 60 小时仍小于 80 小时，因此“选A必须放弃B”并非预算所致。须写明真正的绑定约束（同一批人、同一观察窗内的能力上限，或各方案实为 80 小时当期投入），否则取舍前提不成立。",
+              "S2 为受控双来源 RAG 实验（B2C 商品评测语料、品牌匿名、模型间效应不一致且存在 Degenerate Hessian/Singular fit 告警），文章把它迁移为“扩写内容会把错误推到更多被引用路径”“证据稀薄则单位正确引用成本更高”的因果链，属本文推论而非来源结论；文中已标注为推导，但第三节“因此错误率应作为事前可行性约束”的因果机制仍缺可检证据，须进一步降级为待基线验证的假设并给出验证判据。",
+              "unsupported claim: “有证据 vs 无证据”的比值比在 GPT-5.2 为 2.09、Claude-3.5-Sonnet 为 2.73、GPT-5-Nano 为 5.91、GPT-5-Mini 为 46.3",
+              "unsupported claim: 含价格 vs 无价格在 Claude 为 7.82、GPT-5-Nano 为 6.26、GPT-5-Mini 为 30.4",
+              "unsupported claim: 当额外证据核对工时为0时 B 总工时＝30、单位成本≈2.86，A 单位成本＝30÷5＝4.0；当该工时升至10小时时 B 单位成本＝40÷7≈4.29",
+              "unsupported claim: 恰好等于10小时时两者相等，按条件四处理：取单位成本更低者，若相等则执行 C 并加测"
+            ]
+          }
+        },
+        {
+          "revision": 2,
+          "review": {
+            "scores": {
+              "thesis": 4,
+              "evidence": 3,
+              "mechanism": 4,
+              "tradeoffs": 3,
+              "actionability": 4,
+              "originality": 4
+            },
+            "issues": [
+              "第三节开头的『A 与 B 相加约60小时看似小于一个“80小时”的额度』：『80小时』全文未定义，且与结论三及同段自述的『当期可投入约40个当量工时』口径互斥。要求删除该表述，或明确其来源；互斥理由直接写成『同一2周窗口内无法串行完成 A 再 B 的同口径比较』。",
+              "表一 B 行『约30小时』与表二 B『基础投入20小时／基准当期投入28小时』未统一口径。要求在两表统一（若表一含典型 x 应注明，例如约为 28–30 小时），或加表注说明表二当期投入＝20＋x。",
+              "第五节称排期为『基线2周、执行4周、账本核对1周』（合计7周），第八节却把工时账本闭合放在『第6周末』。要求统一为6周或7周，并在两处同步。",
+              "第五节以『两轮方向一致率 < 70%』作为转 C 门槛，但未定义分母与计算口径（题级还是轮级、单一平台还是全部平台、多平台分层后如何合成）。要求给出可复算定义，否则执行人无法判定。",
+              "第四节『本示例最低修复约6小时』、第八节『A 最低约6小时』与『B 最低约需支撑至少一个新增题面』均无推导，属示意值。要求在首次出现处标注『示意假设』并说明可由2周基线校准。",
+              "表二三档情景列（低 x=0、基准 x=8、高 x=20）全部落在 x<22 的『B 更优』区间，列内不改变选择；反转只在 B 行末列文字给出。建议把 x=22（相等→C）与 x>22（A 更优）作为独立情景列，使表格本身即可改变选择。",
+              "表一 A 行适用条件只写『e ≥ 3/25；或 e < 3/25 但 Ev < 每10题3条』，未涵盖正文条件三所说的『覆盖条件未达标（g < 0.5）也先 A』。要求把 g < 0.5 补入 A 行条件，使表一与条件三一致。",
+              "结论一与第二节把 S2 的方向性提示用于支撑排序，虽然已标注为待验证假设，但建议在结论一内再加一句成立边界（仅限双来源受控设定、B2C 语料、品牌匿名），避免读者把区间数值当作本场景实测。"
+            ],
+            "blockers": [
+              "第二节『含价格 vs 无价格』行区间错误：原文写『出现 6.26 至 30.4 之间的多个取值』，该行实际为 >>10k、>>10k、36.1、7.82、6.26、30.4，存在 36.1 与两个 >>10k，区间上限被显著低估，且与本段自陈的『以免选择性呈现高估值』原则相悖。须按行完整给出取值，或明确剔除 >>10k 的规则及其影响。",
+              "第二节『深覆盖 vs 浅覆盖』行区间错误：原文写『出现 3.98 至 5.33 之间的多个取值』，该行实际为 1,480†、>>10k、132、5.33、19.5、3.98，19.5、132、1,480 均远超 5.33，属严重低估来源。须按行完整呈现或说明剔除奇异值/删失值的规则。",
+              "表二成本行与 Q 增量行不自洽：A 成本低列 26÷5＝5.20、基准 30÷5＝6.00，但 Q 行低情境写 A＝4（应为 26÷4＝6.50）；B 成本三列均以 Q_B＝7 计算，Q 行却写 B 低＝6、高＝8（应为 20÷6≈3.33、40÷8＝5.00）。第四节『表中的 Q_A＝5、Q_B＝7』与表内 Q 行冲突，使『反转点经逐项代回原公式复核』不成立。须统一各列 Q 值并重算成本行，或加表注说明差异来源。",
+              "表二 e 行、Ev 行按列取值与第四节『三档之间……e、Ev、g 三个可行性变量在各档中保持一致』直接冲突：基准列 e＝3/25＝0.12、高列 e＝6/25＝0.24 落在『B 不可行』区间，低列 Ev＝5 未达标，而同节自称示例取 e＝2/25、Ev＝8、g＝0.6。按列解读会使基准/高列的 A/B 比较触犯本文自身门槛。须删除这两行的列内变化，或明确标为『门槛参照行』（并补齐高列 0.24 的说明）。",
+              "第二节『这是十年前的、境外辖区的监管自评』与 S3 发布日期 2020-12-17（至2026年检索约6年）不符，属对来源时间的失实描述。须改为『2020年』或『数年前』。",
+              "第二节称『“结构化 vs 密集”“有条理 vs 散乱”“一致 vs 矛盾”等因子在表中取值接近 1 或方向相反』，与 S2 表值不符：Organized vs Scattered 为 2.21、3.87、2.49、1.19、1.13、1.57，Consistent vs Contradictory 为 2.81、2.81、2.72、2.19、4.09、1.74，均含明显大于1.5的取值，仅 Structured vs Dense 含 <1 值。该笼统表述被用来支持因子剔除，属不准确转述。须逐行给出取值或改为『方向在模型间不一致、部分接近1』。",
+              "r1-blocker-3 未解决：表二 e 行按低/基准/高列给出 0.08/0.12/0.24、Ev 行给出 5/8/10，基准列 e=3/25=0.12、高列 e=6/25=0.24 均落在『B 不可行』区间，而第四节自称『三档之间只有当期投入与 Q 增量随情景变化，e、Ev、g 三个可行性变量在各档中保持一致』并称本示例 e＝2/25。表列值与正文声明直接冲突，按列解读会使基准/高列的 A/B 比较触犯门槛。须删去 e/Ev 行的列内变化，或明确其为『门槛参照行』而非情景取值。",
+              "r1-blocker-8 未解决，并新增同类错位：S2『含价格 vs 无价格』行实际取值为 >>10k、>>10k、36.1、7.82、6.26、30.4，文中写『6.26 至 30.4』漏掉 36.1 与两个 >>10k；『深覆盖 vs 浅覆盖』行实际为 1,480†、>>10k、132、5.33、19.5、3.98，文中写『3.98 至 5.33』漏掉 19.5、132、1,480 与 >>10k。属选择性取小值、引用错位，与本段自陈『以免选择性呈现高估值』的原则相悖。须按行给出完整取值区间（或明确剔除 >>10k 及奇异值的规则与影响）。",
+              "表二成本行与 Q 增量行不自洽：A 成本低列 26÷5＝5.20（隐含 Q_A=5），但 Q 行低情境写 A＝4；B 成本三列均用 Q_B＝7（28÷7＝4.00），但 Q 行写 B 低＝6、高＝8（按此应为 20÷6≈3.33、40÷8＝5.00）。这使『反转点经逐项代回原公式复核』与第五节『表中的 Q_A＝5、Q_B＝7』的表述不成立，须统一各列 Q 值并重算成本行，或在表注说明差异来源。",
+              "unsupported claim: 『含价格 vs 无价格』一行出现 6.26 至 30.4 之间的多个取值",
+              "unsupported claim: 『深覆盖 vs 浅覆盖』一行出现 3.98 至 5.33 之间的多个取值",
+              "unsupported claim: 这是十年前的、境外辖区的监管自评",
+              "unsupported claim: 『结构化 vs 密集』『有条理 vs 散乱』『一致 vs 矛盾』等因子在表中取值接近 1 或方向相反",
+              "historical blocker r1-blocker-3 remains unresolved: 示例虽已声明取通过情境（e=2/25、Ev=8、g=0.6），但表二 e 行仍按列给出 0.08/0.12/0.24、Ev 行给出 5/8/10，基准列 e=0.12、高列 e=0.24 落入 B 不可行区间、低列 Ev=5 未达标，与『各档中保持一致』直接冲突，按列解读仍会触犯门槛。",
+              "historical blocker r1-blocker-8 remains unresolved: 逐模型归属虽已删除，但新写的区间『6.26 至 30.4』仍未完整呈现该行：遗漏 36.1 与两个 >>10k，区间上限被低估，引用仍不完整。"
+            ],
+            "claim_checks": [
+              {
+                "claim": "AI Overviews 与 AI Mode 会展示相关链接，并可能使用 query fan-out 技术跨子主题与数据源发起多个相关检索、识别更多支持性网页",
+                "source_ids": [
+                  "S1"
+                ],
+                "verdict": "supported",
+                "reason": "S1 明写两功能 'may use a \"query fan-out\" technique' 并识别 more supporting web pages，未超出平台机制描述边界。"
+              },
+              {
+                "claim": "页面要作为支持性链接展示，前提是被索引且具备在 Google 搜索中展示摘要的资格，没有额外技术要求，既有 SEO 基础实践继续有效",
+                "source_ids": [
+                  "S1"
+                ],
+                "verdict": "supported",
+                "reason": "S1：'must be indexed and eligible to be shown in Google Search with a snippet'、'There are no additional technical requirements'，并把 SEO fundamentals 表述为 worthwhile 而非准入条件，文章未把建议升级为必要条件。"
+              },
+              {
+                "claim": "AI Performance 面板展示引用总量、平均被引用页面数、grounding queries 与页面级引用活动，并明确这些数字不代表排名、权威性或页面在单个答案中的位置",
+                "source_ids": [
+                  "S4"
+                ],
+                "verdict": "supported",
+                "reason": "S4 逐项列出 Total Citations、Average Cited Pages、Grounding queries、Page-level citation activity，并称 'does not indicate ranking, authority, or the role of any page within an individual answer'。"
+              },
+              {
+                "claim": "『有证据 vs 无证据』一行出现 2.09 至 46.3 之间的多个取值",
+                "source_ids": [
+                  "S2"
+                ],
+                "verdict": "supported",
+                "reason": "该行非删失取值为 8.00*、46.3、2.73、5.91、2.09，均落在 2.09–46.3；仅未提 >>10k，属不完整而非错值，且区间上限未被夸大。"
+              },
+              {
+                "claim": "『含价格 vs 无价格』一行出现 6.26 至 30.4 之间的多个取值",
+                "source_ids": [
+                  "S2"
+                ],
+                "verdict": "unsupported",
+                "reason": "该行实际为 >>10k、>>10k、36.1、7.82、6.26、30.4，存在大于 30.4 的 36.1 与两个 >>10k，文中区间上限与来源不符。"
+              },
+              {
+                "claim": "『深覆盖 vs 浅覆盖』一行出现 3.98 至 5.33 之间的多个取值",
+                "source_ids": [
+                  "S2"
+                ],
+                "verdict": "unsupported",
+                "reason": "该行实际为 1,480†、>>10k、132、5.33、19.5、3.98，存在 19.5、132、1,480 等远超 5.33 的值，文中区间严重低估来源。"
+              },
+              {
+                "claim": "CMA 认为价格/服务/救济/监管状态信息透明度提升，但只是 'there only appears to have been a limited impact on the intensity of competition between providers and on sector outcomes'，并建议继续推进质量披露",
+                "source_ids": [
+                  "S3"
+                ],
+                "verdict": "supported",
+                "reason": "S3 原文含该英文句，并要求 LSB 'continuing to build on the reforms so far'、'providing more information on quality'；文章同时限定为2020年、英格兰和威尔士。"
+              },
+              {
+                "claim": "这是十年前的、境外辖区的监管自评",
+                "source_ids": [
+                  "S3"
+                ],
+                "verdict": "unsupported",
+                "reason": "S3 发布日为 2020-12-17，至2026年检索约6年，非『十年前』；『境外辖区、不可外推』的限定成立，但时间表述失实。"
+              },
+              {
+                "claim": "『结构化 vs 密集』『有条理 vs 散乱』『一致 vs 矛盾』等因子在表中取值接近 1 或方向相反",
+                "source_ids": [
+                  "S2"
+                ],
+                "verdict": "unsupported",
+                "reason": "S2 表值 Organized vs Scattered 为 2.21、3.87、2.49、1.19、1.13、1.57，Consistent vs Contradictory 为 2.81、2.81、2.72、2.19、4.09、1.74，含显著大于1.5的取值；仅 Structured vs Dense 含 <1 值，笼统表述不成立。"
+              },
+              {
+                "claim": "x＝0 时 B 单位成本 20÷7≈2.86、A 基准 30÷5=6.00；x＝22 时两者相等（42÷7=6.00）；x>22 时 A 更优",
+                "source_ids": [
+                  "S2"
+                ],
+                "verdict": "illustrative",
+                "reason": "这是作者明示的示意假设与内部算例（固定项已在第四节列明为共同前置10小时、B基础20小时等），公式自洽且统一为含共同前置口径，仅演示条件阈值，不构成现实效果实测或 S2 结论。"
+              }
+            ],
+            "blocker_checks": [
+              {
+                "issue_id": "r1-blocker-1",
+                "status": "resolved",
+                "location": "表二『A/B 单位增量工时成本』行与第四节 x 逐项复核段",
+                "finding": "本轮已改为 A 基准 30÷5＝6.00，B 为 20÷7≈2.86、42÷7＝6.00、40÷7≈5.71，均按含共同前置的同一口径且与公式自洽，旧稿『30÷5＝4.0』算术错误不再出现。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-2",
+                "status": "resolved",
+                "location": "表二 B 行『反转点与判定』列与第四节反转阈值段",
+                "finding": "相等点已由10小时改为 x＝22：(20+22)÷7＝6.00＝30÷5，并写明 x<22 选 B、x>22 选 A、x=22 执行 C 并加测，与表一条件四一致。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-3",
+                "status": "unresolved",
+                "location": "表二 e 行、Ev 行与第四节『三档之间……e、Ev、g 三个可行性变量在各档中保持一致』",
+                "finding": "示例虽已声明取通过情境（e=2/25、Ev=8、g=0.6），但表二 e 行仍按列给出 0.08/0.12/0.24、Ev 行给出 5/8/10，基准列 e=0.12、高列 e=0.24 落入 B 不可行区间、低列 Ev=5 未达标，与『各档中保持一致』直接冲突，按列解读仍会触犯门槛。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-4",
+                "status": "resolved",
+                "location": "第二节 S2 引用段",
+                "finding": "逐模型数值归属已删除，改为『多个模型取值区间』并明确『已读取表头有 8 个标签而每行只有 6 个数值，本窗口无法确认列序，不做逐模型数值归属』，符合原指令。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-5",
+                "status": "resolved",
+                "location": "结论三与第三节绑定约束段",
+                "finding": "绑定约束已改写为『同一批约三人、当期可投入约40个当量工时』的容量上限及『干预与观察必须在同一窗口内完成』，并声明不是『80小时用不完』的预算额度；A+B 约 50–60 小时已超过 40 小时容量，取舍前提不再依赖80小时预算（残留的『80小时』表述列为本轮 issue）。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-6",
+                "status": "resolved",
+                "location": "第二节『假设一/假设二』、第六节『判据一/判据二』与假设与局限节",
+                "finding": "S2 迁移性因果链已降级为『本文推论、待基线验证的假设』，并给出可在2周基线采集的判据一、判据二，不再作为 S2 结论断言。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-7",
+                "status": "resolved",
+                "location": "第二节第二段 S2 引用",
+                "finding": "旧的逐模型『有证据 vs 无证据』比值（GPT-5.2=2.09 等）已删除，改为区间表述（2.09–46.3），不再做模型名与数值绑定。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-8",
+                "status": "unresolved",
+                "location": "第二节第二段『含价格 vs 无价格』行",
+                "finding": "逐模型归属虽已删除，但新写的区间『6.26 至 30.4』仍未完整呈现该行：遗漏 36.1 与两个 >>10k，区间上限被低估，引用仍不完整。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-9",
+                "status": "resolved",
+                "location": "第四节 x=0 分析段与表二 B 行低情境",
+                "finding": "旧稿『x=0 时 B 总工时＝30、B 单位成本≈2.86、A 单位成本＝30÷5＝4.0』已改为 B 当期投入＝20→2.86、A 基准 30÷5＝6.00，数值与口径自洽。",
+                "scope": "source_article"
+              },
+              {
+                "issue_id": "r1-blocker-10",
+                "status": "resolved",
+                "location": "第四节反转阈值段与表二 B 行",
+                "finding": "旧稿『恰好等于10小时时两者相等』已删除，改为 x＝22 时 (20+22)÷7＝6.00＝30÷5 相等、并保留『相等则执行 C 并加测』规则，与条件四及表二判定列一致。",
+                "scope": "source_article"
+              }
+            ],
+            "format_repair": {
+              "errors": [
+                "blocker_checks must verify every historical blocker"
+              ],
+              "original_review": {
+                "scores": {
+                  "thesis": 4,
+                  "evidence": 3,
+                  "mechanism": 4,
+                  "tradeoffs": 3,
+                  "actionability": 4,
+                  "originality": 4
+                },
+                "issues": [
+                  "第三节：『A 与 B 相加约60小时看似小于一个\"80小时\"的额度』中的『80小时』额度全文未定义，且紧接的『当期可投入约40个当量工时』与之口径互斥；按表二 A=30、B=20、共同前置10小时，若同一窗口共享前置则合计40小时恰等于所述容量，『容量』本身不能证明『选A必须放弃B』。要求删除或定义『80小时』，把互斥来源明确为『干预与观察须在同一2周窗口内串行不可行』，并给出自洽算术。",
+                  "表一 B『约30小时』与表二 B『基础投入20小时』口径不一致（若20为含共同前置的当期投入，表一应同步约20，否则须注明表一含典型额外核对 x，约为30）。须在两表统一并加注。",
+                  "第二节『这是十年前的、境外辖区的监管自评』——S3 发布于 2020-12-17，至 2026 年检索约6年，非『十年前』；改为『数年前』或直接写『2020年』。",
+                  "表二低/基准/高三档最终结论均为『B 更优』，表内未出现任何反转情景（反转只在正文独立 x 分析里给出），削弱决策增量；建议把 x>22（A 更优）或 x=22（相等→C）直接纳入一列，使表格本身能改变选择。",
+                  "第四节『本示例最低修复约6小时』『B 最低约需支撑至少一个新增题面』与第八节『A 最低约6小时』均无推导，属示意；须在首次出现处标注『示意假设』并说明可由基线校准。",
+                  "第五节用『两轮方向一致率<70%』作为转 C 门槛，但未说明一致率按题级还是轮级计算、分母是什么；『同一组题目在单一主平台的一遍采样』的抽样单位与一致率的计算口径须给成可复算定义，否则执行人无法判定。",
+                  "时间表自相矛盾：第五节称『基线2周、执行4周、账本核对1周』（合计7周），第八节却把账本闭合放在『第6周末』；须统一为6周或7周并在两处同步。"
+                ],
+                "blockers": [
+                  "r1-blocker-3 未解决：表二 e 行按低/基准/高列给出 0.08/0.12/0.24、Ev 行给出 5/8/10，基准列 e=3/25=0.12、高列 e=6/25=0.24 均落在『B 不可行』区间，而第四节自称『三档之间只有当期投入与 Q 增量随情景变化，e、Ev、g 三个可行性变量在各档中保持一致』并称本示例 e＝2/25。表列值与正文声明直接冲突，按列解读会使基准/高列的 A/B 比较触犯门槛。须删去 e/Ev 行的列内变化，或明确其为『门槛参照行』而非情景取值。",
+                  "r1-blocker-8 未解决，并新增同类错位：S2『含价格 vs 无价格』行实际取值为 >>10k、>>10k、36.1、7.82、6.26、30.4，文中写『6.26 至 30.4』漏掉 36.1 与两个 >>10k；『深覆盖 vs 浅覆盖』行实际为 1,480†、>>10k、132、5.33、19.5、3.98，文中写『3.98 至 5.33』漏掉 19.5、132、1,480 与 >>10k。属选择性取小值、引用错位，与本段自陈『以免选择性呈现高估值』的原则相悖。须按行给出完整取值区间（或明确剔除 >>10k 及奇异值的规则与影响）。",
+                  "表二成本行与 Q 增量行不自洽：A 成本低列 26÷5＝5.20（隐含 Q_A=5），但 Q 行低情境写 A＝4；B 成本三列均用 Q_B＝7（28÷7＝4.00），但 Q 行写 B 低＝6、高＝8（按此应为 20÷6≈3.33、40÷8＝5.00）。这使『反转点经逐项代回原公式复核』与第五节『表中的 Q_A＝5、Q_B＝7』的表述不成立，须统一各列 Q 值并重算成本行，或在表注说明差异来源。"
+                ],
+                "claim_checks": [
+                  {
+                    "claim": "AI Overviews 与 AI Mode 会展示相关链接，并可能使用 query fan-out 技术跨子主题与数据源发起多个相关检索、识别更多支持性网页",
+                    "source_ids": [
+                      "S1"
+                    ],
+                    "verdict": "supported",
+                    "reason": "S1 明写 both features 'may use a \"query fan-out\" technique'，并称其识别 more supporting web pages。"
+                  },
+                  {
+                    "claim": "页面要作为支持性链接展示，前提是被索引且具备在 Google 搜索中展示摘要的资格，没有额外技术要求",
+                    "source_ids": [
+                      "S1"
+                    ],
+                    "verdict": "supported",
+                    "reason": "S1：'must be indexed and eligible to be shown in Google Search with a snippet' 且 'There are no additional technical requirements'。"
+                  },
+                  {
+                    "claim": "AI Performance 面板展示引用总量、平均被引用页面数、grounding queries 与页面级引用活动，并明确这些数字不代表排名、权威性或页面在单个答案中的位置",
+                    "source_ids": [
+                      "S4"
+                    ],
+                    "verdict": "supported",
+                    "reason": "S4 逐项列出 Total Citations、Average Cited Pages、Grounding queries、Page-level citation activity，并称 'does not indicate ranking, authority, or the role of any page within an individual answer'。"
+                  },
+                  {
+                    "claim": "『有证据 vs 无证据』一行出现 2.09 至 46.3 之间的多个取值",
+                    "source_ids": [
+                      "S2"
+                    ],
+                    "verdict": "supported",
+                    "reason": "该行数值为 8.00*、>>10k、46.3、2.73、5.91、2.09，非删失值确实落在 2.09–46.3；但文中未提 >>10k，区间上限被低估，属不完整引用而非错值。"
+                  },
+                  {
+                    "claim": "『含价格 vs 无价格』一行出现 6.26 至 30.4 之间的多个取值",
+                    "source_ids": [
+                      "S2"
+                    ],
+                    "verdict": "unsupported",
+                    "reason": "该行实际为 >>10k、>>10k、36.1、7.82、6.26、30.4，存在大于 30.4 的 36.1，文中区间上限与来源不符。"
+                  },
+                  {
+                    "claim": "『深覆盖 vs 浅覆盖』一行出现 3.98 至 5.33 之间的多个取值",
+                    "source_ids": [
+                      "S2"
+                    ],
+                    "verdict": "unsupported",
+                    "reason": "该行实际为 1,480†、>>10k、132、5.33、19.5、3.98，存在 19.5、132、1,480 等远超 5.33 的值，文中区间严重低估来源。"
+                  },
+                  {
+                    "claim": "CMA 认为价格/服务/救济/监管状态信息透明度提升，但只是 'there only appears to have been a limited impact on the intensity of competition between providers and on sector outcomes'，并建议继续推进质量披露",
+                    "source_ids": [
+                      "S3"
+                    ],
+                    "verdict": "supported",
+                    "reason": "S3 原文含该英文句，并要求 LSB 'providing more information on quality'。"
+                  },
+                  {
+                    "claim": "这是十年前的、境外辖区的监管自评",
+                    "source_ids": [
+                      "S3"
+                    ],
+                    "verdict": "unsupported",
+                    "reason": "S3 发布于 2020-12-17，距 2026 年检索约6年，非『十年前』；『境外辖区、不能外推』的限定成立，但时间表述失真。"
+                  },
+                  {
+                    "claim": "x＝0 时 B 单位成本 20÷7≈2.86，A 基准 30÷5=6.00；x＝22 时两者相等（42÷7=6.00），x>22 时 A 更优",
+                    "source_ids": [
+                      "S2"
+                    ],
+                    "verdict": "illustrative",
+                    "reason": "这是作者明示的示意假设与内部算例（固定项已在第四节列明），公式自洽且口径为含共同前置，仅演示条件阈值，不构成对现实效果的实测或来源结论。"
+                  }
+                ]
+              }
+            },
+            "publication_fallback": true,
+            "fallback_reason": "semantic review findings are retained as warnings"
+          },
+          "review_state": "completed_with_warnings",
+          "errors": []
+        }
+      ],
+      "expected_blocking_errors": [
+        "unsupported claim: 『含价格 vs 无价格』一行出现 6.26 至 30.4 之间的多个取值",
+        "unsupported claim: 『深覆盖 vs 浅覆盖』一行出现 3.98 至 5.33 之间的多个取值",
+        "unsupported claim: 这是十年前的、境外辖区的监管自评",
+        "unsupported claim: 『结构化 vs 密集』『有条理 vs 散乱』『一致 vs 矛盾』等因子在表中取值接近 1 或方向相反",
+        "historical blocker r1-blocker-3 remains unresolved: 示例虽已声明取通过情境（e=2/25、Ev=8、g=0.6），但表二 e 行仍按列给出 0.08/0.12/0.24、Ev 行给出 5/8/10，基准列 e=0.12、高列 e=0.24 落入 B 不可行区间、低列 Ev=5 未达标，与『各档中保持一致』直接冲突，按列解读仍会触犯门槛。",
+        "historical blocker r1-blocker-8 remains unresolved: 逐模型归属虽已删除，但新写的区间『6.26 至 30.4』仍未完整呈现该行：遗漏 36.1 与两个 >>10k，区间上限被低估，引用仍不完整。",
+        "第二节『含价格 vs 无价格』行区间错误：原文写『出现 6.26 至 30.4 之间的多个取值』，该行实际为 >>10k、>>10k、36.1、7.82、6.26、30.4，存在 36.1 与两个 >>10k，区间上限被显著低估，且与本段自陈的『以免选择性呈现高估值』原则相悖。须按行完整给出取值，或明确剔除 >>10k 的规则及其影响。",
+        "第二节『深覆盖 vs 浅覆盖』行区间错误：原文写『出现 3.98 至 5.33 之间的多个取值』，该行实际为 1,480†、>>10k、132、5.33、19.5、3.98，19.5、132、1,480 均远超 5.33，属严重低估来源。须按行完整呈现或说明剔除奇异值/删失值的规则。",
+        "表二成本行与 Q 增量行不自洽：A 成本低列 26÷5＝5.20、基准 30÷5＝6.00，但 Q 行低情境写 A＝4（应为 26÷4＝6.50）；B 成本三列均以 Q_B＝7 计算，Q 行却写 B 低＝6、高＝8（应为 20÷6≈3.33、40÷8＝5.00）。第四节『表中的 Q_A＝5、Q_B＝7』与表内 Q 行冲突，使『反转点经逐项代回原公式复核』不成立。须统一各列 Q 值并重算成本行，或加表注说明差异来源。",
+        "表二 e 行、Ev 行按列取值与第四节『三档之间……e、Ev、g 三个可行性变量在各档中保持一致』直接冲突：基准列 e＝3/25＝0.12、高列 e＝6/25＝0.24 落在『B 不可行』区间，低列 Ev＝5 未达标，而同节自称示例取 e＝2/25、Ev＝8、g＝0.6。按列解读会使基准/高列的 A/B 比较触犯本文自身门槛。须删除这两行的列内变化，或明确标为『门槛参照行』（并补齐高列 0.24 的说明）。",
+        "第二节『这是十年前的、境外辖区的监管自评』与 S3 发布日期 2020-12-17（至2026年检索约6年）不符，属对来源时间的失实描述。须改为『2020年』或『数年前』。",
+        "第二节称『“结构化 vs 密集”“有条理 vs 散乱”“一致 vs 矛盾”等因子在表中取值接近 1 或方向相反』，与 S2 表值不符：Organized vs Scattered 为 2.21、3.87、2.49、1.19、1.13、1.57，Consistent vs Contradictory 为 2.81、2.81、2.72、2.19、4.09、1.74，均含明显大于1.5的取值，仅 Structured vs Dense 含 <1 值。该笼统表述被用来支持因子剔除，属不准确转述。须逐行给出取值或改为『方向在模型间不一致、部分接近1』。",
+        "r1-blocker-3 未解决：表二 e 行按低/基准/高列给出 0.08/0.12/0.24、Ev 行给出 5/8/10，基准列 e=3/25=0.12、高列 e=6/25=0.24 均落在『B 不可行』区间，而第四节自称『三档之间只有当期投入与 Q 增量随情景变化，e、Ev、g 三个可行性变量在各档中保持一致』并称本示例 e＝2/25。表列值与正文声明直接冲突，按列解读会使基准/高列的 A/B 比较触犯门槛。须删去 e/Ev 行的列内变化，或明确其为『门槛参照行』而非情景取值。",
+        "r1-blocker-8 未解决，并新增同类错位：S2『含价格 vs 无价格』行实际取值为 >>10k、>>10k、36.1、7.82、6.26、30.4，文中写『6.26 至 30.4』漏掉 36.1 与两个 >>10k；『深覆盖 vs 浅覆盖』行实际为 1,480†、>>10k、132、5.33、19.5、3.98，文中写『3.98 至 5.33』漏掉 19.5、132、1,480 与 >>10k。属选择性取小值、引用错位，与本段自陈『以免选择性呈现高估值』的原则相悖。须按行给出完整取值区间（或明确剔除 >>10k 及奇异值的规则与影响）。",
+        "表二成本行与 Q 增量行不自洽：A 成本低列 26÷5＝5.20（隐含 Q_A=5），但 Q 行低情境写 A＝4；B 成本三列均用 Q_B＝7（28÷7＝4.00），但 Q 行写 B 低＝6、高＝8（按此应为 20÷6≈3.33、40÷8＝5.00）。这使『反转点经逐项代回原公式复核』与第五节『表中的 Q_A＝5、Q_B＝7』的表述不成立，须统一各列 Q 值并重算成本行，或在表注说明差异来源。"
+      ]
+    },
+    {
+      "run_url": "https://github.com/yt-feng/geo-org/actions/runs/36351630936",
+      "original_audit_sha256": "54bf84826233a8e108379c9f670d89bafb7276e1c909ff01e49eaed8e1a2191d",
+      "row": 706,
+      "original_passed": true,
+      "sources": [
+        {
+          "id": "S1",
+          "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+          "url": "https://developers.google.com/search/docs/appearance/ai-features"
+        },
+        {
+          "id": "S2",
+          "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+          "url": "https://arxiv.org/html/2604.25707v2"
+        },
+        {
+          "id": "S3",
+          "title": "CMA publishes review of progress in legal services sector",
+          "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector"
+        },
+        {
+          "id": "S4",
+          "title": "Introducing Copilot Search in Bing",
+          "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/"
+        },
+        {
+          "id": "S5",
+          "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+          "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you"
+        }
+      ],
+      "attempts": [
+        {
+          "revision": 0,
+          "review": {
+            "blockers": [
+              "工时账不自洽：表一A/B/C的资源强度与第四节『80小时=共同40+路径40』的逐项闭合冲突（B是否重复计入前置修复成本、C的16–24小时无出处），而全文临界点6与表二全部推荐均由该工时分母推出，读者无法据现文复算出唯一的A/B/C推荐。",
+              "结论一以[S2]支撑『合格正确引用问题数增量÷完整工时成本』及『同一分母、同一时间窗、同一起始基线』的判据，S2不含工时成本或该比较口径，属引用错位；须改注或补证。",
+              "unsupported claim: 路径选择的正确判据是『合格正确引用问题数增量 ÷ 完整工时成本』，并且统一为增量口径"
+            ]
+          }
+        },
+        {
+          "revision": 1,
+          "review": {
+            "blockers": [
+              "执行摘要结论三的临界点（『等于5个问题时两方案同价』）与其自身第四节两处算例（40小时同价点为6、32小时无整数同价点且ΔQ=5选B）直接冲突，属关键计算与推荐矛盾，读者无法据现文得到唯一规则。",
+              "执行摘要结论三『可行整数相邻值3与4』为错误算术结论（4.8的相邻整数为4与5），且与第四节情形乙『4.8落在4与5之间』冲突。",
+              "工时账仍未闭合且分母口径不一致（历史r0-blocker-1）：B『为A前置修复支付8小时』与共同40小时内的『事实台账与官网事实统一8小时』关系未界定；c_A取分母40、c_B取分母32，两条路径未使用同一分母，c不可直接比较。",
+              "表二推荐未先执行最低增量门槛与停止条件，且第四节『B已投入40小时但低于门槛』与A/B/C/D互斥框架逻辑矛盾，导致排序规则在门槛与比较之间缺乏互斥、无遗漏的分支顺序。",
+              "unsupported claim: 在示意参数下，B的增量等于5个问题时两方案同价，按规则取暂缓；小于5选A，大于5选B",
+              "unsupported claim: 32 ÷ 6.67 ≈ 4.8，可行整数相邻值3与4",
+              "historical blocker r0-blocker-1 remains unresolved: 本轮虽补出共同40小时的16+8+10+6=40并声明C的17小时为其子集，但B『为A前置修复支付8小时』与共同40小时内『事实台账与官网事实统一8小时』仍未界定是否同一笔；且c_A分母取40、c_B分母取32，两路径未使用同一分母，工时账仍未唯一闭合，读者仍无法复算唯一的A/B推荐。"
+            ]
+          }
+        },
+        {
+          "revision": 2,
+          "review": {
+            "scores": {
+              "thesis": 3,
+              "evidence": 3,
+              "mechanism": 3,
+              "tradeoffs": 3,
+              "actionability": 3,
+              "originality": 3
+            },
+            "issues": [
+              "执行摘要结论一：『判据是「合格正确引用问题数增量 ÷ 该路径的完整可用工时」，单位小时/个』——增量÷工时的量纲应为「个/小时」，与所标「小时/个」互逆，也与第二节/第四节 c＝可支配增量工时÷ΔQ_valid 互逆；须统一为 c 的定义方向后再排序，否则读者按公式算会得到相反推荐。",
+              "执行摘要结论三与第四节临界点推导：同一输入（32小时口径、ΔQ_valid_B＝4、A侧ΔQ_valid_A＝6已过门槛）在结论三与临界点段判『选A/＜5选A』，而表二面板甲对ΔQ_B＝4判『C/D』，面板甲规则又写『门槛未过→C或D』，与第四节『若两路径都达不到门槛，才输出C或D』冲突；须给出『仅B未过门槛而A过门槛』时的唯一输出并同步三处。",
+              "第四节『关于那8小时的归属』：一面称『它就是共同项里的「事实台账与官网事实统一8小时」…是A、B共用的同一笔』，一面称B『再付8小时』（已花费），又写『80小时里另有8小时成为未启用产能』（未花费）；已付与未付、同一笔与第二笔三处自相矛盾，读者无法决定 c_B 分母取32还是40。须给出唯一可复算口径。",
+              "表二面板甲低情境对ΔQ_B＝4判『C/D』，面板乙对同口径32小时、ΔQ_B＝5判『B（6.40＜6.67）』，但两面板都未给出『A在该行是否仍可用』的判断列，读者会把『B可行性』误当整体选项；须在表内加『A是否仍可选』列，避免门槛过滤与方案比较混叠。",
+              "表一A行停止条件『阈值处取暂缓C』：A侧 c_A＝40÷6 固定、不存在与B的同价点，此句无对应机制，易与B侧同价规则混淆；应删除或补出A侧取C的具体触发条件。",
+              "第五节分群称三类关系是『依赖，不是偏好』，但未给出各类进入A/B比较所需的前置检查（如SFER门槛、两轮一致率、40问题清单是否齐备）的可执行核对表，读者难以据以自判归属。",
+              "第三节称『这张表如何改变决策：先否定凭品牌定位选路的做法』，但表一未列出『凭品牌定位直觉选路』的对照成本，所谓决策增量仅停留在规则声明，建议补一行直觉选路的机会成本以兑现增量。"
+            ],
+            "blockers": [
+              "工时账不唯一闭合：第四节同时称8小时为共同40内同一笔前置修复、又称B『再付8小时』、又称『另有8小时为未启用产能』，且 c_A 分母取40、c_B（情形②）分母取32，读者无法据现文复算唯一的A/B/C推荐（历史 r0-blocker-1、r1-blocker-3、r1-blocker-7 的同一问题仍未解决）。",
+              "门槛与比较的分支顺序仍不一致：同一输入（ΔQ_valid_B＝4、32小时、A过门槛）在执行摘要结论三与第四节临界点被判『选A』，在表二面板甲被判『C/D』，且面板甲『门槛未过→C或D』与第四节『两路径都达不到门槛才输出C或D』互相冲突，无法得到唯一规则（历史 r1-blocker-4 未解决）。",
+              "执行摘要结论一把排序判据写成『增量 ÷ 完整可用工时』却标注单位『小时/个』，与第二节/第四节的 c＝工时÷增量定义互逆，属核心指标的口径/单位错误，直接影响『小者更优』与推荐方向。",
+              "historical blocker r0-blocker-1 remains unresolved: 本轮补出16+8+10+6=40并声明C的17小时为共同40子集，但8小时是『同一笔』还是B『再付』的第二笔仍未界定，且『未启用产能8小时』与『再付8小时』并存，工时账仍不唯一闭合。",
+              "historical blocker r1-blocker-3 remains unresolved: c_A分母取40、c_B（情形②）分母取32的数值口径仍未统一为同一分母；仅以『都是可支配工时』作措辞统一，未说明为何B的8小时不进入其分母，读者无法据此唯一复算。",
+              "historical blocker r1-blocker-4 remains unresolved: 面板甲已先列门槛列，但对ΔQ_B＝4且A已过门槛的情形判『C/D』，与第四节/结论三的『仅B未过、A可用→选A』不一致，门槛与比较之间仍缺互斥且无遗漏的分支顺序。",
+              "historical blocker r1-blocker-7 remains unresolved: 本轮虽声明8小时为共同40内同一笔前置修复，但又写B『再付8小时』使可支配由40降到32、并同时称『另有8小时为未启用产能』，同一笔/第二笔与已付/未付仍含混，c_A取分母40、c_B取32仍未统一，工时账仍无法唯一闭合。"
+            ],
+            "claim_checks": [
+              {
+                "claim": "引用广度与回答层吸收程度是两个不同结果，应当分开测量，这一点有公开数据集的描述性统计支持[S2]",
+                "source_ids": [
+                  "S2"
+                ],
+                "verdict": "supported",
+                "reason": "S2摘要称『a sharp divergence between citation breadth and citation depth』，支持广度/深度分开测量；但仅描述性、作者声明不做因果推断。"
+              },
+              {
+                "claim": "Q&A格式本身并未显示吸收优势（该数据集报告为负向相对差异）",
+                "source_ids": [
+                  "S2"
+                ],
+                "verdict": "supported",
+                "reason": "S2报告Q&A 0.0947对非Q&A 0.1005、相对差-5.74%；属描述性统计，文中未夸大为因果。"
+              },
+              {
+                "claim": "平台文档把『结构化数据与页面可见文本一致』列为有用的最佳实践，并说明AI功能不额外增加技术前提、其可见度汇总在既有搜索控制台口径",
+                "source_ids": [
+                  "S1"
+                ],
+                "verdict": "supported",
+                "reason": "S1把『structured data matches the visible text』列入worthwhile最佳实践，称『There are no additional technical requirements』，且AI功能站点计入Search Console整体流量。"
+              },
+              {
+                "claim": "英格兰与威尔士的监管机构推动律所披露价格、服务与质量信息后，透明度有明确进展，但对竞争强度与行业结果的影响仍然有限",
+                "source_ids": [
+                  "S3"
+                ],
+                "verdict": "supported",
+                "reason": "S3称『clear signs of progress』但『limited impact on the intensity of competition…and on sector outcomes』；仅限2020年英格兰与威尔士，文中已标境外与年份边界。"
+              },
+              {
+                "claim": "平台侧强调生成式答案对来源的显著标注与可追溯",
+                "source_ids": [
+                  "S4"
+                ],
+                "verdict": "supported",
+                "reason": "S4称『Copilot Search cites its sources prominently』；文中已注明仅为平台设计意图，不构成流量/线索承诺。"
+              },
+              {
+                "claim": "B若复用A前置修复…B的可支配增量工时从40降到32，80小时里另有8小时成为未启用产能",
+                "source_ids": [],
+                "verdict": "illustrative",
+                "reason": "作者自标为示意假设；但同段一面称『再付8小时』（花费）一面称『未启用产能』（未花费），且称即共同40内的同一笔，口径不唯一，无法据以复算c_B分母。"
+              },
+              {
+                "claim": "32小时口径下ΔQ_valid_B＜5选A、≥5选B（等号归B）",
+                "source_ids": [],
+                "verdict": "illustrative",
+                "reason": "内部示意算例；但ΔQ_valid_B＝4＜门槛5时，本文他处（表二面板甲、统一门槛规则）判C或D，与『＜5选A』冲突，结论不唯一。"
+              },
+              {
+                "claim": "路径排序的判据是『合格正确引用问题数增量 ÷ 该路径的完整可用工时』，单位小时/个",
+                "source_ids": [],
+                "verdict": "illustrative",
+                "reason": "作者自设框架；增量÷工时的单位应为个/小时，与所标『小时/个』及第四节 c＝工时÷增量互逆，属内部口径冲突而非外部事实问题。"
+              }
+            ],
+            "blocker_checks": [
+              {
+                "issue_id": "r0-blocker-1",
+                "status": "unresolved",
+                "scope": "source_article",
+                "location": "第一节『80小时＝共同40小时＋该路径40』分解句、表一B行『完整工时归集』列、第四节『关于那8小时的归属』",
+                "finding": "本轮补出16+8+10+6=40并声明C的17小时为共同40子集，但8小时是『同一笔』还是B『再付』的第二笔仍未界定，且『未启用产能8小时』与『再付8小时』并存，工时账仍不唯一闭合。"
+              },
+              {
+                "issue_id": "r0-blocker-2",
+                "status": "resolved",
+                "scope": "source_article",
+                "location": "执行摘要结论一『…但「以工时成本为分母」的比较规则没有任何给定来源提出过，是本文为这道决策题设计的』与第二节c定义",
+                "finding": "S2现仅用于支撑『引用广度与吸收程度是两个不同结果』，工时成本口径明确标为本文自设，不再由S2支撑，引用错位已修正。"
+              },
+              {
+                "issue_id": "r0-blocker-3",
+                "status": "resolved",
+                "scope": "source_article",
+                "location": "执行摘要结论一括注『判据是本文自设的决策框架，不是外部研究结论』",
+                "finding": "原以外部研究口吻陈述的判据现明确标为本文自设决策框架，未再冒充外部结论；该判据本身的单位互逆问题另列为本轮新blocker。"
+              },
+              {
+                "issue_id": "r1-blocker-1",
+                "status": "resolved",
+                "scope": "source_article",
+                "location": "执行摘要结论三与第四节情形甲临界点推导",
+                "finding": "摘要与第四节均写作40小时口径同价点为ΔQ_valid_B＝6（=6取暂缓C），两处不再冲突，原『等于5个问题时两方案同价』已被更正。"
+              },
+              {
+                "issue_id": "r1-blocker-2",
+                "status": "resolved",
+                "scope": "source_article",
+                "location": "执行摘要结论三『32÷6.67≈4.80，落在4与5之间』",
+                "finding": "错误表述『可行整数相邻值3与4』已删除，现写4.80落在4与5之间，算术正确。"
+              },
+              {
+                "issue_id": "r1-blocker-3",
+                "status": "unresolved",
+                "scope": "source_article",
+                "location": "第四节口径定义『都可写为「该路径可支配工时」』与表二面板乙工时列",
+                "finding": "c_A分母取40、c_B（情形②）分母取32的数值口径仍未统一为同一分母；仅以『都是可支配工时』作措辞统一，未说明为何B的8小时不进入其分母，读者无法据此唯一复算。"
+              },
+              {
+                "issue_id": "r1-blocker-4",
+                "status": "unresolved",
+                "scope": "source_article",
+                "location": "表二面板甲『门槛通过？/推荐』列与第四节『若两路径都达不到门槛，才输出C或D并重设问题集』",
+                "finding": "面板甲已先列门槛列，但对ΔQ_B＝4且A已过门槛的情形判『C/D』，与第四节/结论三的『仅B未过、A可用→选A』不一致，门槛与比较之间仍缺互斥且无遗漏的分支顺序。"
+              },
+              {
+                "issue_id": "r1-blocker-5",
+                "status": "resolved",
+                "scope": "source_article",
+                "location": "执行摘要结论三及第四节情形甲",
+                "finding": "原『B增量等于5个时两方案同价』已更正为40小时口径同价点ΔQ_valid_B＝6；等号处取暂缓C与表二面板乙『＝6时c_B＝6.67＝c_A→C』一致。"
+              },
+              {
+                "issue_id": "r1-blocker-6",
+                "status": "resolved",
+                "scope": "source_article",
+                "location": "执行摘要结论三『32÷6.67≈4.80，落在4与5之间』",
+                "finding": "原『可行整数相邻值3与4』的算术错误已改正为4与5之间。"
+              },
+              {
+                "issue_id": "r1-blocker-7",
+                "status": "unresolved",
+                "scope": "source_article",
+                "location": "第四节『关于那8小时的归属』与表一B行情形②工时归集",
+                "finding": "本轮虽声明8小时为共同40内同一笔前置修复，但又写B『再付8小时』使可支配由40降到32、并同时称『另有8小时为未启用产能』，同一笔/第二笔与已付/未付仍含混，c_A取分母40、c_B取32仍未统一，工时账仍无法唯一闭合。"
+              }
+            ],
+            "publication_fallback": true,
+            "fallback_reason": "semantic review findings are retained as warnings"
+          },
+          "review_state": "completed_with_warnings",
+          "errors": []
+        }
+      ],
+      "expected_blocking_errors": [
+        "historical blocker r0-blocker-1 remains unresolved: 本轮补出16+8+10+6=40并声明C的17小时为共同40子集，但8小时是『同一笔』还是B『再付』的第二笔仍未界定，且『未启用产能8小时』与『再付8小时』并存，工时账仍不唯一闭合。",
+        "historical blocker r1-blocker-3 remains unresolved: c_A分母取40、c_B（情形②）分母取32的数值口径仍未统一为同一分母；仅以『都是可支配工时』作措辞统一，未说明为何B的8小时不进入其分母，读者无法据此唯一复算。",
+        "historical blocker r1-blocker-4 remains unresolved: 面板甲已先列门槛列，但对ΔQ_B＝4且A已过门槛的情形判『C/D』，与第四节/结论三的『仅B未过、A可用→选A』不一致，门槛与比较之间仍缺互斥且无遗漏的分支顺序。",
+        "historical blocker r1-blocker-7 remains unresolved: 本轮虽声明8小时为共同40内同一笔前置修复，但又写B『再付8小时』使可支配由40降到32、并同时称『另有8小时为未启用产能』，同一笔/第二笔与已付/未付仍含混，c_A取分母40、c_B取32仍未统一，工时账仍无法唯一闭合。",
+        "工时账不唯一闭合：第四节同时称8小时为共同40内同一笔前置修复、又称B『再付8小时』、又称『另有8小时为未启用产能』，且 c_A 分母取40、c_B（情形②）分母取32，读者无法据现文复算唯一的A/B/C推荐（历史 r0-blocker-1、r1-blocker-3、r1-blocker-7 的同一问题仍未解决）。",
+        "门槛与比较的分支顺序仍不一致：同一输入（ΔQ_valid_B＝4、32小时、A过门槛）在执行摘要结论三与第四节临界点被判『选A』，在表二面板甲被判『C/D』，且面板甲『门槛未过→C或D』与第四节『两路径都达不到门槛才输出C或D』互相冲突，无法得到唯一规则（历史 r1-blocker-4 未解决）。",
+        "执行摘要结论一把排序判据写成『增量 ÷ 完整可用工时』却标注单位『小时/个』，与第二节/第四节的 c＝工时÷增量定义互逆，属核心指标的口径/单位错误，直接影响『小者更优』与推荐方向。"
+      ]
+    }
+  ]
+}

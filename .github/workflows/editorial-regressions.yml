@@ -21,8 +21,14 @@ jobs:
     name: Editorial regression gate
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      # PR events otherwise check out a synthetic merge SHA. Required commit
+      # statuses attach to the PR head; test that exact head before reporting it.
+      EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPECTED_CHECKOUT_SHA }}
       - name: Mark the actual checked-out commit as awaiting verification
         id: identity
         env:
@@ -30,7 +36,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           sha=$(git rev-parse HEAD)
-          test "$sha" = "$GITHUB_SHA"
+          test "$sha" = "$EXPECTED_CHECKOUT_SHA"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           gh api --method POST "repos/$GH_REPO/statuses/$sha" \
             -f state=pending -f context='Editorial verified commit' \

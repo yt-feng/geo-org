@@ -11,8 +11,8 @@ REQUIRED = ("IDENTITY_OUTCOME", "PYTHON_OUTCOME", "NODE_OUTCOME",
 
 
 def status_arguments(env):
-    repo, sha, expected = (env.get(key, "") for key in
-                           ("GH_REPO", "TESTED_SHA", "GITHUB_SHA"))
+    repo, sha = (env.get(key, "") for key in ("GH_REPO", "TESTED_SHA"))
+    expected = env.get("EXPECTED_CHECKOUT_SHA", env.get("GITHUB_SHA", ""))
     run_id = env.get("GITHUB_RUN_ID", "")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_][A-Za-z0-9_.-]*", repo):
         raise ValueError("Invalid repository")

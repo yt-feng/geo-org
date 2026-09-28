@@ -339,6 +339,18 @@ class RevisionMetadataTests(unittest.TestCase):
         self.assertIn("表2的门槛与推荐情景互相矛盾", review["blockers"])
         self.assertTrue(ip.review_errors(review))
 
+    def test_bad_json_during_format_repair_cannot_turn_known_facts_into_unavailable_review(self):
+        original = self.good_review()
+        original["issues"] = "invalid array"
+        original["claim_checks"][0]["verdict"] = "unsupported"
+        original["blockers"] = ["42 hours exceeds the declared 40-hour capacity"]
+        with patch.object(ip, "request_json", side_effect=[original, RuntimeError("response not valid JSON")]):
+            review = ip.review_article(self.article, self.sources, "test", "zh")
+        self.assertNotEqual(review.get("review_status"), "unavailable")
+        self.assertIn("42 hours", " ".join(review["blockers"]))
+        self.assertTrue(any("unsupported claim" in error for error in review["blockers"]))
+        self.assertTrue(ip._publication_blocking_errors(review, self.sources, []))
+
     def test_unresolved_or_unverifiable_history_cannot_be_cleared_by_author(self):
         for status in ("unresolved", "unverifiable"):
             value = {**self.good_review(), "blocker_checks": [{**self.resolved_check(), "status": status}]}
@@ -382,7 +394,9 @@ class RevisionMetadataTests(unittest.TestCase):
             audit_path = Path(directory) / "audit.json"
             with patch.object(ip, "request_json", side_effect=request), patch.object(ip, "validate_insight", side_effect=lambda *a, **k: {"passed": True, "errors": [], "metrics": {}}), patch.dict(os.environ, {"INSIGHT_MAX_REVISIONS": "1"}):
                 if expect_failure:
-                    result = ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
+                    with self.assertRaisesRegex(ip.InsightQualityError, "Cannot publish unresolved"):
+                        ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
+                    result = None
                 else:
                     result = ip.produce_article(topic, self.sources, "test", audit_path=audit_path)
             audit = json.loads(audit_path.read_text())
@@ -417,20 +431,28 @@ class RevisionMetadataTests(unittest.TestCase):
     def test_bad_metadata_never_bypasses_current_review_or_old_blockers(self):
         final_review = {**self.good_review(), "blocker_checks": [{**self.resolved_check(), "status": "unresolved"}]}
         _, audit, stages, reviewed = self.run_two_drafts(self.response(), final_review=final_review, expect_failure=True)
-        self.assertTrue(audit["passed"])
+        self.assertFalse(audit["passed"])
         self.assertEqual(len(reviewed), 2)
         self.assertNotIn("zh-revision-metadata-repair", stages)
-        self.assertEqual(audit["attempts"][1]["review_state"], "completed_with_warnings")
-        self.assertEqual(audit["attempts"][1]["errors"], [])
-        self.assertTrue(audit["attempts"][1]["warnings"])
+        self.assertEqual(audit["attempts"][1]["review_state"], "completed")
+        self.assertTrue(audit["attempts"][1]["errors"])
+        self.assertNotIn("publication_fallback", audit["attempts"][1]["review"])
 
     def test_low_score_still_requires_substantive_revision_despite_metadata(self):
         final_review = {**self.good_review(), "scores": {**self.good_review()["scores"], "tradeoffs": 3}, "blocker_checks": [self.resolved_check()]}
-        _, audit, stages, reviewed = self.run_two_drafts(self.response(), final_review=final_review, expect_failure=True)
+        _, audit, stages, reviewed = self.run_two_drafts(self.response(), final_review=final_review)
         self.assertTrue(audit["passed"])
         self.assertEqual(len(reviewed), 2)
         self.assertEqual(audit["attempts"][1]["review_state"], "completed_with_warnings")
         self.assertTrue(any("tradeoffs: 3/5" in warning for warning in audit["attempts"][1]["warnings"]))
+
+    def test_exhausted_new_draft_cannot_publish_infeasible_arithmetic_as_warning(self):
+        review = {**self.good_review(), "blocker_checks": [self.resolved_check()],
+                  "blockers": ["B at x=22 requires 42 hours and exceeds the 40-hour capacity; the equality recommendation is infeasible."]}
+        article, audit, _, _ = self.run_two_drafts(self.response(), final_review=review, expect_failure=True)
+        self.assertIsNone(article)
+        self.assertFalse(audit["passed"])
+        self.assertIn("42 hours", " ".join(audit["attempts"][-1]["errors"]))
 
 
 class ArticleNormalizationTests(unittest.TestCase):
@@ -611,8 +633,8 @@ class ResumeTests(unittest.TestCase):
                     article = ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
                                                  resume_audit=self.audit if audit is None else audit)
                 else:
-                    if mode == "bad_structure":
-                        with self.assertRaisesRegex(RuntimeError, "did not pass quality gates"):
+                    if mode in ("bad_structure", "unresolved", "missing_checks", "unsupported"):
+                        with self.assertRaises(RuntimeError):
                             ip.produce_article(self.topic, self.sources, "test", audit_path=audit_path,
                                                resume_audit=self.audit if audit is None else audit)
                         article = None
@@ -650,6 +672,9 @@ class ResumeTests(unittest.TestCase):
     def test_resume_publishes_saved_structural_draft_after_semantic_warning(self):
         saved_run = copy.deepcopy(self.audit)
         saved_run["attempts"][-1]["review_state"] = "completed"
+        saved_run["attempts"][-1]["review"] = self.good_review([
+            {"id": "r0-blocker-1", "kind": "blocker"}])
+        saved_run["attempts"][-1]["review"]["scores"]["tradeoffs"] = 3
         saved_run["attempts"][-1]["errors"] = ["editorial score below preference"]
         saved_run["attempts"][-1]["structure"] = {"passed": True, "errors": [], "metrics": {}}
         with tempfile.TemporaryDirectory() as directory, \
@@ -660,6 +685,14 @@ class ResumeTests(unittest.TestCase):
         request.assert_not_called()
         self.assertTrue(article["quality"]["review_type"].startswith("structural publication fallback"))
         self.assertTrue(article["quality"]["warnings"])
+
+    def test_resume_revises_saved_factual_failure_instead_of_shortcut_publishing(self):
+        saved_run = copy.deepcopy(self.audit)
+        saved_run["attempts"][-1]["review_state"] = "completed"
+        article, saved, stages, _ = self.run_resume(audit=saved_run)
+        self.assertEqual(stages, ["zh-draft-3", "zh-review"])
+        self.assertEqual(article["quality"]["revisions"], 3)
+        self.assertTrue(saved["passed"])
 
     def test_source_mismatch_rejected_before_request_or_destination_write(self):
         mutations = [lambda s: s[0].update(id="S99"), lambda s: s[0].update(url="https://example.com/changed"),
@@ -714,10 +747,11 @@ class ResumeTests(unittest.TestCase):
         for mode in ("unresolved", "missing_checks", "unsupported"):
             with self.subTest(mode=mode):
                 _, saved, stages, _ = self.run_resume(mode=mode, env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
-                self.assertTrue(saved["passed"])
+                self.assertFalse(saved["passed"])
                 self.assertTrue(saved["attempts"][-1]["review"]["blockers"])
-                self.assertEqual(saved["attempts"][-1]["review_state"], "completed_with_warnings")
-                self.assertEqual(saved["attempts"][-1]["errors"], [])
+                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
+                self.assertTrue(saved["attempts"][-1]["errors"])
+                self.assertNotIn("publication_fallback", saved["attempts"][-1]["review"])
                 if mode == "missing_checks":
                     self.assertEqual(stages[-1], "zh-review-format-repair")
 
@@ -846,15 +880,21 @@ class EditorialRevisionTests(unittest.TestCase):
         self.assertFalse(saved["attempts"][-1]["structure"]["passed"])
         self.assertTrue(any("script" in error for error in saved["attempts"][-1]["errors"]))
 
-    def test_candidate_cannot_override_factual_blockers_historical_checks_or_scores(self):
-        for mode in ("unsupported", "unresolved", "low_score"):
+    def test_candidate_cannot_override_factual_blockers_or_historical_checks(self):
+        for mode in ("unsupported", "unresolved"):
             with self.subTest(mode=mode):
                 _, saved, stages, _ = self.run_editorial(mode=mode, attempts=1, expect_failure=True)
                 self.assertEqual(stages, ["zh-review"])
-                self.assertTrue(saved["passed"])
-                self.assertEqual(saved["attempts"][-1]["review_state"], "completed_with_warnings")
-                self.assertEqual(saved["attempts"][-1]["errors"], [])
-                self.assertTrue(saved["attempts"][-1]["warnings"])
+                self.assertFalse(saved["passed"])
+                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
+                self.assertTrue(saved["attempts"][-1]["errors"])
+                self.assertNotIn("publication_fallback", saved["attempts"][-1]["review"])
+
+    def test_low_score_only_keeps_the_existing_warning_publication_policy(self):
+        article, saved, _, _ = self.run_editorial(mode="low_score", attempts=1)
+        self.assertTrue(saved["passed"])
+        self.assertTrue(article["quality"]["warnings"])
+        self.assertEqual(saved["attempts"][-1]["review_state"], "completed_with_warnings")
 
     def test_candidate_failure_continues_from_its_feedback_to_model_revision(self):
         article, saved, stages, prompts = self.run_editorial(mode="first_unsupported")
