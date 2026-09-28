@@ -176,6 +176,36 @@ class PassedChineseResumeTests(unittest.TestCase):
                 checks[0]["status"] = status
             self.assert_invalid(audit, "blocker")
 
+    def test_saved_fallback_flag_never_bypasses_factual_or_historical_review(self):
+        changes = [
+            lambda review: review.update(blockers=["x=22 consumes 42 hours, beyond the 40-hour capacity"]),
+            lambda review: review["claim_checks"][0].update(verdict="unsupported"),
+            lambda review: review["claim_checks"][0].update(source_ids=["S99"]),
+            lambda review: review["blocker_checks"][0].update(status="unresolved"),
+            lambda review: review["blocker_checks"][0].update(status="unverifiable"),
+            lambda review: review.update(blocker_checks=[]),
+        ]
+        for mutate in changes:
+            with self.subTest(change=mutate):
+                audit = copy.deepcopy(self.audit)
+                last = audit["attempts"][-1]
+                last["review_state"] = "completed_with_warnings"
+                last["review"]["publication_fallback"] = True
+                last["errors"] = []
+                mutate(last["review"])
+                self.assert_invalid(audit, "independent review rejected")
+
+    def test_saved_score_only_fallback_still_requires_and_accepts_resolved_history(self):
+        last = self.audit["attempts"][-1]
+        last["review_state"] = "completed_with_warnings"
+        last["review"]["publication_fallback"] = True
+        last["review"]["scores"]["tradeoffs"] = 3
+        with mock.patch.object(ip, "request_json") as model:
+            validated = ip.validate_passed_chinese_audit(self.audit, self.topic)
+        model.assert_not_called()
+        self.assertTrue(validated["full_fingerprint_verified"])
+        self.assertEqual(validated["required_blockers"][0]["id"], "r0-blocker-1")
+
     def test_same_draft_format_repair_cannot_erase_a_factual_blocker(self):
         self.audit["attempts"][-1]["review"]["format_repair"] = {
             "errors": ["Missing source ID"], "original_review": {"blockers": [],
