@@ -14,6 +14,7 @@ import time
 
 WORKFLOW = "editorial-regressions.yml"
 CHECK_NAME = "Editorial regression gate"
+STATUS_CONTEXT = "Editorial verified commit"
 
 
 def command(*args):
@@ -23,7 +24,7 @@ def command(*args):
 
 def publish(repo, branch, *, run=command, sleep=time.sleep,
             monotonic=time.monotonic, timeout=900):
-    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_][A-Za-z0-9_.-]*", repo):
         raise ValueError("Invalid repository")
     if not re.fullmatch(r"automation/daily-article-[0-9]+-[0-9]+", branch):
         raise ValueError("Invalid staging branch")
@@ -60,6 +61,16 @@ def publish(repo, branch, *, run=command, sleep=time.sleep,
                 if not matched or any(item["status"] != "completed" or
                                       item["conclusion"] != "success" for item in matched):
                     raise RuntimeError("Required editorial check is absent or unsuccessful; main unchanged")
+                statuses = json.loads(run("gh", "api",
+                    f"repos/{repo}/commits/{sha}/status?per_page=100"))
+                required = [item for item in statuses.get("statuses", [])
+                            if item.get("context") == STATUS_CONTEXT]
+                expected_url = f"https://github.com/{repo}/actions/runs/{candidate['databaseId']}"
+                if (len(required) != 1 or required[0].get("state") != "success" or
+                        required[0].get("creator", {}).get("id") != 41898282 or
+                        required[0].get("target_url") != expected_url or
+                        statuses.get("sha") != sha):
+                    raise RuntimeError("Required commit status is absent, stale or unsuccessful; main unchanged")
                 # A concurrent main update is rejected by this ordinary push.
                 # Keep the staging branch and article for recovery on any failure.
                 run("git", "push", "origin", f"{sha}:refs/heads/main")

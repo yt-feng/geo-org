@@ -24,6 +24,10 @@ class CheckedPublishTests(unittest.TestCase):
         self.check_run = 11
         self.check_result = "success"
         self.check_present = True
+        self.status_result = "success"
+        self.status_creator = 41898282
+        self.status_run = 11
+        self.status_sha = self.SHA
         self.cleanup_fails = False
         self.push_rejected = False
 
@@ -43,6 +47,11 @@ class CheckedPublishTests(unittest.TestCase):
                      "status": "completed", "conclusion": self.result}
             return json.dumps([old] if self.lists == 1 else [old, fresh])
         if args[:2] == ("gh", "api"):
+            if "/status?" in args[2]:
+                return json.dumps({"sha": self.status_sha, "statuses": [{
+                    "context": module.STATUS_CONTEXT, "state": self.status_result,
+                    "creator": {"id": self.status_creator},
+                    "target_url": f"https://github.com/test/repo/actions/runs/{self.status_run}"}]})
             check = {"name": module.CHECK_NAME, "head_sha": self.check_sha,
                      "app": {"id": self.check_app}, "status": "completed",
                      "conclusion": self.check_result,
@@ -96,6 +105,16 @@ class CheckedPublishTests(unittest.TestCase):
         self.push_rejected = True
         with self.assertRaises(subprocess.CalledProcessError): self.publish()
         self.assertFalse(any("--force" in call or "--delete" in call for call in self.calls))
+
+    def test_pending_failed_foreign_or_stale_commit_status_never_publishes(self):
+        for field, value in (("status_result", "pending"), ("status_result", "failure"),
+                             ("status_creator", 1), ("status_run", 10),
+                             ("status_sha", "b" * 40)):
+            with self.subTest(field=field, value=value):
+                self.setUp()
+                setattr(self, field, value)
+                with self.assertRaises(RuntimeError): self.publish()
+                self.assertEqual(self.main_pushes(), [])
 
     def test_cleanup_failure_does_not_report_published_article_as_failed(self):
         self.cleanup_fails = True
