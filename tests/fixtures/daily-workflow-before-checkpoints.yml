@@ -1,5 +1,4 @@
 name: Generate Daily Blog Article
-# daily-resume-schema: daily-resume-v1
 
 on:
   schedule:
@@ -95,7 +94,7 @@ jobs:
         with:
           targets: en,ar
 
-      - name: ${{ inputs.preview == true && 'Generate one researched insight (preview)' || 'Generate one researched insight (production)' }}
+      - name: Generate one researched insight
         env:
           RESEARCH_CATALOG_PATH: .artifacts/research-catalog-generator.json
           RESEARCH_CATALOG_PEER_PATH: .artifacts/research-catalog-preflight.json
@@ -126,7 +125,7 @@ jobs:
           TAVILY_MAX_RESULTS: "3"
         run: |
           set -euo pipefail
-          args=(--save-checkpoint)
+          args=()
           if [ "$PREVIEW_ONLY" = "true" ]; then
             args+=(--preview-dir .artifacts/preview)
           fi
@@ -139,8 +138,6 @@ jobs:
               cp -R "$RUNNER_TEMP/insight-resume/offline-translations/." .artifacts/offline-translations/
             fi
             args+=(--resume-dir "$RUNNER_TEMP/insight-resume/insights")
-          elif [ "$GITHUB_REF" = "refs/heads/main" ] && [ "$PREVIEW_ONLY" != "true" ]; then
-            args+=(--auto-resume)
           fi
           if [ -n "$EDITORIAL_REVISION_JSON" ]; then
             [ -n "$RESUME_RUN_ID" ] || { echo "An authored repair requires a resume run"; exit 1; }
@@ -178,21 +175,6 @@ jobs:
           path: .artifacts/
           include-hidden-files: true
           if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Seal a small resumable topic checkpoint
-        if: always()
-        id: checkpoint
-        run: python scripts/daily_resume_checkpoint.py --package "$RUNNER_TEMP/daily-checkpoint"
-
-      - name: Preserve attempt-bound continuation checkpoint
-        if: ${{ always() && steps.checkpoint.outputs.ready == 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: daily-insight-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/daily-checkpoint/
-          include-hidden-files: true
-          if-no-files-found: error
           retention-days: 14
 
       - name: Commit generated article
