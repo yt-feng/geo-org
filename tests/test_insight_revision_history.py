@@ -65,6 +65,7 @@ class RevisionHistoryTests(unittest.TestCase):
         def request(prompt, api_key, *, stage, **kwargs):
             stages.append(stage)
             if stage == "zh-draft-3":
+                self.assertEqual(kwargs["thinking"], "enabled")
                 feedback = json.loads(prompt.split("完整修订任务：", 1)[1])
                 self.assertEqual([fix["id"] for fix in feedback["required_fixes"]], self.expected_ids)
                 self.assertIn(self.base_increment, prompt)
@@ -96,6 +97,7 @@ class RevisionHistoryTests(unittest.TestCase):
 
         self.assertEqual(stages, ["zh-draft-3", "zh-review"])
         self.assertEqual(saved["attempts"][:3], original["attempts"])
+        self.assertEqual(saved["attempts"][-1]["draft_thinking"], "enabled")
         self.assertEqual([fix["id"] for fix in saved["attempts"][-1]["feedback_applied"]["required_fixes"]],
                          self.expected_ids)
         blocker_json = reviewed_prompts[0].split("待核历史blocker：", 1)[1].split("\n语言：", 1)[0]
@@ -103,6 +105,106 @@ class RevisionHistoryTests(unittest.TestCase):
         self.assertTrue(saved["passed"])
         self.assertEqual(article["quality"]["revisions"], 3)
         self.assertEqual(self.audit, original)
+
+
+class ReviewedRepairTests(unittest.TestCase):
+    def setUp(self):
+        fixture = Path(__file__).parent / "fixtures/daily-row707-production-reviews.json"
+        self.fixture = json.loads(fixture.read_text())
+        self.audit = self.fixture["audit"]
+
+    def test_real_row707_preserves_all_ids_and_latest_independent_findings(self):
+        original = copy.deepcopy(self.audit)
+        feedback = ip._revision_feedback(self.audit)
+        expected_ids = [f"r{a['revision']}-{kind}-{n}"
+                        for a in self.audit["attempts"]
+                        for kind, items in (("blocker", a["review"].get("blockers", [])),
+                                            ("structure", a["structure"].get("errors", [])),
+                                            ("issue", a["review"].get("issues", [])))
+                        for n, _ in enumerate(items, 1)]
+        fixes = {fix["id"]: fix for fix in feedback["required_fixes"]}
+        self.assertEqual(list(fixes), expected_ids)
+        self.assertEqual(len(fixes), 37)
+        latest = self.audit["attempts"][-1]
+        for check in latest["review"]["blocker_checks"]:
+            carried = fixes[check["issue_id"]]["latest_independent_check"]
+            self.assertEqual(carried, {"reviewed_revision": 2,
+                "reviewed_article_sha256": self.fixture["reviewed_last_article_sha256"],
+                **{key: check[key] for key in ("status", "scope", "location", "finding")}})
+        focus = feedback["repair_focus"]
+        self.assertEqual(len(focus["preserve_and_recheck_resolved_ids"]), 8)
+        self.assertIn("r1-blocker-3", focus["unresolved_or_unverified_blocker_ids"])
+        self.assertIn("r2-blocker-1", focus["unresolved_or_unverified_blocker_ids"])
+        self.assertIn("0.80", fixes["r1-blocker-1"]["latest_independent_check"]["finding"])
+        self.assertTrue(ip._factual_repair_required(feedback))
+        self.assertEqual(self.audit, original)
+
+    def test_real_row707_remains_blocked_even_with_resolved_feedback_and_fallback_flag(self):
+        latest = self.audit["attempts"][-1]
+        review = copy.deepcopy(latest["review"])
+        review["publication_fallback"] = True
+        ip._revision_feedback(self.audit)
+        errors = ip._publication_blocking_errors(review, self.audit["sources"],
+                    ip._prior_publication_blockers(self.audit, latest))
+        self.assertTrue(any("Q_cap" in error for error in errors))
+        self.assertTrue(any("r1-blocker-3" in error and "unresolved" in error for error in errors))
+        self.assertFalse(self.audit["passed"])
+
+    def test_missing_or_later_unresolved_check_never_inherits_an_earlier_pass(self):
+        first = self.audit["attempts"][-2]["review"]["blocker_checks"][0]
+        issue = first["issue_id"]
+        latest = self.audit["attempts"][-1]
+        latest["review"]["blocker_checks"] = [{**first, "status": "unresolved", "finding": "本轮错误重新出现"}]
+        feedback = ip._revision_feedback(self.audit)
+        fix = next(f for f in feedback["required_fixes"] if f["id"] == issue)
+        self.assertEqual(fix["latest_independent_check"]["finding"], "本轮错误重新出现")
+        self.assertIn(issue, feedback["repair_focus"]["unresolved_or_unverified_blocker_ids"])
+        latest["review"]["blocker_checks"] = None
+        feedback = ip._revision_feedback(self.audit)
+        self.assertNotIn("latest_independent_check", next(f for f in feedback["required_fixes"] if f["id"] == issue))
+        self.assertIn(issue, feedback["repair_focus"]["unresolved_or_unverified_blocker_ids"])
+
+    def test_reasoning_mode_is_selective_and_keeps_request_and_token_budget(self):
+        resolved = {"required_fixes": [{"kind": "blocker", "latest_independent_check": {"status": "resolved"}}]}
+        self.assertFalse(ip._factual_repair_required({}))
+        self.assertFalse(ip._factual_repair_required({"required_fixes": [{"kind": "issue"}]}))
+        self.assertFalse(ip._factual_repair_required(resolved))
+        self.assertTrue(ip._factual_repair_required({"claim_checks": [{"verdict": "unsupported"}]}))
+        with patch.dict(os.environ, {"INSIGHT_THINKING": "disabled", "INSIGHT_REVIEW_THINKING": "enabled"}), \
+                patch.object(ip, "begin_request") as admission, patch.object(ip, "complete_request"), \
+                patch.object(ip, "_completion_attempt", return_value=("{}", {})), \
+                contextlib.redirect_stdout(io.StringIO()):
+            ip.request_json("initial", "unused", stage="zh-draft-0", max_tokens=48000)
+            ip.request_json("repair", "unused", stage="zh-draft-3", max_tokens=48000, thinking="enabled")
+            ip.request_json("review", "unused", stage="zh-review", max_tokens=48000)
+        self.assertEqual([call.args[1]["thinking"]["type"] for call in admission.call_args_list],
+                         ["disabled", "enabled", "enabled"])
+        self.assertEqual([call.args[1]["max_tokens"] for call in admission.call_args_list], [48000]*3)
+        self.assertEqual([call.args[0] for call in admission.call_args_list],
+                         ["zh-draft-0", "zh-draft-3", "zh-review"])
+        with patch.object(ip, "begin_request") as admission, self.assertRaises(ValueError):
+            ip.request_json("invalid", "unused", stage="zh-draft-3", thinking="invalid")
+        admission.assert_not_called()
+
+    def test_conflicting_duplicate_checks_remain_unverified_in_both_orders(self):
+        latest = self.audit["attempts"][-1]
+        unresolved = next(check for check in latest["review"]["blocker_checks"]
+                          if check["status"] == "unresolved")
+        resolved = {**unresolved, "status": "resolved", "finding": "重复记录声称已修复"}
+        issue_id = unresolved["issue_id"]
+        required = ip._prior_publication_blockers(self.audit, latest)
+        for pair in ([unresolved, resolved], [resolved, unresolved]):
+            with self.subTest(order=[check["status"] for check in pair]):
+                latest["review"]["blocker_checks"] = copy.deepcopy(pair)
+                feedback = ip._revision_feedback(self.audit)
+                fix = next(f for f in feedback["required_fixes"] if f["id"] == issue_id)
+                self.assertNotIn("latest_independent_check", fix)
+                self.assertIn(issue_id, feedback["repair_focus"]["unresolved_or_unverified_blocker_ids"])
+                self.assertNotIn(issue_id, feedback["repair_focus"]["preserve_and_recheck_resolved_ids"])
+                self.assertTrue(ip._factual_repair_required(feedback))
+                self.assertIn(f"blocker_checks repeats {issue_id}",
+                              ip._blocker_check_errors(latest["review"], required))
+                self.assertEqual(latest["review"]["blocker_checks"], pair)
 
 
 if __name__ == "__main__":

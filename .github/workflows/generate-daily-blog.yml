@@ -104,6 +104,7 @@ jobs:
           SITE_URL: https://eco-geo.org
           DEEPSEEK_MODEL: deepseek-flash
           INSIGHT_THINKING: "disabled"
+          INSIGHT_REPAIR_THINKING: "enabled"
           INSIGHT_REVIEW_THINKING: "enabled"
           INSIGHT_RESEARCH_MAX_TOKENS: "48000"
           INSIGHT_MAX_TOKENS: "48000"

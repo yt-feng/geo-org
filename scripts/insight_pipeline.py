@@ -307,18 +307,23 @@ def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeou
             threading.Thread(target=close_response, name="insight-http-close", daemon=True).start()
 
 
-def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 48000) -> dict:
+def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 48000,
+                 thinking: str | None = None) -> dict:
     """Read complete streamed JSON, with bounded retries and safe progress logs."""
     if type(max_tokens) is not int or max_tokens <= 0:
         raise ValueError("max_tokens must be a positive integer")
     length_retry_limit = token_budget("INSIGHT_LENGTH_RETRY_MAX_TOKENS", 96000)
     length_recovered = False
+    if thinking is None:
+        thinking = (os.environ.get("INSIGHT_REVIEW_THINKING", "enabled") if "review" in stage
+                    else os.environ.get("INSIGHT_THINKING", "disabled"))
+    if thinking not in ("enabled", "disabled"):
+        raise ValueError("Insight thinking must be enabled or disabled")
     payload = {
         "model": os.environ.get("INSIGHT_REVIEW_MODEL", gb.MODEL) if "review" in stage else gb.MODEL,
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
-        "thinking": {"type": os.environ.get("INSIGHT_REVIEW_THINKING", "enabled") if "review" in stage
-                     else os.environ.get("INSIGHT_THINKING", "disabled")},
+        "thinking": {"type": thinking},
         "response_format": {"type": "json_object"},
         "stream": True,
         "stream_options": {"include_usage": True},
@@ -748,12 +753,51 @@ def _revision_feedback(audit: dict) -> dict:
                     "kind": kind, "problem": str(item),
                     "instruction": "修复并指出正文位置；如果上轮已修复，核对本轮仍保留该修复。"})
     required_fixes.extend(cross_language_required_fixes(audit))
+    # Carry the independent review's actual finding, not only the original
+    # problem text. A resolved finding is a preservation target, not permission
+    # to remove its ID or skip its independent recheck on the next draft.
+    checks = current.get("review", {}).get("blocker_checks", [])
+    if not isinstance(checks, list):
+        checks = []
+    grouped_checks = {}
+    for check in checks:
+        if isinstance(check, dict) and isinstance(check.get("issue_id"), str):
+            grouped_checks.setdefault(check["issue_id"], []).append(check)
+    # Invalid review records can survive a failed format repair. Duplicate IDs
+    # are unverified regardless of order, never a last-entry resolved result.
+    latest_checks = {issue_id: group[0] for issue_id, group in grouped_checks.items()
+                     if len(group) == 1
+                     and group[0].get("status") in ("resolved", "unresolved", "unverifiable")}
+    for fix in required_fixes:
+        check = latest_checks.get(fix["id"])
+        if fix.get("kind") != "blocker" or check is None:
+            continue
+        fix["latest_independent_check"] = {
+            "reviewed_revision": current["revision"],
+            "reviewed_article_sha256": current.get("article_sha256"),
+            **{key: check[key] for key in ("status", "scope", "location", "finding") if key in check},
+        }
+    repair_ids = [fix["id"] for fix in required_fixes if fix.get("kind") == "blocker"
+                  and fix.get("latest_independent_check", {}).get("status") != "resolved"]
+    preserve_ids = [fix["id"] for fix in required_fixes if fix.get("kind") == "blocker"
+                    and fix.get("latest_independent_check", {}).get("status") == "resolved"]
     return {"failures": current.get("errors", []),
             "numeric_changes": metrics.get("translation", {}).get("numeric_changes", metrics.get("numeric_changes", {})),
             "scores": current.get("review", {}).get("scores"),
             "claim_checks": current.get("review", {}).get("claim_checks", []),
             "required_fixes": required_fixes,
+            "repair_focus": {"unresolved_or_unverified_blocker_ids": repair_ids,
+                             "preserve_and_recheck_resolved_ids": preserve_ids},
             "acceptance": "每维至少4且总分至少25/30；blockers为空；结构与事实门槛不变"}
+
+
+def _factual_repair_required(feedback: dict) -> bool:
+    """Use a reasoning draft for known factual work, without adding attempts."""
+    return (any(fix.get("kind") == "blocker"
+                and fix.get("latest_independent_check", {}).get("status") != "resolved"
+                for fix in feedback.get("required_fixes", []))
+            or any(check.get("verdict") == "unsupported"
+                   for check in feedback.get("claim_checks", []) if isinstance(check, dict)))
 
 
 def _revision_response_errors(raw: dict, feedback: dict) -> list[str]:
@@ -1413,6 +1457,10 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 "location":"本轮章节标题/表格行/段落位置","verification":"用本轮具体内容说明为何解决了该问题"}}]。
 每个ID恰好回应一次，不用“已优化”之类空话；不要把revision_response写进正文。
 作者的回应仅用于审计，最终仍由独立主编审稿，不能代替事实核查或改变分数门槛。
+repair_focus先列当前未解决或未核验的硬问题。latest_independent_check是上一稿的
+独立审稿结论，包含当时复算、正文位置和稿件指纹：resolved项要保留并逐项复核，
+不能因为再次看到最初问题就恢复旧公式、旧变量方向或旧推荐；unresolved/unverifiable
+项按最新finding具体修复。它们不是本轮稿件的通过证明，每个历史ID仍须回应并重新审查。
 上稿：{json.dumps(previous, ensure_ascii=False)}
 完整修订任务：{json.dumps(feedback, ensure_ascii=False)}"""
             draft_origin = "editorial_revision" if editorial_revision is not None and revision == start_revision else "model"
@@ -1430,8 +1478,12 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             elif draft_origin == "editorial_revision":
                 raw = editorial_revision
             else:
+                draft_thinking = (os.environ.get("INSIGHT_REPAIR_THINKING", "enabled")
+                                  if _factual_repair_required(feedback)
+                                  else os.environ.get("INSIGHT_THINKING", "disabled"))
                 raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
-                                   max_tokens=token_budget("INSIGHT_MAX_TOKENS", 48000))
+                                   max_tokens=token_budget("INSIGHT_MAX_TOKENS", 48000),
+                                   thinking=draft_thinking)
             normalization = {}
             try:
                 article = normalize_article(raw, lang, normalization=normalization)
@@ -1450,6 +1502,8 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                        "metadata_errors": metadata_errors,
                        "metadata_state": "warning" if metadata_errors else "valid",
                        "feedback_applied": feedback, "review_state": "not_started"}
+            if draft_origin == "model":
+                attempt["draft_thinking"] = draft_thinking
             if lang != "zh":
                 attempt["translation_provenance"] = raw["translation_provenance"]
             errors = list(structural["errors"])

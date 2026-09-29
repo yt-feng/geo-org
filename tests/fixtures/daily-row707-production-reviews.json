@@ -1,0 +1,758 @@
+{
+  "origin": {
+    "run_url": "https://github.com/yt-feng/geo-org/actions/runs/36497447498",
+    "audit_sha256": "14378752100847bd28a41f1a712875134f3cb857b0999e16c3fc9c717e9a67ce",
+    "checkpoint_archive_sha256": "3801aa21e10ed07bd3fac460b34b46daa0d633f2058edab0512ec63e78792637",
+    "scope": "Original review history and public source metadata; authored article text and source bodies omitted."
+  },
+  "audit": {
+    "version": "insights-v3",
+    "row": 707,
+    "language": "zh",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-28T23:21:17+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Promoting resilience and preparedness in supply chains (EN)",
+        "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+        "publisher": "OECD",
+        "published": "",
+        "retrieved_at": "2026-09-28T23:21:19+00:00",
+        "evidence_kind": "institutional_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 172554,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "oecd.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24"
+      },
+      {
+        "id": "S3",
+        "title": "Source Coverage and Citation Bias in LLM-based vs. Traditional Search Engines",
+        "url": "https://arxiv.org/html/2512.09483v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-28T23:21:19+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 78799,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "667b88d6b0ba41c66ef518148bb0afe6ed2e7abc595fd245989c9437129ddb0c"
+      },
+      {
+        "id": "S4",
+        "title": "Emphasize Resilience in Supply Chains",
+        "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
+        "publisher": "BCG",
+        "published": "2022-10-04",
+        "retrieved_at": "2026-09-28T23:21:21+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 4963,
+        "body_chars": 4963,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-28T23:21:22+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      }
+    ],
+    "passed": false,
+    "attempts": [
+      {
+        "revision": 0,
+        "structure": {
+          "passed": true,
+          "errors": [],
+          "metrics": {
+            "language": "zh",
+            "gate_version": 1,
+            "semantic_review_required": true,
+            "h2_count": 8,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 7,
+                "cells": 21
+              },
+              {
+                "captions": 1,
+                "rows": 6,
+                "headers": 8,
+                "cells": 40
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "method": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 1,
+              "S2": 1,
+              "S3": 2,
+              "S4": 1,
+              "S5": 1
+            },
+            "visible_character_count": 6670,
+            "zh_character_count": 4939,
+            "word_count": 928,
+            "minimum_zh_characters": 2600,
+            "executive_summary_takeaways": 3,
+            "tables_meeting_structure": 2,
+            "valid_citation_count": 6,
+            "cited_source_ids": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5"
+            ],
+            "cited_domains": [
+              "arxiv.org",
+              "bcg.com",
+              "blogs.bing.com",
+              "developers.google.com",
+              "oecd.org"
+            ],
+            "unique_cited_sources": 5,
+            "unique_cited_domains": 5,
+            "duplicate_paragraph_count": 0,
+            "duplicate_paragraph_samples": []
+          }
+        },
+        "review": {
+          "scores": {
+            "thesis": 4,
+            "evidence": 3,
+            "mechanism": 3,
+            "tradeoffs": 3,
+            "actionability": 4,
+            "originality": 3
+          },
+          "issues": [
+            "执行摘要把“同一处错误参数可能被拆成多个子查询分别命中，错误会被复制到多条回答路径”称为“一个工程性事实”。S1只证明AI Overviews/AI Mode“may use a query fan-out”，并未证实错误会被复制进多条答案。要求：将此处降级为“待检验机制/假设”，与“机制”一节“可能机制”的措辞一致。",
+            "经济性示例以“若门槛设为‘需至少修复26题’，则32 ≥ 26，A通过”引入一个未在假设清单（80h、28h、0.10、8题、20题、1.6h、2.0h、0.40/0.25/0.60）中定义的门槛，并与表一/摘要的“ΔQ≥8题”增量门槛口径混用（把nA与增量门槛并列比较）。要求：删除或定义该阈值，并统一以ΔQ为增量门槛。",
+            "表二低/高情境只列出pA、qA、pB等区间，未说明在哪一区间下A/B的优先序会改变，也未把qA/pA的变动代回E_A是否越过0.10门槛。要求：给出每个变量改变决策的临界区间（如qA低到何种程度E_A>0.10），否则该表对选择增量有限。",
+            "等号规则两处不一致：门槛处采用“达到即通过”（nA=门槛时可行），反转点处“恰好相等时按事前规则扩大采样，不强行选择”。要求：明确两处等号分属不同规则并各自写明，避免读者误用。",
+            "“边界情形(4) 修复空间耗尽”与基准算例冲突：E_base=20/40即只有20题含严重错误，A至多用20×1.6=32h，本文却按nA=32题、52h计，剩余工时的处置前提不成立。要求：先按错误问题数上限重设nA再加边界情形。"
+          ],
+          "blockers": [
+            "表二qA行公式写作 E_A = (E_base×N − nA×qA×N)/N，与正文所用 (E_base×N − nA×qA)/N 不一致；按表中公式代入基准值(20−32×0.60×40)/40=−18.7，与正文0.02矛盾。属错误计算，须修正表二公式并同步摘要、正文、表格。",
+            "反转点 pB*≈0.492（“pB>0.492则优先次序反转”）与准入门槛规则自相矛盾：文中E_B=20/40=0.50>门槛0.10，且结论一规定E_base>门槛时“不应参与后续增量比较”、表二亦写“B被准入约束先行排除”。在E_base=0.50固定的前提下，B不可能因pB升高而被优先。须限定该反转仅在E_base≤门槛的子情境下成立并重设输入，或删除该反转结论。",
+            "nA=floor(52/1.6)=32 超过含严重错误的问题数20（E_base=20/40），而E_A公式把nA×qA当作被消除的错误数——对不含错误的问题无法消除错误。ΔQ_A=32×0.40与E_A=0.02的计数因此不可行，须以错误问题数为上限重算并同步表格。",
+            "机制一节对S3的转述“更少的外链指向高信誉来源之外”与S3原文“more outlinks to reputable sources”不是同一构造，改变了变量方向。属引用不支持该表述，须按S3原变量改写。",
+            "unsupported claim: 被AI搜索偏好的域名往往具备…更少的外链指向高信誉来源之外的内容特征"
+          ],
+          "claim_checks": [
+            {
+              "claim": "AI Overviews 与 AI Mode 可能使用“查询扇出”…页面要作为支撑链接出现需先被索引且可展示摘要，没有额外技术门槛",
+              "source_ids": [
+                "S1"
+              ],
+              "verdict": "supported",
+              "reason": "S1明示query fan-out、索引入资格、'There are no additional technical requirements'及现有SEO基础实践，适用边界为通用搜索，非本行业效果。"
+            },
+            {
+              "claim": "覆盖六个LLM搜索引擎与两个传统搜索引擎、55,936条查询的测量研究显示AI搜索引用的域名中约37%不出现在传统搜索的结果里",
+              "source_ids": [
+                "S3"
+              ],
+              "verdict": "supported",
+              "reason": "S3摘要与贡献段给出55,936 queries、six aise/two tse、'37% of domains are unique to aise'，与“约37%”一致。"
+            },
+            {
+              "claim": "被AI搜索偏好的域名往往具备…更少的外链指向高信誉来源之外的内容特征",
+              "source_ids": [
+                "S3"
+              ],
+              "verdict": "unsupported",
+              "reason": "S3原文为'more outlinks to reputable sources'，本文转述成了“更少外链指向高信誉来源之外”，变量方向/构造被改变，不能据此支撑。“低知名度域名”“更结构化HTML”“更易读文本”部分则与S3一致。"
+            },
+            {
+              "claim": "韧性策略应按两类风险分段…把常态化风险管理工具（如库存）用于重大中断会造成浪费、环境负担与表现不佳",
+              "source_ids": [
+                "S2"
+              ],
+              "verdict": "supported",
+              "reason": "S2 Key messages原文含segmented两类风险及'routine risk management…like stockpiles…waste, environmental burden, and underperformance'，与本文一致。"
+            },
+            {
+              "claim": "S2与S4不涉及GEO，只借用其“按条件分段”与“取舍必须显式标价”的方法结构",
+              "source_ids": [
+                "S2",
+                "S4"
+              ],
+              "verdict": "supported",
+              "reason": "S2、S4excerpts仅涉供应链韧性，无GEO内容，作者自限边界与来源内容相符。"
+            },
+            {
+              "claim": "E_A ≈ (20 − 32×0.60)/40 = 0.02",
+              "source_ids": [],
+              "verdict": "illustrative",
+              "reason": "属作者明示的示意算例，内部按(E_base×N − nA×qA)/N计算自洽；但表二同行的公式多乘一个N，公式与算例不符。"
+            },
+            {
+              "claim": "令 26 × pB = 12.8，得 pB* ≈ 0.492…当校准得到的pB超过约0.492时B的期望增量超过A，优先次序反转",
+              "source_ids": [],
+              "verdict": "inference",
+              "reason": "算术本身正确（26×0.492=12.792，26×0.493=12.818），但为固定其余输入的纯算术推论，且在E_base=0.50>门槛时与准入门槛规则冲突，不能作为可执行推荐。"
+            },
+            {
+              "claim": "微软在Bing Copilot Search发布说明中表示会显著标注来源、内联链接…列出用于生成该回答的全部链接；可用地区不含俄罗斯与中国",
+              "source_ids": [
+                "S5"
+              ],
+              "verdict": "supported",
+              "reason": "S5含'cites its sources prominently'、'list of every link used to generate the curated answer'、'inline link the entire sentence or passage'及'*Available WW except Russia and China'。"
+            }
+          ]
+        },
+        "errors": [
+          "evidence: 3/5 (minimum 4)",
+          "mechanism: 3/5 (minimum 4)",
+          "tradeoffs: 3/5 (minimum 4)",
+          "originality: 3/5 (minimum 4)",
+          "editorial total below 25/30",
+          "表二qA行公式写作 E_A = (E_base×N − nA×qA×N)/N，与正文所用 (E_base×N − nA×qA)/N 不一致；按表中公式代入基准值(20−32×0.60×40)/40=−18.7，与正文0.02矛盾。属错误计算，须修正表二公式并同步摘要、正文、表格。",
+          "反转点 pB*≈0.492（“pB>0.492则优先次序反转”）与准入门槛规则自相矛盾：文中E_B=20/40=0.50>门槛0.10，且结论一规定E_base>门槛时“不应参与后续增量比较”、表二亦写“B被准入约束先行排除”。在E_base=0.50固定的前提下，B不可能因pB升高而被优先。须限定该反转仅在E_base≤门槛的子情境下成立并重设输入，或删除该反转结论。",
+          "nA=floor(52/1.6)=32 超过含严重错误的问题数20（E_base=20/40），而E_A公式把nA×qA当作被消除的错误数——对不含错误的问题无法消除错误。ΔQ_A=32×0.40与E_A=0.02的计数因此不可行，须以错误问题数为上限重算并同步表格。",
+          "机制一节对S3的转述“更少的外链指向高信誉来源之外”与S3原文“more outlinks to reputable sources”不是同一构造，改变了变量方向。属引用不支持该表述，须按S3原变量改写。",
+          "unsupported claim: 被AI搜索偏好的域名往往具备…更少的外链指向高信誉来源之外的内容特征"
+        ],
+        "article_sha256": "e15de52cf56fabb5929772c1fc83c3c408b4bbdc98f081c58ec35e9942f59bb1",
+        "review_state": "completed"
+      },
+      {
+        "revision": 1,
+        "structure": {
+          "passed": true,
+          "errors": [],
+          "metrics": {
+            "language": "zh",
+            "gate_version": 1,
+            "semantic_review_required": true,
+            "h2_count": 8,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 7,
+                "cells": 21
+              },
+              {
+                "captions": 1,
+                "rows": 6,
+                "headers": 8,
+                "cells": 40
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "method": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 1,
+              "S2": 1,
+              "S3": 2,
+              "S4": 1,
+              "S5": 1
+            },
+            "visible_character_count": 8495,
+            "zh_character_count": 5897,
+            "word_count": 1296,
+            "minimum_zh_characters": 2600,
+            "executive_summary_takeaways": 3,
+            "tables_meeting_structure": 2,
+            "valid_citation_count": 6,
+            "cited_source_ids": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5"
+            ],
+            "cited_domains": [
+              "arxiv.org",
+              "bcg.com",
+              "blogs.bing.com",
+              "developers.google.com",
+              "oecd.org"
+            ],
+            "unique_cited_sources": 5,
+            "unique_cited_domains": 5,
+            "duplicate_paragraph_count": 0,
+            "duplicate_paragraph_samples": []
+          }
+        },
+        "review": {
+          "scores": {
+            "thesis": 4,
+            "evidence": 3,
+            "mechanism": 4,
+            "tradeoffs": 3,
+            "actionability": 3,
+            "originality": 4
+          },
+          "issues": [
+            "表二 qA 行的临界值（0.1875）与“计算示例”的 qA ≥ 0.80 直接冲突：按表内公式与基准输入(E_base=0.50、N=40、nA=20)复算应为 (20−4)/20=0.80。修改要求：把该单元格改为按基准情境的 0.80，或写明该列所依据的情境与 nA 取值，并同步表一、行动路径的表述。",
+            "第一次基线中 B 已被准入门槛排除，却仍计算并排列 ΔQ_B=18×0.25=4.5；该值不参与任何决策，易被误读为方案比较。修改要求：删除或显式标注“仅作口径演示，不参与本轮选择”。",
+            "表二 Q_cap 行把 C 的触发写成“Q_cap < 最低增量8”，而行动路径把 C 触发写成“可稳定抽取问题数 < 20”；两个量（未被合格引用的问题数、问题池总量）与两个阈值的关系未说明。修改要求：分别定义阈值适用对象，并说明二者同时命中时的优先次序。",
+            "边界情形(5)与表二 pB 行的动作规则不一致：前者在 ΔQ_A=ΔQ_B 时要求“扩大采样再判”，后者用“≥”直接判 B 优先；前者在 ΔQ_A>ΔQ_B 但单位成本 A 更高时选 B，后者一律“否则A优先”。修改要求：统一等号规则并写入单位成本条件，使 pB*=0.0444 处有唯一可执行动作；该临界值在正文只写“在示意精度内相等”，未给动作。",
+            "缺一个分支：行动路径规定“E_post ≤ 0.10 且 ΔQ ≥ 8”才扩大，停止条件只列“ΔQ=0 或单位成本高于替代用途”。第一次基线恰为 E_post=0.20（未达门槛）而 ΔQ=8（达标），该组合无对应动作。修改要求：明确此时是重做A（要求 qA ≥ 0.80）、继续观察还是转 C。",
+            "表一 B 行“扩大：同口径单位增量成本稳定且不低于A”的措辞与结论二及行动路径相反（后者要求单位成本不高于替代用途才扩大）。修改要求：改为“不高于替代用途/不高于A”，或改写为可判定的比较式。",
+            "C 与 A/B 不同量纲：A/B 用“小时/合格增量”，C 用“线下单位有效线索成本”，正文未给折算率或共同分母，也无任何示意数值。修改要求：给出工时—货币折算或统一到同一单位，否则 C 与 A/B 不可比，仅能靠顺序规则落地。",
+            "S3 相关两句（“检索文档中的错误信息可能传播进生成答案”“用户即使面对不正确的归属也会受引用数量与类型影响”）在 S3 原文中分别引自 Deng et al. (2025)、Miroyan et al. (2025) 的既有研究。修改要求：注明系 S3 转引的既有文献，避免读作 S3 自身实测。",
+            "S1、S3、S5 均未标注发布日期/版本（资料包 published 为空），正文称 S3 为“测量研究”但未说明其为预印本、也不给检索时间。修改要求：标注可得的日期或版本信息，并在证据局限中提示时效边界。",
+            "机制小节标题“为什么先修事实、再谈覆盖”与正文“待检验机制……这是推断而非已被S1证实的结论”的语气存在落差。修改要求：标题改为条件式表述（如“机制假设与证伪方式”）。",
+            "表二给出低/高情境列，但未演示任一组合下推荐如何改变（仅 qA 与 pB 行给出临界式）。修改要求：至少给出一组低/高组合的代入结果，说明哪一行在什么组合下真正改变 A/B/C 选择。",
+            "表一 A 行“停止：两轮采样方向不一致或复核分歧率≥20%”与边界情形(1)一致，但 E_post 不达标时未列入停止条件，与行动路径的“扩大”门槛不对齐，需在表一补充该停止/重做条件。"
+          ],
+          "blockers": [
+            "错误计算：表二 qA 行“qA ≥ (E_base×N − 0.10×N)/nA = 0.1875 时E_A达标”与同文“计算示例”的 qA ≥ 0.80 矛盾；按该行公式与基准输入(E_base=0.50、N=40、nA=20)独立复算为 (20−4)/20=0.80，0.1875 属残留错误值，须修正并同步表一、表二与行动路径。",
+            "停止/门槛条件未优先且与推荐冲突：第二次基线中 ΔQ_A=0.8、ΔQ_B=4.5 均低于本文自设“最低增量8题”，正文在“整数执行规则”中又写明“低于8题的ΔQ不视为达到最低增量门槛”，却直接给出“推荐次序反转为B优先”，未说明是否应先触发停止/门槛判定或转 C。须补出该情形下的判定顺序（门槛优先）与推荐的确切含义。",
+            "决策规则在阈值处不唯一：表二 pB 行“pB ≥ pA×nA/nB 时B优先；否则A优先”只含 ΔQ 条件，而边界情形(5)要求“ΔQ 相等时扩大采样再判”，并在 ΔQ_A>ΔQ_B 但单位成本 A 更高时改选 B；两者在正文算出的临界值 pB*=0.0444 处给出不同动作，且表二遗漏单位成本条件，与结论二“同时比较增量与完整工时成本”不一致。须统一等号规则和成本条件。",
+            "unsupported claim: 门槛0.10下，qA ≥ (E_base×N − 0.10×N)/nA = 0.1875 时E_A达标"
+          ],
+          "claim_checks": [
+            {
+              "claim": "AI Overviews 与 AI Mode 可能使用“查询扇出”（query fan-out），跨子主题与多个数据来源发起多次相关检索，并可能展示比传统搜索更广的链接集合",
+              "source_ids": [
+                "S1"
+              ],
+              "verdict": "supported",
+              "reason": "S1 原文含 “may use a 'query fan-out' technique” 与 “display a wider and more diverse set of helpful links … than with a classic web search”；本文限定为平台机制说明，未据此声称效果。"
+            },
+            {
+              "claim": "页面要作为支撑链接出现，需先被索引且可在搜索中展示摘要，没有额外技术门槛",
+              "source_ids": [
+                "S1"
+              ],
+              "verdict": "supported",
+              "reason": "S1 明写 “a page must be indexed and eligible to be shown in Google Search with a snippet … There are no additional technical requirements”；本文未把 SEO 建议升格为准入要求。"
+            },
+            {
+              "claim": "AI搜索引用的域名中约37%不出现在传统搜索的结果里，其来源分布更分散、更偏好用户知名度较低的域名",
+              "source_ids": [
+                "S3"
+              ],
+              "verdict": "supported",
+              "reason": "S3 摘要与贡献(2)给出 “37% of domains in aise results are absent from tse outputs”“less concentrated distribution and favor domains with lower user popularity”；适用边界为通用搜索引擎测量，不含中国供应链行业。"
+            },
+            {
+              "claim": "被AI搜索偏好的域名往往具备更结构化、层级更清晰的 HTML、更易读的文本，以及与指向高信誉来源的更多外链同时出现",
+              "source_ids": [
+                "S3"
+              ],
+              "verdict": "supported",
+              "reason": "S3 贡献(4)原文为 “more structured, hierarchical HTML, easier-to-read text, lower domain popularity, and more outlinks to reputable sources”，方向与本文一致；该结论为相关性特征分析，本文已标注“因果方向仍需本品牌自测确认”。"
+            },
+            {
+              "claim": "韧性策略应按两类风险分段……把常态化风险管理工具（如库存）用于重大中断会造成浪费、环境负担与表现不佳",
+              "source_ids": [
+                "S2"
+              ],
+              "verdict": "supported",
+              "reason": "S2 关键信息原文一致（segmented … business-as-usual … extreme 'black swan' events；stockpiles 用于重大中断导致 waste, environmental burden, and underperformance）；S2 与 GEO 无关，本文已标为方法论类比。"
+            },
+            {
+              "claim": "另有咨询观点文章指出，韧性建设需要在低成本集中采购与高成本多元化之间显式取舍",
+              "source_ids": [
+                "S4"
+              ],
+              "verdict": "supported",
+              "reason": "S4 原文称集中单一供应商可降低运营成本、多元化会面临更高成本与复杂度；本文未据此推断行业GEO投入效果，也未声称BCG立场。"
+            },
+            {
+              "claim": "微软在Bing Copilot Search发布说明中表示会显著标注来源、内联链接到生成答案所依据的句子或段落，并列出用于生成该回答的全部链接",
+              "source_ids": [
+                "S5"
+              ],
+              "verdict": "supported",
+              "reason": "S5 原文 “cites its sources prominently”“you can see a list of every link used to generate the curated answer”“we inline link the entire sentence or passage”；本文已标注其为产品意图声明且注明可用地区不含俄罗斯与中国。"
+            },
+            {
+              "claim": "AI搜索在可信度、政治中立性与安全指标上并不优于传统搜索",
+              "source_ids": [
+                "S3"
+              ],
+              "verdict": "supported",
+              "reason": "S3 原文明写 “aise do not outperform tse in credibility, political neutrality and safety metrics”；本文未据此断言显著性方向（截断摘录无法核验显著性标记）。"
+            },
+            {
+              "claim": "门槛0.10下，qA ≥ (E_base×N − 0.10×N)/nA = 0.1875 时E_A达标",
+              "source_ids": [],
+              "verdict": "unsupported",
+              "reason": "属本文内部算式；按该行公式与基准输入 (E_base=0.50、N=40、nA=20) 复算为 (20−4)/20=0.80，与“计算示例”qA ≥ 0.80 矛盾，0.1875 无输入可复现。"
+            },
+            {
+              "claim": "第二次基线中 ΔQ_A=2×0.40=0.8、ΔQ_B=18×0.25=4.5，故在示例假设下的推荐次序反转为B优先",
+              "source_ids": [],
+              "verdict": "inference",
+              "reason": "数值本身复算无误，属示意模型内的条件推论；但两值均低于本文自设“最低增量8题”，正文未先按停止/门槛顺序判定是否应转 C，故该推荐在本文规则内不闭合。"
+            }
+          ],
+          "blocker_checks": [
+            {
+              "issue_id": "r0-blocker-1",
+              "status": "resolved",
+              "scope": "source_article",
+              "location": "“表二”qA 行公式与“计算示例”修正后公式 E_A = (E_base×N − nA×qA)/N",
+              "finding": "表二现已写作 (E_base×N − nA×qA)/N，与正文一致，原“nA×qA×N”已删除；但同一行“=0.1875”的临界值仍与正文 0.80 矛盾，已作为本轮新 blocker 列出。"
+            },
+            {
+              "issue_id": "r0-blocker-2",
+              "status": "resolved",
+              "scope": "source_article",
+              "location": "“表二”后“如何改变决策”段与“计算示例”第二次基线",
+              "finding": "现文明确“当 E_base = 0.50 大于门槛0.10时……不存在‘B反超’的反转区间”，并把反转限定在 E_base ≤ 0.10 且 nA_int=2 的子情境，pB* 改为 0.0444；原在固定 E_base=0.50 下的反超结论已不存在。"
+            },
+            {
+              "issue_id": "r0-blocker-3",
+              "status": "resolved",
+              "scope": "source_article",
+              "location": "“计算示例”整数可行计数：nA = min(32, 20) = 20；第二次基线 nA_int = min(32, 2) = 2",
+              "finding": "nA 现以错误问题数为上限，并显式说明“只有20个问题含严重错误，修完这20个之后不再有可修复的对象”；32 不再作为实际修复数进入 ΔQ/E_A 计算，表一的资源强度列也同步为“问题数受错误问题数上限约束”。"
+            },
+            {
+              "issue_id": "r0-blocker-4",
+              "status": "resolved",
+              "scope": "source_article",
+              "location": "“机制：为什么先修事实、再谈覆盖”第二步（引用选择）",
+              "finding": "该段现表述为“与指向高信誉来源的更多外链同时出现”，与 S3 原文 “more outlinks to reputable sources” 方向一致；原“更少的外链指向高信誉来源之外”的逆向构造已删除。"
+            },
+            {
+              "issue_id": "r0-blocker-5",
+              "status": "resolved",
+              "scope": "source_article",
+              "location": "“机制”第二步及“假设、证据局限与反证条件”中的相应表述",
+              "finding": "正文与标题/摘要/结论均不再出现“更少的外链指向高信誉来源之外”的特征断言；现仅保留 S3 支持的“更多外链指向高信誉来源”，并按观察模式标注因果待验。"
+            }
+          ]
+        },
+        "errors": [
+          "evidence: 3/5 (minimum 4)",
+          "tradeoffs: 3/5 (minimum 4)",
+          "actionability: 3/5 (minimum 4)",
+          "editorial total below 25/30",
+          "错误计算：表二 qA 行“qA ≥ (E_base×N − 0.10×N)/nA = 0.1875 时E_A达标”与同文“计算示例”的 qA ≥ 0.80 矛盾；按该行公式与基准输入(E_base=0.50、N=40、nA=20)独立复算为 (20−4)/20=0.80，0.1875 属残留错误值，须修正并同步表一、表二与行动路径。",
+          "停止/门槛条件未优先且与推荐冲突：第二次基线中 ΔQ_A=0.8、ΔQ_B=4.5 均低于本文自设“最低增量8题”，正文在“整数执行规则”中又写明“低于8题的ΔQ不视为达到最低增量门槛”，却直接给出“推荐次序反转为B优先”，未说明是否应先触发停止/门槛判定或转 C。须补出该情形下的判定顺序（门槛优先）与推荐的确切含义。",
+          "决策规则在阈值处不唯一：表二 pB 行“pB ≥ pA×nA/nB 时B优先；否则A优先”只含 ΔQ 条件，而边界情形(5)要求“ΔQ 相等时扩大采样再判”，并在 ΔQ_A>ΔQ_B 但单位成本 A 更高时改选 B；两者在正文算出的临界值 pB*=0.0444 处给出不同动作，且表二遗漏单位成本条件，与结论二“同时比较增量与完整工时成本”不一致。须统一等号规则和成本条件。",
+          "unsupported claim: 门槛0.10下，qA ≥ (E_base×N − 0.10×N)/nA = 0.1875 时E_A达标"
+        ],
+        "article_sha256": "177d47b64fd967803e8cdb2564ea48fecded8d1c90ea492cc68be80a6c60a3aa",
+        "review_state": "completed"
+      },
+      {
+        "revision": 2,
+        "structure": {
+          "passed": true,
+          "errors": [],
+          "metrics": {
+            "language": "zh",
+            "gate_version": 1,
+            "semantic_review_required": true,
+            "h2_count": 8,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 7,
+                "cells": 21
+              },
+              {
+                "captions": 1,
+                "rows": 6,
+                "headers": 8,
+                "cells": 40
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "method": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 1,
+              "S2": 1,
+              "S3": 2,
+              "S4": 1,
+              "S5": 1
+            },
+            "visible_character_count": 10472,
+            "zh_character_count": 7003,
+            "word_count": 1940,
+            "minimum_zh_characters": 2600,
+            "executive_summary_takeaways": 3,
+            "tables_meeting_structure": 2,
+            "valid_citation_count": 6,
+            "cited_source_ids": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5"
+            ],
+            "cited_domains": [
+              "arxiv.org",
+              "bcg.com",
+              "blogs.bing.com",
+              "developers.google.com",
+              "oecd.org"
+            ],
+            "unique_cited_sources": 5,
+            "unique_cited_domains": 5,
+            "duplicate_paragraph_count": 0,
+            "duplicate_paragraph_samples": []
+          }
+        },
+        "review": {
+          "scores": {
+            "thesis": 3,
+            "evidence": 3,
+            "mechanism": 3,
+            "tradeoffs": 3,
+            "actionability": 3,
+            "originality": 2
+          },
+          "issues": [
+            "表二 Q_cap 行定义与取值不一致：定义写“Q_cap = 当前未被合格引用的问题数”，而计算示例给定 Q_base=6/40，未被合格引用应为 40−6=34，表却写“示意 18”。nB=min(26,18)=18、ΔQ_B=18×0.25=4.5、单位成本 B=(28+36)/4.5≈14.2 全部依赖该值，须统一定义与取值并同步全表、二次基线。",
+            "表二 pB 行与边界情形(7)成本条件不对称：表二写“若 ΔQ_B < ΔQ_A → 选 A”未附成本条件，而(7)规定“ΔQ_A > ΔQ_B 且单位成本 A ≤ 单位成本 B”才选 A。对“ΔQ_A > ΔQ_B 但单位成本 A 更高”这一象限两者动作不一致/缺失，应把成本条件对称写入两处。",
+            "边界情形(7)与(8)在 ΔQ_A = ΔQ_B = 0 时冲突：(7)判“扩大采样再判”，(8)判“选 C”，正文却称“按顺序覆盖全部情形”。须明确(8)优先或把零增量并入(7)，并同步摘要与表二。",
+            "机制一节 S3 括注“研究变量是外链的数量或存在，而非外链指向它处的性质”与主句及 S3 不一致：S3 的变量是“more outlinks to reputable sources”，方向（指向高信誉来源）本就是变量的一部分。应改为“变量为指向高信誉来源的外链数量”，删除对方向性的否定。",
+            "E_post 在 B 路径无定义：正文只在 A 用 E_A=(E_base×N−nA×qA)/N，未给出 B 的 E_post 公式，却在表一/行动路径(b)以“E_post ≤ 0.10”作为 B 的扩量门槛，读者无法计算。须补出 B 的 E_post 定义或注明该门槛仅适用于 A。",
+            "pB*≈0.0444 远低于表二演示区间（pB 低情境=0.15、基准=0.25），即在整个演示范围内 ΔQ_B 恒大于 ΔQ_A，“反转点”在演示区间内不触发。建议扩展区间或说明该临界值解释力有限，避免读者误读为可操作分界。",
+            "原创性偏弱：A/B/C 的“先门槛后增量比较”属通用决策分析范式，S1–S5 仅作通用背景与方法论类比，未从证据推导出行业性新判断。建议明确本篇可迁移规则（门槛顺序）与不可迁移边界（GEO 效果、行业参数），减少自我循环的公式演示。"
+          ],
+          "blockers": [
+            "Q_cap 口径错误：定义“= 当前未被合格引用的问题数”（依 Q_base=6/40 应为 34）与实际取值 18 矛盾，导致 nB、ΔQ_B、单位成本 B 及 Q_cap<8→C 的判定线全部失真，须重算并同步表二、两次基线与预算闭合。",
+            "决策规则在 ΔQ_A > ΔQ_B 且单位成本 A > 单位成本 B 象限无一致动作（表二判 A、边界情形(7)无对应规则），且(7)与(8)在 ΔQ_A = ΔQ_B = 0 处给出不同动作，与正文“按顺序覆盖全部情形”及结论二“同时比较增量与完整工时成本”冲突，须统一等号与成本条件。",
+            "unsupported claim: Q_cap = 当前未被合格引用的问题数（示意18）",
+            "historical blocker r1-blocker-3 remains unresolved: 表二 pB 行现已含“且 B 的单位成本 ≤ 替代用途”且等号处改为“扩大采样再判”，但 ΔQ_B<ΔQ_A 分支仍未附成本条件，与(7)“ΔQ_A>ΔQ_B 且单位成本 A ≤ 单位成本 B 才选 A”不对称；ΔQ_A>ΔQ_B 但单位成本 A 更高的象限两处给出不一致/缺失动作，且(7)与(8)在零增量处冲突，“按顺序覆盖全部情形”不成立。"
+          ],
+          "claim_checks": [
+            {
+              "claim": "AI 搜索引用的域名中约37%不出现在传统搜索的结果里",
+              "source_ids": [
+                "S3"
+              ],
+              "verdict": "supported",
+              "reason": "S3 明示“37% of domains are unique to aise”“37% of domains in aise results are absent from tse outputs”，为同一口径；适用范围限该测量样本，非行业现状。"
+            },
+            {
+              "claim": "被 AI 搜索偏好的域名往往具备更结构化、层级更清晰的 HTML、更易读的文本，以及更多指向高信誉来源的外链",
+              "source_ids": [
+                "S3"
+              ],
+              "verdict": "supported",
+              "reason": "S3 原文“domains favored by aise generally exhibit more structured, hierarchical HTML, easier-to-read text, lower domain popularity, and more outlinks to reputable sources”，方向一致（原文另含 lower domain popularity）。"
+            },
+            {
+              "claim": "页面要作为支撑链接出现，需先被索引且可在搜索中展示摘要，没有额外技术门槛",
+              "source_ids": [
+                "S1"
+              ],
+              "verdict": "supported",
+              "reason": "S1 明确“must be indexed and eligible to be shown in Google Search with a snippet… There are no additional technical requirements”，属准入前提而非效果承诺。"
+            },
+            {
+              "claim": "AI Overviews 与 AI Mode 可能使用“查询扇出”（query fan-out）",
+              "source_ids": [
+                "S1"
+              ],
+              "verdict": "supported",
+              "reason": "S1 写“Both AI Overviews and AI Mode may use a 'query fan-out' technique”，为“may”的机制描述。"
+            },
+            {
+              "claim": "同一处错误参数有机会出现在多条子查询路径的回答里",
+              "source_ids": [
+                "S1"
+              ],
+              "verdict": "inference",
+              "reason": "S1 只说明可能使用 fan-out，未证实错误会被复制进多条答案；文中已标注“待检验机制（非已证事实）”，成立边界为“若机制成立”。"
+            },
+            {
+              "claim": "Q_cap = 当前未被合格引用的问题数（示意18）",
+              "source_ids": [],
+              "verdict": "unsupported",
+              "reason": "依同文 Q_base=6/40，未被合格引用应为 34，与取值 18 不符，属定义—取值矛盾，无可支持来源。"
+            },
+            {
+              "claim": "qA ≥ (0.50×40 − 0.10×40)/20 = 0.80 时 E_A ≤ 0.10",
+              "source_ids": [],
+              "verdict": "inference",
+              "reason": "独立复算：(20−4)/20=0.80；qA=0.80→(20−16)/40=0.10（等于门槛），0.79→0.105、0.81→0.095，等号规则与正文“达到即通过”一致；属内部算例非外部事实。"
+            },
+            {
+              "claim": "微软会显著标注来源、内联链接到生成答案所依据的句子或段落，并列出用于生成该回答的全部链接",
+              "source_ids": [
+                "S5"
+              ],
+              "verdict": "supported",
+              "reason": "S5 写“cites its sources prominently”“inline link the entire sentence or passage”“a list of every link used”，属产品意图声明，不构成效果证据。"
+            },
+            {
+              "claim": "OECD 强调韧性策略按常态化扰动与极端事件两类风险分段，把常态化工具用于重大中断会造成浪费、环境负担与表现不佳",
+              "source_ids": [
+                "S2"
+              ],
+              "verdict": "supported",
+              "reason": "S2 原文“segment to address two distinct categories… Applying the instruments of routine risk management (like stockpiles) to major disruptions results in waste, environmental burden, and underperformance”；与 GEO 无直接关系，仅方法论类比。"
+            }
+          ],
+          "blocker_checks": [
+            {
+              "issue_id": "r0-blocker-1",
+              "status": "resolved",
+              "location": "表二 qA 行“E_A = (E_base×N − nA×qA) / N”与计算示例 E_A=(20−20×0.60)/40=0.20",
+              "finding": "表二公式已改为 (E_base×N − nA×qA)/N，与正文一致，不再出现 nA×qA×N 的错误构造。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r0-blocker-2",
+              "status": "resolved",
+              "location": "表二下方“如何改变决策”与计算示例“B 优先的临界值复核”",
+              "finding": "现明确 E_base=0.50>0.10 时条目一先排除 B、不存在反转区间，反转仅限 E_base≤0.10 子情境（pB*≈0.0444），旧 0.492 反转已不存在。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r0-blocker-3",
+              "status": "resolved",
+              "location": "计算示例“第一次基线……整数可行计数”",
+              "finding": "现写 nA = min(floor(52/1.6), 20) = 20，可修对象以含严重错误问题数为上限，未再用 32。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r0-blocker-4",
+              "status": "resolved",
+              "location": "机制一节“第二步（引用选择）”",
+              "finding": "现表述为“更多指向高信誉来源的外链”，与 S3 “more outlinks to reputable sources” 方向一致，变量方向未再翻转。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r0-blocker-5",
+              "status": "resolved",
+              "location": "机制一节“第二步（引用选择）”及“证据边界说明”",
+              "finding": "旧“更少的外链指向高信誉来源之外”表述已删除，无标题/摘要/结论再引用该断言。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r1-blocker-1",
+              "status": "resolved",
+              "location": "表二 qA 行与计算示例“qA 的临界值与复核”",
+              "finding": "现均为 0.80（(20−4)/20），并显式注明“0.1875 是早期版本残留的错误值”。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r1-blocker-2",
+              "status": "resolved",
+              "location": "计算示例“关键修正——推荐的确切含义”",
+              "finding": "现明确 ΔQ_A=0.8 与 ΔQ_B=4.5 均低于最低增量8、未触发扩量，门槛判定优先，“B 优先”仅为纯 ΔQ 次序，与停止条件不冲突。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r1-blocker-3",
+              "status": "unresolved",
+              "location": "表二 pB 行 vs 边界情形(7)与(8)",
+              "finding": "表二 pB 行现已含“且 B 的单位成本 ≤ 替代用途”且等号处改为“扩大采样再判”，但 ΔQ_B<ΔQ_A 分支仍未附成本条件，与(7)“ΔQ_A>ΔQ_B 且单位成本 A ≤ 单位成本 B 才选 A”不对称；ΔQ_A>ΔQ_B 但单位成本 A 更高的象限两处给出不一致/缺失动作，且(7)与(8)在零增量处冲突，“按顺序覆盖全部情形”不成立。",
+              "scope": "source_article"
+            },
+            {
+              "issue_id": "r1-blocker-4",
+              "status": "resolved",
+              "location": "计算示例“qA 的临界值与复核”、表二 qA 行",
+              "finding": "旧 unsupported claim（0.1875 达标）已删除，正文仅在说明其为“早期版本残留的错误值”时提及，未作为现行结论。",
+              "scope": "source_article"
+            }
+          ]
+        },
+        "errors": [
+          "thesis: 3/5 (minimum 4)",
+          "evidence: 3/5 (minimum 4)",
+          "mechanism: 3/5 (minimum 4)",
+          "tradeoffs: 3/5 (minimum 4)",
+          "actionability: 3/5 (minimum 4)",
+          "originality: 2/5 (minimum 4)",
+          "editorial total below 25/30",
+          "Q_cap 口径错误：定义“= 当前未被合格引用的问题数”（依 Q_base=6/40 应为 34）与实际取值 18 矛盾，导致 nB、ΔQ_B、单位成本 B 及 Q_cap<8→C 的判定线全部失真，须重算并同步表二、两次基线与预算闭合。",
+          "决策规则在 ΔQ_A > ΔQ_B 且单位成本 A > 单位成本 B 象限无一致动作（表二判 A、边界情形(7)无对应规则），且(7)与(8)在 ΔQ_A = ΔQ_B = 0 处给出不同动作，与正文“按顺序覆盖全部情形”及结论二“同时比较增量与完整工时成本”冲突，须统一等号与成本条件。",
+          "unsupported claim: Q_cap = 当前未被合格引用的问题数（示意18）",
+          "historical blocker r1-blocker-3 remains unresolved: 表二 pB 行现已含“且 B 的单位成本 ≤ 替代用途”且等号处改为“扩大采样再判”，但 ΔQ_B<ΔQ_A 分支仍未附成本条件，与(7)“ΔQ_A>ΔQ_B 且单位成本 A ≤ 单位成本 B 才选 A”不对称；ΔQ_A>ΔQ_B 但单位成本 A 更高的象限两处给出不一致/缺失动作，且(7)与(8)在零增量处冲突，“按顺序覆盖全部情形”不成立。"
+        ],
+        "article_sha256": "fe8b62919c22559b27b757980b1dd9884ea94561c3cda75cd2d3fd8e31d03920",
+        "review_state": "completed"
+      }
+    ]
+  },
+  "reviewed_last_article_sha256": "fe8b62919c22559b27b757980b1dd9884ea94561c3cda75cd2d3fd8e31d03920"
+}
