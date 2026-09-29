@@ -4,7 +4,7 @@
     "row": "707",
     "slug": "00707-geo-0-1-ai-6a821aba",
     "title": "Eco-GEO：供应链 0-1 冷启动的 AI 可见性排序：先淘汰过不了门槛的方案，再比较修复与扩覆盖的完整成本",
-    "excerpt": "在固定工时、固定问题集、可独立复核的条件下，错误率与合格引用增量是准入门槛而非优先级。示意算例：m=20（E_base=0.50）时 B 因 E_base&gt;0.10 先被排除；A 是否可行取决于修复后的错误消除率 qA——qA=0.60 时 E_A=0.20，结论是 C；qA≥0.80 时 E_A=0.10、ΔQ_A=8，A 是唯一可行项，结论是 A。容量侧临界只出现在 m=20 那一侧（hA 超过 2.60 小时、共同前置超过 48 小时，A 掉出门槛）；低错误侧 m=2 的临界是 hB 不超过 1.625 小时或 pB≥4/13，B 才从 C 变为可行。全文数值均为示意假设，附可复算的临界值与停止规则。",
+    "excerpt": "在固定工时、固定问题集、可独立复核的条件下，先检查错误率与合格引用增量，再比较可行方案的完整成本。示意算例：m=20 时 B 因 E_base>0.10 被排除；在其余基准参数不变时，qA=0.60 使 A 的 E_A=0.20，结论 C；qA≥0.80 使 E_A≤0.10、ΔQ_A=8，结论 A。m=2 时，单独把 hB 降到≤1.625 小时或把 pB 提高到≥4/13，B 才达到最低增量。全文数值均为示意假设；最终按复测错误数、净增量和实际完整工时重新验收。",
     "category": "供应链",
     "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, 供应链, 品牌事实一致性, 0-1冷启动期, 资源配置, 决策门槛, Eco-GEO, GEO服务, AI搜索优化",
     "author": "Eco GEO Editorial Team",
@@ -115,6 +115,12 @@
     "reviewed_by": "Eco GEO Research Desk",
     "quality": {
       "version": "insights-v3",
+      "review_type": "agent editorial correction and manual translation review",
+      "repair_record": "docs/editorial-repairs/00707-2026-09-29.json",
+      "automated_semantic_review_reused": false,
+      "body_sha256": "9c67c03ef39f2b2f7a818556f79bcdc53f6510908e8adc546c13e7d49874ef4f",
+      "localization_method": "Chinese editorial correction",
+      "paid_provider_requests_for_correction": 0,
       "metrics": {
         "language": "zh",
         "gate_version": 1,
@@ -151,9 +157,9 @@
           "S4": 1,
           "S5": 1
         },
-        "visible_character_count": 11107,
-        "zh_character_count": 6275,
-        "word_count": 2672,
+        "visible_character_count": 12135,
+        "zh_character_count": 6954,
+        "word_count": 2641,
         "minimum_zh_characters": 2600,
         "executive_summary_takeaways": 3,
         "tables_meeting_structure": 2,
@@ -177,16 +183,7 @@
         "duplicate_paragraph_count": 0,
         "duplicate_paragraph_samples": []
       },
-      "revisions": 5,
-      "review_type": "automated editorial review",
-      "scores": {
-        "thesis": 4,
-        "evidence": 4,
-        "mechanism": 5,
-        "tradeoffs": 4,
-        "actionability": 4,
-        "originality": 4
-      }
+      "warnings": []
     }
   },
   {
