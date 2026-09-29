@@ -33,6 +33,16 @@ must contain its brief, source identities and complete last draft. Known
 translation findings remain bound to the Chinese source and become required
 repairs. Restoring a checkpoint never changes a failure to a pass.
 
+Each revision receives the latest independent finding and its reviewed draft
+identity alongside every historical blocker ID. Resolved findings are targets
+to preserve and recheck; unresolved findings remain repair obligations. They do
+not authorize publication of a later draft. Chinese drafts with outstanding
+factual blockers use `INSIGHT_REPAIR_THINKING=enabled`, independently of the
+initial draft setting. This uses the same request/token limits and attempt
+count. The request mode is recorded in the authored attempt; model reasoning
+text is never persisted. A reasoning-enabled revision is still subject to all
+independent fact, structure and historical-blocker checks.
+
 Source URLs are reread through the existing research validator. IDs, order,
 excerpt windows, body lengths and excerpt SHA256 must match. Actual source
 content or URL drift makes an automatic run explicitly abandon the old draft
