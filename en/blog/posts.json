@@ -1,5 +1,783 @@
 [
   {
+    "order": "716",
+    "row": "707",
+    "slug": "00707-geo-0-1-ai-6a821aba",
+    "title": "Eco-GEO：Supply chain. Ordering visibility for AI cold start: First eliminate solutions that cannot pass the threshold, then compare the total costs of repair vs. expansion coverage.",
+    "excerpt": "Under fixed working hours, a fixed set of problems, and conditions allowing independent review, the error rate and the increment in qualified references are the entry thresholds rather than priorities. Example: when m=20 (E_base=0.50), B is excluded first due to E_base&gt;0.10. Whether A is feasible depends on the corrected error elimination rate qA—when qA=0.60, E_A=0.20, and C is the solution. When qA≥0.80, E_A=0.10, ΔQ_A=8, and A is the only feasible option, so C is the conclusion. The capacity-side threshold only applies when m=20 (hA exceeds 2.60 hours, and the combined preconditions exceed 48 hours, making A out of the threshold). On the low-error side, the threshold for m=2 occurs when hB does not exceed 1.625 hours or pB≥4/13, at which point B becomes feasible from C. All numerical values in the text are illustrative assumptions, along with calculated thresholds and stopping rules.",
+    "category": "Brand GEO",
+    "tags": "GEO, branded GEO, white hat GEO, AI search, supply chain, brand consistency, 0-1 cold start period, resource allocation, decision-making threshold, Eco-GEO, GEO service, AI search optimization",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-29",
+    "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/en/blog/articles/00707-geo-0-1-ai-6a821aba/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:18+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Promoting resilience and preparedness in supply chains (EN)",
+        "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+        "publisher": "OECD",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:22+00:00",
+        "evidence_kind": "institutional_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 172554,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "oecd.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24"
+      },
+      {
+        "id": "S3",
+        "title": "Source Coverage and Citation Bias in LLM-based vs. Traditional Search Engines",
+        "url": "https://arxiv.org/html/2512.09483v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:22+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 78799,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "667b88d6b0ba41c66ef518148bb0afe6ed2e7abc595fd245989c9437129ddb0c"
+      },
+      {
+        "id": "S4",
+        "title": "Emphasize Resilience in Supply Chains",
+        "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
+        "publisher": "BCG",
+        "published": "2022-10-04",
+        "retrieved_at": "2026-09-29T11:45:24+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 4963,
+        "body_chars": 4963,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:24+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "en",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "h2_count": 9,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 7,
+            "headers": 4,
+            "cells": 24
+          },
+          {
+            "captions": 1,
+            "rows": 7,
+            "headers": 6,
+            "cells": 36
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "economics": 2,
+          "executive-summary": 1,
+          "method": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 1,
+          "S2": 1,
+          "S3": 3,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 27660,
+        "zh_character_count": 861,
+        "word_count": 5859,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 7,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "oecd.org"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 9,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 7,
+                "headers": 4,
+                "cells": 24
+              },
+              {
+                "captions": 1,
+                "rows": 7,
+                "headers": 6,
+                "cells": 36
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "economics": 2,
+              "executive-summary": 1,
+              "method": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 1,
+              "S2": 1,
+              "S3": 3,
+              "S4": 1,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {
+                "0": 1,
+                "1": 1
+              },
+              "translated": {},
+              "missing": {
+                "0": 1,
+                "1": 1
+              },
+              "added": {},
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 1,
+                    "path": "title",
+                    "fragment_index": 1,
+                    "tag": "title",
+                    "text": "Eco-GEO：供应链 0-1 冷启动的 AI 可见性排序：先淘汰过不了门槛的方案，再比较修复与扩覆盖的完整成本",
+                    "numbers": {
+                      "0": 1,
+                      "1": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 1,
+                    "path": "title",
+                    "fragment_index": 1,
+                    "tag": "title",
+                    "text": "Eco-GEO: Supply chain. Ordering visibility for AI cold start: First eliminate solutions that cannot pass the threshold, then compare the total costs of repair vs. expansion coverage.",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "0": 1,
+                    "1": 1
+                  },
+                  "added": {}
+                }
+              ],
+              "block_differences_total": 1,
+              "block_differences_truncated": false
+            },
+            "excerpt": {
+              "source": {
+                "0.1": 2,
+                "0.2": 1,
+                "0.5": 1,
+                "0.6": 1,
+                "0.8": 1,
+                "1.625": 1,
+                "13": 1,
+                "2": 1,
+                "2.6": 1,
+                "20": 2,
+                "4": 1,
+                "48": 1,
+                "8": 1
+              },
+              "translated": {
+                "0.1": 2,
+                "0.2": 1,
+                "0.5": 1,
+                "0.6": 1,
+                "0.8": 1,
+                "1.625": 1,
+                "13": 1,
+                "2": 1,
+                "2.6": 1,
+                "20": 2,
+                "4": 1,
+                "48": 1,
+                "8": 1
+              },
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 17,
+                "0.02": 2,
+                "0.0308": 2,
+                "0.05": 9,
+                "0.1": 43,
+                "0.105": 1,
+                "0.11": 1,
+                "0.15": 3,
+                "0.2": 6,
+                "0.25": 7,
+                "0.3": 1,
+                "0.3077": 2,
+                "0.39": 1,
+                "0.4": 14,
+                "0.5": 11,
+                "0.52": 1,
+                "0.55": 2,
+                "0.6": 8,
+                "0.79": 1,
+                "0.8": 26,
+                "0.9": 4,
+                "1": 22,
+                "1.2": 2,
+                "1.3": 1,
+                "1.6": 8,
+                "1.625": 6,
+                "1.63": 1,
+                "10": 14,
+                "11": 3,
+                "12": 9,
+                "12.31": 4,
+                "12.5": 1,
+                "13": 9,
+                "14": 4,
+                "14.3": 1,
+                "16": 2,
+                "17": 1,
+                "18": 2,
+                "19": 4,
+                "2": 28,
+                "2.6": 5,
+                "2.61": 2,
+                "20": 56,
+                "20%": 7,
+                "200": 4,
+                "2022": 1,
+                "2025": 2,
+                "2026": 1,
+                "22": 1,
+                "24": 1,
+                "26": 10,
+                "28": 15,
+                "29": 1,
+                "3": 17,
+                "3.2": 1,
+                "3.9": 2,
+                "31": 1,
+                "31.2": 2,
+                "32": 19,
+                "34": 6,
+                "37%": 1,
+                "39": 4,
+                "4": 18,
+                "4.2": 1,
+                "4.25": 1,
+                "40": 23,
+                "45": 4,
+                "48": 5,
+                "49": 2,
+                "5": 1,
+                "52": 13,
+                "55936": 1,
+                "6": 8,
+                "6.5": 7,
+                "60": 7,
+                "7": 4,
+                "7.5": 2,
+                "7.6": 4,
+                "7.75": 1,
+                "7.8": 2,
+                "8": 71,
+                "80": 18,
+                "80%": 1,
+                "9": 1
+              },
+              "translated": {
+                "0": 17,
+                "0.02": 2,
+                "0.0308": 2,
+                "0.05": 9,
+                "0.1": 43,
+                "0.105": 1,
+                "0.11": 1,
+                "0.15": 3,
+                "0.2": 6,
+                "0.25": 7,
+                "0.3": 1,
+                "0.3077": 2,
+                "0.39": 1,
+                "0.4": 14,
+                "0.5": 11,
+                "0.52": 1,
+                "0.55": 2,
+                "0.6": 8,
+                "0.79": 1,
+                "0.8": 26,
+                "0.9": 4,
+                "1": 23,
+                "1.2": 2,
+                "1.3": 1,
+                "1.6": 8,
+                "1.625": 6,
+                "1.63": 1,
+                "10": 14,
+                "11": 3,
+                "12": 9,
+                "12.31": 4,
+                "12.5": 1,
+                "13": 9,
+                "14": 4,
+                "14.3": 1,
+                "16": 2,
+                "17": 1,
+                "18": 2,
+                "19": 4,
+                "2": 33,
+                "2.6": 5,
+                "2.61": 2,
+                "20": 56,
+                "20%": 7,
+                "200": 4,
+                "2022": 1,
+                "2025": 2,
+                "2026": 1,
+                "22": 1,
+                "24": 1,
+                "26": 10,
+                "28": 15,
+                "29": 1,
+                "3": 18,
+                "3.2": 1,
+                "3.9": 2,
+                "31": 1,
+                "31.2": 2,
+                "32": 19,
+                "34": 6,
+                "37%": 1,
+                "39": 4,
+                "4": 18,
+                "4.2": 1,
+                "4.25": 1,
+                "40": 22,
+                "45": 4,
+                "48": 5,
+                "49": 2,
+                "5": 1,
+                "52": 13,
+                "55936": 1,
+                "6": 8,
+                "6.5": 7,
+                "60": 7,
+                "7": 4,
+                "7.5": 2,
+                "7.6": 4,
+                "7.75": 1,
+                "7.8": 2,
+                "8": 71,
+                "80": 18,
+                "80%": 1,
+                "9": 1
+              },
+              "missing": {
+                "40": 1
+              },
+              "added": {
+                "1": 1,
+                "2": 5,
+                "3": 1
+              },
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 27,
+                    "path": "/section[4]/table[1]/caption[1]",
+                    "fragment_index": 1,
+                    "tag": "caption",
+                    "text": "表一：按情境的取舍对照——首选、同一预算下放弃的、停止条件；阈值为待校准试验值，非行业基准",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 27,
+                    "path": "/section[4]/table[1]/caption[1]",
+                    "fragment_index": 1,
+                    "tag": "caption",
+                    "text": "Table 1: Comparison of choices by scenario—preferred options, ones given up under the same budget, stop conditions; the threshold is a test value to be calibrated, not an industry benchmark",
+                    "numbers": {
+                      "1": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "1": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 36,
+                    "path": "/section[4]/table[1]/tbody[1]/tr[2]/td[1]",
+                    "fragment_index": 1,
+                    "tag": "td",
+                    "text": "情境二：m=20、qA=0.80（试点校准后）；其余同上",
+                    "numbers": {
+                      "0.8": 1,
+                      "20": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 36,
+                    "path": "/section[4]/table[1]/tbody[1]/tr[2]/td[1]",
+                    "fragment_index": 1,
+                    "tag": "td",
+                    "text": "Scenario 2: m=20, qA=0.80 (after pilot calibration); otherwise the same as above",
+                    "numbers": {
+                      "0.8": 1,
+                      "2": 1,
+                      "20": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "2": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 61,
+                    "path": "/section[4]/p[7]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "按这套顺序，表二 qA／pA／hA／S 四行所属的 m=20 情境给出的是 A：那里 E_base=0.50 使 B 被第 1 步判为不可行，A 在第 2 步成为唯一可行项——这一步不以 E_base≤0.10 为前提。",
+                    "numbers": {
+                      "0.1": 1,
+                      "0.5": 1,
+                      "1": 1,
+                      "2": 1,
+                      "20": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 61,
+                    "path": "/section[4]/p[7]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "According to this sequence, the scenario m=20 in Table 2, where qA/pA/hA/S consists of four rows, yields A: Here, E_base=0.50 makes B deemed infeasible in step 1. In step 2, A becomes the only feasible option—this step does not rely on E_base≤0.10.",
+                    "numbers": {
+                      "0.1": 1,
+                      "0.5": 1,
+                      "1": 1,
+                      "2": 2,
+                      "20": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "2": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 67,
+                    "path": "/section[5]/p[5]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "整数执行：nA、nB 是整数操作数量；ΔQ 是模型期望，可以是小数，不能当作已观测计数。期末按整数验收：40 题里错误题数与合格题数按实际计数，Q_end 至少比基线多 8 题（Q_base=6 → Q_end≥14）；若损失原有合格题，按净增量计算，不能只数新获得的题。",
+                    "numbers": {
+                      "14": 1,
+                      "40": 1,
+                      "6": 1,
+                      "8": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 67,
+                    "path": "/section[5]/p[5]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "Integer execution: nA and nB are the numbers of integer operations; ΔQ is the model expectation, which can be a decimal and cannot be treated as an observed count. Final acceptance by integers: The number of incorrect and correct questions is counted as actual counts. Q_end must be at least 8 more questions than the baseline (Q_base=6 → Q_end≥14); if the original correct questions are lost, it is calculated based on the net increase, and only the newly obtained questions should be counted.",
+                    "numbers": {
+                      "14": 1,
+                      "6": 1,
+                      "8": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "40": 1
+                  },
+                  "added": {}
+                }
+              ],
+              "block_differences_total": 7,
+              "block_differences_truncated": true
+            }
+          }
+        },
+        "publication_policy": "readable-translation-v1",
+        "quality_warning_count": 2
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "title",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "title",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.44",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.44",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.44",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.60",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.60",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.76",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.82",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.96",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.116",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.116",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.120",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.124",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.130",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.130",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.182",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.182",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.186",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.308",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.308",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.320",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.332",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.336",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.336",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.348",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.348",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.358",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.358",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.406",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.568",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.580",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.592",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.592",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.596",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.596",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.612",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.624",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.640",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.640",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        "Translation changes numeric values in title; inspect numeric_changes metrics.",
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "715",
     "row": "706",
     "slug": "00706-ai-geo-ai-231b90c4",

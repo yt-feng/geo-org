@@ -1,5 +1,195 @@
 [
   {
+    "order": "716",
+    "row": "707",
+    "slug": "00707-geo-0-1-ai-6a821aba",
+    "title": "Eco-GEO：供应链 0-1 冷启动的 AI 可见性排序：先淘汰过不了门槛的方案，再比较修复与扩覆盖的完整成本",
+    "excerpt": "在固定工时、固定问题集、可独立复核的条件下，错误率与合格引用增量是准入门槛而非优先级。示意算例：m=20（E_base=0.50）时 B 因 E_base&gt;0.10 先被排除；A 是否可行取决于修复后的错误消除率 qA——qA=0.60 时 E_A=0.20，结论是 C；qA≥0.80 时 E_A=0.10、ΔQ_A=8，A 是唯一可行项，结论是 A。容量侧临界只出现在 m=20 那一侧（hA 超过 2.60 小时、共同前置超过 48 小时，A 掉出门槛）；低错误侧 m=2 的临界是 hB 不超过 1.625 小时或 pB≥4/13，B 才从 C 变为可行。全文数值均为示意假设，附可复算的临界值与停止规则。",
+    "category": "供应链",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, 供应链, 品牌事实一致性, 0-1冷启动期, 资源配置, 决策门槛, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-09-29",
+    "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00707-geo-0-1-ai-6a821aba/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:18+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Promoting resilience and preparedness in supply chains (EN)",
+        "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+        "publisher": "OECD",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:22+00:00",
+        "evidence_kind": "institutional_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 172554,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "oecd.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24"
+      },
+      {
+        "id": "S3",
+        "title": "Source Coverage and Citation Bias in LLM-based vs. Traditional Search Engines",
+        "url": "https://arxiv.org/html/2512.09483v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:22+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 78799,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "667b88d6b0ba41c66ef518148bb0afe6ed2e7abc595fd245989c9437129ddb0c"
+      },
+      {
+        "id": "S4",
+        "title": "Emphasize Resilience in Supply Chains",
+        "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
+        "publisher": "BCG",
+        "published": "2022-10-04",
+        "retrieved_at": "2026-09-29T11:45:24+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 4963,
+        "body_chars": 4963,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-09-29T11:45:24+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "h2_count": 9,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 7,
+            "headers": 4,
+            "cells": 24
+          },
+          {
+            "captions": 1,
+            "rows": 7,
+            "headers": 6,
+            "cells": 36
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "economics": 2,
+          "executive-summary": 1,
+          "method": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 1,
+          "S2": 1,
+          "S3": 3,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 11107,
+        "zh_character_count": 6275,
+        "word_count": 2672,
+        "minimum_zh_characters": 2600,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 7,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "oecd.org"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 5,
+      "review_type": "automated editorial review",
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 5,
+        "tradeoffs": 4,
+        "actionability": 4,
+        "originality": 4
+      }
+    }
+  },
+  {
     "order": "715",
     "row": "706",
     "slug": "00706-ai-geo-ai-231b90c4",

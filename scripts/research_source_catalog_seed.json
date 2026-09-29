@@ -3,23 +3,23 @@
   "metadata_only": true,
   "sources": [
     {
-      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
-      "title": "CMA publishes review of progress in legal services sector",
-      "publisher": "UK Government",
-      "publisher_domain": "gov.uk",
-      "published": "2020-12-17",
-      "retrieved_at": "2026-09-27T17:10:22+00:00",
+      "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
+      "title": "Emphasize Resilience in Supply Chains",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2022-10-04",
+      "retrieved_at": "2026-09-29T11:45:24+00:00",
       "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
+      "evidence_kind": "consulting_analysis",
       "evidence_role": "industry_context",
       "industries": [
-        "legal_services"
+        "supply_chain"
       ],
-      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
-      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0",
-      "body_chars": 5527,
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b",
+      "body_chars": 4963,
       "excerpt_start": 0,
-      "excerpt_end": 5527,
+      "excerpt_end": 4963,
       "excerpt_truncated": false
     },
     {
@@ -28,7 +28,7 @@
       "publisher": "OECD",
       "publisher_domain": "oecd.org",
       "published": "",
-      "retrieved_at": "2026-09-27T17:10:32+00:00",
+      "retrieved_at": "2026-09-29T11:45:22+00:00",
       "retrieval_method": "https_pdf_text",
       "evidence_kind": "institutional_analysis",
       "evidence_role": "industry_context",
@@ -43,41 +43,61 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
-      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2025-12-01",
-      "retrieved_at": "2026-09-27T17:10:38+00:00",
+      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/annexes-1.html",
+      "title": "附件1: 案例研究摘要",
+      "publisher": "Food and Agriculture Organization of the United Nations",
+      "publisher_domain": "fao.org",
+      "published": "",
+      "retrieved_at": "2026-09-28T22:18:44+00:00",
       "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
+      "evidence_kind": "institutional_research",
       "evidence_role": "industry_context",
       "industries": [
-        "gaming"
+        "agriculture_technology"
       ],
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
-      "body_chars": 31831,
+      "text_sha256": "438ea7848eafd95b099a60cddf40718cc854cd7102a6124d7d0a2d1085f9b01b",
+      "body_chars": 18718,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
     },
     {
-      "url": "https://www.wipo.int/web-publications/world-intellectual-property-report-2024/en/5-leveraging-local-know-how-to-develop-video-game-hubs.html",
-      "title": "World Intellectual Property Report 2024 - 5 Leveraging local know-how to develop video game hubs",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2022/04/the-digitalisation-of-agriculture_dd2a1973/285cc27d-en.pdf",
+      "title": "The digitalisation of agriculture (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
       "published": "",
-      "retrieved_at": "2026-09-27T17:10:39+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
+      "retrieved_at": "2026-09-28T22:18:42+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
       "evidence_role": "industry_context",
       "industries": [
-        "gaming"
+        "agriculture_technology"
       ],
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "1df41095c7e717d49d74287b1b0972726fa8ec9ab398505c3ef635fb615ceb7d",
-      "body_chars": 60454,
+      "text_sha256": "3c9ff80a65810d3a57140f8e68cb18e8c9dfe29d2aedf2b80daca5238b71b4e0",
+      "body_chars": 206305,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+      "title": "NIST SP 500-292",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-09-28T22:18:29+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
+      "body_chars": 75496,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
@@ -88,7 +108,7 @@
       "publisher": "National Institute of Standards and Technology",
       "publisher_domain": "nist.gov",
       "published": "2021-11-09",
-      "retrieved_at": "2026-09-27T17:35:45+00:00",
+      "retrieved_at": "2026-09-28T22:18:19+00:00",
       "retrieval_method": "https_fetch",
       "evidence_kind": "government_research",
       "evidence_role": "industry_context",
@@ -103,24 +123,364 @@
       "excerpt_truncated": false
     },
     {
-      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
-      "title": "NIST SP 500-292",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
+      "title": "Online Computer and Video Games (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
       "published": "",
-      "retrieved_at": "2026-09-27T17:36:03+00:00",
+      "retrieved_at": "2026-09-28T22:18:08+00:00",
       "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
+      "evidence_kind": "institutional_analysis",
       "evidence_role": "industry_context",
       "industries": [
-        "cloud_computing"
+        "gaming"
       ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
-      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
-      "body_chars": 75496,
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2",
+      "body_chars": 180037,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/web-publications/world-intellectual-property-report-2024/en/5-leveraging-local-know-how-to-develop-video-game-hubs.html",
+      "title": "World Intellectual Property Report 2024 - 5 Leveraging local know-how to develop video game hubs",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-09-28T22:18:06+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "1df41095c7e717d49d74287b1b0972726fa8ec9ab398505c3ef635fb615ceb7d",
+      "body_chars": 60454,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
+      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-12-01",
+      "retrieved_at": "2026-09-28T22:18:05+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
+      "body_chars": 31831,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+      "title": "CMA publishes review of progress in legal services sector",
+      "publisher": "UK Government",
+      "publisher_domain": "gov.uk",
+      "published": "2020-12-17",
+      "retrieved_at": "2026-09-27T17:14:46+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0",
+      "body_chars": 5527,
+      "excerpt_start": 0,
+      "excerpt_end": 5527,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://support.google.com/business/answer/7091?hl=en",
+      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-09-23T21:34:29+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
+      "body_chars": 3585,
+      "excerpt_start": 0,
+      "excerpt_end": 3585,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.trade.gov/ecommerce-definitions",
+      "title": "eCommerce Definitions",
+      "publisher": "International Trade Administration",
+      "publisher_domain": "trade.gov",
+      "published": "",
+      "retrieved_at": "2026-09-22T00:04:21+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "b2b_export"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Sector boundary: Business-to-business international trade differs from all cross-border consumer ecommerce; use shared planning guidance only within its stated B2B/B2C scope.",
+      "text_sha256": "27662d70e99474c5fa483793b1d9ef037355b7f5518d699d4fc5434aeebcbb63",
+      "body_chars": 4612,
+      "excerpt_start": 0,
+      "excerpt_end": 4612,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://single-market-economy.ec.europa.eu/sectors/cosmetics/legislation_en",
+      "title": "Legislation",
+      "publisher": "European Commission",
+      "publisher_domain": "europa.eu",
+      "published": "",
+      "retrieved_at": "2026-09-20T07:56:35+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cosmetics_personal_care"
+      ],
+      "scope_notes": "European Commission description of the EU finished-cosmetics framework, responsible persons, assessment, notification and product claims. Applicable to the EU context; not Chinese rules, market-demand estimates, or proof of a brand's sales and GEO returns.",
+      "text_sha256": "aff5816d6dd73a02697c2f36be78d40b105097f721add75d026f6a9170e4d0ae",
+      "body_chars": 16904,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.fda.gov/cosmetics/registration-listing-cosmetic-product-facilities-and-products",
+      "title": "Registration & Listing of Cosmetic Product Facilities and Products",
+      "publisher": "US Food and Drug Administration",
+      "publisher_domain": "fda.gov",
+      "published": "",
+      "retrieved_at": "2026-09-20T07:56:34+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cosmetics_personal_care"
+      ],
+      "scope_notes": "US MoCRA facility-registration and product-listing information. Registration/listing does not mean FDA approval or a promotional certification; counts are not sales or unique brands. Do not treat US requirements as Chinese rules. Publication date unconfirmed: an explicit publication field could not be interpreted consistently.",
+      "text_sha256": "fe65db33cbb66b3960506b3c0d8d44e56487439a085876d691df9a3c069cf36b",
+      "body_chars": 13604,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.mca.org.uk/press-releases/uk-businesses-grapple-with-cost-pressures-cyber-risks-and-stalled-economic-growth-according-to-new-mca-research",
+      "title": "UK BUSINESSES GRAPPLE WITH COST PRESSURES, CYBER RISKS AND STALLED ECONOMIC GROWTH ACCORDING TO NEW MCA RESEARCH",
+      "publisher": "Management Consultancies Association",
+      "publisher_domain": "mca.org.uk",
+      "published": "2026-05-06",
+      "retrieved_at": "2026-09-17T07:46:50+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "industry_association_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "management_consulting"
+      ],
+      "scope_notes": "MCA/Savanta Client Survey 2026 of more than 350 senior users of consulting services in the UK, including private/public sectors. Self-reported client priorities and assessments are not representative of Chinese buyers and do not measure GEO attribution.",
+      "text_sha256": "e3fda5310009099c076e03670d73f34ad93ea8ba6d619386079bd9cb1c0b883a",
+      "body_chars": 9392,
+      "excerpt_start": 0,
+      "excerpt_end": 9392,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.iais.org/2026/07/iais-mid-year-global-insurance-market-report-2026-reflects-insurance-sector-stability-amid-global-uncertainty/",
+      "title": "IAIS mid-year Global Insurance Market Report 2026 reflects insurance sector stability amid global uncertainty",
+      "publisher": "International Association of Insurance Supervisors",
+      "publisher_domain": "iais.org",
+      "published": "2026-07-09",
+      "retrieved_at": "2026-09-14T05:57:01+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "insurance"
+      ],
+      "scope_notes": "IAIS interim 2026 monitoring release describing global insurance-sector conditions primarily at end-2025. This is the release body, not the full report, and does not measure any individual Chinese insurer, product, distribution channel or GEO ROI.",
+      "text_sha256": "683b6fa0dbdc3a504f75ec67f89b64b0a5031b211c1f6e85ac80d1fe52dd5b2f",
+      "body_chars": 5820,
+      "excerpt_start": 0,
+      "excerpt_end": 5820,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2023/purchasing-trends-in-global-insurance",
+      "title": "The Latest Purchasing Trends in Global Insurance",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2023-11-28",
+      "retrieved_at": "2026-09-14T05:56:59+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "insurance"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "35c410c4ebaea92e79dc30427c2c43b2c12365ea790f7590f9d7d0fa27ace8b3",
+      "body_chars": 12670,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
+      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "2021-11-02",
+      "retrieved_at": "2026-09-13T05:03:16+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
+      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
+      "body_chars": 2038,
+      "excerpt_start": 0,
+      "excerpt_end": 2038,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.fda.gov/medical-devices/aesthetic-cosmetic-devices/dermal-fillers-soft-tissue-fillers",
+      "title": "Dermal Fillers (Soft Tissue Fillers)",
+      "publisher": "US Food and Drug Administration",
+      "publisher_domain": "fda.gov",
+      "published": "",
+      "retrieved_at": "2026-09-13T05:03:13+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "US FDA information about dermal-filler uses, evidence and patient/professional information. Does not measure Chinese medical-aesthetics demand, lead conversion or clinical outcomes for all procedures; US product approval is not a clinic endorsement. Publication date unconfirmed: an explicit publication field could not be interpreted consistently.",
+      "text_sha256": "9e39ed6f8b39e08d6abc0c949d3730337955ceab0b93aa8f543d2eeaa79e4db5",
+      "body_chars": 13051,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/business/answer/7091?hl=en",
+      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-09-09T06:15:05+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
+      "body_chars": 3585,
+      "excerpt_start": 0,
+      "excerpt_end": 3585,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://developers.google.com/maps/security/compliance/security-compliance?hl=zh-cn",
+      "title": "Google Maps Platform 安全性及合规性概览  |  Google for Developers",
+      "publisher": "Google Search Central",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-09-09T06:15:03+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "7670943c06a4466318727ff9dd06ef990233b9ce802b4c64c36f2382fae74c1b",
+      "body_chars": 17286,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
+      "title": "直播电商监督管理办法",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "2026-01-07",
+      "retrieved_at": "2026-09-08T04:55:08+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction.",
+      "text_sha256": "66f12a13fd10de196fbef32962cf7af0ea8f8130e0f0e2e2f744ea5dcd7603ab",
+      "body_chars": 11552,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://ers.usda.gov/publications/105893",
+      "title": "Precision Agriculture in the Digital Era: Recent Adoption on U.S. Farms | Economic Research Service",
+      "publisher": "USDA Economic Research Service",
+      "publisher_domain": "usda.gov",
+      "published": "",
+      "retrieved_at": "2026-09-08T03:58:59+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "agriculture_technology"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "597eb347fab975f910cc147a245707c28f018e9fc5a6e8ae09981fb71382130f",
+      "body_chars": 2349,
+      "excerpt_start": 0,
+      "excerpt_end": 2349,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/national-strategies-agricultural-automation.html",
+      "title": "针对农业的政策、立法和投资",
+      "publisher": "Food and Agriculture Organization of the United Nations",
+      "publisher_domain": "fao.org",
+      "published": "",
+      "retrieved_at": "2026-09-08T03:58:58+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "agriculture_technology"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "342a5aa67d3cb7c1eb3a99a4e991b4dac866c0ac104fa6282d5b83de6b8a6b4b",
+      "body_chars": 9703,
+      "excerpt_start": 0,
+      "excerpt_end": 9703,
+      "excerpt_truncated": false
     }
   ]
 }
