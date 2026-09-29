@@ -3,8 +3,8 @@
     "order": "716",
     "row": "707",
     "slug": "00707-geo-0-1-ai-6a821aba",
-    "title": "Eco-GEO：Supply chain. Ordering visibility for AI cold start: First eliminate solutions that cannot pass the threshold, then compare the total costs of repair vs. expansion coverage.",
-    "excerpt": "Under fixed working hours, a fixed set of problems, and conditions allowing independent review, the error rate and the increment in qualified references are the entry thresholds rather than priorities. Example: when m=20 (E_base=0.50), B is excluded first due to E_base&gt;0.10. Whether A is feasible depends on the corrected error elimination rate qA—when qA=0.60, E_A=0.20, and C is the solution. When qA≥0.80, E_A=0.10, ΔQ_A=8, and A is the only feasible option, so C is the conclusion. The capacity-side threshold only applies when m=20 (hA exceeds 2.60 hours, and the combined preconditions exceed 48 hours, making A out of the threshold). On the low-error side, the threshold for m=2 occurs when hB does not exceed 1.625 hours or pB≥4/13, at which point B becomes feasible from C. All numerical values in the text are illustrative assumptions, along with calculated thresholds and stopping rules.",
+    "title": "Eco-GEO：Supply-chain AI visibility from zero to one—check eligibility before comparing fact repair with coverage expansion",
+    "excerpt": "With fixed hours, a fixed question set and independent review, first check error rates and the net increase in qualifying citations, then compare the full costs of feasible options. In the illustrative m=20 case, E_base>0.10 excludes B. Holding other baseline inputs fixed, qA=0.60 gives A an E_A of 0.20, so choose C; qA≥0.80 gives E_A≤0.10 and ΔQ_A=8, so choose A. At m=2, reducing hB alone to≤1.625 hours or increasing pB alone to≥4/13 lets B reach the minimum increment. All numbers are illustrative; final acceptance uses new error counts, net increments and actual full hours.",
     "category": "Brand GEO",
     "tags": "GEO, branded GEO, white hat GEO, AI search, supply chain, brand consistency, 0-1 cold start period, resource allocation, decision-making threshold, Eco-GEO, GEO service, AI search optimization",
     "author": "Eco GEO Editorial Team",
@@ -115,6 +115,12 @@
     "reviewed_by": "Eco GEO Research Desk",
     "quality": {
       "version": "insights-v3",
+      "review_type": "agent editorial correction and manual translation review",
+      "repair_record": "docs/editorial-repairs/00707-2026-09-29.json",
+      "automated_semantic_review_reused": false,
+      "body_sha256": "388219e3ddb4221d7643c0bbf140e00ab701d3e1338540c3869d1d5b5e6c6d00",
+      "localization_method": "manual correction of generated translation",
+      "paid_provider_requests_for_correction": 0,
       "metrics": {
         "language": "en",
         "gate_version": 1,
@@ -151,9 +157,9 @@
           "S4": 1,
           "S5": 1
         },
-        "visible_character_count": 27660,
-        "zh_character_count": 861,
-        "word_count": 5859,
+        "visible_character_count": 30580,
+        "zh_character_count": 0,
+        "word_count": 6416,
         "executive_summary_takeaways": 3,
         "tables_meeting_structure": 2,
         "valid_citation_count": 7,
@@ -242,7 +248,7 @@
                     "path": "title",
                     "fragment_index": 1,
                     "tag": "title",
-                    "text": "Eco-GEO: Supply chain. Ordering visibility for AI cold start: First eliminate solutions that cannot pass the threshold, then compare the total costs of repair vs. expansion coverage.",
+                    "text": "Eco-GEO: Supply-chain AI visibility from zero to one—check eligibility before comparing fact repair with coverage expansion",
                     "numbers": {},
                     "text_truncated": false
                   },
@@ -260,31 +266,25 @@
               "source": {
                 "0.1": 2,
                 "0.2": 1,
-                "0.5": 1,
                 "0.6": 1,
                 "0.8": 1,
                 "1.625": 1,
                 "13": 1,
                 "2": 1,
-                "2.6": 1,
-                "20": 2,
+                "20": 1,
                 "4": 1,
-                "48": 1,
                 "8": 1
               },
               "translated": {
                 "0.1": 2,
                 "0.2": 1,
-                "0.5": 1,
                 "0.6": 1,
                 "0.8": 1,
                 "1.625": 1,
                 "13": 1,
                 "2": 1,
-                "2.6": 1,
-                "20": 2,
+                "20": 1,
                 "4": 1,
-                "48": 1,
                 "8": 1
               },
               "missing": {},
@@ -292,34 +292,37 @@
             },
             "body_html": {
               "source": {
-                "0": 17,
+                "0": 30,
                 "0.02": 2,
-                "0.0308": 2,
-                "0.05": 9,
-                "0.1": 43,
+                "0.030769": 1,
+                "0.0308": 1,
+                "0.05": 10,
+                "0.075": 1,
+                "0.1": 41,
                 "0.105": 1,
-                "0.11": 1,
+                "0.125": 1,
                 "0.15": 3,
                 "0.2": 6,
-                "0.25": 7,
+                "0.25": 9,
                 "0.3": 1,
                 "0.3077": 2,
                 "0.39": 1,
-                "0.4": 14,
+                "0.4": 16,
                 "0.5": 11,
                 "0.52": 1,
                 "0.55": 2,
                 "0.6": 8,
                 "0.79": 1,
-                "0.8": 26,
-                "0.9": 4,
+                "0.8": 27,
+                "0.9": 5,
                 "1": 22,
                 "1.2": 2,
                 "1.3": 1,
-                "1.6": 8,
+                "1.6": 9,
                 "1.625": 6,
                 "1.63": 1,
                 "10": 14,
+                "10%": 1,
                 "11": 3,
                 "12": 9,
                 "12.31": 4,
@@ -331,81 +334,89 @@
                 "17": 1,
                 "18": 2,
                 "19": 4,
-                "2": 28,
+                "2": 31,
                 "2.6": 5,
                 "2.61": 2,
-                "20": 56,
+                "20": 57,
                 "20%": 7,
-                "200": 4,
+                "200": 5,
                 "2022": 1,
                 "2025": 2,
                 "2026": 1,
                 "22": 1,
                 "24": 1,
-                "26": 10,
-                "28": 15,
+                "25.6": 1,
+                "26": 11,
+                "28": 14,
+                "28.8": 1,
                 "29": 1,
                 "3": 17,
                 "3.2": 1,
                 "3.9": 2,
                 "31": 1,
                 "31.2": 2,
-                "32": 19,
-                "34": 6,
+                "32": 25,
+                "32.8": 1,
+                "33": 1,
+                "34": 8,
                 "37%": 1,
                 "39": 4,
                 "4": 18,
                 "4.2": 1,
                 "4.25": 1,
-                "40": 23,
+                "40": 26,
                 "45": 4,
                 "48": 5,
                 "49": 2,
-                "5": 1,
-                "52": 13,
+                "5": 2,
+                "52": 12,
                 "55936": 1,
                 "6": 8,
                 "6.5": 7,
                 "60": 7,
+                "65": 2,
                 "7": 4,
                 "7.5": 2,
                 "7.6": 4,
                 "7.75": 1,
                 "7.8": 2,
-                "8": 71,
-                "80": 18,
+                "8": 66,
+                "80": 28,
                 "80%": 1,
                 "9": 1
               },
               "translated": {
-                "0": 17,
+                "0": 29,
                 "0.02": 2,
-                "0.0308": 2,
-                "0.05": 9,
-                "0.1": 43,
+                "0.030769": 1,
+                "0.0308": 1,
+                "0.05": 10,
+                "0.075": 1,
+                "0.1": 41,
                 "0.105": 1,
-                "0.11": 1,
+                "0.125": 1,
                 "0.15": 3,
                 "0.2": 6,
-                "0.25": 7,
+                "0.25": 9,
                 "0.3": 1,
                 "0.3077": 2,
                 "0.39": 1,
-                "0.4": 14,
+                "0.4": 16,
                 "0.5": 11,
                 "0.52": 1,
                 "0.55": 2,
                 "0.6": 8,
                 "0.79": 1,
-                "0.8": 26,
-                "0.9": 4,
-                "1": 23,
+                "0.8": 27,
+                "0.9": 5,
+                "1": 19,
                 "1.2": 2,
                 "1.3": 1,
-                "1.6": 8,
+                "1.6": 9,
                 "1.625": 6,
                 "1.63": 1,
                 "10": 14,
+                "10%": 1,
                 "11": 3,
                 "12": 9,
                 "12.31": 4,
@@ -420,59 +431,103 @@
                 "2": 33,
                 "2.6": 5,
                 "2.61": 2,
-                "20": 56,
+                "20": 57,
                 "20%": 7,
-                "200": 4,
+                "200": 5,
                 "2022": 1,
                 "2025": 2,
                 "2026": 1,
                 "22": 1,
                 "24": 1,
-                "26": 10,
-                "28": 15,
+                "25.6": 1,
+                "26": 11,
+                "28": 14,
+                "28.8": 1,
                 "29": 1,
-                "3": 18,
+                "3": 17,
                 "3.2": 1,
                 "3.9": 2,
                 "31": 1,
                 "31.2": 2,
-                "32": 19,
-                "34": 6,
+                "32": 25,
+                "32.8": 1,
+                "33": 1,
+                "34": 8,
                 "37%": 1,
                 "39": 4,
                 "4": 18,
                 "4.2": 1,
                 "4.25": 1,
-                "40": 22,
+                "40": 26,
                 "45": 4,
                 "48": 5,
                 "49": 2,
-                "5": 1,
-                "52": 13,
+                "5": 2,
+                "52": 12,
                 "55936": 1,
                 "6": 8,
                 "6.5": 7,
                 "60": 7,
+                "65": 2,
                 "7": 4,
                 "7.5": 2,
                 "7.6": 4,
                 "7.75": 1,
                 "7.8": 2,
-                "8": 71,
-                "80": 18,
+                "8": 66,
+                "80": 28,
                 "80%": 1,
                 "9": 1
               },
               "missing": {
-                "40": 1
+                "0": 1,
+                "1": 3
               },
               "added": {
-                "1": 1,
-                "2": 5,
-                "3": 1
+                "2": 2
               },
               "block_alignment": "structural_position",
               "block_differences": [
+                {
+                  "source": {
+                    "block_index": 5,
+                    "path": "/section[1]/ul[1]/li[3]",
+                    "fragment_index": 1,
+                    "tag": "li",
+                    "text": "N=40 时 A 与 B 不会同时合格。pA=0 时 A 的增量为0，直接排除；pA>0 时，A 达到ΔQ≥8需m≥8/pA，B基线准入需m≤0.10N。因此两者同时可行的必要条件为N≥80/pA；固定pA=0.40才得到N≥200，还需检查各方案其余条件。本例主要比较“做唯一可行项，还是暂停”。",
+                    "numbers": {
+                      "0": 3,
+                      "0.1": 1,
+                      "0.4": 1,
+                      "200": 1,
+                      "40": 1,
+                      "8": 2,
+                      "80": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 5,
+                    "path": "/section[1]/ul[1]/li[3]",
+                    "fragment_index": 1,
+                    "tag": "li",
+                    "text": "At N=40, A and B cannot both qualify. If pA=0, A has zero increment and is excluded. For pA>0, A needs m≥8/pA to reach ΔQ≥8, while B requires m≤0.10N at baseline. Thus N≥80/pA is necessary for joint feasibility; N≥200 follows only when pA=0.40. All other conditions must still pass. The example therefore mainly asks whether to select the sole feasible option or pause.",
+                    "numbers": {
+                      "0": 2,
+                      "0.1": 1,
+                      "0.4": 1,
+                      "200": 1,
+                      "40": 1,
+                      "8": 2,
+                      "80": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "0": 1
+                  },
+                  "added": {}
+                },
                 {
                   "source": {
                     "block_index": 27,
@@ -536,11 +591,10 @@
                     "path": "/section[4]/p[7]",
                     "fragment_index": 1,
                     "tag": "p",
-                    "text": "按这套顺序，表二 qA／pA／hA／S 四行所属的 m=20 情境给出的是 A：那里 E_base=0.50 使 B 被第 1 步判为不可行，A 在第 2 步成为唯一可行项——这一步不以 E_base≤0.10 为前提。",
+                    "text": "按这套顺序，表二qA／pA／hA／S四行所属的m=20情境中，B因E_base=0.50不可行；只有A在该列通过全部门槛时，才在第2步成为唯一可行项，否则选C。选A不以E_base≤0.10为前提，但也不能省略A自己的错误率、增量与工时门槛。",
                     "numbers": {
                       "0.1": 1,
                       "0.5": 1,
-                      "1": 1,
                       "2": 1,
                       "20": 1
                     },
@@ -551,7 +605,7 @@
                     "path": "/section[4]/p[7]",
                     "fragment_index": 1,
                     "tag": "p",
-                    "text": "According to this sequence, the scenario m=20 in Table 2, where qA/pA/hA/S consists of four rows, yields A: Here, E_base=0.50 makes B deemed infeasible in step 1. In step 2, A becomes the only feasible option—this step does not rely on E_base≤0.10.",
+                    "text": "For the m=20 rows qA, pA, hA and S in Table 2, E_base=0.50 excludes B at step 1. A is the sole feasible option only in columns that pass all of that row’s conditions; a column in which A fails means C. Selecting the sole feasible A at step 2 does not require B’s E_base≤0.10 condition.",
                     "numbers": {
                       "0.1": 1,
                       "0.5": 1,
@@ -563,44 +617,12 @@
                   },
                   "missing": {},
                   "added": {
+                    "1": 1,
                     "2": 1
                   }
-                },
-                {
-                  "source": {
-                    "block_index": 67,
-                    "path": "/section[5]/p[5]",
-                    "fragment_index": 1,
-                    "tag": "p",
-                    "text": "整数执行：nA、nB 是整数操作数量；ΔQ 是模型期望，可以是小数，不能当作已观测计数。期末按整数验收：40 题里错误题数与合格题数按实际计数，Q_end 至少比基线多 8 题（Q_base=6 → Q_end≥14）；若损失原有合格题，按净增量计算，不能只数新获得的题。",
-                    "numbers": {
-                      "14": 1,
-                      "40": 1,
-                      "6": 1,
-                      "8": 1
-                    },
-                    "text_truncated": false
-                  },
-                  "translated": {
-                    "block_index": 67,
-                    "path": "/section[5]/p[5]",
-                    "fragment_index": 1,
-                    "tag": "p",
-                    "text": "Integer execution: nA and nB are the numbers of integer operations; ΔQ is the model expectation, which can be a decimal and cannot be treated as an observed count. Final acceptance by integers: The number of incorrect and correct questions is counted as actual counts. Q_end must be at least 8 more questions than the baseline (Q_base=6 → Q_end≥14); if the original correct questions are lost, it is calculated based on the net increase, and only the newly obtained questions should be counted.",
-                    "numbers": {
-                      "14": 1,
-                      "6": 1,
-                      "8": 1
-                    },
-                    "text_truncated": false
-                  },
-                  "missing": {
-                    "40": 1
-                  },
-                  "added": {}
                 }
               ],
-              "block_differences_total": 7,
+              "block_differences_total": 13,
               "block_differences_truncated": true
             }
           }
@@ -608,173 +630,10 @@
         "publication_policy": "readable-translation-v1",
         "quality_warning_count": 2
       },
-      "revisions": 0,
-      "review_type": "offline translation structure check",
       "warnings": [
-        {
-          "block": "title",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "title",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.44",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.44",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.44",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.60",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.60",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.76",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.82",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.96",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.116",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.116",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.120",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.124",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.130",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.130",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.182",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.182",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.186",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.308",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.308",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.320",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.332",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.336",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.336",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.348",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.348",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.358",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.358",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.406",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.568",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.580",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.592",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.592",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.596",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.596",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.612",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.624",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.640",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.640",
-          "warning": "Offline translation retained Chinese source text"
-        },
         "Translation changes numeric values in title; inspect numeric_changes metrics.",
         "Translation changes numeric values in body_html; inspect numeric_changes metrics."
-      ],
-      "paid_translation_calls": 0
+      ]
     }
   },
   {

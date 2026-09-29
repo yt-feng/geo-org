@@ -1,0 +1,1892 @@
+{
+  "record_type": "agent_editorial_and_translation_correction",
+  "version": 1,
+  "row": 707,
+  "slug": "00707-geo-0-1-ai-6a821aba",
+  "corrected_on": "2026-09-29",
+  "original_run": "https://github.com/yt-feng/geo-org/actions/runs/36563635343",
+  "original_generated_commit": "c4f7a5c4a8300d8ac9221cca4e7947854ceac5a5",
+  "original_review": {
+    "scores": {
+      "thesis": 4,
+      "evidence": 4,
+      "mechanism": 5,
+      "tradeoffs": 4,
+      "actionability": 4,
+      "originality": 4
+    },
+    "issues": [
+      "第3节末『与第 2 节「≥20% 暂停扩量」和 (0) 一致』属内部引用错位：第2节只定义 E/Q/ΔQ 口径与『分歧率＝分歧题数/复核题数』，从未出现『≥20% 暂停扩量』。请改为引用 (0) 或第3节冻结门槛清单，或把该规则补写进第2节。",
+      "第3节末『复核分歧率是严格不等——分歧率＝20% 视为不通过』措辞易歧义：实际规则是『<20% 通过、≥20% 选 C』（含端点的排除式）。建议直接写明两条阈值的端点归属，避免『严格不等』被读成排他性『>』。",
+      "第3节『把 qA 校准到 0.90，m 在 20 至 32 之间都可成立』推导链不完整：单用 E_A＝m(1−qA)/40≤0.10 只得到 m≤40，读者看不到 32 从何而来；32 来自 nA=min(floor(52/1.6),m,Q_cap) 的工时上限。请补出 m>32 时 nA=32、E_A=(m−28.8)/40 的分段，否则结论悬空。",
+      "第7节『台账字段完成率<80% 直接选 C』引入了一个第3节冻结门槛清单中不存在的门槛（清单只有 N≥20、Q_cap≥8、总工时≤80、E_post≤0.10、ΔQ≥8、分歧率<20%）。请把 80% 补入第3节冻结清单，或明确标注为第7节的运营性闸门而非决策门槛。",
+      "第7节『只有把 qA 校准到 ≥0.80 后重做一轮 A 才可能达标』与『pA<0.40，或 hA>2.60、S>48』未标明成立前提为 m=20、nA=20（pB 行则为 nB=26、hB=2.0）。请加限定语或改写为通式 qA≥(m−0.10N)/nA，否则等于把特定算例临界当作通用阈值。",
+      "表一与正文重复：情境一/二/三的数值与第4、5节几乎逐句复述，未独立产生决策增量。请为每行补出『本行新增的判断』（如机会成本的量化口径），或压缩表一，仅在表二保留单变量增量。",
+      "摘要『容量侧临界只出现在 m=20 那一侧』易被读成排除 m=2 侧的 hB 容量临界（表二 hB 行 1.625 小时）。请改为『影响 A 的容量临界只出现在 m=20 那一侧』。",
+      "同一组临界值（0.80、4/13、1.625、2.60、48）在摘要、第3、4、5（末）、6、8节反复出现，属重复段落；建议在表二集中一次，其他处只引用行号，减少冗余。"
+    ],
+    "blockers": [],
+    "claim_checks": [
+      {
+        "claim": "AI Overviews 与 AI Mode 可能使用『查询扇出』，并可能展示比传统搜索更广的链接集合；页面要成为支撑链接须被索引并具备展示摘要资格，且没有额外的专门技术要求",
+        "source_ids": [
+          "S1"
+        ],
+        "verdict": "supported",
+        "reason": "S1 原文直书 query fan-out、a wider and more diverse set of helpful links、must be indexed and eligible…There are no additional technical requirements；文章同时限定为资格条件、不承诺引用增长，与来源范围一致。"
+      },
+      {
+        "claim": "覆盖 55,936 条查询、六个大模型搜索系统与两个传统搜索系统，样本中 37% 的域名只出现在大模型搜索一侧；被偏好的域名更结构化、文本更易读、域名热度更低、更多外链指向高信誉来源",
+        "source_ids": [
+          "S3"
+        ],
+        "verdict": "supported",
+        "reason": "S3 摘要与贡献(2)(4)逐项给出该数字与特征方向；文章标注为特征关联、非因果干预，符合 S3 实验设定边界。"
+      },
+      {
+        "claim": "一份研究认为检索到的文档中的错误信息可能传播进生成答案（Deng et al., 2025）；另一份认为用户会受引用数量与类型影响（Miroyan et al., 2025）",
+        "source_ids": [
+          "S3"
+        ],
+        "verdict": "supported",
+        "reason": "S3 文献回顾确有此两处转引；文章明确说明二者是 S3 转引的既有文献、不是 S3 自身实验结论，未把转引升级为一手证据。"
+      },
+      {
+        "claim": "微软 Copilot Search 公告称突出标注来源、把整句或整段内联链接到来源并列出全部来源链接，且可用地区不含中国和俄罗斯",
+        "source_ids": [
+          "S5"
+        ],
+        "verdict": "supported",
+        "reason": "S5 原文含 cites its sources prominently、inline link the entire sentence or passage、a list of every link used 及 *Available WW except Russia and China；文章限定为厂商功能声明而非效果证明。"
+      },
+      {
+        "claim": "OECD 报告主张按两类风险分段：常态化中断归企业常规风险管理，极端事件才需政府介入，把常规工具用于重大中断会造成浪费与表现不佳",
+        "source_ids": [
+          "S2"
+        ],
+        "verdict": "supported",
+        "reason": "S2 Key messages 明确 strategic segmentation 与 results in waste, environmental burden, and underperformance；文章仅作方法类比、不据此支撑 GEO 效果。"
+      },
+      {
+        "claim": "咨询机构公开观点文章指出韧性投入存在取舍：集中采购降低复杂度与成本，多元化供应提高韧性但增加成本与复杂度",
+        "source_ids": [
+          "S4"
+        ],
+        "verdict": "supported",
+        "reason": "S4 该段原文本即如此表述；文章注明其非 GEO 研究、只提供『按条件分段、把代价列全』的方法类比。"
+      },
+      {
+        "claim": "m=20、pA=0.40、qA=0.60、hA=1.6 → nA=min(32,20,34)=20；ΔQ_A=8；E_A=(20−12)/40=0.20；H_A=28+32=60，预算闭合 10+12+6+32=60",
+        "source_ids": [],
+        "verdict": "illustrative",
+        "reason": "明示示意假设的内部算例；独立复算 nA、ΔQ、E_A、H_A 与预算闭合全部一致，成立边界限于该组输入，不能外推为实测。"
+      },
+      {
+        "claim": "N=40 时 A 与 B 不会同时合格；pA=0.40 下两者同时成立要求 N≥200",
+        "source_ids": [],
+        "verdict": "inference",
+        "reason": "由 nA≤m、ΔQ_A≥8 需 m≥8/pA=20 与 B 需 m≤0.10N 推出 N≥80/pA=200；属模型内推理，仅在所述门槛与 pA=0.40 下成立。"
+      }
+    ],
+    "blocker_checks": [
+      {
+        "issue_id": "r0-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第5节表二 qA 行与『逐项代回复核』段",
+        "finding": "表二 qA 行现用 E=(20−20qA)/40，临界 0.80；全文无 nA×qA×N 形式；独立复算 0.79→4.2/40=0.105、0.80→0.10 与表二一致。"
+      },
+      {
+        "issue_id": "r0-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第5节末『若只求两方案增量相等的代数交点』段与第3节(3)段",
+        "finding": "旧 pB*≈0.492 已删除，现仅给 pB=0.8/26≈0.0308 并明言低于演示区间 0.15–0.55、无可操作含义；第3节(3)自证 N=40 时 A、B 不同时合格。"
+      },
+      {
+        "issue_id": "r0-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第4节 A 定义行与高错误情境段",
+        "finding": "A 定义现为 nA=min(floor(52/hA), m, Q_cap)，m=20 时 nA=min(32,20,34)=20，未再把 32 当作可消除错误数。"
+      },
+      {
+        "issue_id": "r0-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第1节 S3 段",
+        "finding": "现写『更多外链指向高信誉来源』，与 S3 原变量 more outlinks to reputable sources 方向一致。"
+      },
+      {
+        "issue_id": "r0-blocker-5",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第1节 S3 段、摘要与第8节",
+        "finding": "旧『更少的外链指向高信誉来源之外』在本轮正文、标题、摘要与结论中均未出现，未被替代性重引。"
+      },
+      {
+        "issue_id": "r1-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第5节表二 qA 行与『逐项代回复核』段",
+        "finding": "0.1875 全文未出现；qA 临界统一为 (20−4)/20=0.80，与 Q_end=14、H_B=80、单位成本 10 的推导自洽。"
+      },
+      {
+        "issue_id": "r1-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第4节低错误情境段与表一情境三",
+        "finding": "ΔQ_A=0.8、ΔQ_B=6.5 均低于最低增量 8，文章写『两者 ΔQ<8，均不可行 → C』，未见『B 优先』类表述；表一情境三同样写 C。"
+      },
+      {
+        "issue_id": "r1-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节(1)(3)与『两类等号要分开写清』段",
+        "finding": "排序已并为单条规则『比较完整单位成本 H/ΔQ，低者优先；成本相等取增量较高者；两者都相等则补测后再判』，等号处不再出现互相冲突的动作。"
+      },
+      {
+        "issue_id": "r1-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第5节 qA 临界段与表二 qA 行",
+        "finding": "现行『由 (20−20qA)/40≤0.10 得 qA≥0.80』，全文检索未见『0.1875』，标题、摘要与结论亦未重引。"
+      },
+      {
+        "issue_id": "r2-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第2节 Q_cap 定义与第4节 U、nB",
+        "finding": "Q_cap=N−Q_base=40−6=34；低错误情境 U=34−2=32、nB=min(26,32)=26，全文未再取 18，单位成本与 Q_end 据此重算。"
+      },
+      {
+        "issue_id": "r2-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节(1)(3)与『两类等号要分开写清』段",
+        "finding": "ΔQ≤0 先行排除且不计单位成本；两者都可行时统一按『成本低者优先→成本相等取增量高者→都相等补测』，原象限冲突不再存在。"
+      },
+      {
+        "issue_id": "r2-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第2节 Q_cap 定义",
+        "finding": "Q_cap=34 直接由 Q_base=6 支撑；示意值 18 已从正文、摘要与结论中消失。"
+      },
+      {
+        "issue_id": "r2-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节末执行步骤『第 2 步』与表一情境一、表二 qA／pA／hA／S 行",
+        "finding": "旧(7)(8)编号分支与 E_base≤0.10 前提均已删除；现第2步明写『只有 A 可行（例如 E_base>0.10 使 B 不可行，或 nB<8/pB）→ A』，E_base=0.50>0.10 且 A 可行的情形归 A，与规则(1)(2)、表一情境一、表二同参数行一致，分支穷尽。"
+      },
+      {
+        "issue_id": "r3-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第8节首段",
+        "finding": "改记 2026-09-29T11:45Z（UTC；S1 11:45:18、S2/S3 11:45:22、S4/S5 11:45:24），与资料包 retrieved_at 逐条一致，并声明未换算本地日期。"
+      },
+      {
+        "issue_id": "r3-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第8节首段及全文",
+        "finding": "『2026年9月28日』在本轮正文任何位置均未出现，标题、摘要与结论亦未重引。"
+      },
+      {
+        "issue_id": "r4-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节末执行步骤『第 2 步』与表一、表二行注、第7节执行路径",
+        "finding": "分支一额外要求的 E_base≤0.10 已删除，改写为『A 可行且 B 不可行（含 E_base>0.10 或 nB<8/pB）则先 A』；表一情境一写『A 成为唯一可行方案』、表二 qA／pA／hA／S 行标『A 为唯一可行项』，第7节扩大条件引用『第 2 步中是唯一可行项』，三处一致。"
+      },
+      {
+        "issue_id": "r4-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节末执行步骤与 (0)(1)(2)(3) 逐条对应处",
+        "finding": "第0/1/2/3 步已覆盖『都不可行→C、只 A→A、只 B→B、都可行→比成本』全部象限，且与规则(0)(1)(2)(3)一一对应，未再出现 E_base≤0.10 的额外前提。"
+      },
+      {
+        "issue_id": "r4-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节末『把条件写成人能执行的话』段",
+        "finding": "该段第2步将 E_base>0.10 且 A 可行的情形判为 A，独立代入表二 qA=0.80、hA=1.6、pA=0.40、S=28 行（m=20、ΔQ_A=8、E_A=0.10、B 因 E_base=0.50 不可行）均得 A，与表一情境一及第5节末『qA、pA 行让 C 变成 A』一致。"
+      },
+      {
+        "issue_id": "r4-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节末执行段与表二 qA／hA／pA／S 行",
+        "finding": "执行段分支不再以 E_base≤0.10 为前提，E_base>0.10 且 A 可行落入『只有 A 可行→A』而非『其余情况选 C』；未再出现示意值 18 类断言。"
+      },
+      {
+        "issue_id": "r4-blocker-5",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "第3节末执行段、规则(1)(2)、表一情境一、表二 qA／pA／hA／S 行",
+        "finding": "『按顺序覆盖全部情形』现成立：四个互斥且穷尽的结果（C／A／B／比成本）与 (0)(1)(2)(3) 对齐，独立逐行代入表二六个变量行，最终动作标签与执行分支完全一致。"
+      }
+    ]
+  },
+  "original_review_assessment": "The original final r5 passed the automated25/30 gate. Subsequent independent reading found decision-rule contradictions and translation reversals. Its scores and passed flags do not approve the corrected text.",
+  "original_audit_verification": {
+    "artifact_audit_sha256": "0bd989c014955d81f8bb6d55e8ecb1547ff30ed5bb83d03140b15ca2280b0dee",
+    "zh_validator_passed": true,
+    "original_history_exactly_preserved": true,
+    "source_evidence_identity_unchanged": true,
+    "original_audit_sha256": "14378752100847bd28a41f1a712875134f3cb857b0999e16c3fc9c717e9a67ce",
+    "original_37_response_ids_retained": true,
+    "response_id_unique": true,
+    "response_count": 56,
+    "final_revision": 5,
+    "final_draft_origin": "model",
+    "scores": {
+      "thesis": 4,
+      "evidence": 4,
+      "mechanism": 5,
+      "tradeoffs": 4,
+      "actionability": 4,
+      "originality": 4
+    },
+    "issues_count": 8,
+    "blocker_checks_count": 20,
+    "blocker_statuses": [
+      "resolved"
+    ],
+    "metadata_errors": [],
+    "final_article_sha256": "9113a3f7c557150899806cd32cb7334c5cf950324e7315cd4052edf72475a3b4",
+    "full_fingerprint_verified": true,
+    "semantic_acceptance": "not accepted: manual review found new contradictory final statements despite model review pass",
+    "translations": {
+      "en": {
+        "audit_sha256": "10d450c27c233020686e7388e2f4c7eeab5ec05e0f69d08b03fa114060a3387e",
+        "source_hash_match": true,
+        "source_metadata_match": true,
+        "article_hash_match": true,
+        "provenance_source_hash_match": true,
+        "structure_passed": true,
+        "checkpoint_complete": true,
+        "checkpoint_article_hash_match": true,
+        "warnings_count": 42,
+        "paid_translation_requests": 0,
+        "review_type": "not_required_offline_translation",
+        "manual_review": "pending"
+      },
+      "ar": {
+        "audit_sha256": "7c4327830fd6b9396efd5049717a4566b4be79288017f2b14124c7bffd0d867a",
+        "source_hash_match": true,
+        "source_metadata_match": true,
+        "article_hash_match": true,
+        "provenance_source_hash_match": true,
+        "structure_passed": true,
+        "checkpoint_complete": true,
+        "checkpoint_article_hash_match": true,
+        "warnings_count": 73,
+        "paid_translation_requests": 0,
+        "review_type": "not_required_offline_translation",
+        "manual_review": "pending"
+      }
+    }
+  },
+  "original_final_author_responses": [
+    {
+      "issue_id": "r0-blocker-1",
+      "change": "保留已修复状态：表二 qA 行沿用 E=(20−20qA)/40，不再出现 nA×qA×N 形式。",
+      "location": "第 5 节表二 qA 行与“逐项代回复核”段",
+      "verification": "本轮 qA 行低/基准/临界/高值为 0.50→0.25、0.60→0.20、0.80→0.10、0.90→0.05，复核段写 (20−20qA)/40≤0.10 得 qA≥0.80，全文无 (E_base×N − nA×qA×N)/N。"
+    },
+    {
+      "issue_id": "r0-blocker-2",
+      "change": "保留已修复状态：旧反转点 pB*≈0.492 未恢复；仅保留代数交点 ≈0.0308 并声明低于演示区间、无可操作含义。",
+      "location": "第 5 节表二 pB 行与末段",
+      "verification": "第 5 节明确 pB≥4/13 是低错误侧可操作临界，0.0308 只作交点并注明三种取值下 ΔQ_B 均低于 8、都选 C。"
+    },
+    {
+      "issue_id": "r0-blocker-3",
+      "change": "保留已修复状态：nA 仍以错误题数 m 为上限，A 不对不含错误的问题“消除错误”。",
+      "location": "第 3 节 A 可行窗口段、第 4 节 A 定义行",
+      "verification": "nA=min(floor(52/hA), m, Q_cap)，m=20 时 nA=20；E_A 只用 nA×qA 且 nA≤m，未再出现 nA=32 作为消除错误数。"
+    },
+    {
+      "issue_id": "r0-blocker-4",
+      "change": "保留已修复状态：S3 外链变量方向仍写作“更多外链指向高信誉来源”。",
+      "location": "第 1 节 S3 段",
+      "verification": "该句与 S3 特征描述的变量方向一致，未改写为其它构造。"
+    },
+    {
+      "issue_id": "r0-blocker-5",
+      "change": "保留已修复状态：全文未再出现“更少的外链指向高信誉来源之外”。",
+      "location": "第 1 节 S3 段、摘要与第 8 节",
+      "verification": "检索正文、摘要与边界段均无该表述，也未用替代措辞重引。"
+    },
+    {
+      "issue_id": "r0-issue-1",
+      "change": "保留：错误复制到多条答案路径仍写作待检验机制，未称工程事实。",
+      "location": "第 1 节第二段",
+      "verification": "该段写明“本篇按待检验机制处理，不作为已证实的工程事实”，摘要亦未把它写成事实。"
+    },
+    {
+      "issue_id": "r0-issue-2",
+      "change": "保留已修复状态：未再引入“需至少修复 26 题”一类未定义门槛，门槛统一为 ΔQ≥8。",
+      "location": "第 3 节门槛段与第 4 节整数执行段",
+      "verification": "全文增量门槛只写 ΔQ≥8，nA 与增量门槛不并列比较，只作为可行性公式的中间量。"
+    },
+    {
+      "issue_id": "r0-issue-3",
+      "change": "保留并强化：表二逐行给出低/基准/临界/高值及动作，并把 qA、pA 变动代回 E_A 是否越过 0.10。",
+      "location": "第 5 节表二与复核段",
+      "verification": "qA 行给出 0.80 为 E_A=0.10 的临界；pA 行注明该组合下 E_A 恒为 0.10；容量行给出 hA≤2.60、hB≤1.625、S≤48。"
+    },
+    {
+      "issue_id": "r0-issue-4",
+      "change": "改写并补齐：把门槛等号与排序等号分成两条规则，并按 r4-issue-2 补入分歧率＝20% 不通过。",
+      "location": "第 3 节“两类等号要分开写清”段",
+      "verification": "门槛处列出 E_post、ΔQ、N、Q_cap、总工时五项达到即通过，并写明分歧率是严格不等；排序处写明成本相等取 ΔQ 高者、都相等补测。"
+    },
+    {
+      "issue_id": "r0-issue-5",
+      "change": "保留已修复状态：先按错误题数上限重设 nA，再谈剩余工时。",
+      "location": "第 4 节 A 定义行与高错误情境段、剩余工时段",
+      "verification": "m=20 时 nA=20、干预工时 32 小时；剩余 20 小时按条件式规则处理（有缺失字段则转投，无则记未使用）。"
+    },
+    {
+      "issue_id": "r1-blocker-1",
+      "change": "保留已修复状态：0.1875 未恢复，qA 临界统一为 0.80。",
+      "location": "第 5 节表二 qA 行与复核段",
+      "verification": "全文无 0.1875；qA=0.80 得 E=0.10，0.79 得 0.105 不通过，与表一行内口径一致。"
+    },
+    {
+      "issue_id": "r1-blocker-2",
+      "change": "保留已修复状态：低错误情境两方案 ΔQ 均低于门槛时判 C，未再出现“反转为 B 优先”。",
+      "location": "第 4 节低错误情境段、表一情境三",
+      "verification": "ΔQ_A=0.8、ΔQ_B=6.5 均<8，两处都写 C；B 只在情境四（hB≤1.625 或 pB≥4/13）才可行。"
+    },
+    {
+      "issue_id": "r1-blocker-3",
+      "change": "保留已修复状态：排序改为单条规则，按下限门槛先淘汰再比完整单位成本，等号单独处理。",
+      "location": "第 3 节 (1)(3) 与执行段第 3 步",
+      "verification": "两方案都可行时比较 H/ΔQ，低者优先；成本相等取 ΔQ 高者；都相等补测，无互相冲突的动作。"
+    },
+    {
+      "issue_id": "r1-blocker-4",
+      "change": "保留已修复状态：0.1875 类 unsupported claim 未再出现。",
+      "location": "第 5 节 qA 临界段与表二 qA 行",
+      "verification": "现行写法为 (20−20qA)/40≤0.10 得 qA≥0.80，标题、摘要与结论均未引用旧值。"
+    },
+    {
+      "issue_id": "r1-issue-1",
+      "change": "保留已修复状态：表二 qA 单元格统一为 0.80 并写明该列所依据的情境与 nA 取值。",
+      "location": "第 5 节表二 qA 行固定项与临界列",
+      "verification": "固定项含 m=20、nA=20、N=40、hA=1.6、S=28，临界列 0.80 可独立复算。"
+    },
+    {
+      "issue_id": "r1-issue-2",
+      "change": "保留已修复状态：B 被准入排除时不计算也不排列 ΔQ_B。",
+      "location": "第 4 节高错误情境段、表一情境一",
+      "verification": "高错误情境明确写“B 因 E_base=0.50 被第 1 步排除，不计算 ΔQ_B 与单位成本”。"
+    },
+    {
+      "issue_id": "r1-issue-3",
+      "change": "改写：分别定义两个阈值的适用对象，并说明同时命中时动作相同。",
+      "location": "第 2 节 Q_cap 段",
+      "verification": "N 为问题池总量（门槛 20 题），Q_cap 为未合格空间（门槛 8 题），两者任一不满足即进 (0) 选 C，无先后差别。"
+    },
+    {
+      "issue_id": "r1-issue-4",
+      "change": "保留已修复状态：等号规则已统一为单条排序规则（成本低者优先→成本相等取增量高者→都相等补测）。",
+      "location": "第 3 节 (3) 与执行段第 3 步",
+      "verification": "两处动作完全一致，pB 临界处不再出现两种不同动作。"
+    },
+    {
+      "issue_id": "r1-issue-5",
+      "change": "补齐分支：写出 E_post 与 ΔQ 只满足一个时的动作。",
+      "location": "第 7 节扩大条件段",
+      "verification": "E_post>0.10 而 ΔQ≥8 时要求把 qA 校准到 ≥0.80 后重做，否则转 C；ΔQ<8 而 E_post≤0.10 时要求把 pA、hA、S 校准过临界才重启，否则转 C。"
+    },
+    {
+      "issue_id": "r1-issue-6",
+      "change": "保留已修复状态：表一的扩大/停止方向与门槛一致。",
+      "location": "表一情境二、情境四的触发条件列",
+      "verification": "两次写“单位成本升到高于团队另行记录的替代用途 → 转 C”，不要求“不低于 A”。"
+    },
+    {
+      "issue_id": "r1-issue-7",
+      "change": "保留已修复状态：C 与 A/B 不跨量纲比较，C 靠第 0、1、2 步顺序规则落地。",
+      "location": "第 6 节反方解释三段、第 7 节停止条件段",
+      "verification": "明写不提供元/有效线索与小时/合格引用的折算率；线下比较只在同一单位下才参与自动判定，否则记录为定性判断。"
+    },
+    {
+      "issue_id": "r1-issue-8",
+      "change": "保留已修复状态：两项转引研究已标注为 S3 转引。",
+      "location": "第 1 节第四段",
+      "verification": "写明 Deng et al. (2025) 与 Miroyan et al. (2025) 是 S3 转引的既有文献，不是 S3 自身实验结论。"
+    },
+    {
+      "issue_id": "r1-issue-9",
+      "change": "保留已修复状态：标注版本与读取时间，并在证据局限中提示时效边界。",
+      "location": "第 8 节首段",
+      "verification": "写明 S3 为 arXiv v1 预印本、published 为空、读取时间 2026-09-29T11:45Z，并说明平台文档可能更新。"
+    },
+    {
+      "issue_id": "r1-issue-10",
+      "change": "保留已修复状态：机制小节标题为条件式表述。",
+      "location": "第 1 节标题",
+      "verification": "标题为“机制假设与证伪方式：证据只走到‘资格与关联’，没走到‘效果’”，与段内语气一致。"
+    },
+    {
+      "issue_id": "r1-issue-11",
+      "change": "补齐：给出两组高低组合的代入结果，说明哪类行在什么组合下改变 A/B/C。",
+      "location": "第 5 节“把高低两侧组合起来看”段",
+      "verification": "组合一（m=20）低值侧得 C、高值侧得 A；组合二（m=2）pB=0.15 得 C、pB=4/13 得 B。"
+    },
+    {
+      "issue_id": "r1-issue-12",
+      "change": "补齐：表一在 E_post 不达标处补入停止/重做条件。",
+      "location": "表一情境二、情境四的触发条件列",
+      "verification": "两处写“实测 E_post>0.10 或 ΔQ<8 → C”，与第 7 节扩大门槛对齐。"
+    },
+    {
+      "issue_id": "r2-blocker-1",
+      "change": "保留已修复状态：Q_cap 取值与定义一致，全部相关计算据 34 重算。",
+      "location": "第 2 节 Q_cap 段、第 4 节 U 与 nB",
+      "verification": "Q_cap=N−Q_base=40−6=34；低错误情境 U=34−2=32、nB=26，全文未再取 18。"
+    },
+    {
+      "issue_id": "r2-blocker-2",
+      "change": "保留已修复状态：ΔQ≤0 在 (1) 先行排除，两方案可行时统一按完整单位成本比较。",
+      "location": "第 3 节 (1)(3)",
+      "verification": "零增量不再给出两个相反动作；ΔQ_A>ΔQ_B 而成本 A 更高的象限由“成本低者优先”唯一决定。"
+    },
+    {
+      "issue_id": "r2-blocker-3",
+      "change": "保留已修复状态：Q_cap 由 Q_base 直接推出，示意值 18 未再出现。",
+      "location": "第 2 节 Q_cap 段",
+      "verification": "全部出现位置均为 34，摘要与结论亦未引用 18。"
+    },
+    {
+      "issue_id": "r2-blocker-4",
+      "change": "本轮正面修复：删除执行段分支一的 E_base≤0.10 额外前提，改写为与 (0)(1)(2)(3) 逐步对应的四步有序规则，覆盖 E_base>0.10 且 A 可行的情形。",
+      "location": "第 3 节末“把规则写成人能执行的话”四步段，以及第 5 节表二 qA／pA／hA／S 行的边界含义列、第 7 节扩大条件段",
+      "verification": "第 2 步改为“只有 A 可行（例如 E_base>0.10 使 B 不可行，或 nB<8/pB）→ A”。代入 m=20、qA=0.80、pA=0.40、hA=1.6、N=40：A 可行（nA=20、ΔQ_A=8、E_A=0.10），B 因 E_base=0.50 不可行，按第 2 步得 A，与表一情境二、表二四行“A（等号通过）”一致；E_base>0.10 且 A 可行的情形不再落入“其余情况选 C”。"
+    },
+    {
+      "issue_id": "r2-issue-1",
+      "change": "保留已修复状态：表二 Q_cap 相关定义与取值统一为 34 并同步二次基线。",
+      "location": "第 2 节、第 4 节低错误情境段",
+      "verification": "nB=min(26,32)=26、ΔQ_B=6.5、H_B=80、单位成本 10（临界情形）均据 34 重算。"
+    },
+    {
+      "issue_id": "r2-issue-2",
+      "change": "保留已修复状态：成本条件不再两处不对称，排序只用一条规则。",
+      "location": "第 3 节 (3) 与执行段第 3 步",
+      "verification": "ΔQ_A>ΔQ_B 而成本 A 更高的象限由“成本低者优先”唯一决定，未再有缺条件的“选 A”。"
+    },
+    {
+      "issue_id": "r2-issue-3",
+      "change": "保留已修复状态：零增量归入 (1) 先行排除，不产生分支冲突。",
+      "location": "第 3 节 (1)",
+      "verification": "ΔQ 期望≤0 直接判不可行且不算单位成本；两方案都≤0 时走第 2 步“都不可行 → C”。"
+    },
+    {
+      "issue_id": "r2-issue-4",
+      "change": "保留已修复状态：S3 变量写为“更多外链指向高信誉来源”，未再加否定方向的括注。",
+      "location": "第 1 节 S3 段",
+      "verification": "该句只描述变量与其方向，未出现“研究变量是外链数量而非性质”一类表述。"
+    },
+    {
+      "issue_id": "r2-issue-5",
+      "change": "保留并强化：给出 B 的 E_post 定义，并说明 0.10 门槛同样作用于 B。",
+      "location": "第 4 节 B 定义行、表一情境四",
+      "verification": "E_B=m/N 为模型假设，期末须复测；若 B 新增内容引入新错误则按 E_post>0.10 处理，表一情境四的停止条件列与此一致。"
+    },
+    {
+      "issue_id": "r2-issue-6",
+      "change": "保留已修复状态：pB 的交点说明标为低于演示区间、解释力有限。",
+      "location": "第 5 节末段倒数第二段",
+      "verification": "写明 0.0308 低于演示区间 0.15–0.55、不能称为反转点，并给出低错误侧可操作临界 pB≥4/13。"
+    },
+    {
+      "issue_id": "r2-issue-7",
+      "change": "保留并强化：明确可迁移规则与不可迁移边界，减少自我循环的公式演示。",
+      "location": "第 8 节第三段",
+      "verification": "写明可迁移的是核算顺序（分清总量与未达标空间、用真实对象数限制产能、先过门槛再比完整成本、不足则暂停并交代预算去向），不可迁移的是具体数值、行业参数与效果结论。"
+    },
+    {
+      "issue_id": "r3-blocker-1",
+      "change": "保留已修复状态：读取时间改为 2026-09-29T11:45Z 并说明时区口径。",
+      "location": "第 8 节首段",
+      "verification": "列出 S1 11:45:18、S2/S3 11:45:22、S4/S5 11:45:24，与资料包 retrieved_at 逐条一致，并声明未换算本地日期。"
+    },
+    {
+      "issue_id": "r3-blocker-2",
+      "change": "保留已修复状态：全文未再出现 2026 年 9 月 28 日。",
+      "location": "第 8 节首段及全文",
+      "verification": "标题、摘要与正文均无该日期。"
+    },
+    {
+      "issue_id": "r3-issue-1",
+      "change": "保留已修复状态并把表一扩到六个情境，逐情境并列首选、放弃项与触发停止。",
+      "location": "第 3 节表一",
+      "verification": "六行各含适用条件、首选、同一预算下的放弃项与停止/转向条件，不再只复述排除顺序。"
+    },
+    {
+      "issue_id": "r3-issue-2",
+      "change": "保留并补明：写出 (3) 的可触发条件 N≥200，并说明本篇算例不触发该分支。",
+      "location": "第 3 节 (3) 段、第 5 节末段",
+      "verification": "两处均写 N≥10m≥200；第 5 节说明 N=40 时不存在按 (3) 比较成本的情形。"
+    },
+    {
+      "issue_id": "r3-issue-3",
+      "change": "保留并同步标注：39 与 12.31 只作完整性展示，不是选择依据。",
+      "location": "第 4 节低错误情境段、第 5 节倒数第二段、表一情境三放弃项列",
+      "verification": "三处一致写明两个 ΔQ 均已低于 8 题门槛，成本比较不再改变动作。"
+    },
+    {
+      "issue_id": "r3-issue-4",
+      "change": "保留：给出 hA、hB 与共同 28 小时的敏感性翻转点。",
+      "location": "第 5 节表二 hA、hB、S 三行与复核段",
+      "verification": "hA≤2.60、hB≤1.625、S≤48 为通过，2.61、1.63、49 即掉出门槛并转 C。"
+    },
+    {
+      "issue_id": "r3-issue-5",
+      "change": "保留已修复状态：qA 行固定项含 nA=20。",
+      "location": "第 5 节表二 qA 行",
+      "verification": "固定项写作 pA=0.40、m=20、nA=20、N=40、hA=1.6、S=28，可独立复算 E=(20−20qA)/40。"
+    },
+    {
+      "issue_id": "r3-issue-6",
+      "change": "保留已修复状态：pB 行的基准值与临界值分列。",
+      "location": "第 5 节表二列头与 pB 行",
+      "verification": "表头为低值／基准值／临界值／高值四列，pB 行 0.25 在基准列、4/13 在临界列，并注明两列含义不同。"
+    },
+    {
+      "issue_id": "r4-blocker-1",
+      "change": "本轮修复：执行段删除 E_base≤0.10 前提，改为四步有序规则，其中“只有 A 可行”含 E_base>0.10 或 nB<8/pB 两种成因。",
+      "location": "第 3 节末执行段、表一情境一与情境二、表二 qA／pA／hA／S 行、第 7 节扩大条件段",
+      "verification": "代入 m=20、qA=0.80、pA=0.40、hA=1.6、N=40 得 A 可行、B 不可行，按第 2 步选 A；表一情境二、表二四行、第 5 节“qA、pA 行让 C 变成 A”与本规则一致。"
+    },
+    {
+      "issue_id": "r4-blocker-2",
+      "change": "本轮修复 r2-blocker-4 遗留问题：执行段改为与 (0)(1)(2)(3) 一一对应的第 0–3 步，不再有额外前提，E_base>0.10 且 A 可行的情形得到 A 的动作。",
+      "location": "第 3 节末四步执行段",
+      "verification": "第 0 步对应 (0)，第 1 步对应 (1) 的逐方案可行性，第 2 步对应 (2)，第 3 步对应 (3)；m=20、qA=0.80 情境按第 2 步得 A，与表一、表二一致。"
+    },
+    {
+      "issue_id": "r4-blocker-3",
+      "change": "本轮修复：同一条四步规则统一了表二 qA 0.80、hA 1.2/1.6/2.60、pA 0.40/0.60、S 20/28/48 的动作，并在这四行边界含义列注明 B 已被 E_base>0.10 排除、A 为唯一可行项。",
+      "location": "第 3 节末执行段、第 5 节表二四行末列、第 7 节扩大条件段",
+      "verification": "该四行的动作与第 2 步“只有 A 可行 → A”一致，不再被判为“其余情况选 C”；第 7 节的扩大条件写明唯一可行即可扩大。"
+    },
+    {
+      "issue_id": "r4-blocker-4",
+      "change": "本轮修复历史遗留 r2-blocker-4：执行段分支穷尽且与 (0)(1)(2)(3) 逐项对应，五步之外没有隐含前提。",
+      "location": "第 3 节末四步执行段与第 5 节表二行注",
+      "verification": "四种组合（都不行、仅 A、仅 B、都行）各有唯一动作；m=20 参数的各行都落到“仅 A → A”，与表一情境二一致。"
+    },
+    {
+      "issue_id": "r4-blocker-5",
+      "change": "本轮修复同一历史遗留：删除分支一的 E_base≤0.10 前提，使 E_base>0.10 且 A 可行的情形不再落入“其余情况选 C”。",
+      "location": "第 3 节末执行段第 1、2 步",
+      "verification": "第 1 步只把 E_base≤0.10 作为 B 的准入条件，不作为 A 的条件；第 2 步据此把仅 A 可行的情形判为 A。"
+    },
+    {
+      "issue_id": "r4-issue-1",
+      "change": "改写摘要：把 2.60 小时与 48 小时归到 m=20 那一侧，把 1.625 小时与 4/13 归到 m=2 那一侧。",
+      "location": "摘要",
+      "verification": "摘要现写“容量侧临界只出现在 m=20 那一侧（hA 超过 2.60、共同前置超过 48 小时，A 掉出门槛）；低错误侧 m=2 的临界是 hB 不超过 1.625 小时或 pB≥4/13”，与表二行参数一致。"
+    },
+    {
+      "issue_id": "r4-issue-2",
+      "change": "补齐：在“两类等号要分开写清”段写明分歧率＝20% 不通过，并回核第 2 节。",
+      "location": "第 3 节“两类等号要分开写清”段、第 2 节 Q 指标项",
+      "verification": "该段写“复核分歧率是严格不等——分歧率＝20% 视为不通过”，与 (0) 的“分歧率≥20% 直接选 C”及第 2 节定义一致。"
+    },
+    {
+      "issue_id": "r4-issue-3",
+      "change": "统一剩余工时去向为条件式表述，并同步第 7 节预算闭合句与表一。",
+      "location": "第 4 节剩余工时段、第 7 节预算闭合段",
+      "verification": "两处都写：有台账缺失字段则按其转投（每项 1.0 小时示意），无空间则记为未使用并在下一轮预算重新分配；第 4 节高错误情境不再单方面写“记为未使用”而又在整数执行段写“转投”。"
+    },
+    {
+      "issue_id": "r4-issue-4",
+      "change": "删除示意 30% 数值，改为定性证伪条件，并说明原因归类不新增门槛、不改变 (0)(1)(2)(3)。",
+      "location": "第 6 节反方解释一段",
+      "verification": "该段写“这条诊断不新增门槛，也不改变 (0)(1)(2)(3) 的先后顺序；若 ΔQ_A 仍低于 8，(1) 已判 A 不可行”，并说明原因归类只决定下一次试点指向 B 还是结构优化。"
+    },
+    {
+      "issue_id": "r4-issue-5",
+      "change": "明确“单位成本更低”的比较对象是另一可行方案，并把与替代用途的比较单列为停止条件 (a)(b)。",
+      "location": "第 7 节扩大条件段与停止条件段",
+      "verification": "扩大条件的 (ii) 写“与另一可行方案比较，不是与替代用途比较”；停止条件 (a) 限同一单位下比较，口径不再与扩大条件混用。"
+    },
+    {
+      "issue_id": "r4-issue-6",
+      "change": "在表二 qA、pA、hA、S 四行的“校准方式与边界含义”列注明该行 B 已被 E_base>0.10 排除、A 为唯一可行项。",
+      "location": "第 5 节表二末列",
+      "verification": "四行分别写“本行 B 已被 E_base=0.50>0.10 排除，A 为唯一可行项”，与第 3 节末第 2 步的“仅 A 可行 → A”一致。"
+    }
+  ],
+  "evidence_unchanged": true,
+  "source_receipts": [
+    {
+      "id": "S1",
+      "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+      "url": "https://developers.google.com/search/docs/appearance/ai-features",
+      "publisher": "Google Search Central",
+      "published": "",
+      "retrieved_at": "2026-09-29T11:45:18+00:00",
+      "evidence_kind": "platform_documentation",
+      "excerpt_start": 0,
+      "excerpt_end": 5468,
+      "body_chars": 5468,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "google.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+      "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+    },
+    {
+      "id": "S2",
+      "title": "Promoting resilience and preparedness in supply chains (EN)",
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+      "publisher": "OECD",
+      "published": "",
+      "retrieved_at": "2026-09-29T11:45:22+00:00",
+      "evidence_kind": "institutional_analysis",
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "body_chars": 172554,
+      "excerpt_truncated": true,
+      "retrieval_method": "https_pdf_text",
+      "publisher_domain": "oecd.org",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24"
+    },
+    {
+      "id": "S3",
+      "title": "Source Coverage and Citation Bias in LLM-based vs. Traditional Search Engines",
+      "url": "https://arxiv.org/html/2512.09483v1",
+      "publisher": "arXiv authors",
+      "published": "",
+      "retrieved_at": "2026-09-29T11:45:22+00:00",
+      "evidence_kind": "research_paper",
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "body_chars": 78799,
+      "excerpt_truncated": true,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "arxiv.org",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+      "text_sha256": "667b88d6b0ba41c66ef518148bb0afe6ed2e7abc595fd245989c9437129ddb0c"
+    },
+    {
+      "id": "S4",
+      "title": "Emphasize Resilience in Supply Chains",
+      "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
+      "publisher": "BCG",
+      "published": "2022-10-04",
+      "retrieved_at": "2026-09-29T11:45:24+00:00",
+      "evidence_kind": "consulting_analysis",
+      "excerpt_start": 0,
+      "excerpt_end": 4963,
+      "body_chars": 4963,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "bcg.com",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b"
+    },
+    {
+      "id": "S5",
+      "title": "Introducing Copilot Search in Bing",
+      "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+      "publisher": "Microsoft Bing",
+      "published": "",
+      "retrieved_at": "2026-09-29T11:45:24+00:00",
+      "evidence_kind": "platform_announcement",
+      "excerpt_start": 0,
+      "excerpt_end": 5856,
+      "body_chars": 5856,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "bing.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+      "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+    }
+  ],
+  "source_review_scope": "This correction reuses the production run's exact source IDs, URLs, excerpt hashes, excerpt windows and recorded11:45 UTC reread. No new source fetch or new claim of publication-date verification was performed during this offline correction.",
+  "paid_provider_requests_for_correction": 0,
+  "method": "Explicit paragraph and table-cell corrections by agents; exact-fraction recalculation of displayed scenarios and independent comparison of the three languages. No new model score, HyMT pass, or independent provider review is claimed.",
+  "future_translation_gate_scope": "The existing automated translation gate remains a structural check with semantic/numeric warnings. These publication-specific regressions bind reviewed text and arithmetic; they are not a general semantic translation validator.",
+  "chinese_corrections": [
+    {
+      "tag": "li",
+      "index": 0,
+      "old_text": "门槛先于排序，但门槛不等于“A 自动优先”。示意参数下 m=20（E_base=0.50）时，B 因基线错误率高于 0.10 先被排除；A 是否可行取决于修复后的错误消除率 qA：qA=0.60 时 E_A=0.20，A 也不可行，本轮结论是 C；qA≥0.80 时 E_A=0.10、ΔQ_A=8，A 成为唯一可行项，结论是 A。",
+      "new_text": "门槛先于排序，但门槛不等于“A 自动优先”。示意参数下 m=20（E_base=0.50）时，B 因基线错误率高于 0.10 被排除；其余基准参数不变时，qA=0.60 使 E_A=0.20，A 也不可行，结论 C；qA≥0.80 使 E_A≤0.10、ΔQ_A=8，A 成为唯一可行项。等号只在 qA=0.80 时成立；例如 qA=0.90 时 E_A=0.05。",
+      "reason": "Correct equality over a parameter range."
+    },
+    {
+      "tag": "li",
+      "index": 2,
+      "old_text": "N=40 时 A 与 B 不会同时合格。A 过 ΔQ≥8 需 m≥8/pA；B 过 E_base≤0.10 需 m≤0.10N。在 pA=0.40 下两者同时成立要求 N≥200。因此本篇算例里反复出现的判断是“做唯一可行的那一项，还是暂停”。",
+      "new_text": "N=40 时 A 与 B 不会同时合格。pA=0 时 A 的增量为0，直接排除；pA>0 时，A 达到ΔQ≥8需m≥8/pA，B基线准入需m≤0.10N。因此两者同时可行的必要条件为N≥80/pA；固定pA=0.40才得到N≥200，还需检查各方案其余条件。本例主要比较“做唯一可行项，还是暂停”。",
+      "reason": "Exclude zero conversion before reciprocal feasibility bounds."
+    },
+    {
+      "tag": "li",
+      "index": 4,
+      "old_text": "Q：分子＝合格题数，分母＝N，抽样单位＝题，复核者＝独立第三人，窗口＝同一观察窗口的期初期末，偏差控制＝答案与来源同时留存，分歧率＝分歧题数/复核题数。",
+      "new_text": "Q 是合格题的整数计数；合格比例另记为 Q/N，不把比例与计数混用。复核者＝独立第三人，窗口＝同一观察窗口的期初期末；答案与来源同时留存，分歧率＝分歧题数/复核题数。",
+      "reason": "Keep Q a count rather than redefine it as a rate."
+    },
+    {
+      "tag": "li",
+      "index": 5,
+      "old_text": "ΔQ：同一问题集、同一分母定义、同一窗口的期初期末之差，统一为增量口径，不使用期末总量。",
+      "new_text": "ΔQ＝Q_end−Q_base，是同一问题集与同一窗口内合格题计数的期末减期初，单位为题；合格比例的变化另记 ΔQ/N，不使用期末总量替代增量。",
+      "reason": "Preserve increment units."
+    },
+    {
+      "tag": "p",
+      "index": 12,
+      "old_text": "排序规则按顺序覆盖全部情形：(0) 数据条件不成立（N<20 或 Q_cap<8，或无版本化台账、无独立复核、分歧率≥20%）直接选 C。(1) 逐方案检查可行性与停止条件：ΔQ 期望≤0 直接排除且不计算单位成本；A 需 nA≥8/pA（等价于 ΔQ_A≥8）且预计 E_A≤0.10；B 需 E_base≤0.10 且 nB≥8/pB（等价于 ΔQ_B≥8）。(2) 只有一个方案可行则选它；都不行则选 C。(3) 若两者都可行，比较完整单位成本 H/ΔQ，低者优先；成本相等取增量较高者；增量与成本都相等则补测后再判，不强行选择。",
+      "new_text": "排序规则按顺序覆盖全部情形：(0) 数据条件不成立（N<20 或 Q_cap<8，或无版本化台账、无独立复核、存在未核实的范围内品牌事实、分歧率≥20%）直接选 C。(1) 逐方案检查可行性与停止条件：总工时>80 或 ΔQ 期望≤0 直接排除，不计算单位成本；A 需 ΔQ_A≥8 且预计 E_A≤0.10；B 需 E_base≤0.10、预计 E_B≤0.10 且 ΔQ_B≥8。预测中的 E_B=m/N 只在“不引入也不消除错误”的示意假设下成立，实际验收必须重新计算 E_post。(2) 只有一个方案可行则选它；都不行则选 C。(3) 若两者都可行，比较完整单位成本 H/ΔQ，低者优先；成本相等取增量较高者；增量与成本都相等则补测后再判，不强行选择。",
+      "reason": "Make all factual-data and cost gates explicit and avoid division by zero."
+    },
+    {
+      "tag": "p",
+      "index": 13,
+      "old_text": "两类等号要分开写清。门槛处的等号：E_post＝0.10、ΔQ＝8、N＝20、Q_cap＝8、总工时＝80 都按“达到即通过”处理；复核分歧率是严格不等——分歧率＝20% 视为不通过，与第 2 节“≥20% 暂停扩量”和 (0) 一致。排序处的等号属另一条规则：单位成本相等时取 ΔQ 较高者，两者都相等时补测后再判。两处等号分属不同规则，不可互相套用。",
+      "new_text": "两类等号要分开写清。门槛处的等号：E_post＝0.10、ΔQ＝8、N＝20、Q_cap＝8、总工时＝80 都按“达到即通过”处理；分歧率<20% 才通过，分歧率≥20% 选 C，与本节冻结清单和 (0) 一致。排序处的等号属另一条规则：单位成本相等时取 ΔQ 较高者，两者都相等时补测后再判。两处等号分属不同规则，不可互相套用。",
+      "reason": "Fix an incorrect section reference and state endpoint membership directly."
+    },
+    {
+      "tag": "p",
+      "index": 14,
+      "old_text": "(3) 在本篇算例中不可触发：N＝40 时 B 准入要求 m≤0.10N＝4，而 ΔQ_A≤m×pA≤m≤4<8，所以 A 永不达标。要使 (3) 可触发，需要 m≥8/pA（pA=0.40 时 m≥20）且 m≤0.10N，即 N≥10m≥200。因此 (3) 是给更大问题池准备的规则；参数一变必须重推，不能照搬。",
+      "new_text": "(3) 在本篇算例中不可触发：N=40时B准入要求m≤4，而A的ΔQ_A≤m×pA≤m≤4<8。一般化时先排除pA=0，因为A不可能达到最低增量；对pA>0，A需m≥8/pA，B需m≤0.10N，合起来得到必要条件N≥80/pA。固定pA=0.40才需N≥200；这并非充分条件，还要检查对象数、工时、错误率和B的增量。",
+      "reason": "Exclude pA=0 before the general reciprocal and preserve necessary-only logic."
+    },
+    {
+      "tag": "p",
+      "index": 15,
+      "old_text": "反过来看 A 的可行窗口（示意参数 pA=0.40、qA=0.80、hA=1.6、N=40）：ΔQ_A≥8 需 m≥20，而 E_A＝m(1−qA)/40≤0.10 需 m(1−qA)≤4，qA=0.80 时 m 只能等于 20；把 qA 校准到 0.90，m 在 20 至 32 之间都可成立。这解释了为什么“错误率更高就一定先修”是错的：m 太小过不了增量门槛，m 太大又过不了错误率门槛。",
+      "new_text": "反过来看 A 的可行窗口（示意参数 pA=0.40、hA=1.6、N=40、Q_cap=34）：工时使 nA≤floor(52/1.6)=32。m≤32 时 nA=m，ΔQ_A≥8 需 m≥20；若 qA=0.80，E_A=m(1−0.80)/40≤0.10 需 m≤20，所以可行的整数 m 只有 20。m>32 时 nA=32，E_A=(m−25.6)/40，仍不能通过。若 qA=0.90，则 m=20 至 32 均可通过；m>32 时 E_A=(m−28.8)/40≤0.10 要求 m≤32.8，因此整数 m=33、34 不通过。这解释了为什么“错误率更高就一定先修”是错的：m 太小过不了增量门槛，m 太大又过不了错误率门槛。",
+      "reason": "Show the object/working-hour cap in the feasible-window derivation."
+    },
+    {
+      "tag": "td",
+      "index": 3,
+      "old_text": "若试点把 qA 校准到 ≥0.80（m=20 时 E_A≤0.10），A 成为唯一可行方案；否则维持 C。实测 E_post≥0.11 或 ΔQ<8 均转 C",
+      "new_text": "若试点把 qA 校准到 ≥0.80（m=20 且其余输入不变时 E_A≤0.10），A 成为唯一可行方案；否则维持 C。实测 E_post>0.10 或 ΔQ<8 均转 C。",
+      "reason": "Use the same stopping comparator throughout."
+    },
+    {
+      "tag": "td",
+      "index": 15,
+      "old_text": "实测 E_post>0.10 或 ΔQ<8 → C；E_post 按 E_B=m/N 复测，若 B 新增内容引入新错误则不通过",
+      "new_text": "实测 E_post>0.10 或 ΔQ<8 → C；E_post 用期末错误题数/N 重新计算。若 B 引入新错误，不再沿用 E_B=m/N 的预测，按新实测值判断是否越线。",
+      "reason": "New B errors invalidate the constant-error assumption but do not automatically exceed 10%."
+    },
+    {
+      "tag": "td",
+      "index": 19,
+      "old_text": "hB 降到 ≤1.625 小时（nB=32）或 pB≥4/13 才重启 B；否则 C",
+      "new_text": "pB=0.25 时，hB≤1.625 可处理至少32题，满足最低增量；若 hB=2.0，则需 pB≥4/13。其余条件仍须通过，否则 C。",
+      "reason": "At m=0 a lower hB can permit more than32 objects; retain the lower-bound interpretation."
+    },
+    {
+      "tag": "li",
+      "index": 6,
+      "old_text": "第 0 步：若 N<20，或 Q_cap<8，或无版本化事实台账，或无独立复核，或复核分歧率≥20%，选 C，流程结束。",
+      "new_text": "第 0 步：若 N<20，或 Q_cap<8，或无版本化事实台账，或无独立复核，或有范围内品牌事实尚未核实，或复核分歧率≥20%，选 C，流程结束。",
+      "reason": "Do not place unverified questions in the verified-correct pool."
+    },
+    {
+      "tag": "li",
+      "index": 7,
+      "old_text": "第 1 步：分别判 A、B 是否可行。A 可行 ⇔ ΔQ_A≥8 且 E_A≤0.10；B 可行 ⇔ E_base≤0.10 且 ΔQ_B≥8。任一方案 ΔQ 期望≤0 直接判其不可行，不算单位成本。",
+      "new_text": "第 1 步：先排除总工时>80 或 ΔQ期望≤0 的方案。对其余方案，A 可行 ⇔ ΔQ_A≥8 且预计 E_A≤0.10；B 可行 ⇔ E_base≤0.10、ΔQ_B≥8 且预计 E_B≤0.10。实际验收均用重新采样的 E_post，不用基线或预测替代。",
+      "reason": "Match the operational decision step to all fixed gates."
+    },
+    {
+      "tag": "li",
+      "index": 8,
+      "old_text": "第 2 步：A、B 都不可行 → C；只有 A 可行（例如 E_base>0.10 使 B 不可行，或 nB<8/pB）→ A；只有 B 可行（A 因 nA<8/pA 或 E_A>0.10 不可行）→ B。",
+      "new_text": "第 2 步：A、B 都不可行 → C；只有 A 可行 → A；只有 B 可行 → B。B 可因 E_base>0.10、错误率或增量不达标而不可行；A 可因错误率或增量不达标而不可行。不要给“只有 A”额外附加 B 的基线条件。",
+      "reason": "Keep the four exhaustive result cases without reciprocal zero denominators."
+    },
+    {
+      "tag": "p",
+      "index": 17,
+      "old_text": "按这套顺序，表二 qA／pA／hA／S 四行所属的 m=20 情境给出的是 A：那里 E_base=0.50 使 B 被第 1 步判为不可行，A 在第 2 步成为唯一可行项——这一步不以 E_base≤0.10 为前提。",
+      "new_text": "按这套顺序，表二qA／pA／hA／S四行所属的m=20情境中，B因E_base=0.50不可行；只有A在该列通过全部门槛时，才在第2步成为唯一可行项，否则选C。选A不以E_base≤0.10为前提，但也不能省略A自己的错误率、增量与工时门槛。",
+      "reason": "Rows contain both eligible and ineligible columns; do not label all columns A."
+    },
+    {
+      "tag": "p",
+      "index": 19,
+      "old_text": "A：hA=1.6 小时/题（核对 0.8＋改写与提交 0.8，属示意拆分）；nA=min(floor(52/hA), m, Q_cap)；ΔQ_A=nA×pA；E_A=(m−nA×qA)/N；H_A=28+hA×nA；约束 0≤pA≤qA≤1（消除错误不必然获得引用）。B：只处理事实已核验正确但尚未合格引用的题；hB=2.0 小时/题；U=Q_cap−m；nB=min(floor(52/hB), U)；ΔQ_B=nB×pB；E_B=m/N；H_B=28+hB×nB。B 的 E_B 是模型假设，前提是 B 既不消除存量错误也不制造新错误；期末必须重新采样，若 B 的新内容引入新错误，按 E_post>0.10 处理，即 B 同样受 0.10 的门槛约束。若 B 必须先完成 A，则 B 的成本要加上修复工时并重算共同基线，不能套用本篇独立 B 的账本。",
+      "new_text": "A：hA=1.6 小时/题（核对 0.8＋改写与提交 0.8，属示意拆分）；nA=min(floor((80−S)/hA),m,Q_cap)；ΔQ_A=nA×pA；E_A=(m−nA×qA)/N；H_A=S+hA×nA；约束 0≤pA≤qA≤1。B 只处理事实已核验正确但尚未合格引用的题；hB=2.0 小时/题；U=Q_cap−m；nB=min(floor((80−S)/hB),U)；ΔQ_B=nB×pB；H_B=S+hB×nB；0≤pB≤1。共同工时基准 S=28，故干预容量为52；若变动 S，必须重算80−S。要求0≤S≤80且每题工时为正。示意预测 E_B=m/N 的前提是 B 既不消除存量错误也不制造新错误；期末必须用新的错误题数计算 E_post。例如基线 m=2 时新增1道错误且无消除，E_post=3/40=0.075，仍满足≤0.10；新增3道则5/40=0.125，不通过。不能把“有新增错误”等同于“超过10%”，也不能沿用旧基线宣称通过。若 B 必须先完成 A，则须加入修复工时并重算共同基线，不能套用本篇独立 B 的账本。",
+      "reason": "Define variable shared cost consistently and fix B end-state error logic."
+    },
+    {
+      "tag": "td",
+      "index": 26,
+      "old_text": "0.60（=第 4 节基准）→ E=0.20；C",
+      "new_text": "0.60（第4节基准）→ E=0.20；C",
+      "reason": "Keep the baseline cross-reference separate from mathematical equality."
+    },
+    {
+      "tag": "td",
+      "index": 29,
+      "old_text": "试点记录“消除错误题数/处理错误题数”；低于 0.80 时 A 过不了错误率门槛。本行 B 已被 E_base=0.50>0.10 排除，A 为唯一可行项",
+      "new_text": "试点记录“消除错误题数/处理错误题数”；低于 0.80 时 A 过不了错误率门槛。本行 B 已被 E_base=0.50>0.10 排除，只有该列通过A全部门槛时，A才为唯一可行项；否则C",
+      "reason": "Qualify unique-feasible row notes by each column's complete gates."
+    },
+    {
+      "tag": "td",
+      "index": 35,
+      "old_text": "试点记录“转为合格题数/处理错误题数”；须满足 pA≤qA。本行 B 已被 E_base=0.50>0.10 排除，A 为唯一可行项",
+      "new_text": "试点记录“转为合格题数/处理错误题数”；须满足 pA≤qA。本行 B 已被 E_base=0.50>0.10 排除，只有该列通过A全部门槛时，A才为唯一可行项；否则C",
+      "reason": "Qualify unique-feasible row notes by each column's complete gates."
+    },
+    {
+      "tag": "td",
+      "index": 47,
+      "old_text": "台账逐题记录实际修复工时；超过 2.60 小时/题，A 掉出增量门槛。本行 B 已被 E_base=0.50>0.10 排除，A 为唯一可行项",
+      "new_text": "台账逐题记录实际修复工时；超过 2.60 小时/题，A 掉出增量门槛。本行 B 已被 E_base=0.50>0.10 排除，只有该列通过A全部门槛时，A才为唯一可行项；否则C",
+      "reason": "Qualify unique-feasible row notes by each column's complete gates."
+    },
+    {
+      "tag": "td",
+      "index": 59,
+      "old_text": "台账记录台账、采样与复核实际工时；共同成本超过 48 小时，A 掉出门槛。本行 B 已被 E_base=0.50>0.10 排除，A 为唯一可行项",
+      "new_text": "台账记录台账、采样与复核实际工时；共同成本超过 48 小时，A 掉出门槛。本行 B 已被 E_base=0.50>0.10 排除，只有该列通过A全部门槛时，A才为唯一可行项；否则C",
+      "reason": "Qualify unique-feasible row notes by each column's complete gates."
+    },
+    {
+      "tag": "td",
+      "index": 41,
+      "old_text": "试点记录“转为合格题数/覆盖题数”；基准 0.25 与临界 4/13 是两列不同含义，不可混读。本行 E_base=0.05≤0.10，B 有准入资格；A 因 ΔQ_A=0.8<8 不可行，B 为唯一可行项",
+      "new_text": "试点记录“转为合格题数/覆盖题数”；基准 0.25 与临界 4/13 是两列不同含义，不可混读。本行 E_base=0.05≤0.10，B 有准入资格；A 因 ΔQ_A=0.8<8 不可行，只有该列通过B全部门槛时，B才为唯一可行项；否则C",
+      "reason": "Qualify unique-feasible row notes by each column's complete gates."
+    },
+    {
+      "tag": "td",
+      "index": 53,
+      "old_text": "台账逐题记录覆盖工时；本篇基准 2.0 小时/题本身已越过临界，B 不可行。本行 A 因 ΔQ_A=0.8<8 不可行，B 为唯一可行项",
+      "new_text": "台账逐题记录覆盖工时；本篇基准 2.0 小时/题本身已越过临界，B 不可行。本行 A 因 ΔQ_A=0.8<8 不可行，只有该列通过B全部门槛时，B才为唯一可行项；否则C",
+      "reason": "Qualify unique-feasible row notes by each column's complete gates."
+    },
+    {
+      "tag": "p",
+      "index": 27,
+      "old_text": "顺带给出算例中两个方案期望增量相等的代数交点：pB=ΔQ_A/nB=0.8/26≈0.0308；代入 0.02、0.0308、0.05 得 ΔQ_B=0.52、0.8、1.3，全部低于 8，所以三种情况都选 C。该交点远低于本篇演示区间 0.15–0.55，没有可操作含义，不能称为 A/B 反转点；低错误侧可操作的临界是 pB≥4/13（在 nB=26、hB=2.0 的前提下）。另外，低错误情境算出的 39 与 12.31 小时/合格增量仅供完整性展示，不是选择依据——两个方案的 ΔQ 都已低于 8 题门槛，成本比较不再改变动作。",
+      "new_text": "顺带给出算例中两个方案期望增量相等的代数交点：pB=0.8/26=2/65≈0.030769；代入0.02、2/65、0.05，ΔQ_B分别为0.52、0.8、1.3，全部低于8，三种情况都选C。使用精确分数计算等号，不能把四舍五入后的0.0308当作精确交点。该交点低于演示区间0.15–0.55，没有可操作含义；低错误侧的可操作临界是pB≥4/13（固定nB=26、hB=2.0）。39与12.31小时/合格增量仅供完整性展示：两个方案都已被增量门槛排除，成本比较不改变动作。",
+      "reason": "Use an exact fraction at the algebraic equality point."
+    },
+    {
+      "tag": "p",
+      "index": 28,
+      "old_text": "在本篇 N=40 的算例里，没有任何单变量变化能让 A 与 B 同时可行，所以不存在“改一个变量就把首选从 A 翻到 B”的情形，也不存在需要按 (3) 比较单位成本的象限。这不是模型缺陷，而是 N=40、ΔQ≥8、E_base≤0.10 三个条件共同决定的结果；要让 (3) 真正触发，需要 N≥200 的问题池。",
+      "new_text": "在本篇 N=40 的算例里，无论本表所列输入怎样变动，只要B仍要求m≤4且A只修错误题并满足pA≤1，两者就不可能同时达到ΔQ≥8，因此没有A与B同时可行后的成本排序。一般化时，pA=0使A直接不合格；仅当pA>0时，两者同时可行的必要条件为N≥80/pA，固定pA=0.40才得到N≥200。这只是必要条件，还必须分别检查工时、错误率、对象数与B的增量，不能据N≥200就宣布两者都可行。",
+      "reason": "Preserve positive-pA domain and distinguish necessary from sufficient conditions."
+    },
+    {
+      "tag": "p",
+      "index": 31,
+      "old_text": "能推翻本篇结论的观察：试点把 qA、pA 校准到临界之上且 m 足够大，使 A 成为唯一可行方案；或把 hB、pB 校准过 1.625 与 4/13，使 B 从 C 变为可行；或出现 N≥200、m≥20 的更大问题池，使 A 与 B 同时可行，此时必须按第 3 节 (3) 比较完整单位成本。本次读取窗口没有保留显著性标记，S3 为 v1 预印本，其完整方法与显著性无法确认；本窗口无法确认显著性，也不能据此断言任何效果不显著。",
+      "new_text": "能改变本例动作的观察：在相同对象数与工时条件下，试点把qA、pA校准过各自临界，使A成为唯一可行方案；或单独降低hB或提高pB，使B从C变为可行。若扩展问题池，先排除pA=0的A；对pA>0，一般必要条件是N≥80/pA，固定pA=0.40时为N≥200。还须逐项验证两个方案的全部准入条件，才可按第3节(3)比较完整成本。本次读取窗口没有保留显著性标记，S3为v1预印本；无法确认完整方法与显著性，也不能因此断言任何效果不显著。",
+      "reason": "Avoid treating the larger-pool necessary condition as automatic joint feasibility."
+    },
+    {
+      "tag": "p",
+      "index": 32,
+      "old_text": "第 1 周（渠道负责人主责，产品与合规各 1 人会签）：冻结问题集、字段、门槛与账本模板。指标＝台账字段完成率＝已核验字段数/计划字段数；<80% 直接选 C。第 1–3 周（运营 1 人采集，独立复核 1 人判定，第三人裁决分歧）：完成两轮基线。指标＝E_base、Q_base（按平台分别报告）、分歧率；两轮方向不一致或分歧率≥20% 则选 C 并先修订判定规程。第 3–7 周：在 52 小时剩余容量内做不超过 10 题的试点，校准 pA、qA、pB、hA、hB、S 中至少一项；试点干预计入 nA 或 nB，采样与复核计入 28 小时，不另记一次产出；若拿不到可用试点估计，就只做校准、不批准扩量。第 7–8 周：同规程复测并结算，指标＝ΔQ、E_post、H、单位成本。",
+      "new_text": "第1周（渠道负责人主责，产品与合规各1人会签）：冻结问题集、字段、门槛与账本模板。台账字段完成率＝已核验字段数/计划字段数，仅作准备进度；本轮范围内品牌事实必须全部核实，有未核实题则按第3节(0)选C，不另加80%的决策门槛。第1–3周（运营1人采集，独立复核1人判定，第三人裁决分歧）：完成两轮基线，分别报告E_base、Q_base、分歧率；若两轮结论跨越门槛或分歧率≥20%，先校准判定规程。第3–7周：在剩余容量内做不超过10题的试点，校准pA、qA、pB、hA、hB、S；试点干预计入nA或nB，采样与复核计入共同工时，不重复计算产出。拿不到可用估计就只做校准，不批准扩量。第7–8周同规程复测，结算ΔQ、E_post、实际H和完整单位成本。",
+      "reason": "Remove the new unaligned80% gate and retain complete fact verification."
+    },
+    {
+      "tag": "p",
+      "index": 33,
+      "old_text": "扩大条件按顺序判定：(i) 所选方案实测 E_post≤0.10 且 ΔQ≥8 同时成立；(ii) 该方案在第 2 步中是唯一可行项，或在第 3 步中其完整单位成本 H/ΔQ 低于另一可行方案。这里的“单位成本更低”指的是与另一可行方案比较，不是与替代用途比较。只满足其中一个条件时不扩大：若 E_post>0.10 而 ΔQ≥8，说明 qA 低于预期，只有把 qA 校准到 ≥0.80 后重做一轮 A 才可能达标，否则转 C；若 ΔQ<8 而 E_post≤0.10，说明 pA 或产能低于临界（pA<0.40，或 hA>2.60、S>48），只有把这些输入校准过临界才重启，否则转 C。",
+      "new_text": "扩大前先用实测结果重跑第3节的完整顺序：数据条件合格、实际H≤80、E_post≤0.10且ΔQ≥8，然后在可行方案中选择；只有一个可行就选它，两者可行则成本较低者优先，成本相等取增量较高者，两者均相等则补测，不自动扩大。失败诊断必须分方案：A错误率超线时检查qA与处理数量；仅在示意预测模型成立时，nA×qA≥m−0.10N是预计错误率的门槛，实际验收始终以重新采样的E_post计数为准。A增量不足时检查nA×pA≥8和可用工时。只有固定m=20、nA=20时才有qA≥0.80、pA≥0.40；hA≤2.60及S≤48分别依赖表二各行固定输入。B错误率超线时检查新增、消除和保留的错误题，修复并重新采样，不能套用A的qA门槛；B增量不足时检查nB×pB≥8，固定nB=26才有pB≥4/13，固定pB=0.25、U=32、S=28才有hB≤1.625。改变任一输入后重算全套条件；排除仍不合格的方案，唯一合格就选它，两者都不合格才选C，两者合格按第3步比较。单项改善不能抵消同一方案另一门槛失败。",
+      "reason": "Diagnose A/B separately and retain empirical counts, cost ties, capacity and exact boundary scopes."
+    },
+    {
+      "tag": "p",
+      "index": 35,
+      "old_text": "预算逐项闭合：台账 10＋采样 12＋复核 6＋干预工时＋未使用工时＝80 小时。高错误情境为 10+12+6+32=60，剩余 20 小时按第 4 节的规则处理：有台账缺失字段则转投（每项按 1.0 小时示意计），无空间则明确记为未使用并在下一轮预算重新分配；若判定 C，已支出的 28 小时不可回收，剩余 52 小时不作为 GEO 干预支出记账。时间表是按本例工时的安排建议，不是来源结论；容量不够就延后决策或缩小试验，但不能删去复核环节。",
+      "new_text": "预算逐项闭合：台账10＋采样12＋复核6＋实际干预工时＋补充台账工时＋未使用工时＝80小时。补充台账只记录原10小时以外的实际新增工作，不重复记账。高错误情境的A算例为10+12+6+32=60，剩余20小时按第4节规则处理：有缺失字段可补则记录实际补充工时，无空间则记为未使用。若在任何干预开始前选C，只记已经发生的共同工作28小时，余下52小时不记作GEO干预支出；若做过试点才选C，试点实际工时仍须入账，不能因停止决定而抹掉。时间表是本例安排建议，不是来源结论；容量不够就延后决策或缩小试验，但不能删去复核环节。",
+      "reason": "Retain actual pilot spending even when the later decision is C."
+    },
+    {
+      "tag": "p",
+      "index": 39,
+      "old_text": "失效条件：若事实类原因占比低、统一后错误率不降、错误率下降但净引用增量仍为 0，或实测显示 A、B 都无法在 80 小时内越过门槛，则本文对应分支自动失效，动作回到 C。",
+      "new_text": "失效条件：事实类原因占比低只提示重审机制与下一轮试点方向，不新增门槛，也不自动选C。若统一后错误率不降，或错误率下降但净引用增量仍为0，A的相应机制解释不成立；这不自动排除仍满足全部门槛的B。数据条件不合格按(0)选C；否则逐方案按实际工时、E_post与净增量核验，不合格的方案被排除，只有两者都不合格才按第2步选C。",
+      "reason": "Do not turn an explanatory diagnostic into an extra global stopping gate."
+    }
+  ],
+  "translation_corrections": [
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 0,
+      "old_text": "the threshold precedes ranking, but the threshold does not equal “A automatically prioritized”. indicates that when m=20 (E_base=0.50), B is excluded first due to a higher baseline error rate than 0.10; whether A is feasible depends on the corrected error elimination rate qA: when qA=0.60, E_A=0.20, and A is also not feasible. The conclusion for this round is C; when qA≥0.80, E_A=0.10, ΔQ_A=8, and A becomes the only feasible option. The conclusion is A.",
+      "new_text": "Thresholds come before ranking, but they do not automatically favor A. In the illustrative case m=20 (E_base=0.50), B is excluded because its baseline error rate exceeds 0.10. Holding the other baseline inputs fixed, qA=0.60 gives E_A=0.20, so A also fails and the decision is C. With qA≥0.80, E_A≤0.10 and ΔQ_A=8, making A the only feasible option. Equality holds only at qA=0.80; for example, qA=0.90 gives E_A=0.05.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 4,
+      "old_text": "Q: The numerator equals the number of qualifying questions, the denominator equals N, the sampling unit equals the question, the reviewer equals an independent third person, the window equals the start and end periods within the same observation window, deviation control equals keeping both the answer and the source, and the disagreement rate equals the number of disagreeing questions divided by the number of reviewed questions.",
+      "new_text": "Q is the integer count of qualifying questions. The qualifying proportion is Q/N; a proportion must not be confused with a count. An independent third-party reviewer checks the start and end of the same observation window. Retain both answers and sources. The disagreement rate is the number of disputed questions divided by the number reviewed.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 5,
+      "old_text": "ΔQ: The difference between the beginning and end of the same period for the same set of questions, with the same denominator definition, and the same window. It is expressed in terms of increment, without using the total amount at the end of the period.",
+      "new_text": "ΔQ=Q_end−Q_base is the end-minus-start change in the count of qualifying questions within the same question set and observation window, measured in questions. The change in qualifying proportion is ΔQ/N. Do not substitute the end-of-period total for the increment.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 12,
+      "old_text": "Sorting rules cover all scenarios in order: (0) If the data conditions do not hold (N<20 or Q_cap<8, or no versioned ledger, no independent review, disagreement rate ≥ 20%), directly choose C. (1) Check the feasibility and stopping conditions for each scenario: If ΔQ expectation ≤ 0, exclude it and do not calculate unit cost; A requires nA ≥ 8/pA (equivalent to ΔQ_A ≥ 8) and E_A ≤ 0.10 is expected; B requires E_base ≤ 0.10 and nB ≥ 8/pB (equivalent to ΔQ_B ≥ 8). (2) If only one scenario is feasible, choose it; if none are feasible, choose C. (3) If both are feasible, compare the complete unit cost H/ΔQ; choose the lower one; if costs are equal, choose the one with a higher increment; if increments and costs are equal, conduct supplementary testing before making a decision; do not force a choice.",
+      "new_text": "Apply the decision rules in order. (0) Choose C if the data conditions fail: N<20, Q_cap<8, no versioned fact ledger, no independent review, any unverified in-scope brand fact, or a disagreement rate≥20%. (1) Exclude any option with total hours>80 or expected ΔQ≤0 without calculating its unit cost. A requires ΔQ_A≥8 and expected E_A≤0.10. B requires E_base≤0.10, expected E_B≤0.10 and ΔQ_B≥8. The forecast E_B=m/N holds only under the illustrative assumption that B introduces and removes no errors; actual acceptance must recalculate E_post. (2) Select the sole feasible option; if neither is feasible, choose C. (3) If both are feasible, compare full unit costs H/ΔQ and prefer the lower cost. If costs tie, prefer the higher increment. If both costs and increments tie, collect further observations before deciding.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 13,
+      "old_text": "两类等号要分开写清。 门槛处的等号 ：E_post＝0.10、ΔQ＝8、N＝20、Q_cap＝8、总工时＝80 都按“达到即通过”处理；复核分歧率是严格不等——分歧率＝20% 视为不通过，与第 2 节“≥20% 暂停扩量”和 (0) 一致。 排序处的等号 属另一条规则：单位成本相等时取 ΔQ 较高者，两者都相等时补测后再判。两处等号分属不同规则，不可互相套用。",
+      "new_text": "Keep two uses of equality separate. Equality at an eligibility threshold: E_post=0.10, ΔQ=8, N=20, Q_cap=8 and total hours=80 all pass. The disagreement rate must be<20%; a rate≥20% means C, consistent with the fixed criteria and step (0). Equality in ranking: when unit costs tie, choose the higher ΔQ; when both tie, gather more observations before deciding. These are different rules, not interchangeable uses of equality.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 15,
+      "old_text": "Conversely, for A’s feasible range (with parameters pA=0.40, qA=0.80, hA=1.6, N=40): ΔQ_A≥8 requires m≥20, while E_A=m(1−qA)/40≤0.10 requires m(1−qA)≤4. When qA=0.80, m must be equal to 20. By adjusting qA to 0.90, m can range from 20 to 32. This explains why “higher error rate means immediate repair” is incorrect: if m is too small, it cannot meet the increment threshold; if m is too large, it cannot meet the error rate threshold.",
+      "new_text": "Consider A’s feasible range with illustrative inputs pA=0.40, hA=1.6, N=40 and Q_cap=34. Available hours cap nA at floor(52/1.6)=32. For m≤32, nA=m, and ΔQ_A≥8 requires m≥20. If qA=0.80, E_A=m(1−0.80)/40≤0.10 requires m≤20, so the only feasible integer m is 20. For m>32, nA=32 and E_A=(m−25.6)/40 still fails. If qA=0.90, integers m=20 through 32 pass; for m>32, E_A=(m−28.8)/40≤0.10 requires m≤32.8, so integers 33 and 34 fail. A higher error rate therefore does not automatically favor repair: too few erroneous questions cannot meet the increment threshold, while too many cannot meet the residual-error threshold.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 3,
+      "old_text": "If the pilot calibrates qA to ≥0.80 (with E_A≤0.10 at m=20), A becomes the only viable option; otherwise, C remains. If E_post≥0.11 or ΔQ<8 is met, it will be converted to C.",
+      "new_text": "If the pilot supports qA≥0.80, with m=20 and all other inputs fixed, E_A≤0.10 and A is the only feasible option. Otherwise retain C. Measured E_post>0.10 or ΔQ<8 means C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 15,
+      "old_text": "Measured E_post>0.10 or ΔQ<8 → C; E_post is rechecked using E_B=m/N. If new content added to B introduces new errors, it will not pass.",
+      "new_text": "Measured E_post>0.10 or ΔQ<8 means C. Recalculate E_post as the final number of erroneous questions divided by N. If B introduces new errors, stop using the forecast E_B=m/N and compare the new measured value with the threshold.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 19,
+      "old_text": "hB drops to ≤1.625 hours (nB=32) or pB≥4/13 before B restarts; otherwise C",
+      "new_text": "With pB=0.25, hB≤1.625 permits at least 32 questions, meeting the minimum increment. If hB=2.0, pB≥4/13 is required. All other conditions must also pass; otherwise choose C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 6,
+      "old_text": "Step 0 : If N<20, or Q_cap<8, or there is no versioned fact ledger, or there is no independent review, or the disagreement rate during review is ≥20%, choose C. The process ends.",
+      "new_text": "Step 0: If N<20, Q_cap<8, there is no versioned fact ledger or independent review, any in-scope brand fact remains unverified, or the review disagreement rate is≥20%, choose C and end the procedure.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 7,
+      "old_text": "Step 1 : Determine separately whether A and B are feasible. A is feasible if ΔQ_A≥8 and E_A≤0.10; B is feasible if E_base≤0.10 and ΔQ_B≥8. If either scenario’s expected ΔQ≤0, it is immediately deemed infeasible, without considering unit costs.",
+      "new_text": "Step 1: First exclude options with total hours>80 or expected ΔQ≤0. For the rest, A is feasible if and only if ΔQ_A≥8 and expected E_A≤0.10; B is feasible if and only if E_base≤0.10, ΔQ_B≥8 and expected E_B≤0.10. Actual acceptance always uses a newly sampled E_post, not the baseline or forecast.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 8,
+      "old_text": "Step 2 : Neither A nor B is feasible → C; only A is feasible (for example, E_base>0.10 makes B unfeasible, or nB<8/pB → A; only B is feasible (A is unfeasible due to nA<8/pA or E_A>0.10) → B.",
+      "new_text": "Step 2: Neither A nor B feasible → C; only A feasible → A; only B feasible → B. B may fail because E_base>0.10, or because its error-rate or increment condition fails. A may fail its error-rate or increment condition. Do not add B’s baseline condition as a prerequisite for selecting the only feasible option A.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 19,
+      "old_text": "A: hA = 1.6 hours/problem (Verify: 0.8 + rewritten and submitted 0.8, indicative split); nA = min(floor(52/hA), m, Q_cap); ΔQ_A = nA × pA; E_A = (m − nA × qA)/N; H_A = 28 + hA × nA; Constraint: 0 ≤ pA ≤ qA ≤ 1 (Eliminating errors does not necessarily lead to citations). B: Only handle problems where the facts have been verified correctly but still not deemed qualified for citation; hB = 2.0 hours/problem; U = Q_cap − m; nB = min(floor(52/hB), U); ΔQ_B = nB × pB; E_B = m/N; H_B = 28 + hB × nB. E_B in B is a model assumption, assuming that B neither eliminates existing errors nor creates new ones; at the end of the period, re-sampling is required. If B introduces new errors, it will be handled according to E_post>0.10, meaning B is also subject to the 0.10 threshold. If B must complete A first, then B’s cost must include repair hours and the recalculated common baseline. This cannot be applied to the independent account of B.",
+      "new_text": "A: hA=1.6 hours per question, illustratively split into 0.8 for checking and 0.8 for rewriting and submission; nA=min(floor((80−S)/hA),m,Q_cap); ΔQ_A=nA×pA; E_A=(m−nA×qA)/N; H_A=S+hA×nA; 0≤pA≤qA≤1. B handles only questions whose facts are verified as correct but which do not yet have qualifying citations; hB=2.0 hours per question; U=Q_cap−m; nB=min(floor((80−S)/hB),U); ΔQ_B=nB×pB; H_B=S+hB×nB; 0≤pB≤1. Baseline shared work S=28 leaves 52 intervention hours; if S changes, recompute 80−S. Require 0≤S≤80 and positive hours per question. The illustrative forecast E_B=m/N assumes B neither removes existing errors nor adds new ones. At the end, calculate E_post from the new error count. For example, starting at m=2, one new erroneous question with none removed gives E_post=3/40=0.075, which still passes≤0.10; three new erroneous questions give 5/40=0.125 and fail. New errors do not automatically mean exceeding 10%, and the old baseline cannot establish a pass. If B must first complete A, include the repair hours and reset the shared baseline; do not use this independent-B ledger.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 27,
+      "old_text": "By the way, for the calculation examples, the algebraic intersection points where the expected increments of the two solutions are equal are: pB = ΔQ_A/nB = 0.8/26 ≈ 0.0308. Substituting 0.02, 0.0308, and 0.05 gives ΔQ_B = 0.52, 0.8, and 1.3 respectively. All these values are less than 8, so option C is chosen for all three cases. This intersection point is far below the range of 0.15–0.55 mentioned in this demonstration; it has no practical significance and cannot be considered an A/B inversion point. The critical threshold for low-error scenarios is pB ≥ 4/13 (under the conditions of nB = 26 and hB = 2.0). Additionally, the calculated values of 39 and 12.31 hours/correct increment for low-error situations are merely for completeness and not used as a basis for selection—since both solutions’ ΔQ values are below the 8-point threshold, cost comparisons do not change the outcome.",
+      "new_text": "The algebraic intersection of the two expected increments in the low-error example is pB=0.8/26=2/65≈0.030769. For pB=0.02, 2/65 and 0.05, ΔQ_B is respectively 0.52, 0.8 and 1.3. All are below 8, so all three cases choose C. Use the exact fraction for equality; the rounded 0.0308 is not the exact intersection. The intersection is below the illustrative range 0.15–0.55 and has no actionable significance. The actionable low-error threshold is pB≥4/13, holding nB=26 and hB=2.0 fixed. The unit costs of 39 and 12.31 hours per additional qualifying question are shown only for completeness: both options already fail the increment threshold, so comparing costs does not change the decision.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 28,
+      "old_text": "In this example with N=40, no single variable change makes A and B feasible simultaneously. Therefore, there is no situation where changing one variable switches the preferred option from A to B, nor is there a need to compare unit costs according to quadrant (3). This is not a model flaw; rather, it’s a result of the combination of three conditions: N=40, ΔQ≥8, and E_base≤0.10. For quadrant (3) to be triggered, there must be at least 200 problems in the problem pool.",
+      "new_text": "In this N=40 example, changing the inputs listed in the table cannot make both options feasible while B still requires m≤4 and A repairs only erroneous questions with pA≤1. Both cannot reach ΔQ≥8, so there is no ranking of jointly feasible A and B. In general, pA=0 excludes A. For pA>0, a necessary condition for joint feasibility is N≥80/pA; only fixing pA=0.40 yields N≥200. This is not sufficient: check hours, error rates, eligible object counts and B’s increment separately. N≥200 alone does not establish that both options are feasible.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 31,
+      "old_text": "Observations that can refute the conclusions of this article: The pilot project calibrates qA and pA above the critical point, and with a sufficiently large m, makes A the only viable option; or calibrating hB and pB at 1.625 and 4/13 respectively, makes B feasible from C; or there may be larger problem sets with N≥200 and m≥20, making both A and B feasible simultaneously. In such cases, the complete unit cost must be compared according to Section 3(3). This reading window does not retain any significance markers. S3 is a v1 preprint, and its complete method and significance cannot be confirmed. This window cannot confirm significance, nor can it assert that any effects are insignificant.",
+      "new_text": "Observations that change the illustrative decision include a pilot supporting qA and pA beyond their respective thresholds, with the same eligible counts and working-hour constraints, making A the only feasible option; or separately reducing hB or increasing pB, making B feasible instead of C. If the question pool expands, first exclude A when pA=0. For pA>0, the general necessary condition is N≥80/pA, or N≥200 when pA=0.40. All eligibility conditions for both options must still be checked before comparing full costs under section 3(3). The read excerpt retains no significance markers; S3 is a v1 preprint. Its full methods and statistical significance cannot be confirmed from this excerpt, and this does not establish that any effect is statistically insignificant.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 32,
+      "old_text": "Week 1 (Responsibility of channel leaders; 1 person from product and compliance signed): Freeze issue sets, fields, thresholds, and ledger templates. Indicator = Completion rate of ledger fields = Number of verified fields / Number of planned fields; <80% → directly choose C. Weeks 1–3 (1 person for data collection, 1 person for independent review, third party for arbitration of disagreements): Complete two rounds of baseline testing. Indicators = E_base, Q_base (reported separately by platform), disagreement rate; if the directions from two rounds are inconsistent or the disagreement rate ≥ 20%, then choose C and revise the evaluation criteria first. Weeks 3–7: Conduct no more than 10 trials within the remaining 52 hours, calibrating at least one of pA, qA, pB, hA, hB, S; the trial results will be included in nA or nB, with sampling and review counted as 28 hours, not additional output. If no available trials can be obtained, only calibration will be done, no expansion approved. Weeks 7–8: Repeat the evaluation process and finalize results. Indicators = ΔQ, E_post, H, unit cost.",
+      "new_text": "Week 1: the channel lead is responsible, with one product and one compliance reviewer signing off. Freeze the question set, fields, thresholds and ledger template. Field completion—verified fields/planned fields—is only a readiness indicator. All in-scope brand facts must be verified; any unverified question means C under section 3(0), without adding an 80% decision threshold. Weeks 1–3: one operations collector, one independent reviewer and a third adjudicator complete two baseline rounds, reporting E_base, Q_base and disagreement rates separately by platform. If the rounds lead to different sides of a threshold, or disagreement is≥20%, first calibrate the review procedure. Weeks 3–7: run a pilot of at most 10 questions within the remaining hours to calibrate pA, qA, pB, hA, hB and S. Count pilot interventions within nA or nB and sampling/review within shared hours; do not count output twice. Without usable estimates, continue calibration and do not authorize expansion. Weeks 7–8: repeat the same sampling procedure and settle ΔQ, E_post, actual H and full unit cost.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 33,
+      "old_text": "The expansion of conditions is determined sequentially: (i) The selected plan must have measured E_post≤0.10 and ΔQ≥8 simultaneously; (ii) The plan is the only feasible option in step 2, or its total unit cost H/ΔQ is lower than that of another feasible option in step 3. Here, “lower unit cost” refers to comparison with another feasible option, not with alternative uses. Expansion does not occur if only one condition is met: if E_post>0.10 and ΔQ≥8, it indicates that qA is below expectations. Only by adjusting qA to ≥0.80 can the plan meet the standard again; otherwise, proceed to C. If ΔQ<8 and E_post≤0.10, it means that pA or capacity is below the threshold (pA<0.40, or hA>2.60, S>48). Only after these inputs are adjusted to the threshold can the process be restarted; otherwise, proceed to C.",
+      "new_text": "Before expanding, rerun the complete sequence in section 3 using measured results: valid data conditions, actual H≤80, E_post≤0.10 and ΔQ≥8. Select the only feasible option, or compare full unit costs if both are feasible. A cost tie favors the higher increment; a tie on both requires more observations, not automatic expansion. Diagnose failures separately. For A’s error rate, check qA and the number treated: nA×qA≥m−0.10N is the forecast condition only while the illustrative prediction model holds. Actual acceptance always uses newly sampled E_post counts. For A’s increment, check nA×pA≥8 and available hours. Only fixing m=20 and nA=20 gives qA≥0.80 and pA≥0.40. The bounds hA≤2.60 and S≤48 each depend on the other inputs fixed in their table rows. For B’s error-rate failure, examine added, removed and retained erroneous questions, repair and resample; do not apply A’s qA threshold. For B’s increment, check nB×pB≥8: pB≥4/13 assumes nB=26, while hB≤1.625 assumes pB=0.25, U=32 and S=28. Recalculate all conditions after any input changes. Exclude any option that still fails and select the sole option that passes; choose C only if neither passes. Improvement in one metric cannot offset failure of another condition for the same option.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 2,
+      "old_text": "When N=40, A and B will not be qualified simultaneously. For A, if ΔQ≥8, then m≥8/pA must hold; for B, if E_base≤0.10, then m≤0.10N must hold. With pA=0.40, both conditions must be met simultaneously, which requires N≥200. Therefore, the recurring decision in this example is “to do the only feasible option, or to pause”.",
+      "new_text": "At N=40, A and B cannot both qualify. If pA=0, A has zero increment and is excluded. For pA>0, A needs m≥8/pA to reach ΔQ≥8, while B requires m≤0.10N at baseline. Thus N≥80/pA is necessary for joint feasibility; N≥200 follows only when pA=0.40. All other conditions must still pass. The example therefore mainly asks whether to select the sole feasible option or pause.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 14,
+      "old_text": "(3) In this example, the condition cannot be triggered when N=40: the requirement for B to be eligible is m≤0.10N=4, while ΔQ_A≤m×pA≤m≤4<8. Therefore, A never meets the criteria. To make (3) triggerable, m must be ≥8/pA (i.e., m≥20 when pA=0.40) and ≤0.10N, meaning N≥10m≥200. Thus, (3) is a rule designed for larger problem pools; any changes to parameters must be re-evaluated and cannot be copied directly.",
+      "new_text": "Step (3) cannot occur in this example: at N=40, B requires m≤4, while A has ΔQ_A≤m×pA≤m≤4<8. In general, exclude pA=0 first because A cannot meet the minimum increment. For pA>0, A requires m≥8/pA and B requires m≤0.10N, giving the necessary condition N≥80/pA. Only fixing pA=0.40 gives N≥200. This is not sufficient: eligible counts, hours, error rates and B’s increment must also pass.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 17,
+      "old_text": "According to this sequence, the scenario m=20 in Table 2, where qA/pA/hA/S consists of four rows, yields A: Here, E_base=0.50 makes B deemed infeasible in step 1. In step 2, A becomes the only feasible option—this step does not rely on E_base≤0.10.",
+      "new_text": "For the m=20 rows qA, pA, hA and S in Table 2, E_base=0.50 excludes B at step 1. A is the sole feasible option only in columns that pass all of that row’s conditions; a column in which A fails means C. Selecting the sole feasible A at step 2 does not require B’s E_base≤0.10 condition.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 29,
+      "old_text": "Pilot record “Number of errors eliminated/Number of errors processed”; if it’s below 0.80, A won’t pass the error rate threshold. This line B has been excluded due to E_base=0.50>0.10; A is the only viable option.",
+      "new_text": "Estimate qA as erroneous questions corrected/erroneous questions treated. Below 0.80, A fails the error-rate threshold. B is excluded by E_base=0.50>0.10. A is the sole feasible option only in columns meeting all row conditions; otherwise C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 35,
+      "old_text": "The pilot records are “converted to eligible question counts/error-handled questions”; it must satisfy pA≤qA. Line B has been excluded by E_base=0.50>0.10, and A is the only viable option.",
+      "new_text": "Estimate pA as questions becoming qualifying/questions treated for errors, with pA≤qA. B is excluded by E_base=0.50>0.10. A is the sole feasible option only in columns meeting all row conditions; otherwise C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 41,
+      "old_text": "The pilot records are “translated into eligible questions/covered questions”; the baseline of 0.25 and the critical point of 4/13 are two different meanings and should not be confused. In this row, E_base=0.05≤0.10, B has eligibility; A is not feasible due to ΔQ_A=0.8<8, and B is the only feasible option.",
+      "new_text": "Estimate pB as questions becoming qualifying/questions covered. The baseline 0.25 differs from the critical value 4/13. B passes its baseline error-rate condition because E_base=0.05≤0.10, while A fails ΔQ_A=0.8<8. B is the sole feasible option only in columns meeting all row conditions; otherwise C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 47,
+      "old_text": "The ledger records the actual repair hours for each item; if it exceeds 2.60 hours per item, A drops below the increment threshold. Item B in this line has been excluded due to E_base=0.50>0.10, with A being the only viable option.",
+      "new_text": "Record actual repair hours per question. Above 2.60, A cannot meet the increment threshold. B is excluded by E_base=0.50>0.10. A is the sole feasible option only in columns meeting all row conditions; otherwise C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 53,
+      "old_text": "The ledger records work hours item by item; the baseline of 2.0 hours/item has exceeded the threshold, making B impossible. Item A in this row is impossible due to ΔQ_A=0.8<8, while B is the only feasible option.",
+      "new_text": "Record actual coverage hours per question. The baseline 2.0 already exceeds the critical value, so B fails there. A fails ΔQ_A=0.8<8. B is the sole feasible option only in columns meeting all row conditions; otherwise C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 59,
+      "old_text": "Record ledger entries, sample and review actual working hours; joint costs exceed 48 hours, A falls below the threshold. This line B has been excluded by E_base=0.50>0.10; A is the only viable option.",
+      "new_text": "Record actual ledger, sampling and review hours. Above 48 shared hours, A cannot meet the threshold. B is excluded by E_base=0.50>0.10. A is the sole feasible option only in columns meeting all row conditions; otherwise C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 39,
+      "old_text": "Invalid conditions: If the proportion of factual reasons is low, the error rate does not decrease after unification, the error rate decreases but the net citation increase remains 0, or actual testing shows that neither A nor B can cross the threshold within 80 hours, then the corresponding branch of this article automatically becomes invalid, and the process returns to step C.",
+      "new_text": "A low share of factual causes calls for reassessing the mechanism and the direction of the next pilot; it adds no threshold and does not automatically select C. If errors do not decline after facts are unified, or errors decline but the net citation increment remains 0, the corresponding explanation of A’s mechanism fails. This does not automatically exclude B if B still meets every condition. Invalid data conditions mean C under step (0). Otherwise, assess each option using actual hours, E_post and the net increment; exclude any option that fails, select the sole option that passes, and select C only if neither passes. If both pass, use the cost and tie-breaking rules in step (3).",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 26,
+      "old_text": "0.60 (== Section 4 baseline) → E=0.20; C",
+      "new_text": "0.60 (Section 4 baseline) → E=0.20; C",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "en",
+      "tag": "h2",
+      "index": 0,
+      "old_text": "Core judgment: First, eliminate those who meet the threshold. Then discuss whether to prioritize “pre-existing facts” or expand coverage.",
+      "new_text": "Core judgment: exclude options that fail the thresholds before comparing fact repair with coverage expansion.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 3,
+      "old_text": "由此可以提出的 假设 是：若同一处品牌参数在多个页面上互相冲突，不同子查询可能命中不同版本，使同一意图的多个答案路径出现矛盾表述。这里的中介变量是“同一事实存在多个公开版本”；可观察证据是固定问题集上的答案是否复述了过期或错误版本；使该解释失败的条件是：即使把所有版本统一，固定问题集上的错误表述数量也不下降。错误会被复制到多条答案路径这一说法，本篇按待检验机制处理，不作为已证实的工程事实。",
+      "new_text": "This suggests a hypothesis: if a brand parameter has conflicting versions across pages, different subqueries may retrieve different versions and produce inconsistent answers to the same intent. The proposed mediator is multiple public versions of one fact. The observable test is whether answers to the fixed question set repeat outdated or incorrect versions. The explanation fails if unifying all versions does not reduce incorrect answers. Propagation across answer paths is a mechanism to test, not an established engineering fact.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 6,
+      "old_text": "Microsoft’s announcement regarding Copilot Search states that the product will highlight sources, link entire sentences or paragraphs in the answers to those sources, and list all the links used to generate the answers. The announcement also notes that available regions include countries other than China and Russia. [S5] This is a manufacturer’s feature statement, not proof of accuracy or translation quality. It also reminds readers in the Chinese market that the same set of actions may vary across different platforms.",
+      "new_text": "Microsoft’s Copilot Search announcement says the product highlights sources, links complete sentences or paragraphs to their sources, and lists all links used to generate the answer. It also states that availability excludes China and Russia. {{0}} This is a vendor feature claim, not proof of citation accuracy or conversion effectiveness. Availability of the same intervention may differ across platforms for readers in China.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 7,
+      "old_text": "OECD 的政策报告主张按两类风险对韧性策略分段：常态化中断由企业常规风险管理处理，极端事件才需要政府作为促进者与应急资源提供者介入，把常规工具用于重大中断会造成浪费与表现不佳。 [S2] 一篇咨询机构的公开观点文章则指出，韧性投入存在显式取舍，例如集中采购降低复杂度与成本，而多元化供应提高韧性但增加成本与复杂度。 [S4] 这两份材料都不是 GEO 研究，只能提供方法类比：按条件分段、把代价列全。它们不能支撑任何关于 AI 引用效果的说法。",
+      "new_text": "The OECD policy report distinguishes routine disruptions, addressed through ordinary enterprise management, from extreme events that call for government facilitation and emergency resources. Applying ordinary tools to major disruptions can be wasteful and ineffective. {{0}} A public consulting commentary describes explicit trade-offs: concentrated sourcing can reduce complexity and cost, while diversification can improve resilience at greater cost and complexity. {{1}} Neither source studies GEO. Their contribution is a methodological analogy—segment decisions by conditions and include all costs—not evidence of AI citation effectiveness.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 10,
+      "old_text": "The number of available objects for B is expressed as U = Q_cap − m. This formula holds true under the conditions that all questions have been verified, any factual errors in any brand are counted towards m, and the incorrect questions do not overlap with the correct ones. If these conditions are not met, this formula cannot be used; proof must be provided first. This article does not promise statistical significance; it only ensures consistency and reproducibility. No significance markers are retained in this reading window, so no judgments of “significant/insignificant” can be made regarding any effects.",
+      "new_text": "B’s eligible pool is U=Q_cap−m only if every question has undergone fact verification, every in-scope brand factual error is included in m, and erroneous questions do not overlap with qualifying questions. If these conditions fail, do not use the formula; establish the evidence first. This article promises consistent definitions and reviewable calculations, not statistical significance. No significance markers were retained in the read excerpt, so it cannot establish whether any effect is statistically significant.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "li",
+      "index": 9,
+      "old_text": "Step 3 : Both A and B are feasible → Compare the complete unit cost H/ΔQ; choose the lower value first. If costs are equal, choose the one with higher ΔQ. If both costs are equal, make a supplementary measurement before making a decision.",
+      "new_text": "Step 3: If both options are feasible, prefer the lower full unit cost H/ΔQ. If costs tie, prefer the higher ΔQ. If both cost and ΔQ tie, gather further observations before deciding.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 18,
+      "old_text": "Joint preliminary work (both A and B must be paid, and it counts towards both sides’ total costs): Fact ledger 10 hours + two rounds of baseline and final sampling totaling 12 hours + independent review and adjudication 6 hours = 28 hours; remaining intervention capacity 52 hours. Joint work only involves organizing judgment bases and measurements; no changes are made to the public page. This model does not account for any additional hours. The two plans are alternative trials, not separate 80-hour increments.",
+      "new_text": "Shared preliminary work is required for either A or B and is included in each option’s full cost: 10 hours for the fact ledger +12 hours for the two baseline rounds and final sampling +6 hours for independent review and adjudication =28 hours, leaving 52 intervention hours. This shared work organizes evidence and measurement without changing public pages; the model assigns it no citation increment. A and B are alternative trials, not two separate allocations of 80 hours.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 22,
+      "old_text": "Integer execution: nA and nB are the numbers of integer operations; ΔQ is the model expectation, which can be a decimal and cannot be treated as an observed count. Final acceptance by integers: The number of incorrect and correct questions is counted as actual counts. Q_end must be at least 8 more questions than the baseline (Q_base=6 → Q_end≥14); if the original correct questions are lost, it is calculated based on the net increase, and only the newly obtained questions should be counted.",
+      "new_text": "Integer execution: nA and nB are integer counts of interventions. ΔQ is a model expectation and may be fractional; it is not an observed count. Final acceptance uses actual integer counts of erroneous and qualifying questions among the 40. Q_end must exceed the baseline by at least 8 (Q_base=6 → Q_end≥14). If previously qualifying questions are lost, subtract those losses: measure the net increment, not only newly qualifying questions.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 29,
+      "old_text": "反方解释一：本品牌引用不足主要来自可读性与结构，而不是事实错误。S3 记录的特征里本来就包含更结构化的 HTML 与更易读的文本， [S3] 所以这个解释与本篇的证据并不冲突。检验方式：对每个未合格题逐项记录原因（事实缺失／事实错误／结构或可读性／缺少第三方证据），允许多原因共存，并在两轮基线中记录各类原因的题数占比。这条诊断不新增门槛，也不改变 (0)(1)(2)(3) 的先后顺序：若 A 试点后 ΔQ_A 仍低于 8 题，(1) 已把 A 判为不可行，无论原因怎么归类，动作都不会变成 A；原因归类的作用是决定下一次试点指向 B 还是结构优化，而不是覆盖门槛。若修复后错误率下降但净引用增量仍为 0，则“纠错带来增量”的链条被推翻，停止扩量。若原因归类中事实类占优，则 A 的机制前提在本品牌场景得到部分支持，但动作仍以 (0)(1)(2)(3) 为准，本篇不为该诊断单设阈值。",
+      "new_text": "An alternative explanation is that the brand’s citation shortfall comes mainly from readability and structure rather than factual errors. S3 includes structured HTML and readable text among its observed features, {{0}} so this explanation is compatible with the cited evidence. For every nonqualifying question, record possible causes—missing facts, incorrect facts, structure/readability or lack of third-party evidence—allowing multiple causes, and report their shares across the two baseline rounds. This diagnosis adds no threshold and does not override steps (0)–(3). If A’s pilot still gives ΔQ_A<8, step (1) rejects A regardless of the labels assigned to causes. The labels guide the next pilot toward B or structural changes; they do not waive eligibility. If errors decline but net citation growth remains 0, the proposed correction-to-growth mechanism fails and expansion stops. A predominance of factual causes offers partial support for A’s mechanism in this brand’s setting, but the decision still follows (0)–(3), without a separate diagnostic cutoff.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 35,
+      "old_text": "Budget item closure: Ledger 10 + Sampling 12 + Review 6 + Intervention hours + Unused hours = 80 hours. In high-error scenarios, it’s 10+12+6+32=60 hours. The remaining 20 hours are handled according to section 4: if there are missing fields in the ledger, they are allocated (each item is counted as 1.0 hours). If there’s no space, they are clearly recorded as unused and reassigned in the next budget cycle. If determined to be C, the 28 hours already spent cannot be recovered; the remaining 52 hours are not recorded as GEO intervention expenses. The schedule is recommended based on this example’s hours, not a conclusion from the source. If capacity is insufficient, decisions can be delayed or trials can be scaled down, but the review step cannot be removed.",
+      "new_text": "Budget reconciliation: ledger 10 +sampling 12 +review 6 +actual intervention hours +supplementary ledger hours +unused hours =80. Supplementary ledger hours count only actual additional work beyond the original 10 hours; do not count those original hours twice. The high-error example uses 10+12+6+32=60 hours. Account for the remaining 20 under section 4: spend them on missing ledger fields if needed, illustratively at 1.0 hour per field, or record them as unused for reassignment in the next budget. If C is selected before intervention, the 28 shared hours already spent cannot be recovered and the remaining 52 hours are not GEO intervention spending. If C is selected after a pilot, retain all actual pilot costs and calculate the unused remainder; do not erase completed work. This timetable is an arrangement based on the illustrative hours, not a source finding. Insufficient capacity calls for postponement or a smaller trial, never removal of independent review.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "p",
+      "index": 37,
+      "old_text": "缺乏垂直证据：没有中国供应链买家的 AI 搜索行为数据，没有本品牌或任何企业的 GEO 转化实测，没有采访或客户案例。m、pA、qA、pB、hA、hB、S 以及 0.10、8 题、20 题、80 小时/8 周全部为示意参数；校准方式是两轮基线加不超过 10 题的试点，若无法完成校准，则只保留顺序规则、不给出任何数值性推荐。",
+      "new_text": "Industry evidence is absent: the sources provide no Chinese supply-chain buyer AI-search behavior data, no measured GEO conversion results for this brand or another company, and no interviews or client cases. The inputs m, pA, qA, pB, hA, hB, S and the thresholds 0.10, 8 questions, 20 questions and 80 hours/8 weeks are all illustrative assumptions. Calibration uses two baseline rounds and a pilot of at most 10 questions. If calibration cannot be completed, retain only the sequential decision rules and make no numerical recommendation.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "en",
+      "tag": "td",
+      "index": 17,
+      "old_text": "A: No object is directly excluded; B: ΔQ_B still needs to be ≥8. Under this baseline, nB=26 and ΔQ_B=6.5 → C",
+      "new_text": "A has no erroneous questions to repair and is excluded. B still requires ΔQ_B≥8; the baseline nB=26 and ΔQ_B=6.5 therefore mean C.",
+      "reason": "Restore no-object exclusion"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 0,
+      "old_text": ": الحد الأدنى يسبق الترتيب، لكن الحد الأدنى لا يعادل “الأولوية التلقائية A”. يوضح أنه عندما يكون m=20 (E_base=0.50)، يتم استبعاد B بسبب معدل الأخطاء الأولي الذي يتجاوز 0.10؛ سواء كان A قابلاً للتطبيق أم لا يعتمد على معدل إزالة الأخطاء بعد التصحيح، حيث إذا كانت qA=0.60 فإن E_A=0.20، وبالتالي A غير قابل للتطبيق، والاستنتاج في هذه الجولة هو C؛ أما إذا كانت qA≥0.80 فإن E_A=0.10 وΔQ_A=8، وبالتالي A يصبح الخيار الوحيد القابل للتطبيق، والاستنتاج هو A.",
+      "new_text": "شروط القبول تسبق الترتيب، لكنها لا تعني أولوية تلقائية للخيار A. في المثال التوضيحي m=20 وE_base=0.50، يُستبعد B لأن معدل الخطأ الأساسي يتجاوز 0.10. مع ثبات بقية المدخلات الأساسية، تعطي qA=0.60 القيمة E_A=0.20، فيفشل A أيضًا ويكون القرار C. وعند qA≥0.80 تصبح E_A≤0.10 وΔQ_A=8، فيكون A الخيار الوحيد القابل للتنفيذ. تتحقق المساواة فقط عند qA=0.80؛ فعند qA=0.90 تكون E_A=0.05.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 4,
+      "old_text": "الجزء الأول = عدد الأسئلة المؤهلة، الجزء الثاني = N، وحدة العينة = السؤال، الشخص المسؤول عن المراجعة = الطرف الثالث المستقل، النافذة = نهاية الفترة ونفس نافذة الملاحظة، التحكم في الانحرافات = الاحتفاظ بالإجابات والمصادر في نفس الوقت، معدل الخلافات = عدد الأسئلة المتناقضة / عدد الأسئلة التي تمت مراجعتها.",
+      "new_text": "Q هو عدد صحيح للأسئلة المؤهلة. أما النسبة المؤهلة فهي Q/N؛ ولا يجوز الخلط بين العدد والنسبة. يجري مراجع مستقل التحقق في بداية نافذة الملاحظة نفسها ونهايتها، مع الاحتفاظ بالإجابات والمصادر معًا. معدل الخلاف هو عدد الأسئلة المختلف عليها مقسومًا على عدد الأسئلة المراجعة.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 5,
+      "old_text": "ΔQ: الفرق بين نهاية ومطلع الفترة في نفس مجموعة الأسئلة، ونفس القاسم، ونفس النافذة، يتم تحديده بواسطة القياس المتزايد، دون استخدام الكمية الإجمالية في نهاية الفترة.",
+      "new_text": "ΔQ=Q_end−Q_base هو عدد الأسئلة المؤهلة في نهاية الفترة ناقص عددها في بدايتها، ضمن مجموعة الأسئلة ونافذة الملاحظة نفسيهما، ووحدته سؤال. أما تغير النسبة المؤهلة فهو ΔQ/N. لا يُستبدل العدد النهائي بالزيادة.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 12,
+      "old_text": "قواعد الترتيب تغطي جميع الحالات بالتسلسل:  \n(0) إذا لم تتحقق شروط البيانات (N<20 أو Q_cap<8، أو عدم وجود سجلات مطورة، أو عدم وجود مراجعة مستقلة، أو نسبة الخلاف ≥ 20%)، يتم اختيار الخيار C مباشرةً.  \n(1) فحص جدوى كل خطة وشروط التوقف: إذا كان ΔQ المتوقع ≤ 0، يتم استبعادها دون حساب تكلفة الوحدة؛ ويجب أن يتحقق A من خلال nA ≥ 8/pA (وهو ما يعادل ΔQ_A ≥ 8)، ويجب أن يكون E_A ≤ 0.10؛ ويجب أن يكون E_base ≤ 0.10 وnB ≥ 8/pB (وهو ما يعادل ΔQ_B ≥ 8).  \n(2) إذا كانت هناك خطة واحدة فقط قابلة للتنفيذ، يتم اختيارها؛ وإذا لم تكن هناك خطة قابلة للتنفيذ، يتم اختيار الخيار C.  \n(3) إذا كانت الخطوتان قابلتين للتنفيذ، يتم مقارنة تكلفة الوحدة الكاملة H/ΔQ، ويتم اختيار الأقل؛ إذا كانت التكلفات متساوية، يتم اختيار الأعلى من حيث الزيادة؛ وإذا كانت الزيادة والتكلفة متساويتين، يتم إجراء اختبارات إضافية قبل اتخاذ قرار، ولا يتم الاختيار بشكل قسري.",
+      "new_text": "تُطبَّق قواعد القرار بالترتيب. (0) يُختار C إذا لم تتحقق شروط البيانات: N<20، أو Q_cap<8، أو غياب سجل حقائق مضبوط الإصدارات أو مراجعة مستقلة، أو وجود حقيقة تخص العلامة التجارية ضمن النطاق لم تُتحقق بعد، أو معدل خلاف≥20%. (1) يُستبعد أي خيار يتجاوز إجمالي ساعاته 80 أو تكون زيادته المتوقعة ΔQ≤0، دون حساب تكلفة الوحدة. يتطلب A تحقق ΔQ_A≥8 وE_A المتوقعة≤0.10. ويتطلب B تحقق E_base≤0.10 وE_B المتوقعة≤0.10 وΔQ_B≥8. لا يصح التنبؤ E_B=m/N إلا بافتراض أن B لا يضيف أخطاء ولا يزيلها؛ ويجب إعادة حساب E_post عند القبول الفعلي. (2) يُختار الخيار الوحيد القابل للتنفيذ؛ وإذا فشل الاثنان يُختار C. (3) إذا كان الاثنان قابلين للتنفيذ، تُقارَن التكلفة الكاملة للوحدة H/ΔQ ويُفضَّل الأقل. عند تساوي التكلفة تُفضَّل الزيادة الأكبر، وعند تساويهما معًا تُجمع ملاحظات إضافية قبل القرار.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 13,
+      "old_text": "يجب كتابة علامات المساواة في الفئتين بشكل منفصل. في نقطة ، تُستخدم علامة المساواة : E_post=0.10، ΔQ=8، N=20، Q_cap=8، وعدد ساعات العمل الإجمالي=80، ويتم التعامل معها جميعًا على أنها “تم الوصول إلى الحد المطلوب”. أما نسبة الخلافات فهي غير متساوية بدقة؛ حيث يُعتبر أن نسبة الخلافات=20% يعني عدم النجاح، وهذا يتوافق مع القاعدة الثانية “≥20% توقف التوسع” و(0). أما في نقطة ، فإن علامة المساواة تخضع لقاعدة مختلفة: عندما تكون تكلفة الوحدة متساوية، يتم اختيار القيمة الأعلى لـ ΔQ، وإذا كانت القيمتان متساويتين، يتم إجراء اختبارات إضافية قبل الحكم. علامات المساواة في هاتين النقطتين تخضع لقواعد مختلفة، ولا يمكن تطبيقها مع بعضها البعض.",
+      "new_text": "يجب الفصل بين نوعين من المساواة. المساواة عند حدود القبول: القيم E_post=0.10 وΔQ=8 وN=20 وQ_cap=8 وإجمالي الساعات=80 كلها مقبولة. أما معدل الخلاف فيجب أن يكون<20%؛ وعند≥20% يُختار C، اتساقًا مع الشروط المثبتة والخطوة (0). المساواة في الترتيب: عند تساوي تكلفة الوحدة تُختار ΔQ الأعلى، وعند تساويهما معًا تُجمع ملاحظات إضافية. هاتان قاعدتان مختلفتان ولا تُستبدل إحداهما بالأخرى.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 15,
+      "old_text": "إذا نظرنا إلى النافذة القابلة للتطبيق لـ A (بالنسبة للمعاملات pA=0.40، qA=0.80، hA=1.6، N=40): فإن ΔQ_A≥8 يتطلب m≥20، بينما E_A=m(1−qA)/40≤0.10 يتطلب m(1−qA)≤4. عندما يكون qA=0.80، يجب أن يكون m=20. عند تصحيح qA إلى 0.90، يمكن أن يكون m بين 20 و32. هذا يفسر لماذا فكرة \"يجب الترميم أولاً إذا كانت نسبة الخطأ مرتفعة\" خاطئة: فالمقدار m صغير جداً لدرجة أنه لا يمكن تجاوز حاجز الزيادة، والمقدار m كبير جداً لدرجة أنه لا يمكن تجاوز حاجز نسبة الخطأ.",
+      "new_text": "لننظر إلى نطاق قابلية A للتنفيذ عند المدخلات التوضيحية pA=0.40 وhA=1.6 وN=40 وQ_cap=34. تحد الساعات المتاحة من nA بحيث nA≤floor(52/1.6)=32. عندما m≤32، تكون nA=m، ويتطلب ΔQ_A≥8 أن تكون m≥20. وعند qA=0.80، يتطلب E_A=m(1−0.80)/40≤0.10 أن تكون m≤20؛ لذا فالعدد الصحيح الوحيد المقبول هو m=20. أما عندما m>32 فتكون nA=32 وE_A=(m−25.6)/40، ولا يتحقق الشرط. وعند qA=0.90، تمر الأعداد الصحيحة من m=20 إلى 32؛ وللقيم m>32 يتطلب E_A=(m−28.8)/40≤0.10 أن تكون m≤32.8، لذلك تفشل 33 و34. ارتفاع معدل الخطأ لا يجعل الإصلاح أولوية تلقائية: قلة الأسئلة الخاطئة تمنع بلوغ حد الزيادة، وكثرتها تمنع بلوغ حد الخطأ المتبقي.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 3,
+      "old_text": "إذا قامت المحطة التجريبية بتصحيح قيمة qA إلى ≥0.80 (عند m=20، يكون E_A≤0.10)، فإن A تصبح الخيار الوحيد القابل للتطبيق؛ وإلا يتم الإبقاء على الخيار C. إذا كانت قيمة E_post≥0.11 أو ΔQ<8 تساوي 8، فإن الخيار C يُختار.",
+      "new_text": "إذا دعمت التجربة qA≥0.80 مع m=20 وثبات بقية المدخلات، فإن E_A≤0.10 ويصبح A الخيار الوحيد القابل للتنفيذ؛ وإلا يبقى C. إذا كان القياس الفعلي E_post>0.10 أو ΔQ<8 فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 15,
+      "old_text": "القيمة الفعلية لـ E_post>0.10 أو ΔQ<8 هي C؛ يتم إعادة القياس لـ E_post وفقًا للمعادلة E_B=m/N، وإذا أدى إضافة محتوى جديد إلى B إلى حدوث خطأ جديد، فلا يتم الموافقة.",
+      "new_text": "إذا كان القياس الفعلي E_post>0.10 أو ΔQ<8 فالقرار C. تُحسب E_post من عدد الأسئلة الخاطئة في نهاية الفترة مقسومًا على N. إذا أضاف B أخطاء جديدة فلا يعود التنبؤ E_B=m/N صالحًا؛ ويُقارَن القياس الجديد بالحد.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 19,
+      "old_text": "يتم إعادة تشغيل B عندما يكون الوقت ≤1.625 ساعة (nB=32) أو pB≥4/13؛ وإلا فإن C سيظل في حالة التوقف.",
+      "new_text": "عند pB=0.25، يتيح hB≤1.625 معالجة 32 سؤالًا على الأقل وتحقيق الحد الأدنى للزيادة. وعند hB=2.0 يلزم pB≥4/13. يجب أيضًا تحقق سائر الشروط؛ وإلا فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 6,
+      "old_text": "الخطوة الأولى : إذا كان N<20، أو Q_cap<8، أو لا يوجد سجل للحقائق المختلفة، أو لا يوجد فحص مستقل، أو نسبة الخلافات في الفحص ≥20%، اختر الخيار C، وينتهي الإجراء.",
+      "new_text": "الخطوة 0: إذا كان N<20 أو Q_cap<8، أو غاب سجل حقائق مضبوط الإصدارات أو التدقيق المستقل، أو بقيت حقيقة للعلامة التجارية ضمن النطاق دون تحقق، أو كان معدل الخلاف≥20%، يُختار C وينتهي الإجراء.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 7,
+      "old_text": "الخطوة الأولى : يتم تحديد ما إذا كانت الخطة A وB قابلة للتنفيذ أم لا. إذا كانت الخطة A قابلة للتنفيذ، فإن ذلك يعني أن ΔQ_A≥8 وE_A≤0.10؛ أما إذا كانت الخطة B قابلة للتنفيذ، فإن ذلك يعني أن E_base≤0.10 وΔQ_B≥8. إذا كان القيمة المتوقعة لـ ΔQ في أي من الخطوتين ≤0، فإن ذلك يعني أن الخطة غير قابلة للتنفيذ، ولا يتم احتساب التكلفة الوحدة في حسابات التنفيذ.",
+      "new_text": "الخطوة 1: تُستبعد أولًا الخيارات التي يتجاوز إجمالي ساعاتها 80 أو تكون ΔQ المتوقعة≤0. وللبقية، يكون A قابلًا للتنفيذ إذا وفقط إذا كانت ΔQ_A≥8 وE_A المتوقعة≤0.10؛ ويكون B قابلًا للتنفيذ إذا وفقط إذا كانت E_base≤0.10 وΔQ_B≥8 وE_B المتوقعة≤0.10. يُستخدم عند القبول الفعلي قياس E_post الجديد، لا خط الأساس ولا التنبؤ.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 8,
+      "old_text": "الخط الثاني : لا يمكن تنفيذ كلا الخيارين A وB → الخيار C؛ يمكن تنفيذ الخيار A فقط (على سبيل المثال، E_base>0.10 يجعل B غير قابل للتنفيذ، أو nB<8/pB). → الخيار A فقط يمكن تنفيذه؛ يمكن تنفيذ الخيار B فقط (A غير قابل للتنفيذ بسبب nA<8/pA أو E_A>0.10). → الخيار B.",
+      "new_text": "الخطوة 2: إذا فشل A وB فالقرار C؛ وإذا كان A وحده قابلًا للتنفيذ فالقرار A؛ وإذا كان B وحده قابلًا للتنفيذ فالقرار B. قد يفشل B بسبب E_base>0.10 أو عدم بلوغ شرط معدل الخطأ أو الزيادة، وقد يفشل A في شرط معدل الخطأ أو الزيادة. لا تُضاف شروط خط أساس B إلى قرار اختيار A عندما يكون هو الخيار الوحيد الممكن.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 19,
+      "old_text": "أ: hA = 1.6 ساعة/سؤال (تحقق من 0.8 + إعادة الكتابة وتقديمها، وهي تعتبر عملية تفكيك توضيحية)؛ nA = min(floor(52/hA), m, Q_cap)؛ ΔQ_A = nA × pA؛ E_A = (m − nA × qA) / N؛ H_A = 28 + hA × nA؛ القيد: 0 ≤ pA ≤ qA ≤ 1 (إزالة الأخطاء لا تعني بالضرورة الحصول على الاقتباس). ب: يتم التعامل فقط مع الأسئلة التي تم التحقق من صحتها ولكنها لم تُقبل بعد؛ hB = 2.0 ساعة/سؤال؛ U = Q_cap − m؛ nB = min(floor(52/hB), U)؛ ΔQ_B = nB × pB؛ E_B = m/N؛ H_B = 28 + hB × nB. E_B في ب هو افتراض نموذجي، بشرط أن ب لا يزيل الأخطاء القائمة ولا يخلق أخطاء جديدة؛ يجب إعادة العينة في نهاية الفترة، وإذا أدت المحتويات الجديدة في ب إلى خلق أخطاء جديدة، يتم التعامل معها وفقًا لـ E_post>0.10، أي أن ب أيضًا يخضع لقيود 0.10. إذا كان علي ب إنهاء A أولاً، فيجب إضافة تكلفة الإصلاح إلى التكلفة الإجمالية وإعادة حساب الخط الأساسي المشترك، ولا يمكن تطبيق حسابات ب المستقلة في هذا النص.",
+      "new_text": "A: قيمة hA=1.6 ساعة لكل سؤال، مقسمة توضيحيًا إلى 0.8 للتحقق و0.8 لإعادة الكتابة والتقديم؛ nA=min(floor((80−S)/hA),m,Q_cap)؛ ΔQ_A=nA×pA؛ E_A=(m−nA×qA)/N؛ H_A=S+hA×nA؛ والقيد 0≤pA≤qA≤1. يعالج B فقط الأسئلة التي ثبتت صحة حقائقها ولم تحصل بعد على استشهاد مؤهل؛ hB=2.0 ساعة لكل سؤال؛ U=Q_cap−m؛ nB=min(floor((80−S)/hB),U)؛ ΔQ_B=nB×pB؛ H_B=S+hB×nB؛ 0≤pB≤1. خط أساس العمل المشترك S=28، فتتبقى 52 ساعة للتدخل؛ وإذا تغير S فيجب إعادة حساب 80−S. يلزم 0≤S≤80 وأن تكون ساعات السؤال موجبة. يفترض التنبؤ التوضيحي E_B=m/N أن B لا يزيل أخطاء قائمة ولا يضيف أخطاء جديدة. في نهاية الفترة تُحسب E_post من عدد الأخطاء الجديد. مثلًا، بدءًا من m=2، إضافة سؤال خاطئ واحد دون إزالة أي خطأ تعطي E_post=3/40=0.075، وهي ما زالت تحقق≤0.10؛ أما إضافة ثلاثة أسئلة خاطئة فتعطي 5/40=0.125 وتفشل. لا تعني إضافة أخطاء تلقائيًا تجاوز 10%، ولا يجوز إعلان النجاح باستخدام خط الأساس القديم. إذا كان B يتطلب إتمام A أولًا، تُضاف ساعات الإصلاح ويُعاد تحديد خط الأساس المشترك، ولا يُستخدم حساب B المستقل هنا.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 27,
+      "old_text": "بالإضافة إلى ذلك، نقدم نقاط التقاطع الرياضية التي تُظهر أن الزيادات المتوقعة في الحسابات متساوية: pB=ΔQ_A/nB=0.8/26≈0.0308؛ وعند استبدال القيم بـ 0.02، 0.0308، 0.05، نحصل على ΔQ_B=0.52، 0.8، 1.3، وكلها أقل من 8، لذا يُفضل اختيار الخيار C في جميع الحالات. هذه النقطة أقل بكثير من النطاق المذكور في العرض الحالي، وهو من 0.15 إلى 0.55، ولا توجد فيها أي معنى قابل للتطبيق، ولا يمكن اعتبارها نقطة انعكاس A/B؛ الحد الأدنى للخطأ في الجانب السلبي هو pB≥4/13 (при nB=26، hB=2.0). بالإضافة إلى ذلك، فإن القيمة المحسوبة في الحالات ذات الخطأ المنخفض، وهي 39 و12.31 ساعة/زيادة مؤهلة، هي مجرد عروض للاكتمال فقط، وليست أساسًا للاختيار – فكل من الحلول two ΔQ أقل من حد 8، وبالتالي لا يتغير التباين في التكلفة.",
+      "new_text": "نقطة التقاطع الجبرية للزيادتين المتوقعتين في مثال الخطأ المنخفض هي pB=0.8/26=2/65≈0.030769. عند القيم 0.02 و2/65 و0.05 تكون ΔQ_B على التوالي 0.52 و0.8 و1.3؛ وكلها أقل من 8، لذلك يكون القرار C في الحالات الثلاث. تُستخدم الكسور الدقيقة عند حساب المساواة؛ فالقيمة المقربة 0.0308 ليست نقطة التقاطع الدقيقة. تقع هذه النقطة تحت المجال التوضيحي 0.15–0.55 ولا تغير القرار عمليًا. الحد العملي للجانب منخفض الخطأ هو pB≥4/13 مع ثبات nB=26 وhB=2.0. تُعرض القيمتان 39 و12.31 ساعة لكل سؤال مؤهل إضافي للاكتمال فقط؛ فقد استُبعد الخياران بالفعل لعدم بلوغ حد الزيادة، فلا تغير مقارنة التكلفة القرار.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 28,
+      "old_text": "في هذا المثال الذي يحتوي على قيمة N=40، لا يوجد أي تغيير في متغير واحد يمكن أن يجعل A وB قابلين للتطبيق في نفس الوقت، لذلك لا يوجد حالة يمكن فيها تغيير المتغير الواحد لتحويل الخيار من A إلى B، ولا يوجد حاجة لملء ربع الجدول وفقًا للمعيار (3) لمراجعة التكاليف القياسية. هذه ليست عيبًا في النموذج، بل هي نتيجة مشتركة لثلاثة شروط: N=40، ΔQ≥8، E_base≤0.10؛ لكي يتم تحقيق المعيار (3)، يجب أن يكون عدد الحالات التي تحتاج إلى معالجة N≥200.",
+      "new_text": "في المثال N=40، لا يمكن لتغيير المدخلات المدرجة في الجدول أن يجعل الخيارين قابلين للتنفيذ معًا ما دام B يشترط m≤4، وكان A يصلح الأسئلة الخاطئة فقط مع pA≤1. لا يمكن لكليهما بلوغ ΔQ≥8، فلا توجد هنا مفاضلة تكلفة بين خيارين مؤهلين معًا. بصورة عامة، تستبعد pA=0 الخيار A. وعند pA>0، الشرط الضروري لقابليتهما المشتركة هو N≥80/pA؛ وتنتج N≥200 فقط عند تثبيت pA=0.40. هذا شرط ضروري لا كافٍ: يجب التحقق منفصلًا من الساعات ومعدلات الخطأ وأعداد الأسئلة المتاحة وزيادة B. لا تكفي N≥200 لإعلان قابلية الخيارين.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 31,
+      "old_text": "ملاحظات يمكن أن تدحض استنتاجات هذه الدراسة: يمكن تصحيح قيم qA وpA فوق الحد الحرج، وكون قيمة m كبيرة بما يكفي لجعل A الخيار الوحيد الممكن؛ أو يمكن تصحيح قيم hB وpB إلى 1.625 و4/13، مما يجعل B خيارًا ممكنًا بدلاً من C؛ أو قد يكون هناك مشاكل أكبر مثل N≥200 وm≥20، مما يجعل A وB خيارين ممكنين في نفس الوقت، وفي هذه الحالة يجب مقارنة التكلفة الكاملة للوحدات وفقًا للقسم 3(3). لم يتم الاحتفاظ بعلامات الدلالة في نافذة القراءة هذه، وS3 هو نسخة مسبقة من v1، ولا يمكن تأكيد الطريقة الكاملة أو الدلالة؛ لا يمكن التأكد من الدلالة في هذه النافذة، ولا يمكن القول بأن أي تأثير غير ملحوظ.",
+      "new_text": "يمكن أن يتغير القرار التوضيحي إذا دعمت التجربة تجاوز qA وpA حدودهما المعنية، مع بقاء أعداد الأسئلة والقيود الزمنية نفسها، فيصبح A الخيار الوحيد الممكن؛ أو إذا خُفض hB وحده أو رُفع pB وحده، فيصبح B ممكنًا بدلًا من C. عند توسيع مجموعة الأسئلة يُستبعد A أولًا إذا كانت pA=0. وعند pA>0 يكون الشرط الضروري العام N≥80/pA، أو N≥200 عندما pA=0.40. يجب مع ذلك فحص جميع شروط قبول الخيارين قبل مقارنة التكلفة الكاملة وفق القسم 3(3). لم تحتفظ نافذة القراءة بعلامات الدلالة الإحصائية، وS3 نسخة أولية v1؛ لا يمكن تأكيد المنهج الكامل أو الدلالة منها، ولا يبرر ذلك الادعاء بأن أي أثر غير دال إحصائيًا.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 32,
+      "old_text": "الأسبوع الأول: المسؤول عن القنوات هو المشرف الرئيسي، ويتم التوقيع على المنتج والامتثال من قبل شخص واحد لكل منهما. يتم تجميد مجموعة المشاكل، والمحتويات، والعتبات، وتقنيات السجلات. المؤشر = معدل إكمال محتويات السجل = عدد المحتويات التي تم التحقق منها / عدد المحتويات المخطط لها؛ <80% اختيار الخيار C مباشرة. الأسبوعان الأول إلى الثالث: يتم جمع البيانات من قبل شخص واحد في العمليات، ويتم التحقق من الجودة من قبل شخص واحد بشكل مستقل، ويتم التصديق من قبل شخص ثالث في حالة وجود خلافات. يتم إكمال جولتين من التقييم الأساسي. المؤشر = E_base، Q_base (يتم الإبلاغ عنها على حدة حسب المنصة)، ومعدل الخلافات؛ إذا كانت الاتجاهات غير متوافقة أو كان معدل الخلافات ≥20%، فإن الخيار C يُختار ويتم تعديل إجراءات التصديق أولاً. الأسبوع الثالث إلى السابع: خلال الوقت المتبقي البالغ 52 ساعة، يتم تنفيذ لا يزيد عن 10 مسائل تجريبية، ويتم تعديل واحد على الأقل من pA، qA، pB، hA، hB، S؛ من المتوقع أن يتم إدخال nA أو nB في التجربة التجريبية، ويتم احتساب العينات والتحقق في 28 ساعة، دون احتساب مرة أخرى؛ إذا لم يتم الحصول على تقديرات للتجارب التجريبية المتاحة، فسيتم فقط إجراء التعديلات، دون الموافقة على زيادة الكمية. الأسبوع السابع إلى الثامن: يتم إعادة التحقق وفقًا للإجراءات نفسها وتسوية الأمور، المؤشر = ΔQ، E_post، H، تكلفة الوحدة.",
+      "new_text": "الأسبوع 1: يقود مسؤول القنوات العمل، مع اعتماد شخص من المنتج وشخص من الامتثال. تُثبت مجموعة الأسئلة والحقول والحدود ونموذج السجل. نسبة اكتمال الحقول، أي الحقول المتحقق منها/الحقول المخطط لها، مؤشر للجاهزية فقط. يجب التحقق من جميع حقائق العلامة التجارية ضمن النطاق؛ وجود سؤال غير متحقق منه يعني C وفق القسم 3(0)، دون إضافة حد قرار نسبته 80%. الأسابيع 1–3: يجمع موظف عمليات البيانات ويراجعها شخص مستقل ويحسم طرف ثالث الخلافات، لإتمام جولتين أساسيتين والإبلاغ منفصلًا حسب المنصة عن E_base وQ_base ومعدل الخلاف. إذا وقعت نتيجتا الجولتين على جانبين مختلفين من أحد الحدود، أو كان الخلاف≥20%، تُضبط إجراءات الحكم أولًا. الأسابيع 3–7: تُجرى تجربة لا تتجاوز 10 أسئلة ضمن الساعات المتبقية لمعايرة pA وqA وpB وhA وhB وS. تُحتسب تدخلات التجربة ضمن nA أو nB، وتُحتسب المعاينة والمراجعة ضمن الوقت المشترك، دون مضاعفة المخرجات. عند غياب تقديرات صالحة، تقتصر الخطوة على المعايرة ولا يُعتمد التوسع. الأسابيع 7–8: تُعاد المعاينة بالطريقة نفسها وتُحسب ΔQ وE_post وH الفعلية والتكلفة الكاملة للوحدة.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 33,
+      "old_text": "تحديد الشروط بالترتيب كالتالي:  \n(i) يجب أن يكون E_post للخطة المختارة أقل من 0.10، وأن يكون ΔQ أكبر من 8 في نفس الوقت؛  \n(ii) يجب أن تكون هذه الخطة الخيار الوحيد القابل للتنفيذ في الخطوة الثانية، أو في الخطوة الثالثة يجب أن يكون التكلفة الكلية لها H/ΔQ أقل من خيار آخر قابل للتنفيذ.  \nمعنى “التكلفة الكلية الأقل” هنا هو مقارنة الخطة مع خيارات أخرى قابلة للتنفيذ، وليس مقارنتها مع استخدامات بديلة.  \nإذا تم تحقيق واحدة من الشروط فقط، فلا يتم توسيع العملية: إذا كان E_post>0.10 وΔQ≥8، فهذا يعني أن qA أقل من المتوقع، ويجب تصحيح qA إلى ≥0.80 قبل إعادة التنفيذ، وإلا يتم التحول إلى الخطة C؛ وإذا كان ΔQ<8 وE_post≤0.10، فهذا يعني أن pA أو القدرة الإنتاجية أقل من الحد المطلوب (pA<0.40، أو hA>2.60، S>48)، ويجب تصحيح هذه القيم قبل إعادة التنفيذ، وإلا يتم التحول إلى الخطة C.",
+      "new_text": "قبل التوسع، يُعاد تطبيق التسلسل الكامل في القسم 3 على النتائج المقاسة: صلاحية البيانات، وH الفعلية≤80، وE_post≤0.10، وΔQ≥8. يُختار الخيار الوحيد الممكن؛ وإذا كان الاثنان ممكنين تُفضَّل التكلفة الكاملة الأقل. عند تساوي التكلفة تُفضَّل الزيادة الأكبر، وعند تساويهما معًا يلزم جمع ملاحظات إضافية، لا التوسع التلقائي. يُشخَّص الفشل حسب الخيار. إذا تجاوز معدل خطأ A الحد، تُراجع qA وعدد الأسئلة المعالجة؛ فالشرط التنبؤي nA×qA≥m−0.10N ينطبق فقط ما دام النموذج التوضيحي صالحًا. أما القبول الفعلي فيعتمد دائمًا على إعادة المعاينة وحساب E_post. وعند نقص زيادة A تُراجع nA×pA≥8 والساعات المتاحة. فقط عند تثبيت m=20 وnA=20 تنتج qA≥0.80 وpA≥0.40؛ والحدان hA≤2.60 وS≤48 يعتمدان على المدخلات المثبتة في صفَّيهما. إذا تجاوز معدل خطأ B الحد، تُفحص الأسئلة الخاطئة المضافة والمحذوفة والمتبقية، ثم تُصلح وتُعاد معاينتها؛ ولا يُطبَّق حد qA الخاص بـA. إذا نقصت زيادة B، يُفحص nB×pB≥8؛ فالحد pB≥4/13 يفترض nB=26، والحد hB≤1.625 يفترض pB=0.25 وU=32 وS=28. تُعاد كل الحسابات بعد تغيير أي مدخل؛ ويُستبعد الخيار الذي لا يستوفي الشروط، ويُختار الخيار الوحيد الذي ينجح؛ ولا يُختار C إلا إذا فشل الاثنان. ولا يعوض تحسن مؤشر فشل شرط آخر للخيار نفسه.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 2,
+      "old_text": "N=40 时 A 与 B 不会同时合格。 A 过 ΔQ≥8 需 m≥8/pA；B 过 E_base≤0.10 需 m≤0.10N。在 pA=0.40 下两者同时成立要求 N≥200。因此本篇算例里反复出现的判断是“做唯一可行的那一项，还是暂停”。",
+      "new_text": "عند N=40 لا يمكن أن يتأهل A وB معًا. إذا كانت pA=0 فزيادة A تساوي صفرًا ويُستبعد. وعند pA>0، يحتاج A إلى m≥8/pA لبلوغ ΔQ≥8، بينما يشترط قبول B الأساسي m≤0.10N. لذلك فإن N≥80/pA شرط ضروري لقابليتهما المشتركة؛ ولا تنتج N≥200 إلا عند pA=0.40، مع ضرورة تحقق بقية الشروط. يسأل المثال أساسًا عما إذا كان ينبغي اختيار الخيار الوحيد الممكن أو التوقف.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 14,
+      "old_text": "(3) في هذا المثال الحسابي، لا يمكن تفعيل الشرط عندما يكون N = 40، حيث أن متطلبات القبول لـ B هي m ≤ 0.10N = 4، بينما ΔQ_A ≤ m × pA ≤ m ≤ 4<8، وبالتالي فإن A لا يلبي الشروط أبدًا. لكي يتم تفعيل الشرط (3)، يجب أن يكون m ≥ 8/pA (عند pA = 0.40، يجب أن يكون m ≥ 20) وأن m ≤ 0.10N، أي N ≥ 10m ≥ 200. لذلك، فإن الشرط (3) هو قاعدة مخصصة لمعالجة مشاكل أكبر؛ يجب إعادة حساب القيم عند تغيير المعلمات، ولا يمكن نقلها كما هي.",
+      "new_text": "لا تنطبق الخطوة (3) في هذا المثال: عند N=40 يشترط B أن تكون m≤4، بينما ΔQ_A≤m×pA≤m≤4<8. عند التعميم تُستبعد pA=0 أولًا لأن A لا يستطيع بلوغ الحد الأدنى للزيادة. وللقيم pA>0، يحتاج A إلى m≥8/pA ويحتاج B إلى m≤0.10N، فينتج الشرط الضروري N≥80/pA. فقط عند تثبيت pA=0.40 نحصل على N≥200. وهذا غير كافٍ: يجب أيضًا فحص أعداد الأسئلة والساعات ومعدلات الخطأ وزيادة B.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 17,
+      "old_text": "وفقًا لهذا الترتيب، فإن الحالة m=20 التي تخص الصفوف الأربعة في الجدول الثاني qA/pA/hA/S تعطي نتيجة A: حيث أن E_base=0.50 يجعل B غير قابل للتنفيذ في الخطوة الأولى، بينما يصبح A الخيار الوحيد القابل للتنفيذ في الخطوة الثانية – ولا يُعتمد في هذه الخطوة على شرط E_base≤0.10.",
+      "new_text": "في صفوف qA وpA وhA وS عند m=20 في الجدول 2، تستبعد E_base=0.50 الخيار B في الخطوة 1. لا يكون A الخيار الوحيد الممكن إلا في الأعمدة التي تستوفي جميع شروط الصف؛ وإذا فشل A في عمود فالقرار C. لا يتطلب اختيار A وحده في الخطوة 2 تحقق شرط E_base≤0.10 الخاص بـB.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 29,
+      "old_text": "سجل التجربة: “عدد الأسئلة الخاطئة المزال/عدد الأسئلة التي تم معالجتها”. عندما يكون الرقم أقل من 0.80، فإن A لا يمكنه تجاوز عتبة نسبة الأخطاء. الصفقة B قد تم استبعادها بسبب E_base=0.50>0.10، وأصبح A الخيار الوحيد الممكن.",
+      "new_text": "تُقدَّر qA بعدد الأسئلة التي زال خطؤها/عدد الأسئلة الخاطئة المعالجة. تحت 0.80 يفشل A في حد الخطأ. يُستبعد B بسبب E_base=0.50>0.10. يكون A الخيار الوحيد الممكن فقط في الأعمدة التي تستوفي جميع شروط الصف؛ وإلا فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 35,
+      "old_text": "يجب تحويل سجلات التجربة إلى عدد الأسئلة المؤهلة/عدد الأسئلة التي تم معالجتها بالأخطاء؛ يجب أن يتحقق شرط pA≤qA. تم استبعاد السطر B بسبب E_base=0.50>0.10، والسطر A هو الخيار الوحيد الممكن.",
+      "new_text": "تُقدَّر pA بعدد الأسئلة التي أصبحت مؤهلة/عدد الأسئلة الخاطئة المعالجة، مع pA≤qA. يُستبعد B بسبب E_base=0.50>0.10. يكون A الخيار الوحيد الممكن فقط في الأعمدة التي تستوفي جميع شروط الصف؛ وإلا فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 41,
+      "old_text": "تم تحويل سجلات التجربة إلى عدد الأسئلة المؤهلة/عدد الأسئلة التي تم تغطيتها؛ القاعدة 0.25 والحد الأقصى 4/13 هما مفهومان مختلفان ولا يجب الخلط بينهما. في هذه الصفحة، E_base=0.05≤0.10، وبذلك يكون B مؤهلاً للتنفيذ؛ أما A فلا يمكن تنفيذه بسبب ΔQ_A=0.8<8، وB هو الخيار الوحيد القابل للتنفيذ.",
+      "new_text": "تُقدَّر pB بعدد الأسئلة التي أصبحت مؤهلة/عدد الأسئلة التي شملها التوسع. تختلف القيمة الأساسية 0.25 عن القيمة الحرجة 4/13. يجتاز B شرط الخطأ الأساسي لأن E_base=0.05≤0.10، بينما يفشل A لأن ΔQ_A=0.8<8. يكون B الخيار الوحيد الممكن فقط في الأعمدة التي تستوفي جميع شروط الصف؛ وإلا فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 47,
+      "old_text": "يتم تسجيل ساعات الإصلاح الفعلية في السجلات حسب كل بند؛ إذا تجاوزت الساعة 2.60، فإن A يخرج من قائمة القيم المسموح بها. تم استبعاد البند B من القائمة بسبب E_base=0.50>0.10، وA هو الخيار الوحيد الممكن.",
+      "new_text": "تُسجل ساعات الإصلاح الفعلية لكل سؤال. إذا تجاوزت 2.60 لا يبلغ A حد الزيادة. يُستبعد B بسبب E_base=0.50>0.10. يكون A الخيار الوحيد الممكن فقط في الأعمدة التي تستوفي جميع شروط الصف؛ وإلا فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 53,
+      "old_text": "يُسجل السجل كل جزء من أجزاء العمل؛ في هذه النسخة، الهدف هو 2.0 ساعة لكل مسألة، وقد تجاوز هذا الهدف بالفعل، لذا فإن الخيار B غير قابل للتطبيق. الخيار A غير قابل للتطبيق أيضًا بسبب ΔQ_A=0.8<8، والخيار B هو الخيار الوحيد القابل للتطبيق.",
+      "new_text": "تُسجل ساعات التغطية الفعلية لكل سؤال. تتجاوز القيمة الأساسية 2.0 الحد الحرج، فيفشل B عندها. يفشل A لأن ΔQ_A=0.8<8. يكون B الخيار الوحيد الممكن فقط في الأعمدة التي تستوفي جميع شروط الصف؛ وإلا فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 59,
+      "old_text": "سجلات الدفاتر، أخذ العينات وإعادة التحقق من ساعات العمل الفعلية؛ التكلفة المشتركة تتجاوز 48 ساعة، والنتيجة A تخرج من الحد الأدنى. البنك B تم استبعاده بسبب E_base=0.50>0.10، وA هو الخيار الوحيد الممكن.",
+      "new_text": "تُسجل ساعات السجل والمعاينة والمراجعة الفعلية. إذا تجاوز العمل المشترك 48 ساعة لا يبلغ A الحد. يُستبعد B بسبب E_base=0.50>0.10. يكون A الخيار الوحيد الممكن فقط في الأعمدة التي تستوفي جميع شروط الصف؛ وإلا فالقرار C.",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 26,
+      "old_text": "0.60 (= القاعدة الأساسية للقسم الرابع) → E=0.20؛ C",
+      "new_text": "0.60 (خط الأساس في القسم 4) → E=0.20؛ C",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 39,
+      "old_text": "شروط الفشل: إذا كانت نسبة الأسباب المتعلقة بالحقائق منخفضة، أو لم تنخفض نسبة الأخطاء بعد التوحيد، أو انخفضت نسبة الأخطاء لكن الزيادة في الإشارات الصافية ظلت صفرًا، أو تبين من خلال الاختبارات أن كل من A وB لا يمكنهما تجاوز الحدود خلال 80 ساعة، فإن الفرع المقابل لهذا المقال يفشل تلقائيًا، ويعود العمل إلى الخطوة C.",
+      "new_text": "انخفاض نسبة الأسباب الواقعية يدعو إلى إعادة تقييم الآلية واتجاه التجربة التالية؛ ولا يضيف حدًا جديدًا ولا يؤدي تلقائيًا إلى اختيار C. إذا لم ينخفض الخطأ بعد توحيد الحقائق، أو انخفض وبقي صافي زيادة الاستشهاد 0، فلا يصح التفسير المقابل لآلية A. ولا يستبعد ذلك تلقائيًا الخيار B إذا ظل مستوفيًا جميع الشروط. عدم صلاحية البيانات يعني C وفق الخطوة (0). وإلا فيُقيَّم كل خيار حسب الساعات الفعلية وE_post وصافي الزيادة؛ ويُستبعد الخيار الذي يفشل، ويُختار الخيار الوحيد الذي ينجح، ولا يُختار C إلا إذا فشل الاثنان. وإذا نجح الاثنان تُطبق مقارنة التكلفة وقواعد التعادل في الخطوة (3).",
+      "reason": "Synchronize reviewed Chinese mathematical/decision correction"
+    },
+    {
+      "language": "ar",
+      "tag": "h2",
+      "index": 0,
+      "old_text": "الحكم الأساسي: أولاً، يتم استبعاد الأشخاص الذين لا يستوفون الشروط، ثم نتحدث عن \"هل يجب تعزيز الحقائق المسبقة أم توسيع النطاق التغطية أولاً\".",
+      "new_text": "الحكم الأساسي: تُستبعد الخيارات التي لا تستوفي شروط القبول أولًا، ثم تُقارَن أولوية إصلاح الحقائق بتوسيع تغطية الأسئلة.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 2,
+      "old_text": "Google 的搜索文档说明，AI Overviews 与 AI Mode 可能使用“查询扇出”（query fan-out），跨子主题与多数据源发起多次相关检索，并可能展示比传统搜索更广的链接集合；页面要成为支撑链接，须被索引并具备在搜索中展示摘要的资格，且没有额外的专门技术要求。 [S1] 该文档描述的是资格条件与通用做法，不承诺任何品牌获得引用增长。",
+      "new_text": "توضح وثائق Google أن AI Overviews وAI Mode قد يستخدمان «تفرع الاستعلام» لإجراء عمليات بحث مترابطة عبر موضوعات فرعية ومصادر متعددة، وقد يعرضان روابط أوسع من البحث التقليدي. لكي تظهر صفحة كرابط داعم، يجب فهرستها وتأهلها لعرض مقتطف في البحث، دون متطلبات تقنية خاصة إضافية. {{0}} تصف الوثيقة شروط الأهلية والممارسات العامة، ولا تضمن زيادة الاستشهاد بأي علامة تجارية.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 3,
+      "old_text": "由此可以提出的 假设 是：若同一处品牌参数在多个页面上互相冲突，不同子查询可能命中不同版本，使同一意图的多个答案路径出现矛盾表述。这里的中介变量是“同一事实存在多个公开版本”；可观察证据是固定问题集上的答案是否复述了过期或错误版本；使该解释失败的条件是：即使把所有版本统一，固定问题集上的错误表述数量也不下降。错误会被复制到多条答案路径这一说法，本篇按待检验机制处理，不作为已证实的工程事实。",
+      "new_text": "يمكن صياغة فرضية مفادها أن تضارب قيمة تخص العلامة التجارية عبر صفحات مختلفة قد يجعل الاستعلامات الفرعية تسترجع نسخًا مختلفة، فتظهر إجابات متناقضة للغرض نفسه. المتغير الوسيط هو تعدد النسخ العامة للحقيقة الواحدة. ويُختبر ذلك برصد ما إذا كانت إجابات مجموعة الأسئلة الثابتة تكرر نسخة قديمة أو خاطئة. تفشل الفرضية إذا لم ينخفض عدد الإجابات الخاطئة بعد توحيد جميع النسخ. انتقال الخطأ إلى مسارات إجابة متعددة آلية تحتاج إلى اختبار، وليس حقيقة هندسية مثبتة هنا.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 5,
+      "old_text": "كما تم ذكر نتائج دراستين في المراجعة الأدبية: تؤكد إحدى الدراسات أن المعلومات الخاطئة الموجودة في الوثائق التي تم البحث عنها قد تنتشر في الإجابات الناتجة (Deng et al., 2025)؛ بينما تشير الدراسة الأخرى إلى أن المستخدمين يتأثرون بعدد ونوع المراجعات، حتى لو لم يكن التصنيف صحيحًا (Miroyan et al., 2025). [S3] هما مراجعات أصلية مُستشهد بها من S3، وليست نتائج تجارب من S3 نفسه، كما أن هذه الدراسة لا تعتبر “وجود المراجعات” دليلاً على الفعالية.",
+      "new_text": "ينقل الاستعراض الأدبي في النسخة الأولية نفسها دراستين سابقتين: تشير إحداهما إلى احتمال انتقال المعلومات الخاطئة من الوثائق المسترجعة إلى الإجابات المولدة (Deng et al., 2025)، وتشير الأخرى إلى تأثر المستخدمين بعدد الاستشهادات ونوعها حتى عند عدم صحة إسنادها (Miroyan et al., 2025). {{0}} هذان استنتاجان من أدبيات نقلتها S3، وليسا نتائج تجربة أجرتها S3 نفسها. ولا يُعد مجرد وجود استشهاد دليلًا على الفعالية.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 6,
+      "old_text": "أعلنت شركة مايكروسوفت عن منتج “Copilot Search”، حيث سيُظهر المنتج المصادر التي تم الاستناد إليها في الإجابات، وسيقوم بربط الروابط الكاملة في الإجابات بالمصادر المذكورة، وسيعرض جميع الروابط المستخدمة في توليد الإجابات؛ كما ذكر البيان أن المناطق المتاحة للاستخدام لا تشمل الصين وروسيا. [S5] هذه معلومات حول ميزات المنتج، ولا تعبر عن دقة أو مصداقية النصوص المكتوبة، وتشير أيضًا إلى أن نفس الإجراءات قد لا تكون متاحة على جميع المنصات في السوق الصينية.",
+      "new_text": "يقول إعلان Microsoft عن Copilot Search إن المنتج يبرز المصادر، ويربط الجمل أو الفقرات الكاملة بمصادرها، ويعرض جميع الروابط المستخدمة في توليد الإجابة. ويستثني الإعلان الصين وروسيا من مناطق الإتاحة. {{0}} هذا وصف من المورد لميزة المنتج، لا دليل على دقة الاستشهاد أو فعالية التحويل. وقد تختلف إتاحة الإجراء نفسه بين المنصات بالنسبة إلى القراء في الصين.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 7,
+      "old_text": "OECD 的政策报告主张按两类风险对韧性策略分段：常态化中断由企业常规风险管理处理，极端事件才需要政府作为促进者与应急资源提供者介入，把常规工具用于重大中断会造成浪费与表现不佳。 [S2] 一篇咨询机构的公开观点文章则指出，韧性投入存在显式取舍，例如集中采购降低复杂度与成本，而多元化供应提高韧性但增加成本与复杂度。 [S4] 这两份材料都不是 GEO 研究，只能提供方法类比：按条件分段、把代价列全。它们不能支撑任何关于 AI 引用效果的说法。",
+      "new_text": "يميز تقرير OECD بين الاضطرابات المعتادة التي تعالجها الشركات بإجراءاتها المعتادة، والأحداث الاستثنائية التي تستدعي دور الحكومة في التيسير وتوفير موارد الطوارئ. وقد يؤدي استخدام الأدوات المعتادة للانقطاعات الكبرى إلى هدر الموارد وضعف الأداء. {{0}} وتصف مقالة استشارية عامة مفاضلة صريحة: الشراء من مصادر مركزة قد يقلل التعقيد والتكلفة، بينما يزيد تنويع الموردين المرونة والتكلفة والتعقيد معًا. {{1}} لا تدرس أي من المادتين GEO؛ وإنما توفران تشبيهًا منهجيًا: تقسيم القرار حسب الشروط واحتساب جميع التكاليف، لا إثبات فعالية الاستشهاد بالذكاء الاصطناعي.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "h2",
+      "index": 2,
+      "old_text": "2. القطر: مجموعة الأسئلة، الفترة الأساسية ذات الطرفين، والاختلافات بين الأشياء المتعلقة بـ N و Q_cap.",
+      "new_text": "2. تعريف المقاييس: مجموعة الأسئلة، جولتا خط الأساس، والفرق بين N وQ_cap",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 8,
+      "old_text": "على سبيل المثال، يوجد مجموعة من الأسئلة الثابتة عددها 40 سؤالًا (للمساعدة في الفهم)، وكل سؤال يمثل وحدة قياسية. يتم اختيار الأسئلة من قبل المسؤولين عن القنوات من خلال الاستفسارات والمحادثات التجارية لعشرة أشهر ماضية حول العلامة التجارية المعنية، ثم يتم تحديد الإصدار واللغة وطريقة الطرح وفترة الاختبار. يقوم الموظفون بالعمليات اللازمة لإجراء جولتين من الاختبارات الأساسية، ويتم إعادة الاختبار بنفس الطريقة في نهاية الفترة. يتم الاحتفاظ بإجابات كل سؤال ورابط مصدره؛ يقوم الأشخاص الذين يقومون بالمراجعة المستقلة بتحديد الأسئلة بناءً على بيانات الإصدار، ويتم حل الخلافات من قبل طرف ثالث. تقوم المنصات المختلفة بالإبلاغ بشكل منفصل، دون دمج الحصص.",
+      "new_text": "في المثال، تضم المجموعة الثابتة N=40 سؤالًا، وكل سؤال وحدة معاينة واحدة. يختار مسؤول القنوات الأسئلة من استفسارات العلامة التجارية وأسئلة البيع خلال الأشهر الـ12 الماضية، ويحذف التكرار، ثم يثبت المنصة والإصدار واللغة والصياغة ووقت المعاينة. يجري موظف العمليات جولتين لخط الأساس، وتُعاد المعاينة بالطريقة نفسها في نهاية الفترة. تُحفظ إجابة كل سؤال ورابط المصدر، ويقيّمها مراجع مستقل وفق سجل الحقائق مضبوط الإصدارات، مع حسم الخلافات من طرف ثالث. تُعرض نتائج كل منصة منفصلة ولا تُدمج المقامات.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 3,
+      "old_text": "الجزء الأول = عدد الأسئلة التي تحتوي على أخطاء في الحقائق المتعلقة بالعلامة التجارية، الجزء الثاني = N = 40، وحدة العينة = سؤال، الشخص الذي يقوم بالجمع = تشغيل القنوات، النافذة = الجولتان المتتاليتان قبل التدخل، التحكم في الانحرافات = نفس الشخص الذي يقوم بالجمع، نفس طريقة السؤال، نفس الفترة الزمنية، لا يتم تغيير مجموعة الأسئلة بين الجولتين.",
+      "new_text": "E: البسط هو عدد الأسئلة التي تحتوي على أخطاء في حقائق العلامة التجارية، والمقام N=40. وحدة المعاينة سؤال؛ يجمع البيانات موظف عمليات القنوات خلال جولتين متتاليتين قبل التدخل. تُثبت هوية جامع البيانات وصياغة السؤال والفترة الزمنية، ولا تُغير مجموعة الأسئلة بين الجولتين.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 10,
+      "old_text": "يُكتب عدد العناصر المتاحة لـ B على الشكل التالي: U = Q_cap − m، وذلك بشرط أن تكون جميع الأسئلة قد تم التحقق من صحتها، وأن أي أخطاء في البيانات الخاصة بالعلامات التجارية تُحتسب ضمن قيمة m، وأن الأسئلة الخاطئة لا تتكرر مع الأسئلة الصحيحة. إذا لم يتحقق الشرط، فلا يجب استخدام هذه الصيغة، ويجب إثبات ذلك أولاً. لا يقدم هذا المقال ضمانًا بشأن الدقة الإحصائية، بل يضمن فقط توحيد المصطلحات وإمكانية المراجعة؛ لم يتم حفظ علامات الدقة في نافذة القراءة هذه، لذلك لا يمكن الحكم على مدى \"الدقة/عدم الدقة\" لأي تأثيرات.",
+      "new_text": "يُحسب عدد الأسئلة المتاحة لـB بالصيغة U=Q_cap−m فقط بعد التحقق من حقائق جميع الأسئلة، واحتساب كل خطأ في حقيقة تخص العلامة التجارية ضمن m، وعدم تداخل الأسئلة الخاطئة مع الأسئلة المؤهلة. إذا لم تتحقق هذه الشروط فلا تُستخدم الصيغة ويُستكمل التحقق أولًا. يلتزم المقال بتوحيد التعريفات وإمكانية المراجعة، ولا يدعي دلالة إحصائية. لم تحتفظ نافذة القراءة بعلامات الدلالة؛ لذا لا يمكن منها الحكم بأن أثرًا ما دال أو غير دال إحصائيًا.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "h2",
+      "index": 3,
+      "old_text": "3. عتبة الترتيب وقواعد الترتيب: أولاً يتم استبعاد العناصر غير الضرورية، ثم يتم مقارنتها، وأخيرًا يتم ترتيبها.",
+      "new_text": "3. شروط القبول وقواعد الترتيب: استبعاد غير المؤهل، ثم المقارنة، ثم الترتيب",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 11,
+      "old_text": "الحدود المحددة مسبقًا للتثبيت: يتم تحديد المستوى الذي يمكن للعلامة التجارية تحقيقه بشكل مستقر من خلال ثلاث جولات أولية، ثم يتم النظر في النتائج، ولا يجوز تغيير الحدود بعد ذلك: N≥20، Q_cap≥8، إجمالي ساعات العمل في الخطة ≤80 ساعة، E_post≤0.10، ΔQ≥8، معدل الخلافات في المراجعة <20%. 0.10، 8 أسئلة، 20 سؤالًا هي قيم اختبار يجب تعديلها، وليست معايير صناعية محددة مسبقًا.",
+      "new_text": "تُثبت الحدود التوضيحية مسبقًا: يُعايَر المستوى القابل للتحقيق باستخدام جولتين لخط الأساس قبل تقييم نتائج التدخل، ولا تُحرك الحدود بعد ظهور النتائج. الشروط هي N≥20 وQ_cap≥8 وإجمالي الساعات≤80 وE_post≤0.10 وΔQ≥8 ومعدل الخلاف<20%. القيم 0.10 و8 أسئلة و20 سؤالًا قيم تجريبية تحتاج إلى معايرة، وليست معايير قطاعية مستمدة من المصادر.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "li",
+      "index": 9,
+      "old_text": "الخطوة الثالثة : يمكن استخدام كلا الخيارين A و B؛ يتم مقارنة التكلفة الكلية لكل وحدة بـ ΔQ، ويُفضل الأقل؛ إذا كانت التكاليف متساوية، يتم اختيار ΔQ الأعلى؛ وإذا كانت التكاليف متساوية في كلتا الحالتين، يتم إجراء اختبارات إضافية قبل اتخاذ قرار.",
+      "new_text": "الخطوة 3: إذا تأهل A وB، تُفضَّل التكلفة الكاملة الأقل للوحدة H/ΔQ. عند تساوي التكلفة تُختار ΔQ الأعلى، وعند تساوي التكلفة والزيادة معًا تُجمع ملاحظات إضافية قبل القرار.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 21,
+      "old_text": ": حالات خطأ منخفضة (مثال): m=2، U=32، hB=2.0، pB=0.25، pA=0.40، qA=0.60 → A: nA=min(32,2,34)=2، ΔQ_A=0.8، E_A=(2−1.2)/40=0.02 (تجاوز حد الخطأ، لكن الزيادة غير كافية)، H_A=28+3.2=31.2، التكلفة الوحدةية 31.2/0.8=39؛ B: nB=min(26,32)=26، ΔQ_B=6.5، Q_end=12.5، E_B=0.05 (افتراضي، يجب إعادة القياس)، H_B=28+52=80، التكلفة الوحدةية 80/6.5≈12.31. كلا الحالتين ΔQ<8 غير قابلتين للتنفيذ → C. الرقم 39 والرقم 12.31 مجرد عروض للاكتمال، وليس أساسًا للاختيار: حد الخطأ استبعد كلا الحلين، وبالتالي لا يغير ذلك التكلفة.",
+      "new_text": "مثال الخطأ المنخفض: m=2 وU=32 وhB=2.0 وpB=0.25 وpA=0.40 وqA=0.60. في A: nA=min(32,2,34)=2 وΔQ_A=0.8 وE_A=(2−1.2)/40=0.02، فيتحقق حد الخطأ لكن الزيادة لا تكفي؛ H_A=28+3.2=31.2 والتكلفة 31.2/0.8=39. في B: nB=min(26,32)=26 وΔQ_B=6.5 وQ_end=12.5 وE_B=0.05 افتراضيًا مع وجوب إعادة القياس؛ H_B=28+52=80 والتكلفة 80/6.5≈12.31. يفشل الخياران لأن ΔQ<8، فالقرار C. تُعرض 39 و12.31 للاكتمال فقط: حد الزيادة، لا حد الخطأ، هو الذي استبعد الخيارين، فلا تغير مقارنة التكلفة القرار.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 26,
+      "old_text": "إذا تم دمج الجانبين العلوي والسفلي معًا، فإن الحركة ستتحول بالفعل. في التركيب الأول (م=20)، نأخذ qA=0.50 وpA=0.20، والبقية ثابتة: E_A=A/(20-10)/40=0.25>0.10، وΔQ_A=4<8، ولا يمكن تنفيذ حركة A؛ بينما يتم استبعاد B بسبب E_base=0.50 → C. في نفس السياق، عندما نأخذ qA إلى 0.90 وpA إلى 0.60: E_A=(20-18)/40=0.05≤0.10، وΔQ_A=12≥8 → A. في التركيب الثاني (م=2)، نأخذ pB=0.15: ΔQ_B=3.9<8 → C؛ وعندما نأخذ pB=4/13: ΔQ_B=8 → B (وهنا لا يمكن تنفيذ حركة A بسبب ΔQ_A=0.8<8). بمعنى آخر، هناك حالتان فقط تغيران حقيقة حركة A/B/C: إما أن يكون التحويل خارج النطاق (في صفوف qA، pA، pB) مما يجعل C يصبح A أو B؛ أو أن يكون السعة خارج النطاق (في صفوف hA، hB، S) مما يجعل A أو B يصبح C.",
+      "new_text": "عند جمع طرفي الحساسية يتغير القرار. في التركيب الأول عند m=20، تؤدي qA=0.50 وpA=0.20 مع ثبات البقية إلى E_A=(20−10)/40=0.25>0.10 وΔQ_A=4<8، فيفشل A؛ ويُستبعد B بسبب E_base=0.50، فالقرار C. في السياق نفسه، تعطي qA=0.90 وpA=0.60 القيمة E_A=(20−18)/40=0.05≤0.10 وΔQ_A=12≥8، فالقرار A. في التركيب الثاني عند m=2، تعطي pB=0.15 القيمة ΔQ_B=3.9<8، فالقرار C؛ وعند pB=4/13 تصبح ΔQ_B=8، فالقرار B، مع بقاء A غير مؤهل لأن ΔQ_A=0.8<8. تجاوز حدود التحويل في صفوف qA وpA وpB قد ينقل C إلى A أو B، وتجاوز قيود السعة في صفوف hA وhB وS قد يعيد A أو B إلى C.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 29,
+      "old_text": "反方解释一：本品牌引用不足主要来自可读性与结构，而不是事实错误。S3 记录的特征里本来就包含更结构化的 HTML 与更易读的文本， [S3] 所以这个解释与本篇的证据并不冲突。检验方式：对每个未合格题逐项记录原因（事实缺失／事实错误／结构或可读性／缺少第三方证据），允许多原因共存，并在两轮基线中记录各类原因的题数占比。这条诊断不新增门槛，也不改变 (0)(1)(2)(3) 的先后顺序：若 A 试点后 ΔQ_A 仍低于 8 题，(1) 已把 A 判为不可行，无论原因怎么归类，动作都不会变成 A；原因归类的作用是决定下一次试点指向 B 还是结构优化，而不是覆盖门槛。若修复后错误率下降但净引用增量仍为 0，则“纠错带来增量”的链条被推翻，停止扩量。若原因归类中事实类占优，则 A 的机制前提在本品牌场景得到部分支持，但动作仍以 (0)(1)(2)(3) 为准，本篇不为该诊断单设阈值。",
+      "new_text": "تفسير بديل: قد يكون نقص الاستشهاد بالعلامة التجارية ناتجًا أساسًا من قابلية القراءة وبنية الصفحات، لا من الأخطاء الواقعية. تتضمن خصائص S3 المرصودة HTML منظمًا ونصًا سهل القراءة، {{0}} لذلك لا يتعارض هذا التفسير مع الأدلة. لكل سؤال غير مؤهل، تُسجل الأسباب الممكنة: نقص الحقائق أو خطؤها، البنية أو القراءة، أو غياب دليل من طرف ثالث، مع السماح بتعدد الأسباب وقياس نسبها خلال جولتي خط الأساس. لا يضيف التشخيص حدًا جديدًا ولا يغير ترتيب (0)–(3). إذا بقيت ΔQ_A<8 بعد التجربة، تستبعد الخطوة (1) الخيار A مهما كانت تسمية الأسباب. تُستخدم الأسباب لتوجيه التجربة التالية إلى B أو إصلاح البنية، لا لإلغاء شروط القبول. إذا انخفض الخطأ وبقي صافي نمو الاستشهاد 0، تفشل فرضية أن التصحيح يحقق زيادة ويتوقف التوسع. غلبة الأسباب الواقعية تدعم الآلية جزئيًا في هذا السياق، لكن القرار يظل خاضعًا لـ(0)–(3) دون حد تشخيصي مستقل.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 35,
+      "old_text": "إغلاق الميزانية بناءً على البنود التالية: الدفتر 10 + أوقات أخذ العينات 12 + أوقات المراجعة 6 + ساعات العمل بالتدخل + ساعات العمل غير المستخدمة = 80 ساعة. في الحالات التي تكون فيها الأخطاء كبيرة، فإن المجموع يكون 10+12+6+32=60، ويبقى 20 ساعة يتم التعامل معها وفقًا للقواعد المحددة في القسم الرابع: إذا كان هناك بيانات مفقودة في الدفتر، يتم تحويلها إلى وقت استثماري (بساعة واحدة لكل بند)، وإذا لم يكن هناك مساحة، يتم تسجيلها كساعات غير مستخدمة وتوزيعها مجددًا في الميزانية القادمة؛ إذا تم تحديد أن الوضع هو “C”， فإن الـ 28 ساعة المدفوعة لا يمكن استرجاعها، ويتم تسجيل الـ 52 ساعة المتبقية كنفقات بالتدخل لـ GEO. الجدول الزمني هو توصية حسب ترتيب ساعات العمل في هذه الحالة، وليس استنتاجًا من المصدر؛ إذا لم يكن هناك مساحة كافية، يتم تأجيل القرارات أو تقليل حجم التجربة، ولكن لا يمكن حذف عملية المراجعة.",
+      "new_text": "تسوية الميزانية: السجل 10 +المعاينة 12 +المراجعة 6 +ساعات التدخل الفعلية +ساعات استكمال السجل +الساعات غير المستخدمة =80 ساعة. لا تشمل ساعات استكمال السجل إلا العمل الإضافي الفعلي بعد الساعات العشر الأصلية، ولا تُحتسب تلك الساعات الأصلية مرتين. يستخدم مثال الخطأ المرتفع 10+12+6+32=60 ساعة. تُخصص الـ20 ساعة المتبقية وفق القسم 4 لحقول السجل الناقصة، بفرض توضيحي 1.0 ساعة لكل حقل، أو تُسجل غير مستخدمة لإعادة تخصيصها في الميزانية التالية. إذا اختير C قبل التدخل، فإن الساعات المشتركة الـ28 المدفوعة لا تُسترد، ولا تُسجل الساعات الـ52 المتبقية كنفقات تدخل GEO. وإذا اختير C بعد تجربة، تُحتفظ تكاليف التجربة الفعلية ويُحسب الرصيد غير المستخدم؛ ولا تُمحى الأعمال المنجزة. الجدول الزمني اقتراح مبني على الساعات التوضيحية، لا نتيجة مصدر. عند نقص السعة يؤجل القرار أو يصغر الاختبار، ولا تُلغى المراجعة المستقلة.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 38,
+      "old_text": "一个显式假设：本场景中买家的目标问题集中在参数型事实（规格、认证、交期、MOQ、原产地、付款条件）。这来自本篇的场景设定，不是来源证据，必须用真实采购问题清单验证。可迁移的是核算顺序——先分清总量与未达标空间，用真实对象数限制工时产能，先过错误率与增量门槛，再比较完整单位成本，不足则暂停并交代预算去向；不可迁移的是任何具体数值、行业参数与效果结论。S2 与 S4 只提供“按条件分段、把代价列全”的方法类比，不构成 GEO 投入依据。",
+      "new_text": "افتراض صريح: تركز أسئلة المشترين في هذا السيناريو على حقائق مثل المواصفات والشهادات ومواعيد التسليم وMOQ وبلد المنشأ وشروط الدفع. هذا افتراض للمثال لا دليل من المصادر، ويجب اختباره بقائمة أسئلة شراء فعلية. القابل للنقل هو ترتيب الحساب: التمييز بين حجم المجموعة والمساحة غير المؤهلة، وتقييد القدرة بعدد الأسئلة الحقيقي، ثم فحص حدود الخطأ والزيادة، ومقارنة التكلفة الكاملة، أو التوقف مع بيان مصير الميزانية. أما الأرقام المحددة والمعاملات القطاعية ونتائج الفعالية فلا تُنقل. توفر S2 وS4 تشبيهًا منهجيًا لتقسيم الشروط واحتساب جميع التكاليف، ولا تثبتان جدوى الاستثمار في GEO.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 4,
+      "old_text": "تم إجراء قياسات واسعة النطاق على النسخة المسبقة من arXiv للإصدار v1: شملت 55,936 استعلامًا، وأنظمة بحث مبنية على الذكاء الاصطناعي ستة أنظمة، ونظامين تقليديين للبحث. وأفاد التقرير أن 37% من الأسماء المواقع ظهرت فقط في جانب نظام البحث القائم على الذكاء الاصطناعي؛ والأسماء المواقع التي تفضلها هذه الأنظمة كانت أكثر تنظيمًا من حيث الخصائص (HTML هرمي)، والنصوص أسهل في القراءة، ودرجة حرارة الأسماء المواقع أقل، بالإضافة إلى وجود المزيد من الروابط الخارجية تشير إلى مصادر ذات سمعة عالية. [S3] هذه هي الخصائص المرتبطة ببعضها، وليست تأثيرات سببية، ولا يمكن استنتاج أن “زيادة عدد الروابط الخارجية التي تشير إلى مصادر ذات سمعة عالية سيزيد من احتمالية الاستشهاد بها”. الاتجاه الذي يقدمه التقرير هو: إذا كان العائق في هذا العلامة التجارية يكمن في هيكل الصفحة وقابلية القراءة، فإن المساحة المخصصة للتصحيح محدودة.",
+      "new_text": "تعرض النسخة الأولية v1 على arXiv قياسات واسعة شملت 55,936 استعلامًا وستة أنظمة بحث قائمة على النماذج اللغوية الكبيرة ونظامين تقليديين. وأفادت بأن 37% من النطاقات في العينة ظهرت فقط في نتائج الأنظمة القائمة على النماذج اللغوية. وكانت النطاقات التي تفضلها هذه الأنظمة أكثر تنظيمًا من حيث HTML الهرمي، وأسهل قراءة، وأقل شهرة، وبها روابط خارجية أكثر إلى مصادر عالية السمعة. {{0}} هذه ارتباطات بين خصائص، لا نتائج تدخل سببي؛ فلا تثبت أن إضافة روابط إلى مصادر موثوقة تزيد احتمال الاستشهاد. وتوحي بفحص ما إذا كانت البنية وقابلية القراءة، بدل الأخطاء الواقعية، هما العائق أمام العلامة التجارية.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "p",
+      "index": 22,
+      "old_text": "تنفيذ الأعداد الصحيحة: nA و nB هما عدد عمليات التشغيل بالأعداد الصحيحة؛ ΔQ هو القيمة المتوقعة للنموذج، ويمكن أن تكون كرقم عشري، ولا يجوز اعتبارها عددا ملاحظًا. الاستلام النهائي بالأعداد الصحيحة: يتم حساب عدد الأسئلة الخاطئة والأسئلة المؤهلة وفقًا للعدد الفعلي في 40 سؤالًا، ويجب ألا يقل Q_end عن القاعدة بـ 8 أسئلة على الأقل (Q_base=6 → Q_end≥14)؛ إذا حدث فقدان بعض الأسئلة المؤهلة، يتم حساب الزيادة الصافية، ولا يجوز حساب الأسئلة الجديدة فقط.",
+      "new_text": "التنفيذ بأعداد صحيحة: nA وnB عددان صحيحان للتدخلات. أما ΔQ فهي قيمة متوقعة في النموذج وقد تكون كسرية؛ ولا تُعد عددًا مرصودًا. يُستخدم عند القبول النهائي العدد الفعلي الصحيح للأسئلة الخاطئة والمؤهلة ضمن الأسئلة الـ40. يجب أن تكون Q_end≥Q_base+8؛ فإذا كانت Q_base=6 فإن Q_end≥14. تُطرح خسائر الأسئلة التي كانت مؤهلة سابقًا من المكاسب الجديدة: المطلوب صافي الزيادة، لا عدد الأسئلة المؤهلة حديثًا وحده.",
+      "reason": "Repair translation meaning, untranslated source text or accounting clarity"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 17,
+      "old_text": "A: لا يوجد كائن للاستبعاد مباشرة؛  \nB: لا يزال يجب أن يكون ΔQ_B≥8، وفي هذا المعيار nB=26 وΔQ_B=6.5 → C",
+      "new_text": "لا توجد أسئلة خاطئة ليصلحها A، لذلك يُستبعد مباشرة. لا يزال B يتطلب ΔQ_B≥8؛ وفي الحالة الأساسية nB=26 وΔQ_B=6.5، فالقرار C.",
+      "reason": "Restore no-object exclusion"
+    },
+    {
+      "language": "ar",
+      "tag": "td",
+      "index": 10,
+      "old_text": "放弃本窗口两个方向的 GEO 增量；39 与 12.31 两个单位成本仅供完整性展示，不是选择依据",
+      "new_text": "التخلي عن زيادة GEO في الاتجاهين خلال هذه النافذة؛ القيمتان 39 و12.31 لتكلفة الوحدة معروضتان للاكتمال فقط، وليستا أساسًا للاختيار.",
+      "reason": "Translate remaining Chinese table cell"
+    }
+  ],
+  "independent_review": {
+    "mathematics_and_three_language_consistency": "passed by a separate agent on these exact corrected body hashes",
+    "receipt": "geo707-translation-independent-review-20260929.json",
+    "checks": [
+      "All original HTML element names, attributes and node order retained in every language",
+      "All original source-link attribute sequences retained",
+      "No untranslated Chinese in English or Arabic body",
+      "Each body retains 40 paragraphs, 10 list items and 60 table cells",
+      "30 Table 2 label/value cells have equal numeric and formula-operator multisets across all three languages; six decision notes manually reviewed",
+      "All 24 sensitivity decisions independently recomputed using exact rational arithmetic and matched to actual cells in every language",
+      "qA=0.80 feasible integer m is only 20; qA=0.90 feasible m are 20 through 32",
+      "4/13 increment threshold and exact 2/65 intersection verified",
+      "Three of 40 errors passes 10 percent; five of 40 fails",
+      "Zero pA excluded before division; N>=80/pA only a necessary condition when pA>0",
+      "Manual semantic review confirms global data failure means C, per-option failure excludes that option, sole feasible option is selected, both failures mean C",
+      "Pilot costs retained when stopping; supplementary ledger hours explicitly additional to original ten hours"
+    ],
+    "public_http_and_browser": "not performed in this offline correction"
+  },
+  "articles": {
+    "zh": {
+      "body_sha256": "9c67c03ef39f2b2f7a818556f79bcdc53f6510908e8adc546c13e7d49874ef4f",
+      "article_sha256": "f637095760d0cde3b635fbdf9dece858f21accdc70a4e2896917741b587e75d8",
+      "original_audit_sha256": "0bd989c014955d81f8bb6d55e8ecb1547ff30ed5bb83d03140b15ca2280b0dee",
+      "original_body_sha256": "30ee8b0d0c592c3cd2833a4564720556cdb44a5aaa402ee424d3927055151da7",
+      "publication_structure_passed": true,
+      "automated_diagnostics": [],
+      "semantic_blocks": {
+        "exclude_unqualified": {
+          "tag": "h2",
+          "index": 0,
+          "text_sha256": "d83d3cf8635930517bca09b322c3eb8db610dde1a3eaafa87e856f6e01864f37"
+        },
+        "qualified_count_not_rate": {
+          "tag": "li",
+          "index": 4,
+          "text_sha256": "44af55506cb302e0550d6a07a33ada6fdb01b630594d43e4d51a8e5e3297d522"
+        },
+        "net_increment": {
+          "tag": "p",
+          "index": 22,
+          "text_sha256": "76a0d1a66a01aa90be4b494d5b3f49dccd6ffc11d80716c25a6d50bf73bc328f"
+        },
+        "b_actual_error_count": {
+          "tag": "p",
+          "index": 19,
+          "text_sha256": "03fdf6708f98c05c0de448027220ff66cda590c016a82dd0671c6679d5942f3b"
+        },
+        "stop_spending": {
+          "tag": "p",
+          "index": 35,
+          "text_sha256": "a1bfc2a24fd8d8e76063d97ce66f91222ff58aaab07f95bc3e0c57327637f02e"
+        },
+        "a_b_failure_diagnosis": {
+          "tag": "p",
+          "index": 33,
+          "text_sha256": "df05aaaa75aaf270f089b0fbbb802c7fd6a54a73449bc2a9df3aaa0e7f33a7e2"
+        },
+        "zero_conversion_before_division": {
+          "tag": "li",
+          "index": 2,
+          "text_sha256": "d9478af09cfc7db0c77a2df17306ade0e54e4aeadac661fac517f104281f9f8b"
+        },
+        "endpoints_and_cost_ties": {
+          "tag": "p",
+          "index": 13,
+          "text_sha256": "ced586636a6b6f3d8838e4d76d8c13a7523b0bc847c242fb12cf4eb688188973"
+        },
+        "diagnostic_not_extra_stop": {
+          "tag": "p",
+          "index": 39,
+          "text_sha256": "e439da4f1bc3f5766822be6b12f239574130925f7233fcec65a75acf1f6f2a16"
+        }
+      },
+      "diagnostic_assessment": "Numeric/wording diagnostics are retained. The reviewed table cells and material negation, net-increment, stopping-cost and threshold rules are separately bound by publication regressions; no general automatic semantic pass is asserted."
+    },
+    "en": {
+      "body_sha256": "388219e3ddb4221d7643c0bbf140e00ab701d3e1338540c3869d1d5b5e6c6d00",
+      "article_sha256": "cb0fe57c7450e48af02b5b259d724aab6c50f1149b9cdb2f6b6ec23fe0d0fc8b",
+      "original_audit_sha256": "10d450c27c233020686e7388e2f4c7eeab5ec05e0f69d08b03fa114060a3387e",
+      "original_body_sha256": "598b5bedcd0cbe87ab20861e25370ada5cc91d3b301466eb73a73528e36650af",
+      "publication_structure_passed": true,
+      "automated_diagnostics": [
+        "Translation changes numeric values in title; inspect numeric_changes metrics.",
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "semantic_blocks": {
+        "exclude_unqualified": {
+          "tag": "h2",
+          "index": 0,
+          "text_sha256": "51b2e4b5e307443d51a294d2c7d8a9db75648d2b2818caa61448ab16de7adee6"
+        },
+        "qualified_count_not_rate": {
+          "tag": "li",
+          "index": 4,
+          "text_sha256": "15f162c5bc05e7d9cac77f0f863b09e127a103d0c657118bbc320cdf6de027e7"
+        },
+        "net_increment": {
+          "tag": "p",
+          "index": 22,
+          "text_sha256": "bf01817b2a5a418bb5cbd0b0330b9f617d69f1c7ff01137975bce67217d3f53a"
+        },
+        "b_actual_error_count": {
+          "tag": "p",
+          "index": 19,
+          "text_sha256": "6b84cc0026205e5bc4cf8d27afdc80b8ec7cfff317408f9525831c064bb467cb"
+        },
+        "stop_spending": {
+          "tag": "p",
+          "index": 35,
+          "text_sha256": "f9ee12bdb627201fad1920e0319f386d91f2fa2d5a8edd8f5e72677e746cabb0"
+        },
+        "a_b_failure_diagnosis": {
+          "tag": "p",
+          "index": 33,
+          "text_sha256": "4fb69be6c18b365b6a1c1335a8774c8c2b2fa9cd9ae25bf9dfc97fb5458da001"
+        },
+        "zero_conversion_before_division": {
+          "tag": "li",
+          "index": 2,
+          "text_sha256": "6fcea52e9f93e66de7422f8e0e6403acbf7311419353eb260ad4e043f4520582"
+        },
+        "endpoints_and_cost_ties": {
+          "tag": "p",
+          "index": 13,
+          "text_sha256": "2ee9657a21069d9d023f2ad5daa79b93fcbb901a3dd3b70f618064bec0b1b3bf"
+        },
+        "diagnostic_not_extra_stop": {
+          "tag": "p",
+          "index": 39,
+          "text_sha256": "070e66773f135f9e3fd5786b0c248d7ffdcb8e46019f3e122cb7f30cb3273001"
+        }
+      },
+      "diagnostic_assessment": "Numeric/wording diagnostics are retained. The reviewed table cells and material negation, net-increment, stopping-cost and threshold rules are separately bound by publication regressions; no general automatic semantic pass is asserted."
+    },
+    "ar": {
+      "body_sha256": "d05e2fac5ef1776dd8e8cddad3e6cfd2bb50ff343a6814b7b318cd0eca4c7055",
+      "article_sha256": "f03763bcd3538b369036c997815db894851a84919632408897063a7b4da05ebe",
+      "original_audit_sha256": "7c4327830fd6b9396efd5049717a4566b4be79288017f2b14124c7bffd0d867a",
+      "original_body_sha256": "a0b2bc64a82cbb78768d520ce527ed25a559e082752cb857dd645d985b0049e0",
+      "publication_structure_passed": true,
+      "automated_diagnostics": [
+        "Translation changes numeric values in title; inspect numeric_changes metrics.",
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "semantic_blocks": {
+        "exclude_unqualified": {
+          "tag": "h2",
+          "index": 0,
+          "text_sha256": "281ac8f02b5dbb445246609f69b3968ee3dc43d9966d805f0c1a20f76d5476fb"
+        },
+        "qualified_count_not_rate": {
+          "tag": "li",
+          "index": 4,
+          "text_sha256": "ffad6a6bb19c93c3eb6ebe07c151bbcaef718776c72e04a0e18304fc23bac578"
+        },
+        "net_increment": {
+          "tag": "p",
+          "index": 22,
+          "text_sha256": "747b436f230d3c58ad71c1f5ecbe1d8c53ae378ebe8b4aa397edf0019adf21e1"
+        },
+        "b_actual_error_count": {
+          "tag": "p",
+          "index": 19,
+          "text_sha256": "353e0b9c6f474100b319678ff35e5be7dcb56fad97d2456ffcbd2020511d6c3c"
+        },
+        "stop_spending": {
+          "tag": "p",
+          "index": 35,
+          "text_sha256": "0bd5faebe0ec111391ff70d3fa2c69ffc9367491717cf398697ec9274b4563bb"
+        },
+        "a_b_failure_diagnosis": {
+          "tag": "p",
+          "index": 33,
+          "text_sha256": "1c11f4e68ce6b15c0e360c1f76cddd845631f43e54cd7d5b9127c211e3bc3eda"
+        },
+        "zero_conversion_before_division": {
+          "tag": "li",
+          "index": 2,
+          "text_sha256": "b1f3b0606eea629d5fb093f912a6a0230e948aeb0d8d480918d3516719d71b95"
+        },
+        "endpoints_and_cost_ties": {
+          "tag": "p",
+          "index": 13,
+          "text_sha256": "4ef5289e04fb6aed9eb943745d24605a60e04045eff504cb5f4e3aa99cd77c40"
+        },
+        "diagnostic_not_extra_stop": {
+          "tag": "p",
+          "index": 39,
+          "text_sha256": "2603e8868c8a0317553ee305502c2d3371991ea341ca56c3b31555c4e15935b9"
+        }
+      },
+      "diagnostic_assessment": "Numeric/wording diagnostics are retained. The reviewed table cells and material negation, net-increment, stopping-cost and threshold rules are separately bound by publication regressions; no general automatic semantic pass is asserted."
+    }
+  },
+  "local_validation": {
+    "python_tests": 387,
+    "targeted_page_tests": 5,
+    "site_build": "passed",
+    "html_pages": 1019,
+    "paid_provider_requests": 0,
+    "node_tests": 120,
+    "javascript_syntax_checks": 3
+  }
+}

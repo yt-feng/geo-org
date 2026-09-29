@@ -3,8 +3,8 @@
     "order": "716",
     "row": "707",
     "slug": "00707-geo-0-1-ai-6a821aba",
-    "title": "Eco-GEO：سلسلة التوريد – ترتيب وضوح AI للبدء البارد من 0 إلى 1: أولاً، يتم استبعاد الحلول التي لا تستطيع تجاوز العقبات، ثم يتم مقارنة التكاليف الكاملة للإصلاح وتوسيع النطاق.",
-    "excerpt": "في ظل وجود ساعات عمل ثابتة، ومجموعة مشاكل ثابتة، وإمكانية المراجعة المستقلة، فإن معدل الأخطاء والزيادة في الإشارات الصحيحة يُعتبر شرطًا للقبول وليس أولوية. على سبيل المثال: عندما يكون m=20 وE_base=0.50، يتم استبعاد B لأن E_base&gt;0.10 كبير؛ ويعتمد ما إذا كان A قابلًا للتنفيذ على معدل إزالة الأخطاء بعد التصحيح، حيث إذا كانت qA=0.60، فإن E_A=0.20، وبالتالي C هو الخيار المناسب؛ أما إذا كانت qA≥0.80، فإن E_A=0.10 وΔQ_A=8، وبالتالي A هو الخيار الوحيد القابل للتنفيذ، وبالتالي A هو الخيار المناسب. الجانب الحرج في السعة يحدث فقط عندما يكون m=20 (حيث hA يتجاوز 2.60 ساعة، والوقت المشترك قبل التنفيذ يتجاوز 48 ساعة، وبالتالي A لا يصل إلى الشرط)؛ أما الجانب الحرج في الأخطاء المنخفضة عند m=2، فهو عندما لا يتجاوز hB 1.625 ساعة أو pB≥4/13، وبالتالي B يصبح قابلاً للتنفيذ من C. جميع القيم المذكورة هي افتراضات توضيحية، ومرفقة بقيم حرجة وقواعد توقف يمكن إعادة حسابها.",
+    "title": "Eco-GEO：ظهور شركات سلسلة التوريد في إجابات الذكاء الاصطناعي من البداية—فحص شروط القبول قبل مقارنة إصلاح الحقائق بتوسيع التغطية",
+    "excerpt": "مع ساعات ثابتة ومجموعة أسئلة ثابتة ومراجعة مستقلة، يُفحص أولًا معدل الخطأ وصافي زيادة الاستشهادات المؤهلة، ثم تُقارَن التكاليف الكاملة للخيارات الممكنة. في المثال m=20 يستبعد E_base>0.10 الخيار B. مع ثبات بقية المدخلات، تعطي qA=0.60 القيمة E_A=0.20، فالقرار C؛ وعند qA≥0.80 تكون E_A≤0.10 وΔQ_A=8، فالقرار A. عند m=2، يؤدي خفض hB وحده إلى≤1.625 ساعة أو رفع pB وحده إلى≥4/13 إلى بلوغ B الحد الأدنى للزيادة. جميع الأرقام توضيحية؛ ويعتمد القبول النهائي على إعادة قياس الأخطاء وصافي الزيادة وساعات العمل الفعلية الكاملة.",
     "category": "GEO للعلامات التجارية",
     "tags": "GEO، العلامة التجارية GEO، القبعة البيضاء GEO، بحث AI، سلسلة التوريد، اتساق الحقائق المتعلقة بالعلامة التجارية، فترة البدء البارد من 0 إلى 1، تخصيص الموارد، عتبات اتخاذ القرارات، Eco-GEO، خدمات GEO، تحسين البحث AI.",
     "author": "Eco GEO Editorial Team",
@@ -115,6 +115,12 @@
     "reviewed_by": "Eco GEO Research Desk",
     "quality": {
       "version": "insights-v3",
+      "review_type": "agent editorial correction and manual translation review",
+      "repair_record": "docs/editorial-repairs/00707-2026-09-29.json",
+      "automated_semantic_review_reused": false,
+      "body_sha256": "d05e2fac5ef1776dd8e8cddad3e6cfd2bb50ff343a6814b7b318cd0eca4c7055",
+      "localization_method": "manual correction of generated translation",
+      "paid_provider_requests_for_correction": 0,
       "metrics": {
         "language": "ar",
         "gate_version": 1,
@@ -151,9 +157,9 @@
           "S4": 1,
           "S5": 1
         },
-        "visible_character_count": 25279,
-        "zh_character_count": 1031,
-        "word_count": 5750,
+        "visible_character_count": 26238,
+        "zh_character_count": 0,
+        "word_count": 6144,
         "executive_summary_takeaways": 3,
         "tables_meeting_structure": 2,
         "valid_citation_count": 7,
@@ -216,42 +222,69 @@
                 "0": 1,
                 "1": 1
               },
-              "translated": {
+              "translated": {},
+              "missing": {
                 "0": 1,
                 "1": 1
               },
-              "missing": {},
-              "added": {}
+              "added": {},
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 1,
+                    "path": "title",
+                    "fragment_index": 1,
+                    "tag": "title",
+                    "text": "Eco-GEO：供应链 0-1 冷启动的 AI 可见性排序：先淘汰过不了门槛的方案，再比较修复与扩覆盖的完整成本",
+                    "numbers": {
+                      "0": 1,
+                      "1": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 1,
+                    "path": "title",
+                    "fragment_index": 1,
+                    "tag": "title",
+                    "text": "Eco-GEO: ظهور شركات سلسلة التوريد في إجابات الذكاء الاصطناعي من البداية—فحص شروط القبول قبل مقارنة إصلاح الحقائق بتوسيع التغطية",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "0": 1,
+                    "1": 1
+                  },
+                  "added": {}
+                }
+              ],
+              "block_differences_total": 1,
+              "block_differences_truncated": false
             },
             "excerpt": {
               "source": {
                 "0.1": 2,
                 "0.2": 1,
-                "0.5": 1,
                 "0.6": 1,
                 "0.8": 1,
                 "1.625": 1,
                 "13": 1,
                 "2": 1,
-                "2.6": 1,
-                "20": 2,
+                "20": 1,
                 "4": 1,
-                "48": 1,
                 "8": 1
               },
               "translated": {
                 "0.1": 2,
                 "0.2": 1,
-                "0.5": 1,
                 "0.6": 1,
                 "0.8": 1,
                 "1.625": 1,
                 "13": 1,
                 "2": 1,
-                "2.6": 1,
-                "20": 2,
+                "20": 1,
                 "4": 1,
-                "48": 1,
                 "8": 1
               },
               "missing": {},
@@ -259,34 +292,37 @@
             },
             "body_html": {
               "source": {
-                "0": 17,
+                "0": 30,
                 "0.02": 2,
-                "0.0308": 2,
-                "0.05": 9,
-                "0.1": 43,
+                "0.030769": 1,
+                "0.0308": 1,
+                "0.05": 10,
+                "0.075": 1,
+                "0.1": 41,
                 "0.105": 1,
-                "0.11": 1,
+                "0.125": 1,
                 "0.15": 3,
                 "0.2": 6,
-                "0.25": 7,
+                "0.25": 9,
                 "0.3": 1,
                 "0.3077": 2,
                 "0.39": 1,
-                "0.4": 14,
+                "0.4": 16,
                 "0.5": 11,
                 "0.52": 1,
                 "0.55": 2,
                 "0.6": 8,
                 "0.79": 1,
-                "0.8": 26,
-                "0.9": 4,
+                "0.8": 27,
+                "0.9": 5,
                 "1": 22,
                 "1.2": 2,
                 "1.3": 1,
-                "1.6": 8,
+                "1.6": 9,
                 "1.625": 6,
                 "1.63": 1,
                 "10": 14,
+                "10%": 1,
                 "11": 3,
                 "12": 9,
                 "12.31": 4,
@@ -298,83 +334,91 @@
                 "17": 1,
                 "18": 2,
                 "19": 4,
-                "2": 28,
+                "2": 31,
                 "2.6": 5,
                 "2.61": 2,
-                "20": 56,
+                "20": 57,
                 "20%": 7,
-                "200": 4,
+                "200": 5,
                 "2022": 1,
                 "2025": 2,
                 "2026": 1,
                 "22": 1,
                 "24": 1,
-                "26": 10,
-                "28": 15,
+                "25.6": 1,
+                "26": 11,
+                "28": 14,
+                "28.8": 1,
                 "29": 1,
                 "3": 17,
                 "3.2": 1,
                 "3.9": 2,
                 "31": 1,
                 "31.2": 2,
-                "32": 19,
-                "34": 6,
+                "32": 25,
+                "32.8": 1,
+                "33": 1,
+                "34": 8,
                 "37%": 1,
                 "39": 4,
                 "4": 18,
                 "4.2": 1,
                 "4.25": 1,
-                "40": 23,
+                "40": 26,
                 "45": 4,
                 "48": 5,
                 "49": 2,
-                "5": 1,
-                "52": 13,
+                "5": 2,
+                "52": 12,
                 "55936": 1,
                 "6": 8,
                 "6.5": 7,
                 "60": 7,
+                "65": 2,
                 "7": 4,
                 "7.5": 2,
                 "7.6": 4,
                 "7.75": 1,
                 "7.8": 2,
-                "8": 71,
-                "80": 18,
+                "8": 66,
+                "80": 28,
                 "80%": 1,
                 "9": 1
               },
               "translated": {
-                "0": 13,
+                "0": 27,
                 "0.02": 2,
-                "0.0308": 2,
-                "0.05": 9,
-                "0.1": 43,
+                "0.030769": 1,
+                "0.0308": 1,
+                "0.05": 10,
+                "0.075": 1,
+                "0.1": 41,
                 "0.105": 1,
-                "0.11": 1,
+                "0.125": 1,
                 "0.15": 3,
                 "0.2": 6,
-                "0.25": 7,
+                "0.25": 9,
                 "0.3": 1,
                 "0.3077": 2,
                 "0.39": 1,
-                "0.4": 14,
+                "0.4": 16,
                 "0.5": 11,
                 "0.52": 1,
                 "0.55": 2,
                 "0.6": 8,
                 "0.79": 1,
-                "0.8": 25,
-                "0.9": 4,
-                "1": 11,
+                "0.8": 27,
+                "0.9": 5,
+                "1": 15,
                 "1.2": 2,
                 "1.3": 1,
-                "1.6": 8,
+                "1.6": 9,
                 "1.625": 6,
                 "1.63": 1,
-                "10": 14,
+                "10": 13,
+                "10%": 1,
                 "11": 3,
-                "12": 8,
+                "12": 9,
                 "12.31": 4,
                 "12.5": 1,
                 "13": 9,
@@ -384,61 +428,64 @@
                 "17": 1,
                 "18": 2,
                 "19": 4,
-                "2": 24,
+                "2": 29,
                 "2.6": 5,
                 "2.61": 2,
-                "20": 56,
+                "20": 57,
                 "20%": 7,
-                "200": 4,
+                "200": 5,
                 "2022": 1,
                 "2025": 2,
                 "2026": 1,
                 "22": 1,
                 "24": 1,
-                "26": 10,
-                "28": 15,
+                "25.6": 1,
+                "26": 11,
+                "28": 14,
+                "28.8": 1,
                 "29": 1,
-                "3": 13,
+                "3": 16,
                 "3.2": 1,
                 "3.9": 2,
                 "31": 1,
                 "31.2": 2,
-                "32": 19,
-                "34": 6,
+                "32": 25,
+                "32.8": 1,
+                "33": 1,
+                "34": 8,
                 "37%": 1,
                 "39": 4,
-                "4": 16,
+                "4": 18,
                 "4.2": 1,
                 "4.25": 1,
-                "40": 23,
+                "40": 26,
                 "45": 4,
                 "48": 5,
                 "49": 2,
-                "5": 1,
-                "52": 13,
+                "5": 2,
+                "52": 12,
                 "55936": 1,
                 "6": 8,
                 "6.5": 7,
                 "60": 7,
-                "7": 1,
+                "65": 2,
+                "7": 3,
                 "7.5": 2,
                 "7.6": 4,
                 "7.75": 1,
                 "7.8": 2,
-                "8": 71,
-                "80": 18,
+                "8": 66,
+                "80": 28,
                 "80%": 1,
                 "9": 1
               },
               "missing": {
-                "0": 4,
-                "0.8": 1,
-                "1": 11,
-                "12": 1,
-                "2": 4,
-                "3": 4,
-                "4": 2,
-                "7": 3
+                "0": 3,
+                "1": 7,
+                "10": 1,
+                "2": 2,
+                "3": 1,
+                "7": 1
               },
               "added": {},
               "block_alignment": "structural_position",
@@ -478,30 +525,41 @@
                 },
                 {
                   "source": {
-                    "block_index": 15,
-                    "path": "/section[3]/p[1]",
+                    "block_index": 5,
+                    "path": "/section[1]/ul[1]/li[3]",
                     "fragment_index": 1,
-                    "tag": "p",
-                    "text": "为例说明，固定问题集 N＝40 题（示意），每题是一个抽样单位。题目由渠道负责人从本品牌近 12 个月的询盘与销售问答中挑选、去重后冻结平台、版本、语言、问法与采样时段；运营人员完成两轮基线采样，期末用同一规程复测；每题保留答案与来源链接；独立复核者按版本化事实台账判定，分歧由第三人裁决；不同平台分别报告，不合并分母。",
+                    "tag": "li",
+                    "text": "N=40 时 A 与 B 不会同时合格。pA=0 时 A 的增量为0，直接排除；pA>0 时，A 达到ΔQ≥8需m≥8/pA，B基线准入需m≤0.10N。因此两者同时可行的必要条件为N≥80/pA；固定pA=0.40才得到N≥200，还需检查各方案其余条件。本例主要比较“做唯一可行项，还是暂停”。",
                     "numbers": {
-                      "12": 1,
-                      "40": 1
+                      "0": 3,
+                      "0.1": 1,
+                      "0.4": 1,
+                      "200": 1,
+                      "40": 1,
+                      "8": 2,
+                      "80": 1
                     },
                     "text_truncated": false
                   },
                   "translated": {
-                    "block_index": 15,
-                    "path": "/section[3]/p[1]",
+                    "block_index": 5,
+                    "path": "/section[1]/ul[1]/li[3]",
                     "fragment_index": 1,
-                    "tag": "p",
-                    "text": "على سبيل المثال، يوجد مجموعة من الأسئلة الثابتة عددها 40 سؤالًا (للمساعدة في الفهم)، وكل سؤال يمثل وحدة قياسية. يتم اختيار الأسئلة من قبل المسؤولين عن القنوات من خلال الاستفسارات والمحادثات التجارية لعشرة أشهر ماضية حول العلامة التجارية المعنية، ثم يتم تحديد الإصدار واللغة وطريقة الطرح وفترة الاختبار. يقوم الموظفون بالعمليات اللازمة لإجراء جولتين من الاختبارات الأساسية، ويتم إعادة الاختبار بنفس الطريقة في نهاية الفترة. يتم الاحتفاظ بإجابات كل سؤال ورابط مصدره؛ يقوم الأشخاص الذين يقومون بالمراجعة المستقلة بتحديد الأسئلة بناءً على بيانات الإصدار، ويتم حل الخلافات من قبل طرف ثالث. تقوم المنصات المختلفة بالإبلاغ بشكل منفصل، دون دمج الحصص.",
+                    "tag": "li",
+                    "text": "عند N=40 لا يمكن أن يتأهل A وB معًا. إذا كانت pA=0 فزيادة A تساوي صفرًا ويُستبعد. وعند pA>0، يحتاج A إلى m≥8/pA لبلوغ ΔQ≥8، بينما يشترط قبول B الأساسي m≤0.10N. لذلك فإن N≥80/pA شرط ضروري لقابليتهما المشتركة؛ ولا تنتج N≥200 إلا عند pA=0.40، مع ضرورة تحقق بقية الشروط. يسأل المثال أساسًا عما إذا كان ينبغي اختيار الخيار الوحيد الممكن أو التوقف.",
                     "numbers": {
-                      "40": 1
+                      "0": 2,
+                      "0.1": 1,
+                      "0.4": 1,
+                      "200": 1,
+                      "40": 1,
+                      "8": 2,
+                      "80": 1
                     },
                     "text_truncated": false
                   },
                   "missing": {
-                    "12": 1
+                    "0": 1
                   },
                   "added": {}
                 },
@@ -542,346 +600,53 @@
                 },
                 {
                   "source": {
-                    "block_index": 24,
-                    "path": "/section[4]/p[3]",
+                    "block_index": 61,
+                    "path": "/section[4]/p[7]",
                     "fragment_index": 1,
                     "tag": "p",
-                    "text": "两类等号要分开写清。门槛处的等号：E_post＝0.10、ΔQ＝8、N＝20、Q_cap＝8、总工时＝80 都按“达到即通过”处理；复核分歧率是严格不等——分歧率＝20% 视为不通过，与第 2 节“≥20% 暂停扩量”和 (0) 一致。排序处的等号属另一条规则：单位成本相等时取 ΔQ 较高者，两者都相等时补测后再判。两处等号分属不同规则，不可互相套用。",
+                    "text": "按这套顺序，表二qA／pA／hA／S四行所属的m=20情境中，B因E_base=0.50不可行；只有A在该列通过全部门槛时，才在第2步成为唯一可行项，否则选C。选A不以E_base≤0.10为前提，但也不能省略A自己的错误率、增量与工时门槛。",
                     "numbers": {
-                      "0": 1,
                       "0.1": 1,
+                      "0.5": 1,
                       "2": 1,
-                      "20": 1,
-                      "20%": 2,
-                      "8": 2,
-                      "80": 1
+                      "20": 1
                     },
                     "text_truncated": false
                   },
                   "translated": {
-                    "block_index": 24,
-                    "path": "/section[4]/p[3]",
+                    "block_index": 61,
+                    "path": "/section[4]/p[7]",
                     "fragment_index": 1,
                     "tag": "p",
-                    "text": "يجب كتابة علامات المساواة في الفئتين بشكل منفصل. في نقطة ، تُستخدم علامة المساواة : E_post=0.10، ΔQ=8، N=20، Q_cap=8، وعدد ساعات العمل الإجمالي=80، ويتم التعامل معها جميعًا على أنها “تم الوصول إلى الحد المطلوب”. أما نسبة الخلافات فهي غير متساوية بدقة؛ حيث يُعتبر أن نسبة الخلافات=20% يعني عدم النجاح، وهذا يتوافق مع القاعدة الثانية “≥20% توقف التوسع” و(0). أما في نقطة ، فإن علامة المساواة  تخضع لقاعدة مختلفة: عندما تكون تكلفة الوحدة متساوية، يتم اختيار القيمة الأعلى لـ ΔQ، وإذا كانت القيمتان متساويتين، يتم إجراء اختبارات إضافية قبل الحكم. علامات المساواة في هاتين النقطتين تخضع لقواعد مختلفة، ولا يمكن تطبيقها مع بعضها البعض.",
+                    "text": "في صفوف qA وpA وhA وS عند m=20 في الجدول 2، تستبعد E_base=0.50 الخيار B في الخطوة 1. لا يكون A الخيار الوحيد الممكن إلا في الأعمدة التي تستوفي جميع شروط الصف؛ وإذا فشل A في عمود فالقرار C. لا يتطلب اختيار A وحده في الخطوة 2 تحقق شرط E_base≤0.10 الخاص بـB.",
                     "numbers": {
-                      "0": 1,
                       "0.1": 1,
-                      "20": 1,
-                      "20%": 2,
-                      "8": 2,
-                      "80": 1
+                      "0.5": 1,
+                      "1": 1,
+                      "2": 2,
+                      "20": 1
                     },
                     "text_truncated": false
                   },
-                  "missing": {
+                  "missing": {},
+                  "added": {
+                    "1": 1,
                     "2": 1
-                  },
-                  "added": {}
+                  }
                 }
               ],
-              "block_differences_total": 18,
+              "block_differences_total": 12,
               "block_differences_truncated": true
             }
           }
         },
         "publication_policy": "readable-translation-v1",
-        "quality_warning_count": 1
+        "quality_warning_count": 2
       },
-      "revisions": 0,
-      "review_type": "offline translation structure check",
       "warnings": [
-        {
-          "block": "title",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.8",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.8",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.22",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.22",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.22",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.40",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.40",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.40",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.44",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.44",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.44",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.60",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.60",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.60",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.72",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.72",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.76",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.76",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.76",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.82",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.86",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.96",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.116",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.116",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.116",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.120",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.124",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.124",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.174",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.174",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.210",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.210",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.210",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.290",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.290",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.294",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.294",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.298",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.298",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.302",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.302",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.308",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.308",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.320",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.324",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.324",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.328",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.328",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.340",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.340",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.406",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.406",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.568",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.592",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.592",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.592",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.612",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.612",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.612",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.616",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.616",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.616",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.624",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.624",
-          "warning": "Offline translation changed comparison or formula operators"
-        },
-        {
-          "block": "body_html.624",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "body_html.644",
-          "warning": "Hy-MT2 protected placeholder fallback retained source text"
-        },
-        {
-          "block": "body_html.644",
-          "warning": "Offline translation is missing the target language"
-        },
-        {
-          "block": "body_html.644",
-          "warning": "Offline translation retained Chinese source text"
-        },
-        {
-          "block": "body_html.648",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
-        {
-          "block": "body_html.648",
-          "warning": "Offline translation changed numeric values within a text block"
-        },
-        {
-          "block": "tags",
-          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
-        },
+        "Translation changes numeric values in title; inspect numeric_changes metrics.",
         "Translation changes numeric values in body_html; inspect numeric_changes metrics."
-      ],
-      "paid_translation_calls": 0
+      ]
     }
   },
   {
