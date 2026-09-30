@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import test_daily_resume_passed as fixtures
+from decision_check_fixture import with_decision_checks, coverage_review
 
 daily, ip = fixtures.daily, fixtures.ip
 
@@ -113,7 +114,7 @@ class CrossLanguageResumeTests(unittest.TestCase):
     def editorial(self, *, scope="source_article", status="resolved"):
         loaded = self.load(self.translation())
         fixes = ip._revision_feedback(loaded)["required_fixes"]
-        candidate = {**self.article, "revision_response": [{"issue_id": fix["id"], "change": "已核对",
+        candidate = {**with_decision_checks(self.article), "revision_response": [{"issue_id": fix["id"], "change": "已核对",
             "location": "表2", "verification": "本轮独立核对计算与来源边界"} for fix in fixes]}
         prompts = []
 
@@ -121,6 +122,7 @@ class CrossLanguageResumeTests(unittest.TestCase):
             self.assertIn(stage, ("zh-review", "zh-review-format-repair"))
             prompts.append(prompt)
             review = self.good_review()
+            review["decision_check_coverage"] = coverage_review(candidate)
             review["blocker_checks"] = [{"issue_id": fix["id"], "status": status if fix.get("origin_language") else "resolved",
                 "scope": scope, "location": "表2", "finding": "独立核对当前中文、整数分母、摘要与来源边界后作出判断。"}
                 for fix in fixes if fix["kind"] == "blocker"]

@@ -17,6 +17,7 @@ from pathlib import Path
 import generate_blog as gb
 from deepseek_cost_policy import begin_request, complete_request
 from insight_offline_translation import OfflineTranslationError, translate_article as translate_article_offline
+from insight_decision_checks import DECISION_CHECK_REQUIREMENTS
 from insight_quality import DRAFT_REQUIREMENTS, REVIEW_RUBRIC, validate_insight, validate_translation_publication
 
 SCORE_KEYS = ("thesis", "evidence", "mechanism", "tradeoffs", "actionability", "originality")
@@ -463,6 +464,8 @@ def normalize_article(raw: dict, lang: str, *, normalization: dict | None = None
     article["tags"] = ", ".join(str(t) for t in tags) if isinstance(tags, list) else tags
     if lang == "zh":
         article["tags"] = gb.ensure_required_tags(article["tags"])
+    if lang == "zh" and "decision_checks" in raw:
+        article["decision_checks"] = json.loads(json.dumps(raw["decision_checks"], ensure_ascii=False))
     if normalization is not None:
         normalization.update({"inline_style_attributes_removed": parser.removed,
             "raw_body_sha256": hashlib.sha256(raw["body_html"].encode()).hexdigest(),
@@ -783,6 +786,7 @@ def _revision_feedback(audit: dict) -> dict:
                     and fix.get("latest_independent_check", {}).get("status") == "resolved"]
     return {"failures": current.get("errors", []),
             "numeric_changes": metrics.get("translation", {}).get("numeric_changes", metrics.get("numeric_changes", {})),
+            "decision_checks": metrics.get("decision_checks", {}),
             "scores": current.get("review", {}).get("scores"),
             "claim_checks": current.get("review", {}).get("claim_checks", []),
             "required_fixes": required_fixes,
@@ -793,7 +797,8 @@ def _revision_feedback(audit: dict) -> dict:
 
 def _factual_repair_required(feedback: dict) -> bool:
     """Use a reasoning draft for known factual work, without adding attempts."""
-    return (any(fix.get("kind") == "blocker"
+    return (feedback.get("decision_checks", {}).get("passed") is False
+            or any(fix.get("kind") == "blocker"
                 and fix.get("latest_independent_check", {}).get("status") != "resolved"
                 for fix in feedback.get("required_fixes", []))
             or any(check.get("verdict") == "unsupported"
@@ -860,6 +865,42 @@ required_fixes：{json.dumps(feedback.get('required_fixes', []), ensure_ascii=Fa
     return audit
 
 
+def _decision_coverage_errors(article: dict, review: dict) -> list[str]:
+    if "decision_checks" not in article:
+        return []
+    checks = article["decision_checks"]
+    if not isinstance(checks, dict) or any(not isinstance(checks.get(group), list) for group in ("calculations", "budgets", "cases")):
+        return ["Independent decision-check coverage requires a valid submitted check record"]
+    coverage = review.get("decision_check_coverage", {})
+    errors = []
+    if (not isinstance(coverage, dict) or coverage.get("verdict") != "complete"
+            or not isinstance(coverage.get("finding"), str) or len(coverage["finding"].strip()) < 20):
+        finding = coverage.get("finding", "missing concrete finding") if isinstance(coverage, dict) else "invalid coverage record"
+        errors.append("Independent review must verify complete decision-check coverage and agreement with current article: " + str(finding))
+    if not isinstance(coverage, dict):
+        return errors
+    missing = coverage.get("missing_checks")
+    if not isinstance(missing, list) or any(not isinstance(item, str) or not item.strip() for item in missing):
+        errors.append("decision-check coverage must list missing_checks, empty only after verifying complete coverage")
+    elif missing:
+        errors.extend("Independent decision-check coverage missing: " + item for item in missing)
+    expected = {item["id"] for group in ("calculations", "budgets", "cases")
+                for item in checks.get(group, []) if isinstance(item, dict) and isinstance(item.get("id"), str)}
+    entries = coverage.get("checks")
+    if not isinstance(entries, list):
+        return errors + ["Independent decision-check coverage must verify every submitted check ID"]
+    seen = []
+    for entry in entries:
+        if (not isinstance(entry, dict) or not isinstance(entry.get("check_id"), str)
+                or not isinstance(entry.get("finding"), str) or len(entry["finding"].strip()) < 20):
+            errors.append("Each independent decision-check finding needs its ID and concrete current-body verification")
+            continue
+        seen.append(entry["check_id"])
+    if set(seen) != expected or len(seen) != len(expected):
+        errors.append("Independent decision-check coverage must verify every submitted check ID exactly once")
+    return errors
+
+
 def review_article(article: dict, sources: list[dict], api_key: str, lang: str, original: dict | None = None,
                    required_fixes: list[dict] | None = None) -> dict:
     required_blockers = [item for item in (required_fixes or []) if item.get("kind") == "blocker"]
@@ -916,12 +957,28 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
 已读取来源（仅这些文字可为事实提供支持）：{research_text(sources)}
 中文原文（仅翻译审稿时提供）：{json.dumps(original, ensure_ascii=False) if original else '无'}
 待审文章：{json.dumps(article, ensure_ascii=False)}"""
+    if "decision_checks" in article:
+        prompt += """\n本文附有机器复算的decision_checks，它们不是通过证明。独立逐段核对所有重要算式、
+表格输入/结果、完整工时与共享成本、联合可行性、阈值两侧/等号/零值/容量边界和有序规则
+是否都被检查覆盖且与正文完全一致；无关算式、恒真案例、隐去关键预算检查均须判不完整。
+另返回decision_check_coverage={"verdict":"complete|incomplete","finding":"明确核对哪些正文位置、
+哪些预算/边界和缺失项的具体结果","missing_checks":["应检查但未覆盖的正文断言/边界，完全覆盖才为空"],
+"checks":[{"check_id":"每个已提交检查的原ID，恰好一次","finding":"至少20字，独立核对该输入/结果/规则与本轮具体正文位置的发现"}]}。有遗漏、正文矛盾或来源无支持都列为blocker，不能因为
+计算器passed、示例数字正确或作者自评就清除语义blocker。来源建议不得升级为硬性准入要求。"""
     allowed_source_ids = {source["id"] for source in sources}
     max_tokens = review_max_tokens()
     review = request_json(prompt, api_key, stage=f"{lang}-review", max_tokens=max_tokens)
     format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
     if format_errors:
         original_review = json.loads(json.dumps(review))
+        # A format repair must not erase an independent finding that the same
+        # unchanged draft omits a budget, case, or boundary from its checks.
+        if "decision_checks" in article:
+            original_coverage = original_review.get("decision_check_coverage", {})
+            if isinstance(original_coverage, dict) and (original_coverage.get("verdict") == "incomplete" or original_coverage.get("missing_checks")):
+                original_review.setdefault("blockers", [])
+                if isinstance(original_review["blockers"], list):
+                    original_review["blockers"].extend(_decision_coverage_errors(article, original_review))
         original_format_errors = list(format_errors)
         # A format-only retry is still a fresh factual review of the same article;
         # no score, unsupported verdict or blocker is removed by application code.
@@ -973,6 +1030,7 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
         review["blockers"].extend(f"invalid review response: {error}" for error in format_errors)
     review.setdefault("blockers", []).extend(_claim_review_errors(review, allowed_source_ids))
     review["blockers"].extend(_blocker_check_errors(review, required_blockers))
+    review["blockers"].extend(_decision_coverage_errors(article, review))
     review["blockers"] = list(dict.fromkeys(str(item) for item in review["blockers"]))
     return review
 
@@ -1206,8 +1264,13 @@ def validate_passed_chinese_audit(audit: dict, topic: gb.TopicRow) -> dict:
     if old_structure.get("passed") is not True or old_structure.get("errors") != [] or not isinstance(old_structure.get("metrics"), dict):
         raise invalid("last structure must have passed with complete metrics")
     article = normalize_article(last["article"], "zh")
-    if article != {key: last["article"].get(key) for key in ("title", "excerpt", "body_html", "tags")}:
+    if article != {key: last["article"][key] for key in ("title", "excerpt", "body_html", "tags", "decision_checks") if key in last["article"]}:
         raise invalid("saved article is not identical after normalization")
+    if "decision_checks" in article:
+        if last.get("decision_checks_sha256") != _audit_sha256(article["decision_checks"]):
+            raise invalid("decision checks fingerprint does not match the saved article")
+        if _decision_coverage_errors(article, last.get("review", {})):
+            raise invalid("requires independent decision-check coverage review")
     normalization = last.get("normalization")
     if not isinstance(normalization, dict) or any(not isinstance(normalization.get(key), str) or not re.fullmatch(r"[0-9a-f]{64}", normalization[key])
                                                  for key in ("raw_body_sha256", "normalized_body_sha256")):
@@ -1281,6 +1344,8 @@ def reuse_passed_chinese_audit(topic: gb.TopicRow, sources: list[dict], api_key:
                 "article": article, "article_sha256": validated["article_sha256"], "structure": structural,
                 "normalization": normalization, "feedback_applied": feedback, "review_state": "pending",
                 "revision_response": [], "metadata_errors": [], "metadata_state": "not_applicable", "errors": []}
+        if "decision_checks" in article:
+            last["decision_checks_sha256"] = _audit_sha256(article["decision_checks"])
         audit["attempts"].append(last)
         write_audit(audit_path, audit)
         try:
@@ -1325,7 +1390,7 @@ def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, la
         # A supplied candidate carries content only, never an acceptance result.
         # Detach it from the caller and discard quality/review/passed metadata.
         editorial_revision = json.loads(json.dumps({key: editorial_revision[key]
-            for key in ("title", "excerpt", "body_html", "tags", "revision_response")
+            for key in ("title", "excerpt", "body_html", "tags", "revision_response", "decision_checks")
             if key in editorial_revision}, ensure_ascii=False))
     audit = {"version": "insights-v3", "row": topic.idx, "language": lang,
              "sources": public_sources(sources), "attempts": [], "passed": False,
@@ -1371,6 +1436,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 目标质量参照顶级战略咨询的研究严谨度，不声称达到BCG审定标准，不模仿其文字。
 {DRAFT_REQUIREMENTS}
 {DECISION_ANALYSIS_REQUIREMENTS}
+{DECISION_CHECK_REQUIREMENTS}
 自然使用品牌化GEO/AI搜索优化；品牌只在必要处出现，不凑关键词次数。
 题目应表达本篇核心判断，避免沿用弱选题标题。以读者的经营问题组织全文，不强塞今天新闻。
 提纲和旧稿是待完善的工作材料，不是正确性保证；其中与本轮分析要求冲突的指标、公式
@@ -1381,7 +1447,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 不能把示例结果写成已经得到实证的ROI。
 没有实证就清楚写推论/假设，不要暗示采访、调研或客户实绩。禁止虚构算法权重或保证收录。
 每源最多25个英文词或短句直接引用，其余用原创归纳；不得复制来源的整段文字。
-输出JSON字段title,excerpt,body_html,tags，正文必须完整，3200–4800个汉字。
+输出JSON字段title,excerpt,body_html,tags,decision_checks，正文必须完整，3200–4800个汉字。
 选题：{json.dumps(vars(topic), ensure_ascii=False)}
 {brief_label}：{json.dumps(brief, ensure_ascii=False)}
 已读取原始资料：{research_text(sources)}"""
@@ -1452,7 +1518,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 不能只在文末写“局限”。若tradeoffs或originality不足，必须让读者看见同一预算下
 选项间的放弃项、可观测触发规则、变量变化带来的推荐反转，以及本篇自己推导的
 比较框架。计算先核对单位、校准来源和假设范围，不得用更漂亮的任意系数凑结论。
-返回完整文章JSON title,excerpt,body_html,tags，另附revision_response数组：
+返回完整文章JSON title,excerpt,body_html,tags,decision_checks；必须同步重建本轮全部检查，另附revision_response数组：
 [{{"issue_id":"required_fixes中的原ID","change":"具体改了什么或怎样保留已完成的修复",
 "location":"本轮章节标题/表格行/段落位置","verification":"用本轮具体内容说明为何解决了该问题"}}]。
 每个ID恰好回应一次，不用“已优化”之类空话；不要把revision_response写进正文。
@@ -1488,7 +1554,7 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
             try:
                 article = normalize_article(raw, lang, normalization=normalization)
                 structural = (validate_translation_publication(article, sources, lang, original) if lang != "zh"
-                              else validate_insight(article, sources, lang=lang, source_article=original))
+                              else validate_insight(article, sources, lang=lang, source_article=original, require_decision_checks=True))
             except ValueError as exc:
                 structural = {"passed": False, "errors": [str(exc)], "metrics": {}}
                 article = {key: raw.get(key) for key in ("title", "excerpt", "body_html", "tags")}
@@ -1502,6 +1568,8 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                        "metadata_errors": metadata_errors,
                        "metadata_state": "warning" if metadata_errors else "valid",
                        "feedback_applied": feedback, "review_state": "not_started"}
+            if "decision_checks" in article:
+                attempt["decision_checks_sha256"] = _audit_sha256(article["decision_checks"])
             if draft_origin == "model":
                 attempt["draft_thinking"] = draft_thinking
             if lang != "zh":
@@ -1542,7 +1610,7 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                     # evidence that the article is bad. Keep hard structural and
                     # source gates, publish with an explicit warning, and never
                     # use this path when historical blockers need rechecking.
-                    if not _json_review_failure(exc) or required_fixes:
+                    if not _json_review_failure(exc) or required_fixes or "decision_checks" in article:
                         raise
                     review = _unavailable_review(exc)
                     attempt["warnings"] = ["Independent semantic review unavailable: model returned invalid JSON; structural publication gates passed."]

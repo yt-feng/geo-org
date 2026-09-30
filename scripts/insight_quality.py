@@ -17,6 +17,8 @@ import unicodedata
 from typing import Any, Mapping
 from urllib.parse import urlsplit
 
+from insight_decision_checks import validate_decision_checks
+
 
 DRAFT_REQUIREMENTS = """
 目标是达到一线战略咨询 Insights 的研究和推理强度，用自己的论点和语言写作，
@@ -455,6 +457,7 @@ def validate_insight(
     sources: list[Mapping[str, Any]],
     lang: str = "zh",
     source_article: Mapping[str, Any] | None = None,
+    require_decision_checks: bool = False,
 ) -> dict[str, Any]:
     """Return ``passed``, actionable ``errors``, and inspectable ``metrics``.
 
@@ -487,6 +490,10 @@ def validate_insight(
     language = str(lang).lower().replace("_", "-").split("-")[0]
     if language not in {"zh", "en", "ar"}:
         errors.append("Language must be zh, en, or ar.")
+    if language == "zh" and (require_decision_checks or "decision_checks" in article):
+        decision = validate_decision_checks(article, required=require_decision_checks)
+        metrics["decision_checks"] = decision
+        errors.extend(decision["errors"])
     if language == "zh":
         try:
             minimum = int(os.environ.get("INSIGHT_MIN_ZH_CHARS", "2600"))

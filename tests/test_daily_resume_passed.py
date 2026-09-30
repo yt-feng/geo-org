@@ -13,6 +13,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import generate_daily_blog as daily
 import insight_pipeline as ip
+from decision_check_fixture import with_decision_checks, coverage_review
 from test_insight_quality import SOURCES, valid_article
 
 
@@ -354,7 +355,7 @@ class PassedChineseResumeTests(unittest.TestCase):
             saved = json.loads(self.destination.read_text())
             self.assertEqual(saved["attempts"][-1]["article_sha256"], ip._article_sha256(article))
             return {**self.good_review(), "blocker_checks": []}
-        with mock.patch.object(ip, "request_json", side_effect=[{"decision_question": "选择哪个方案"}, valid_article()]), \
+        with mock.patch.object(ip, "request_json", side_effect=[{"decision_question": "选择哪个方案"}, with_decision_checks(valid_article())]), \
                 mock.patch.object(ip, "review_article", side_effect=review):
             ip.produce_article(self.topic, self.sources, "test", audit_path=self.destination)
 

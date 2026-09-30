@@ -15,6 +15,7 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import insight_pipeline as ip
 import generate_daily_blog as daily
+from decision_check_fixture import with_decision_checks, coverage_review
 
 
 class GenerationBudgetTests(unittest.TestCase):
@@ -538,6 +539,7 @@ class ArticleNormalizationTests(unittest.TestCase):
     def test_produce_audits_normalization_and_reviews_exact_body_to_be_published(self):
         from test_insight_quality import SOURCES, valid_article
         raw = valid_article()
+        raw = with_decision_checks(raw)
         raw["body_html"] += '<p><span style="display:none">额外明示假设：成本1,200元，30天。</span></p>'
         sources = [{**source, "text": f"Source observation {source['id']}"} for source in SOURCES]
         good_review = RevisionMetadataTests().good_review()
@@ -591,7 +593,7 @@ class ResumeTests(unittest.TestCase):
                                     "errors": ["prior editorial failure"]} for revision in range(3)]}
 
     def good_review(self, fixes):
-        return {"scores": {**dict.fromkeys(ip.SCORE_KEYS, 4), "originality": 5}, "issues": [], "blockers": [],
+        return {"decision_check_coverage": coverage_review(with_decision_checks({"body_html": ""})), "scores": {**dict.fromkeys(ip.SCORE_KEYS, 4), "originality": 5}, "issues": [], "blockers": [],
                 "claim_checks": [{"claim": f"Concrete current article observation number {number}",
                                   "reason": "The supplied source supports this scoped observation.",
                                   "source_ids": ["S1" if number % 2 else "S2"], "verdict": "supported"} for number in range(5)],
@@ -766,7 +768,7 @@ class EditorialRevisionTests(unittest.TestCase):
     def setUp(self):
         from test_insight_quality import SOURCES, valid_article
         ResumeTests.setUp(self)
-        self.article = valid_article()
+        self.article = with_decision_checks(valid_article())
         self.sources = [{**source, "text": f"Scoped source body {source['id']}"} for source in SOURCES]
         self.audit["sources"] = ip.public_sources(self.sources)
         self.fixes = ip._revision_feedback(self.audit)["required_fixes"]
