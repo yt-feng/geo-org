@@ -837,7 +837,7 @@ def _revision_response_errors(raw: dict, feedback: dict) -> list[str]:
 def _repair_revision_metadata(article: dict, previous_response: object, feedback: dict, api_key: str, lang: str) -> dict:
     """One auxiliary repair; it can neither replace the draft nor clear blockers."""
     frozen_article = json.dumps(article, ensure_ascii=False, sort_keys=True)
-    audit = {"state": "warning", "article_sha256": hashlib.sha256(frozen_article.encode()).hexdigest(),
+    audit = {"state": "warning", "article_sha256": _article_sha256(article),
              "previous_response": previous_response}
     prompt = f"""修复当前稿件的辅助修订记录，只输出JSON对象，且唯一顶层字段是revision_response。
 正文已经固定，禁止返回title/excerpt/body_html/tags，禁止修改正文、补写新分析或判定文章通过。

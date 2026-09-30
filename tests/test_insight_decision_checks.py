@@ -79,6 +79,39 @@ class DecisionCheckTests(unittest.TestCase):
                 ip.validate_passed_chinese_audit(following, topic)
 
 
+    def test_auxiliary_metadata_repair_then_passed_checkpoint_can_resume(self):
+        from test_daily_resume_passed import PassedChineseResumeTests
+        fixture = PassedChineseResumeTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        candidate = with_decision_checks(valid_article())
+        resume = deepcopy(fixture.audit)
+        resume["passed"] = False
+        resume["attempts"][-1]["review"]["blockers"] = ["Retest the latest decision boundary"]
+        resume["attempts"][-1]["errors"] = ["Retest the latest decision boundary"]
+        fixes = ip._revision_feedback(resume)["required_fixes"]
+        good = fixture.good_review()
+        good["decision_check_coverage"] = coverage_review(candidate)
+        good["blocker_checks"] = [{"issue_id": item["id"], "status": "resolved", "location": "current body",
+                                   "finding": "Independent check of the current formula and current body resolves the finding."}
+                                  for item in fixes if item["kind"] == "blocker"]
+        responses = [{"issue_id": item["id"], "change": "Current verified formula retained", "location": "current body",
+                      "verification": "Compared current inputs and decision rule with independent finding."} for item in fixes]
+        path = fixture.root / "metadata-repaired.json"
+        with patch.object(ip, "review_article", return_value=good), patch.object(ip, "request_json", return_value={"revision_response": responses}) as request:
+            ip.produce_article(fixture.topic, fixture.sources, "key", resume_audit=resume,
+                               editorial_revision=candidate, audit_path=path)
+        self.assertEqual([call.kwargs["stage"] for call in request.call_args_list], ["zh-revision-metadata-repair"])
+        saved = json.loads(path.read_text())
+        self.assertEqual(saved["attempts"][-1]["metadata_state"], "repaired")
+        ip.validate_passed_chinese_audit(saved, fixture.topic)
+        with patch.object(ip, "request_json") as draft, patch.object(ip, "review_article") as review:
+            ip.reuse_passed_chinese_audit(fixture.topic, fixture.sources, "key", resume_audit=saved,
+                                        audit_path=fixture.root / "resumed.json")
+        draft.assert_not_called()
+        review.assert_not_called()
+
+
     def test_exact_decimal_threshold_and_strict_boundary(self):
         self.assertEqual(evaluate("0.15 * 48", {}), Fraction(36, 5))
         self.assertFalse(evaluate("7.2 > 0.15 * 48", {}))
