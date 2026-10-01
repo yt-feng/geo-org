@@ -50,6 +50,15 @@ class InterruptAfterThree:
         return self.translator.translate(*args, **kwargs)
 
 
+def append_smoke_diagnostic(path: Path, event: dict) -> None:
+    """Persist failed as well as accepted decodes of this fixed public corpus."""
+    # Explicit opt-in here only: production article translation does not record
+    # raw inputs or outputs. Close each append before validation can fail so the
+    # always-uploaded smoke artifact contains the exact failing decode.
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"corpus": "fixed-public-smoke", **event}, ensure_ascii=False) + "\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=Path(".artifacts/offline-smoke"))
@@ -58,8 +67,11 @@ def main():
     if any(os.environ.get(name) for name in ("DEEPSEEK_API_KEY", "OPENAI_API_KEY", "TAVILY_API_KEY")):
         raise RuntimeError("Offline smoke requires no paid-provider credentials")
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    diagnostics_path = args.output_dir / "model-decodes.jsonl"
+    diagnostics_path.unlink(missing_ok=True)
     report = {"created_at": datetime.now(timezone.utc).isoformat(), "source": ARTICLE,
-              "source_sha256": digest(ARTICLE), "paid_provider_requests": 0, "languages": {}, "passed": False}
+              "source_sha256": digest(ARTICLE), "paid_provider_requests": 0, "languages": {}, "passed": False,
+              "model_decodes_file": diagnostics_path.name}
     report_path = args.output_dir / "report.json"
     atomic_json(report_path, report)
     try:
@@ -70,7 +82,8 @@ def main():
                 started = time.monotonic()
                 checkpoint = args.output_dir / f"{language}.checkpoint.json"
                 checkpoint.unlink(missing_ok=True)
-                translator = HyMTOfflineTranslator(cache_dir=args.output_dir / "fragment-cache", quality_mode="publish")
+                translator = HyMTOfflineTranslator(cache_dir=args.output_dir / "fragment-cache", quality_mode="publish",
+                    diagnostic_callback=lambda event: append_smoke_diagnostic(diagnostics_path, event))
                 try:
                     translate_article(ARTICLE, language, checkpoint_path=checkpoint,
                                       translator=InterruptAfterThree(translator))
