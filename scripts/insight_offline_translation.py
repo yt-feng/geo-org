@@ -17,6 +17,7 @@ import re
 from hymt_offline_translation import (HyMTOfflineTranslator, OfflineTranslationError, PROTECTED_TERM_PATTERN,
                                       atomic_json, substantial_text_omission)
 from insight_quality import _numbers
+from translation_integrity import integrity_errors, notation_warnings
 
 ADAPTER_VERSION = "insight-html-blocks-v2-publish"
 _TAG = re.compile(r'''<!--.*?-->|</?[A-Za-z](?:"[^"]*"|'[^']*'|[^'">])*>''', re.DOTALL)
@@ -70,6 +71,10 @@ def validate_block(source: str, translated: str, target: str, *, quality_mode: s
         raise OfflineTranslationError("Offline translation omitted visible text")
     if substantial_text_omission(clean_source, clean_result):
         raise OfflineTranslationError("Offline translation omitted most of a substantial text block")
+    hard_errors = integrity_errors(source, translated, target)
+    if hard_errors:
+        raise OfflineTranslationError('; '.join(hard_errors))
+    warnings.extend(notation_warnings(source, translated))
     if Counter(_TERM.findall(source)) != Counter(_TERM.findall(translated)):
         quality_note("Offline translation changed a protected term")
     if re.findall(r"\[S\d+\]", source) != re.findall(r"\[S\d+\]", translated):
@@ -79,12 +84,8 @@ def validate_block(source: str, translated: str, target: str, *, quality_mode: s
         quality_note("Offline translation changed comparison or formula operators")
     if _numbers(clean_source) != _numbers(clean_result):
         quality_note("Offline translation changed numeric values within a text block")
-    if re.search(r"[\u3400-\u9fff]", clean_result):
-        quality_note("Offline translation retained Chinese source text")
-    if re.search(r"[\u3400-\u9fff]", clean_source):
-        target_pattern = r"[A-Za-z]" if target == "en" else r"[\u0600-\u06ff]"
-        if not re.search(target_pattern, clean_result):
-            quality_note("Offline translation is missing the target language")
+    # Completion/language checks above preserve explicit source-authored opaque
+    # names and code; do not reject them again as generic language diagnostics.
     return warnings
 
 
@@ -172,12 +173,23 @@ def translate_article(original: dict, target: str, *, checkpoint_path: Path,
                 record_warnings(key, warnings + stored_warnings)
                 stats["reused_blocks"] += 1
                 return result
-            except OfflineTranslationError:
-                pass
+            except OfflineTranslationError as error:
+                # A matching old hash is not proof of valid translation. Remove
+                # only this rejected block, retaining all other accepted work.
+                checkpoint["blocks"].pop(key, None)
+                checkpoint.setdefault("pending_blocks", {})[key] = {
+                    "source_sha256": block_hash, "error": str(error)}
+                atomic_json(checkpoint_path, checkpoint)
         warning_start = len(getattr(translator, "quality_warnings", []))
-        result = translator.translate(text, target, source="zh")
-        encoded = _encode_fragment_text_angles(text, result) if key.startswith("body_html.") else result
-        warnings = validate_block(text, encoded, target, quality_mode=quality_mode)
+        try:
+            result = translator.translate(text, target, source="zh")
+            encoded = _encode_fragment_text_angles(text, result) if key.startswith("body_html.") else result
+            warnings = validate_block(text, encoded, target, quality_mode=quality_mode)
+        except OfflineTranslationError as error:
+            checkpoint.setdefault("pending_blocks", {})[key] = {
+                "source_sha256": block_hash, "error": str(error)}
+            atomic_json(checkpoint_path, checkpoint)
+            raise
         if encoded != result:
             result = encoded
             stats["escaped_text_angle_blocks"] += 1
@@ -185,6 +197,7 @@ def translate_article(original: dict, target: str, *, checkpoint_path: Path,
         record_warnings(key, warnings)
         checkpoint["blocks"][key] = {"source_sha256": block_hash, "translation": result,
                                      "translation_sha256": digest(result), "quality_warnings": sorted(set(warnings))}
+        checkpoint.get("pending_blocks", {}).pop(key, None)
         atomic_json(checkpoint_path, checkpoint)
         stats["translated_blocks"] += 1
         return result

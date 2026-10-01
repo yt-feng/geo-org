@@ -29,6 +29,12 @@ ARTICLE = {
         '<p>只有错误率≤5%时才扩大试验；否则继续核对事实。保留证据与不确定性。</p></section>',
     "tags": ["GEO", "事实核查"],
 }
+# Replay the exact two source paragraphs that previously fell back to Chinese,
+# plus one short formal-expression case. This adds three blocks per locale, not
+# a full article regeneration, and still uses the pinned free CPU translator.
+_regression = json.loads((Path(__file__).resolve().parents[1] / 'tests/fixtures/row709-translation-integrity.json').read_text())
+ARTICLE['body_html'] += '<section data-role="regression">' + ''.join(
+    '<p>' + block['source'] + '</p>' for block in _regression['resource_blocks']) + '<p>' + _regression['formula_sample'] + '</p></section>'
 
 
 class InterruptAfterThree:
