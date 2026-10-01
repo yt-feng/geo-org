@@ -6,8 +6,9 @@ from collections import Counter
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from xml.etree import ElementTree as ET
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from insight_styles import ARABIC_TABLE_MATH_CSS
+from translation_integrity import TECHNICAL_EXPRESSION, is_technical_expression
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = 'https://eco-geo.org'
@@ -88,12 +89,54 @@ def isolate_arabic_table_math(soup):
         style.string = ARABIC_TABLE_MATH_CSS
         soup.head.append(style)
 
+def isolate_arabic_inline_math(soup):
+    """Isolate formula text in the publication copy; preserve every character.
+
+    Mixed RTL prose and table cells keep their direction. Only complete matched
+    expressions get an LTR bidi boundary; attributes, code and existing LTR
+    contexts are never rewritten. No mathematical evaluation is performed.
+    """
+    for content in soup.select('.content'):
+        for node in list(content.find_all(string=True)):
+            if type(node) is not NavigableString:
+                continue
+            if any(parent.name in {'bdi', 'bdo', 'code', 'pre', 'script', 'style', 'a'} or
+                   str(parent.get('dir', '')).lower() == 'ltr' for parent in node.parents):
+                continue
+            value = str(node)
+            urls = [match.span() for match in re.finditer(r'(?:https?://|mailto:)[^\s<>]+', value)]
+            expressions = list(TECHNICAL_EXPRESSION.finditer(value))
+            matches = [match for match in expressions
+                       if (is_technical_expression(match.group()) or
+                           re.fullmatch(r'\d+(?:\.\d+)?\s*−\s*\d+(?:\.\d+)?', match.group())) and
+                       not any(match.start() < end and match.end() > start for start, end in urls)]
+            # A standalone negative delta also needs its sign on the left.
+            # Never extract an atom from an expression, calendar date or range.
+            excluded = urls + [match.span() for match in expressions]
+            matches += [match for match in re.finditer(r'(?<![\w.])[+−-]\d+(?:\.\d+)?(?!\w|\.\d)', value)
+                        if not any(match.start() < end and match.end() > start for start, end in excluded)]
+            matches.sort(key=lambda match: match.start())
+            if not matches:
+                continue
+            cursor = 0
+            for match in matches:
+                if match.start() > cursor:
+                    node.insert_before(NavigableString(value[cursor:match.start()]))
+                wrapper = soup.new_tag('bdi', attrs={'dir': 'ltr', 'class': 'eco-math'})
+                wrapper.string = match.group()
+                node.insert_before(wrapper)
+                cursor = match.end()
+            if cursor < len(value):
+                node.insert_before(NavigableString(value[cursor:]))
+            node.extract()
+
 def optimize(root, rel, posts, title_counts, paths):
     path=root/rel; raw=path.read_text(encoding='utf-8');s=BeautifulSoup(raw,'html.parser')
     if not s.head or not s.body: return None
     lang=language(rel);prefix=LOCALES[lang];labels=LABELS[lang];hidden=unlisted(rel,s);url=canonical(rel)
     if rel.parts[0] == 'jianong': return None  # Separate checkout domain and security boundary.
     if lang == 'ar':isolate_arabic_table_math(s)
+    if rel.parts[:3] == ('ar', 'blog', 'articles'):isolate_arabic_inline_math(s)
     is_article='articles' in rel.parts
     post=next((p for p in posts[lang] if p['slug']==rel.parent.name),None) if is_article else None
     title=s.title.get_text(' ',strip=True) if s.title else (s.h1.get_text(' ',strip=True) if s.h1 else 'Eco GEO')
