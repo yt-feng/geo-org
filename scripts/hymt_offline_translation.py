@@ -142,17 +142,36 @@ def _detect_source(text: str) -> str:
 
 
 def split_sentences(text: str, limit: int = 1800) -> list[str]:
-    """Bound context only at sentence ends, never in a financial assertion."""
-    parts = []
-    while len(text) > limit:
-        candidates = list(re.finditer(r'[。！？](?:\s*)|[.!?](?=\s|$)(?:\s*)', text[:limit + 1]))
+    """Bound raw input at complete sentence ends outside mask-protected spans."""
+    if limit <= 0:
+        raise ValueError('Offline context limit must be positive')
+    if len(text) <= limit:
+        return [text] if text else []
+    # Use the same resource patterns as _mask before choosing raw-text cuts.
+    # A period in a title attribute, URL, code or protected name is not prose.
+    protected = [match.span() for pattern in (PROTECTED_INLINE, _RESOURCE_OPAQUE,
+                                              _PLACEHOLDERS, TECHNICAL_EXPRESSION)
+                 for match in pattern.finditer(text)]
+    abbreviation = re.compile(r'(?:\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc)|\b[A-Za-z]|\b(?:[A-Za-z]\.)+[A-Za-z])\.$', re.I)
+    ends = []
+    # Match against the full text: slicing at the limit can make a decimal dot
+    # look like an end-of-input terminator, or consume whitespace past the cap.
+    for match in re.finditer(r'[。！？]|[.!?](?=\s|$)', text):
+        if any(start <= match.start() < end for start, end in protected):
+            continue
+        if match.group() == '.' and abbreviation.search(text[:match.end()]):
+            continue  # Ambiguous initials/abbreviations are never forced cuts.
+        ends.append(match.end())
+    parts, offset = [], 0
+    while len(text) - offset > limit:
+        candidates = [end for end in ends if offset < end <= offset + limit]
         if not candidates:
             raise OfflineTranslationError('Single sentence exceeds offline context limit; source retained')
-        end = candidates[-1].end()
-        parts.append(text[:end])
-        text = text[end:]
-    if text:
-        parts.append(text)
+        end = candidates[-1]
+        parts.append(text[offset:end])
+        offset = end
+    if offset < len(text):
+        parts.append(text[offset:])
     return parts
 
 
