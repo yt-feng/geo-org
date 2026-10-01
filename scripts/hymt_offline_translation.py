@@ -39,7 +39,7 @@ _LETTERS = re.compile(r'[A-Za-z\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af\u0600-\u0
 PROTECTED_TERM_PATTERN = r'(?<![A-Za-z])(?:Eco-GEO|GEO|SEO|AI|SOV|ROI|ChatGPT|DeepSeek)(?![A-Za-z])'
 # Financial amounts, dates, percentages, names, and predicates are intentionally
 # absent: splitting those away from the sentence changed financial meaning.
-_OPAQUE = re.compile(
+_RESOURCE_PATTERN = (
     r'(?<!`)(?P<ticks>`+)(?!`).*?(?<!`)(?P=ticks)(?!`)'
     r'|!\[(?:\\.|[^\]\\])*\]\((?:[^()\n]|\([^()\n]*\))*\)'
     r'|\[\[[A-Za-z0-9_:-]+\]\]'
@@ -52,8 +52,12 @@ _OPAQUE = re.compile(
     r'|(?:https?://|mailto:)(?:[^\s<>\[\]()]|\([^\s<>\[\]()]*\))+'
     r'|&(?:\#\d+|\#x[\da-fA-F]+|[A-Za-z]+);'
     r'|\[S\d+\]'
-    r'|' + PROTECTED_TERM_PATTERN +
-    r'|\\.', re.DOTALL)
+    r'|\\.')
+_RESOURCE_OPAQUE = re.compile(_RESOURCE_PATTERN, re.DOTALL)
+# Common abbreviations carry sentence meaning (e.g. AI search). Keep them
+# visible to the decoder; only the source detector / pure-vocabulary shortcut
+# treats them as already localized. Ordinary terminology changes stay warnings.
+_OPAQUE = re.compile(_RESOURCE_PATTERN + r'|' + PROTECTED_TERM_PATTERN, re.DOTALL)
 _ENGINES: dict[str, object] = {}
 _LOCK = threading.RLock()
 # Narrow noun concepts only, never whole claims, quantities, units or generic
@@ -174,7 +178,7 @@ def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
         dictionary[token] = value
         return token
     masked = PROTECTED_INLINE.sub(lambda match: reserve(match.group(), replacements), text)
-    masked = _OPAQUE.sub(lambda match: reserve(match.group(), replacements), masked)
+    masked = _RESOURCE_OPAQUE.sub(lambda match: reserve(match.group(), replacements), masked)
     # Math entities in text belong to the whole formula. Attributes/resources
     # were already reserved as complete tokens and are never decoded here.
     for token, original in list(replacements.items()):

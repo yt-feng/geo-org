@@ -173,7 +173,7 @@ class OfflineArticleTests(unittest.TestCase):
         self.assertEqual(translator.stats["batch_requests"], 0)
         engine_factory.assert_not_called()
 
-    def test_real_translator_masks_visible_terms_and_keeps_resources_whole_for_arabic(self):
+    def test_real_translator_keeps_semantic_terms_visible_and_resources_whole_for_arabic(self):
         original = {"title": "Eco-GEO：分析", "excerpt": "AI分析",
                     "body_html": '<p>AI分析<a href="https://example.org/GEO?model=AI" data-source-id="S1">[S1]</a>。</p>',
                     "tags": ["GEO", "分析"]}
@@ -182,8 +182,8 @@ class OfflineArticleTests(unittest.TestCase):
         class Engine:
             def translate(self, text, source, target):
                 model_inputs.append(text)
-                # A real engine only sees placeholders for each whole resource
-                # and each visible protected term, not literal attributes.
+                # Resource internals remain hidden; semantic words such as AI
+                # stay visible alongside the prose that must be translated.
                 return text.replace("分析", "تحليل").replace("。", ".")
 
         with tempfile.TemporaryDirectory() as directory:
@@ -193,8 +193,9 @@ class OfflineArticleTests(unittest.TestCase):
         self.assertEqual(result["title"], "Eco-GEO：تحليل")
         self.assertIn('AIتحليل<a href="https://example.org/GEO?model=AI" data-source-id="S1">[S1]</a>', result["body_html"])
         self.assertEqual(len(model_inputs), 4)  # The pure GEO tag causes no fifth request.
+        self.assertTrue(any('Eco-GEO' in text for text in model_inputs))
+        self.assertTrue(any('AI分析' in text for text in model_inputs))
         for text in model_inputs:
-            self.assertIsNone(offline._TERM.search(text))
             self.assertNotIn("href", text)
             self.assertNotIn("https://", text)
         _, protected, _ = hymt._mask(original["body_html"], "ar")
@@ -270,11 +271,13 @@ class OfflineArticleTests(unittest.TestCase):
             with self.subTest(source=source), self.assertRaises(offline.OfflineTranslationError):
                 offline.validate_block(source, result, "en")
 
-    def test_protected_tokens_include_citations_and_geo_vocabulary(self):
+    def test_resource_tokens_protect_citations_but_keep_geo_vocabulary_visible(self):
         masked, protected, _ = hymt._mask('Eco-GEO与AI搜索：<a href="https://example.org">[S1]</a>', "ar")
-        for token in ("Eco-GEO", "AI", "[S1]"):
-            self.assertIn(token, protected.values())
-            self.assertNotIn(token, masked)
+        for token in ("Eco-GEO", "AI"):
+            self.assertNotIn(token, protected.values())
+            self.assertIn(token, masked)
+        self.assertIn('[S1]', protected.values())
+        self.assertNotIn('[S1]', masked)
 
     def test_publish_mode_records_quality_warnings_and_reuses_output_without_retranslation(self):
         class ImperfectTranslator(FakeTranslator):

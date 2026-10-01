@@ -29,7 +29,11 @@ note; source-authored code or explicitly marked Chinese names remain protected.
 
 Before decoding, complete formal expressions and comparison symbols receive
 atomic placeholders. Placeholder identity/count must survive, including during
-local repair. Fragment cache keys bind the actual masked input and full resource
+local repair. Common abbreviations such as AI, SEO and GEO remain visible in
+their full sentence: hiding their meaning behind opaque tokens caused the
+model to omit “AI” from “AI search”. Standalone vocabulary tags still skip
+inference; HTML, URLs, citations and formulas remain strictly protected.
+Fragment cache keys bind the actual masked input and full resource
 and term mappings, so an older placeholder numbering cannot restore the wrong
 text. The publication check retains formula and numeric differences as diagnostics;
 it does not infer mathematical conflicts from free prose or claim to solve

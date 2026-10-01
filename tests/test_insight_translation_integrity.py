@@ -7,6 +7,8 @@ import re
 import sys
 import tempfile
 import unittest
+from collections import Counter
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import hymt_offline_translation as hymt
@@ -18,6 +20,48 @@ FIXTURE = json.loads((Path(__file__).parent / 'fixtures/row709-translation-integ
 
 
 class TranslationIntegrityTests(unittest.TestCase):
+    def test_actual_cpu_omission_stays_rejected_while_semantic_abbreviations_remain_visible(self):
+        trace = json.loads((Path(__file__).parent / 'fixtures/hymt-google-opaque-term-failure.json').read_text())
+        for event in trace['events']:
+            missing = Counter(hymt._PLACEHOLDERS.findall(event['model_input'])) - Counter(hymt._PLACEHOLDERS.findall(event['raw_translation']))
+            self.assertEqual(missing, {'__HYMTPH_0000__': 1})
+            with self.assertRaisesRegex(hymt.OfflineTranslationError, 'protected placeholder'):
+                hymt.validate_result(event['model_input'], event['raw_translation'], 'zh', 'en', quality_mode='publish')
+        source = next(block['source'] for block in FIXTURE['resource_blocks'] if block['name'] == 'google')
+        masked, resources, terms = hymt._mask(source, 'en')
+        for phrase in ('AI搜索', 'SEO做法', 'AI准入'):
+            self.assertIn(phrase, masked)
+        self.assertEqual(len(hymt._PLACEHOLDERS.findall(masked)), 3)  # link open, citation, close
+        self.assertFalse({'AI', 'SEO'} & set(resources.values()))
+        restored = hymt._restore_terms(masked, terms)
+        for token, original in resources.items():
+            restored = restored.replace(token, original)
+        self.assertEqual(restored, source)
+
+    def test_visible_term_mapping_invalidates_old_fragment_but_reuses_new_success(self):
+        source = 'AI分析<a href="https://example.org">[S1]</a>'
+        new_mask = hymt._mask(source, 'en')
+        old_resources = {'__HYMTPH_0000__': 'AI', '__HYMTPH_0001__': '<a href="https://example.org">',
+                         '__HYMTPH_0002__': '[S1]', '__HYMTPH_0003__': '</a>'}
+        old_mask = ('__HYMTPH_0000__分析__HYMTPH_0001____HYMTPH_0002____HYMTPH_0003__', old_resources, {})
+        class Engine:
+            inputs = []
+            def translate(self, text, *_):
+                self.inputs.append(text)
+                return text.replace('分析', ' analysis ')
+        engine = Engine()
+        with tempfile.TemporaryDirectory() as directory:
+            translator = hymt.HyMTOfflineTranslator(directory, engine_factory=lambda *_: engine, quality_mode='publish')
+            with patch.object(hymt, '_mask', return_value=old_mask):
+                old_result = translator.translate(source, 'en', 'zh')
+            result = translator.translate(source, 'en', 'zh')
+            self.assertEqual(result, old_result)
+            self.assertEqual(len(engine.inputs), 2)
+            self.assertEqual(engine.inputs[1], new_mask[0])
+            self.assertIn('AI分析', engine.inputs[1])
+            self.assertEqual(translator.translate(source, 'en', 'zh'), result)
+            self.assertEqual(len(engine.inputs), 2)
+
     def test_real_source_fallback_and_mixed_chinese_are_incomplete_not_completed(self):
         for block in FIXTURE['resource_blocks'] + [dict(FIXTURE['mixed_source_block'], language='en')]:
             with self.subTest(language=block['language']), self.assertRaisesRegex(hymt.OfflineTranslationError, 'Chinese source text'):
@@ -157,7 +201,7 @@ class TranslationIntegrityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             translator = hymt.HyMTOfflineTranslator(directory, engine_factory=lambda *_: engine, quality_mode='publish')
             with self.assertRaises(hymt.OfflineTranslationError):
-                translator.translate('第一句AI。第二句GEO。', 'en', 'zh')
+                translator.translate('第一句AI[S1]。第二句GEO[S2]。', 'en', 'zh')
             self.assertEqual(list(Path(directory).rglob('*.json')), [])
         self.assertEqual(engine.calls, 3)
 
