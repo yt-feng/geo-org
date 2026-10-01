@@ -88,6 +88,10 @@ class InsightQualityError(RuntimeError):
     """All bounded draft attempts completed but content gates still rejected them."""
 
 
+class InsightReviewPendingError(InsightQualityError):
+    """The same article still needs a well-formed independent review, not rewriting."""
+
+
 class _CompletionError(ValueError):
     """A fixed, safe diagnostic; never constructed from provider response text."""
 
@@ -518,6 +522,8 @@ def public_sources(sources: list[dict]) -> list[dict]:
 
 
 def review_errors(review: dict) -> list[str]:
+    if review.get("review_status") == "format_invalid":
+        return list(review.get("review_contract_errors") or ["independent review contract is incomplete"]) + list(review.get("blockers", []))
     if review.get("review_status") == "unavailable":
         if review.get("reason") != "invalid_json" or not isinstance(review.get("error"), str) or not review["error"].strip():
             return ["unavailable review record is incomplete"]
@@ -580,7 +586,8 @@ def _blocker_check_errors(review: dict, required_blockers: list[dict], *, format
 
 
 def _review_contract_errors(review: dict, required_blockers: list[dict] | None = None,
-                            *, allowed_source_ids: set[str] | None = None) -> list[str]:
+                            *, allowed_source_ids: set[str] | None = None,
+                            article: dict | None = None) -> list[str]:
     """Separate a malformed review response from an article's editorial failures."""
     errors = []
     scores = review.get("scores")
@@ -615,6 +622,8 @@ def _review_contract_errors(review: dict, required_blockers: list[dict] | None =
             if check.get("verdict") == "supported" and not source_ids:
                 errors.append(f"claim_checks[{index}] supported verdict requires source IDs for actual supporting evidence")
     errors.extend(_blocker_check_errors(review, required_blockers or [], format_only=True))
+    if article is not None:
+        errors.extend(_decision_coverage_contract_errors(article, review))
     return errors
 
 
@@ -813,7 +822,9 @@ def _revision_feedback(audit: dict) -> dict:
                   and fix.get("latest_independent_check", {}).get("status") != "resolved"]
     preserve_ids = [fix["id"] for fix in required_fixes if fix.get("kind") == "blocker"
                     and fix.get("latest_independent_check", {}).get("status") == "resolved"]
-    return {"failures": current.get("errors", []),
+    return {"failures": (current.get("review", {}).get("blockers", [])
+                         if current.get("review_state") in ("pending", "review_pending")
+                         else current.get("errors", [])),
             "numeric_changes": metrics.get("translation", {}).get("numeric_changes", metrics.get("numeric_changes", {})),
             "decision_checks": metrics.get("decision_checks", {}),
             "scores": current.get("review", {}).get("scores"),
@@ -956,40 +967,64 @@ required_fixes：{json.dumps(feedback.get('required_fixes', []), ensure_ascii=Fa
     return audit
 
 
-def _decision_coverage_errors(article: dict, review: dict) -> list[str]:
+def _decision_coverage_contract_errors(article: dict, review: dict) -> list[str]:
+    """Coverage JSON shape, independent of the editor's substantive conclusion."""
     if "decision_checks" not in article:
         return []
     checks = article["decision_checks"]
     if not isinstance(checks, dict) or any(not isinstance(checks.get(group), list) for group in ("calculations", "budgets", "cases")):
         return ["Independent decision-check coverage requires a valid submitted check record"]
-    coverage = review.get("decision_check_coverage", {})
-    errors = []
-    if (not isinstance(coverage, dict) or coverage.get("verdict") != "complete"
-            or not isinstance(coverage.get("finding"), str) or len(coverage["finding"].strip()) < 20):
-        finding = coverage.get("finding", "missing concrete finding") if isinstance(coverage, dict) else "invalid coverage record"
-        errors.append("Independent review must verify complete decision-check coverage and agreement with current article: " + str(finding))
+    coverage = review.get("decision_check_coverage")
     if not isinstance(coverage, dict):
-        return errors
+        return ["decision-check coverage must be an object"]
+    errors = []
+    if coverage.get("verdict") not in ("complete", "incomplete"):
+        errors.append("decision-check coverage verdict must be complete or incomplete")
+    if not isinstance(coverage.get("finding"), str) or not coverage["finding"].strip():
+        errors.append("decision-check coverage needs a nonempty current-body finding")
     missing = coverage.get("missing_checks")
     if not isinstance(missing, list) or any(not isinstance(item, str) or not item.strip() for item in missing):
         errors.append("decision-check coverage must list missing_checks, empty only after verifying complete coverage")
-    elif missing:
-        errors.extend("Independent decision-check coverage missing: " + item for item in missing)
     expected = {item["id"] for group in ("calculations", "budgets", "cases")
-                for item in checks.get(group, []) if isinstance(item, dict) and isinstance(item.get("id"), str)}
+                for item in checks[group] if isinstance(item, dict) and isinstance(item.get("id"), str)}
     entries = coverage.get("checks")
     if not isinstance(entries, list):
         return errors + ["Independent decision-check coverage must verify every submitted check ID"]
     seen = []
     for entry in entries:
-        if (not isinstance(entry, dict) or not isinstance(entry.get("check_id"), str)
-                or not isinstance(entry.get("finding"), str) or len(entry["finding"].strip()) < 20):
+        if not isinstance(entry, dict) or not isinstance(entry.get("check_id"), str):
             errors.append("Each independent decision-check finding needs its ID and concrete current-body verification")
             continue
+        # ID accounting is separate from prose validation: a concise finding
+        # never makes an existing ID disappear from the coverage record.
         seen.append(entry["check_id"])
+        if not isinstance(entry.get("finding"), str) or not entry["finding"].strip():
+            errors.append("Each independent decision-check finding needs its ID and concrete current-body verification")
     if set(seen) != expected or len(seen) != len(expected):
         errors.append("Independent decision-check coverage must verify every submitted check ID exactly once")
     return errors
+
+
+def _decision_coverage_semantic_errors(article: dict, review: dict) -> list[str]:
+    """Keep real missing coverage separate from malformed reviewer metadata."""
+    if "decision_checks" not in article:
+        return []
+    coverage = review.get("decision_check_coverage", {})
+    if not isinstance(coverage, dict):
+        return []
+    errors = []
+    if coverage.get("verdict") == "incomplete":
+        errors.append("Independent review must verify complete decision-check coverage and agreement with current article: "
+                      + str(coverage.get("finding", "")))
+    missing = coverage.get("missing_checks")
+    if isinstance(missing, list):
+        errors.extend("Independent decision-check coverage missing: " + item for item in missing if isinstance(item, str) and item.strip())
+    return errors
+
+
+def _decision_coverage_errors(article: dict, review: dict) -> list[str]:
+    return (_decision_coverage_contract_errors(article, review)
+            + _decision_coverage_semantic_errors(article, review))
 
 
 def review_article(article: dict, sources: list[dict], api_key: str, lang: str, original: dict | None = None,
@@ -1054,12 +1089,12 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
 是否都被检查覆盖且与正文完全一致；无关算式、恒真案例、隐去关键预算检查均须判不完整。
 另返回decision_check_coverage={"verdict":"complete|incomplete","finding":"明确核对哪些正文位置、
 哪些预算/边界和缺失项的具体结果","missing_checks":["应检查但未覆盖的正文断言/边界，完全覆盖才为空"],
-"checks":[{"check_id":"每个已提交检查的原ID，恰好一次","finding":"至少20字，独立核对该输入/结果/规则与本轮具体正文位置的发现"}]}。有遗漏、正文矛盾或来源无支持都列为blocker，不能因为
+"checks":[{"check_id":"每个已提交检查的原ID，恰好一次","finding":"非空、具体核对该输入/结果/规则与正文的发现，可简洁说明，不设字数下限"}]}。有遗漏、正文矛盾或来源无支持都列为blocker，不能因为
 计算器passed、示例数字正确或作者自评就清除语义blocker。来源建议不得升级为硬性准入要求。"""
     allowed_source_ids = {source["id"] for source in sources}
     max_tokens = review_max_tokens()
     review = request_json(prompt, api_key, stage=f"{lang}-review", max_tokens=max_tokens)
-    format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
+    format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids, article=article)
     if format_errors:
         original_review = json.loads(json.dumps(review))
         # A format repair must not erase an independent finding that the same
@@ -1069,7 +1104,7 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
             if isinstance(original_coverage, dict) and (original_coverage.get("verdict") == "incomplete" or original_coverage.get("missing_checks")):
                 original_review.setdefault("blockers", [])
                 if isinstance(original_review["blockers"], list):
-                    original_review["blockers"].extend(_decision_coverage_errors(article, original_review))
+                    original_review["blockers"].extend(_decision_coverage_semantic_errors(article, original_review))
         original_format_errors = list(format_errors)
         # A format-only retry is still a fresh factual review of the same article;
         # no score, unsupported verdict or blocker is removed by application code.
@@ -1079,24 +1114,38 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
                 "只修正JSON契约，继续逐项核实同一证据；不得为格式通过提高分数、删除事实问题"
                 "或改低验收门槛。source_ids缺失或无效时重新核查该条论断的类型与真实支持，"
                 "不得编造ID或机械绑定无关来源；无支持的外部事实必须unsupported并保留为blocker。"
+                "decision_check_coverage每个已提交check_id须恰好一次，finding非空且具体即可，不凑字数；"
+                "实际缺失案例保留incomplete/missing_checks，不能因修格式改成complete。"
                 "格式问题：" + json.dumps(format_errors, ensure_ascii=False)
                 + "\n上次审稿结果（保留具体事实问题）：" + json.dumps(original_review, ensure_ascii=False),
                 api_key, stage=f"{lang}-review-format-repair", max_tokens=max_tokens,
             )
         except Exception as exc:
             if not _json_review_failure(exc):
+                # A provider/budget interruption during schema repair must not
+                # discard the first editor's already observed semantic findings.
+                # Preserve the original exception type for the cost scheduler.
+                checkpoint = json.loads(json.dumps(original_review))
+                checkpoint["format_repair"] = {"errors": original_format_errors,
+                    "original_review": original_review,
+                    "article_sha256": (_article_sha256(article) if all(key in article for key in ("title", "excerpt", "body_html", "tags")) else _audit_sha256(article)),
+                    "decision_checks_sha256": _audit_sha256(article.get("decision_checks"))}
+                checkpoint["blockers"] = list(dict.fromkeys(_format_repair_fact_failures(checkpoint)))
+                checkpoint["review_status"] = "format_invalid"
+                checkpoint["review_contract_errors"] = original_format_errors
+                checkpoint["format_repair_error"] = str(exc)[:500]
+                exc.insight_review_checkpoint = checkpoint
                 raise
             # This is not an absent first review: the first response already
             # contains findings about this unchanged article. Keep them rather
             # than turning the repair's bad JSON into an unavailable-review pass.
             review = json.loads(json.dumps(original_review))
             review["format_repair_error"] = str(exc)[:500]
-            original_blockers = review.get("blockers", [])
-            review["blockers"] = (original_blockers if isinstance(original_blockers, list) else []) + [
-                "Review format repair returned invalid JSON; earlier findings remain unverified"]
-        format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids)
+            # Keep the original findings; the failed JSON repair is reviewer
+            # metadata, not a newly discovered defect in the article.
+        format_errors = _review_contract_errors(review, required_blockers, allowed_source_ids=allowed_source_ids, article=article)
         if not isinstance(review.get("blockers"), list):
-            review["blockers"] = ["editorial review blockers must be an array"]
+            review["blockers"] = []
         # Repairing the schema cannot erase previously identified factual blockers.
         if isinstance(original_review.get("blockers"), list):
             review["blockers"].extend(item for item in original_review["blockers"] if isinstance(item, str) and item.strip())
@@ -1114,14 +1163,26 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
                 if isinstance(check, dict) and isinstance(check.get("issue_id"), str)
                 and check.get("status") in ("unresolved", "unverifiable")
             )
-        review["format_repair"] = {"errors": original_format_errors, "original_review": original_review}
+        review["format_repair"] = {"errors": original_format_errors, "original_review": original_review,
+                                   "article_sha256": (_article_sha256(article) if all(key in article for key in ("title", "excerpt", "body_html", "tags")) else _audit_sha256(article)),
+                                   "decision_checks_sha256": _audit_sha256(article.get("decision_checks"))}
     if not isinstance(review.get("blockers"), list):
-        review["blockers"] = ["editorial review blockers must be an array"]
+        review["blockers"] = []
     if format_errors:
-        review["blockers"].extend(f"invalid review response: {error}" for error in format_errors)
-    review.setdefault("blockers", []).extend(_claim_review_errors(review, allowed_source_ids))
-    review["blockers"].extend(_blocker_check_errors(review, required_blockers))
-    review["blockers"].extend(_decision_coverage_errors(article, review))
+        # Reviewer integration failures must not become instructions to rewrite
+        # the article. The caller checkpoints this exact draft and stops.
+        review["review_status"] = "format_invalid"
+        review["review_contract_errors"] = list(format_errors)
+    claim_errors = _claim_review_errors(review, allowed_source_ids)
+    historical_errors = _blocker_check_errors(review, required_blockers)
+    if format_errors:
+        # Keep actual negative findings, but do not turn malformed IDs, missing
+        # fields or incomplete reviewer arrays into author repair obligations.
+        claim_errors = [error for error in claim_errors if error.startswith("unsupported claim:")]
+        historical_errors = [error for error in historical_errors if error.startswith("historical blocker ")]
+    review.setdefault("blockers", []).extend(claim_errors)
+    review["blockers"].extend(historical_errors)
+    review["blockers"].extend(_decision_coverage_semantic_errors(article, review))
     review["blockers"] = list(dict.fromkeys(str(item) for item in review["blockers"]))
     return review
 
@@ -1150,7 +1211,13 @@ def _resume_article_audit(resume_audit: dict, topic: gb.TopicRow, sources: list[
         last_revision = attempt["revision"]
     if not isinstance(attempts[-1].get("article"), dict):
         raise ValueError("resume_audit requires the complete last article")
-    normalize_article(attempts[-1]["article"], lang)
+    last_article = normalize_article(attempts[-1]["article"], lang)
+    if attempts[-1].get("review_state") in ("review_pending", "pending"):
+        frozen = attempts[-1]
+        if frozen.get("article_sha256") != _article_sha256(last_article):
+            raise ValueError("Pending review article fingerprint changed; supply an explicit editorial revision for changed content")
+        if "decision_checks" in last_article and frozen.get("decision_checks_sha256") != _audit_sha256(last_article["decision_checks"]):
+            raise ValueError("Pending review decision-check fingerprint changed")
     cross_language_required_fixes(resume_audit)
 
     # Detach the resumed history so callers' input objects remain unchanged.
@@ -1207,6 +1274,8 @@ def _publication_blocking_errors(review: dict, sources: list[dict], required: li
     """
     if not isinstance(review, dict):
         return ["publication requires a complete independent review record"]
+    if review.get("review_status") == "format_invalid":
+        return review_errors(review)
     allowed = {source["id"] for source in sources}
     if review.get("review_status") == "unavailable":
         # Preserve the existing invalid-JSON fallback only when no known factual
@@ -1444,10 +1513,19 @@ def reuse_passed_chinese_audit(topic: gb.TopicRow, sources: list[dict], api_key:
                                     required_fixes=feedback["required_fixes"])
             last["review"] = review
             last["review_state"] = "completed"
+            if review.get("review_status") == "format_invalid":
+                last["review_state"] = "review_pending"
+                last["errors"] = list(review.get("review_contract_errors", []))
+                raise InsightReviewPendingError("Saved Chinese fresh review contract remains incomplete; exact article retained")
             last["errors"] = _saved_pass_review_errors(review, sources, validated["required_blockers"])
             if last["errors"]:
                 raise RuntimeError("Saved Chinese fresh review did not pass: " + "; ".join(last["errors"]))
         except Exception as exc:
+            if last["review_state"] in ("pending", "review_pending"):
+                last["review_state"] = "review_pending"
+                last["review_error"] = str(exc)[:500]
+                if isinstance(getattr(exc, "insight_review_checkpoint", None), dict):
+                    last["review"] = exc.insight_review_checkpoint
             audit["error"] = str(exc)
             write_audit(audit_path, audit)
             raise
@@ -1560,6 +1638,8 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
             base_prompt = ""  # All translation work runs on the pinned local CPU model.
         feedback: dict = _revision_feedback(audit) if resume_audit is not None else {}
         previous = normalize_article(audit["attempts"][-1]["article"], lang) if resume_audit is not None else None
+        resume_review_only = (resume_audit is not None and lang == "zh" and editorial_revision is None
+                              and audit["attempts"][-1].get("review_state") in ("review_pending", "pending"))
         start_revision = audit["attempts"][-1]["revision"] + 1 if resume_audit is not None else 0
         if resume_audit is not None:
             attempt_budget = int(os.environ.get("INSIGHT_RESUME_MAX_ATTEMPTS", "3"))
@@ -1625,6 +1705,8 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
 上稿：{_compact_json(_prompt_article(previous))}
 完整修订任务：{_compact_json(_prompt_feedback(feedback))}"""
             draft_origin = "editorial_revision" if editorial_revision is not None and revision == start_revision else "model"
+            if resume_review_only and revision == start_revision:
+                draft_origin = "review_only_resume"
             if lang != "zh":
                 draft_origin = "offline_translation"
                 checkpoint_dir = Path(os.environ.get("INSIGHT_OFFLINE_CHECKPOINT_DIR", ".artifacts/offline-translations"))
@@ -1638,6 +1720,8 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                     continue
             elif draft_origin == "editorial_revision":
                 raw = editorial_revision
+            elif draft_origin == "review_only_resume":
+                raw = {**previous, "revision_response": audit["attempts"][-1].get("revision_response", [])}
             else:
                 draft_thinking = (os.environ.get("INSIGHT_REPAIR_THINKING", "enabled")
                                   if _factual_repair_required(feedback)
@@ -1653,7 +1737,7 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
             except ValueError as exc:
                 structural = {"passed": False, "errors": [str(exc)], "metrics": {}}
                 article = {key: raw.get(key) for key in ("title", "excerpt", "body_html", "tags")}
-            metadata_errors = _revision_response_errors(raw, feedback) if feedback else []
+            metadata_errors = _revision_response_errors(raw, feedback) if feedback and draft_origin != "review_only_resume" else []
             previous = article
             attempt = {"revision": revision, "draft_origin": draft_origin,
                        "article": article, "structure": structural,
@@ -1661,7 +1745,7 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                        "normalization": normalization,
                        "revision_response": raw.get("revision_response", []),
                        "metadata_errors": metadata_errors,
-                       "metadata_state": "warning" if metadata_errors else "valid",
+                       "metadata_state": "not_applicable" if draft_origin == "review_only_resume" else ("warning" if metadata_errors else "valid"),
                        "feedback_applied": feedback, "review_state": "not_started"}
             if "decision_checks" in article:
                 attempt["decision_checks_sha256"] = _audit_sha256(article["decision_checks"])
@@ -1706,6 +1790,12 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                     # source gates, publish with an explicit warning, and never
                     # use this path when historical blockers need rechecking.
                     if not _json_review_failure(exc) or required_fixes or "decision_checks" in article:
+                        attempt["review_state"] = "review_pending"
+                        attempt["review_error"] = str(exc)[:500]
+                        if isinstance(getattr(exc, "insight_review_checkpoint", None), dict):
+                            attempt["review"] = exc.insight_review_checkpoint
+                        attempt["errors"] = ["Independent review request did not complete; exact article retained"]
+                        write_audit(audit_path, audit)
                         raise
                     review = _unavailable_review(exc)
                     attempt["warnings"] = ["Independent semantic review unavailable: model returned invalid JSON; structural publication gates passed."]
@@ -1713,6 +1803,13 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                 else:
                     attempt["review_state"] = "completed"
                 attempt["review"] = review
+                if (review.get("review_status") == "format_invalid"
+                        or ("decision_checks" in article and review.get("review_status") == "unavailable")):
+                    attempt["review_state"] = "review_pending"
+                    attempt["errors"] = list(review.get("review_contract_errors", [])) or ["Independent review is unavailable; exact article retained"]
+                    audit["passed"] = False
+                    write_audit(audit_path, audit)
+                    raise InsightReviewPendingError("Independent review contract remains incomplete; exact article checkpoint retained without author rewrite: " + str(audit_path))
                 if attempt["review_state"] == "completed":
                     errors.extend(review_errors(review))
             # Auxiliary author-response formatting cannot prevent a sound draft

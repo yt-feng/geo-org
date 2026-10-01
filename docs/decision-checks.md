@@ -78,3 +78,29 @@ recorded before the existing bounded recovery. Missing stream terminators,
 malformed frames, decreasing usage counts and totals inconsistent with their
 parts retain the full token reservation. No pricing window or spending limit
 changes, and this accounting repair never grants content acceptance.
+
+## Reviewer contract failures retain the article
+
+Recovery run 36796063312 revision 5 had a 25/30 review, complete coverage of all
+53 submitted IDs, and three concise, concrete Chinese findings. The previous
+validator wrongly required at least 20 characters per finding and then counted
+those valid IDs as absent. That integration error started an unnecessary author
+rewrite, which introduced new quote mismatches and a new unrepresented threshold.
+
+Coverage findings now require nonempty text and each submitted ID exactly once;
+there is no arbitrary minimum prose length. Missing or malformed reviewer IDs,
+fields and verdicts receive one bounded review-only repair on the same article
+and checks. If the repair is still invalid or the provider cannot complete it,
+the checkpoint remains `review_pending` and stops. A checked article without
+valid review JSON also stays pending. Resuming verifies both stored fingerprints
+and reviews that exact draft without an author or auxiliary metadata request.
+
+Actual incomplete coverage, missing decision cases, unsupported claims and
+unresolved historical findings remain publication blockers. A failed format
+repair preserves the first review's findings even when a provider or cost-window
+exception interrupts the second request. Schema diagnostics are recorded
+separately and do not become requests for the author to change the article.
+These transitions neither manufacture a review verdict nor reuse revision 5 as
+authority to ignore the later revision's substantive blocker. A new editorial
+revision still needs a fresh independent review of all current and historical
+obligations.

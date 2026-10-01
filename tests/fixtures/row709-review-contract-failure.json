@@ -1,0 +1,1179 @@
+{
+  "origin_run": 36796063312,
+  "revision": 5,
+  "note": "Recorded authored article and independent review, including the two validator-added errors. Replay tests remove only these exact application diagnostics, never scores, findings, or substantive issues. No source bodies.",
+  "application_generated_blockers": [
+    "Each independent decision-check finding needs its ID and concrete current-body verification",
+    "Independent decision-check coverage must verify every submitted check ID exactly once"
+  ],
+  "article": {
+    "title": "Eco-GEO：先纠错、评估联合，还是扩覆盖？把完整工时与增量分开判断",
+    "excerpt": "以示意工时账本和可核验增量建立有序行动规则：先核输入与错误约束，再判完整可行性、联合选项和单项效率；条件式结论不代表智能硬件行业实测效果。",
+    "body_html": "<section data-role=\"executive-summary\"><h2>先满足事实约束，再做容量内的行动选择</h2><ul><li>对有可靠事实台账和可比测量的智能硬件品牌，本文建议先判断是否必须纠错，再比较A修事实与证据源、B扩真实背书与问题覆盖。这是待校准的试验政策，不是行业实测规律。</li><li>示意完整成本为A40小时、B48小时，共同前置12小时；去重后的联合成本为76小时（40+48−12）。错误达标且两项正增量可行时，48至75小时才进入二选一效率比较；40至47小时只能考虑完整可行的A。</li><li>错误越界的纠错优先于联合评估；错误达标后，无可行正增量优先于联合评估。其余情况按表1自上而下执行，首个命中即停止。联合可行只意味着要增加一个待评估选项，既不证明联合有效，也不自动批准合做。</li></ul></section>\n<section data-role=\"method\"><h2>证据只提供机制与边界，不替本模型指定数值</h2><p>Google文档说明AI搜索相关展示依赖网页被索引、具备摘要展示资格并满足搜索技术要求，没有额外的专门技术要求；结构化数据与可见正文一致被列为值得采用的SEO做法。本文不把这项有益做法提升为AI准入条件，也不把平台说明当作品牌效果实验。<a href=\"https://developers.google.com/search/docs/appearance/ai-features\" data-source-id=\"S1\">[S1]</a></p><p>微软介绍Copilot Search的摘要、内联链接与来源清单，并注明可用区域不包括俄罗斯和中国。团队须按目标市场确认可用入口，不能把不存在的采样能力当成已完成的观测。<a href=\"https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/\" data-source-id=\"S3\">[S3]</a></p><p>所读arXiv预印本（未确认同行评审状态）区分引用被选中与内容被采纳，并给出受控提示下的描述性统计。本文采用这个概念区分，不采用其中的相对百分比口径；这不是对那些百分比可复算性的否定。已读取窗口不足以确认整个提示集的语言构成、统计显著性或中国智能硬件品牌的效果，因此不将平台间差异改写为因果提升。<a href=\"https://arxiv.org/html/2604.25707v2\" data-source-id=\"S2\">[S2]</a></p><p>NIST消费类IoT项目页是核查产品安全相关资料的入口，不表示某品牌已经通过认证，也不证明GEO有效。本文建议将型号、固件、接口、认证等事实逐项对应真实文件，没有证明就记录缺项。<a href=\"https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity\" data-source-id=\"S5\">[S5]</a>咨询分析只用于提出生成式发现渠道的研究问题；本文不从其已读材料推出适用于本场景的收益系数或收入关系。<a href=\"https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you\" data-source-id=\"S4\">[S4]</a></p></section>\n<section data-role=\"causal-mechanism\"><h2>错误改善与正确引用增量是两个目标</h2><p>来源支持搜索回答可以呈现来源链接，以及引用选择与内容采纳能够分别观察。<a href=\"https://developers.google.com/search/docs/appearance/ai-features\" data-source-id=\"S1\">[S1]</a><a href=\"https://arxiv.org/html/2604.25707v2\" data-source-id=\"S2\">[S2]</a><a href=\"https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/\" data-source-id=\"S3\">[S3]</a>本文的推断是：错误进入答案，需要错误事实被检索并实际用于回答；仅见引用链接不能证明错误已经传播，必须核对答案片段。A假设通过事实修正与证据组织改善错误指标或正确引用；B假设通过真实第三方关系和问题覆盖增加正确引用，两条链都要本地验证。</p><p>本模型将纠错目标置于增量效率目标之前，这是建议试验政策。错误越界时，即使A的正确引用增量为0，也可因纠错目标选择A；此时不宣称A的增量效率更优。错误为0也不自动排除A，因为证据整理仍可能增加正确引用。若A不能改善错误，或B扩覆盖不会增加错误传播，必须重估这条政策，不能给错误任意权重后与提及次数相加。</p></section>\n<section data-role=\"segmentation\"><h2>按可观察状态分群，先确认比较输入</h2><p>适用前提是有版本化事实台账、固定问题与平台集、稳定的观察方向、同口径增量估计和可记录的完整工时。任一前提未通过，结果为“补齐输入”，暂不按本模型批准A或B。此时可以做事实核查等准备，但准备不等于完成A，亦不能把尚未核实的错误数当作触发纠错分支的证据。</p><p>以下都为示意假设，非行业基准。固定m=25个问题，每个平台独立记录：Q为在全部选定平台均满足正确引用标准的问题数，E为任一平台答案包含可核验严重错误的问题数，二者均以问题为单位、以25为分母。缺失或不可核验须单独记录，不能计为正确。负责人在看结果前批准示意容忍上限r_max=0.10；E/25大于0.10才越界，整数E至多2时达标，E至少3时越界。这个门槛是业务政策，不是来源给出的最优值，也不能用当前最差错误率自动设定。</p><p>增量为行动期末Q减同口径基线Q。比较输入应来自口径一致的小试估计，并记录估计误差；未实施方案的假设不能当作同期实测。期望值可以含小数，真实问题计数必须是整数，二者不可混排比较。若估计差异不能与观察波动区分，输入前提未通过，应先补测。</p></section>\n<section data-role=\"action-plan\"><h2>表1就是执行顺序，每个后续分支都以之前未命中为前提</h2><p>只执行第一个满足条件的结果，不将各行当作可并行触发的建议。完整成本和联合成本随参数重算，不能永远套用40、48、76。为避免含混，暂缓原因分别记录，不再用同一个C代指不同动作。</p><table><caption>表1：统一有序规则、完整条件与负责动作</caption><thead><tr><th>优先规则</th><th>触发条件（之前均未命中）</th><th>结果与下一步</th></tr></thead><tbody>\n<tr><td>R1</td><td>台账不可靠、方向不稳定或增量口径不可比，任一成立</td><td>补齐输入。SEO负责人补证据和同口径测量，不批准完整A/B。</td></tr>\n<tr><td>R2a / R2b</td><td>输入通过，但错误率越界；容量是否达到A完整成本</td><td>达到则先纠错A，由产品核验与内容执行后复测；未达到则纠错容量不足，停止扩张并重新安排资源。联合可行及增量正负均不能越过R2。</td></tr>\n<tr><td>R3</td><td>错误达标；A不满足“完整可行且增量为正”，且B也不满足该条件</td><td>无可行正增量。保留基线，重新估计行动，不批准完整A/B。即使联合成本在容量内，也先停在此行。</td></tr>\n<tr><td>R4</td><td>至少一个单项完整可行且增量为正；容量达到去重联合成本</td><td>评估联合。先补联合行动的增量与依赖测量，再重做选择；只有一项正增量也进入此行。不等于推荐合做，也不直接选效率较高的单项。</td></tr>\n<tr><td>R5a / R5b</td><td>联合不可行；只有一个单项同时完整可行且增量为正</td><td>唯一合格项为A则选择A，为B则选择B。另一项不可行或增量不为正，不进入除法排序。</td></tr>\n<tr><td>R6</td><td>联合不可行；A与B均完整可行且增量为正</td><td>比较完整成本/增量：A较低则选择A，B较低则选择B；相等则平局复查，未分出差异前不批准完整A/B。</td></tr></tbody></table><p>选择A或B后，内容负责人按完整流程执行，独立评审复测。结果恶化、方向不稳或增量不为正，应回到R1重新判定；R2纠错任务是否达标另看错误指标，不能仅凭增量为0宣布纠错无效。所有结果都保留触发原因，联合评估、平局复查和容量不足不能被记录为已完成行动。</p></section>\n<section data-role=\"economics\"><h2>完整工时、同一基线与严格阈值</h2><p>共同前置12小时=基线采样与人工复核8小时+事实台账4小时。A完整成本=12+20+8=40小时；B完整成本=12+28+8=48小时。联合成本=40+48−12=76小时。这里两项专属执行与复测工时不重叠，仅共同前置可去重；实际若还有共享任务，必须重记账。联合收益未知，不能把两个单项增量直接相加。</p><p>容量48时，A后余48−40=8小时，B后余48−48=0小时。已做共同前置后，追加B仍需48−12=36小时，追加A仍需40−12=28小时。容量75时，A后余75−40=35小时，比追加B的36小时少1小时；B后余75−48=27小时，比追加A的28小时少1小时。只有完整任务完成才计作该方案完成，部分投入不冒充其全部增量，剩余工时也不能同时计为收益和闲置。</p><p>同口径基线Q_base=10；示意A期末16，ΔQ_A=16−10=6；B基准期末14，ΔQ_B=14−10=4；B较高产出期末19，ΔQ_B=19−10=9。R6下，u_A=40/ΔQ_A、u_B=48/ΔQ_B；切换阈值T=6×48/40=7.2。B增量7时A单位成本更低，8时B更低；期望增量7.2只用于期望对照，成本比相等而触发平局复查，不能把7.2写成实测整数计数。若B成本降为40，则T=6×40/40=6，联合成本=40+40−12=68，容量48仍为二选一，容量68则先触发联合评估。</p><p>表2每行只改列出的输入，其余均为：三个输入前提通过，容量48、A成本40、B成本48、共享12、A增量6、B增量4、E=1、m=25、上限0.10。所有数值为示意；期望对照单独标记。结果为规则输出，不是实验效果。</p><table><caption>表2：关键交叉边界与首个命中规则</caption><thead><tr><th>输入变化与唯一结果</th><th>首个命中</th></tr></thead><tbody><tr><td>基准容量48，A增量6、B增量4；结果：选择A。</td><td>R6a</td></tr><tr><td>容量60，其余同基准；结果：选择A。</td><td>R6a</td></tr><tr><td>容量75，A后余35小时，小于B追加36小时；结果：选择A。</td><td>R6a</td></tr><tr><td>容量39，两项均不能完整执行；结果：无可行正增量。</td><td>R3</td></tr><tr><td>容量40，仅A完整可行且增量为正；结果：选择A。</td><td>R5a</td></tr><tr><td>容量44，仅A完整可行且增量为正；结果：选择A。</td><td>R5a</td></tr><tr><td>容量48，仅B增量改为9；结果：选择B。</td><td>R6b</td></tr><tr><td>容量48，仅B增量改为7，低于阈值7.2；结果：选择A。</td><td>R6a</td></tr><tr><td>容量48，仅B增量改为8，高于阈值7.2；结果：选择B。</td><td>R6b</td></tr><tr><td>期望对照：容量48，A期望增量6、B期望增量7.2，两者都非实测计数；结果：平局复查。</td><td>R6平局</td></tr><tr><td>容量48，B成本40增量6，联合成本随之为68；结果：平局复查。</td><td>R6平局</td></tr><tr><td>容量67，B成本40增量6，仍小于联合68；结果：平局复查。</td><td>R6平局</td></tr><tr><td>容量68，B成本40增量6，恰好达到联合68；结果：评估联合。</td><td>R4</td></tr><tr><td>容量48，A增量0、B增量4；结果：选择B。</td><td>R5b</td></tr><tr><td>容量60，A增量负1、B增量4；结果：选择B。</td><td>R5b</td></tr><tr><td>容量75，A增量0、B增量4；结果：选择B。</td><td>R5b</td></tr><tr><td>容量48，A增量6、B增量0；结果：选择A。</td><td>R5a</td></tr><tr><td>容量48，A增量0、B增量负1；结果：无可行正增量。</td><td>R3</td></tr><tr><td>容量44，A增量0；B增量4但完整成本48；结果：无可行正增量。</td><td>R3</td></tr><tr><td>容量76，A增量6、B增量4，错误达标；结果：评估联合。</td><td>R4</td></tr><tr><td>容量76，A增量6、B增量9，错误达标；结果：评估联合。</td><td>R4</td></tr><tr><td>容量76，A增量6、B增量0，仅A为正，错误达标；结果：评估联合。</td><td>R4</td></tr><tr><td>容量76，A增量0、B增量4，仅B为正，错误达标；结果：评估联合。</td><td>R4</td></tr><tr><td>容量76，两项增量均为0，错误达标；结果：无可行正增量。</td><td>R3</td></tr><tr><td>容量48，错误3/25，B增量9仍先纠错；结果：先纠错A。</td><td>R2a</td></tr><tr><td>容量76，错误3/25，联合可行仍先纠错；结果：先纠错A。</td><td>R2a</td></tr><tr><td>容量39，错误3/25，无法完整执行纠错A；结果：纠错容量不足。</td><td>R2b</td></tr><tr><td>容量40，错误3/25，A增量0仍执行纠错目标；结果：先纠错A。</td><td>R2a</td></tr><tr><td>容量48，错误0/25，A增量6仍可比较；结果：选择A。</td><td>R6a</td></tr><tr><td>容量76，台账不可靠，所填错误数尚未核实；结果：补齐输入。</td><td>R1</td></tr><tr><td>容量48，台账可靠但两轮方向不稳定；结果：补齐输入。</td><td>R1</td></tr><tr><td>容量48，方向稳定但增量口径不可比较；结果：补齐输入。</td><td>R1</td></tr></tbody></table><p>容量48、60、75的基准组均为选择A；容量76时错误达标且至少一项正增量，优先评估联合。容量76但两项无正增量先命中R3；容量76且错误越界先命中R2。容量40或44时B不可行，只有A正增量才能按R5选A。由此，容量增加并不等于直接扩张B，变化的是可行选项集合及需要补充的证据。</p></section>\n<section data-role=\"counterargument\"><h2>反方解释、验证安排与推翻条件</h2><p>最强反方解释是：A与B可以合做，或扩覆盖不必等纠错结束。模型对第一点只在联合成本超过容量时排除完整合做；仅当前序R1至R3未命中且联合可行时，才按R4增补联合选项。对第二点，R2只是建议的试验政策，若复测发现B不会放大错误且有独立纠错机制，应重新设计政策；本篇没有证据证明固定先后次序普遍最优。</p><p>第1至2周由SEO负责人固定问题、目标市场、可用平台、版本和判定口径，产品人员准备事实文件，两名独立评审核对答案与引用，分歧交第三人裁决。这是建议安排，不保证任何团队都能按相同日历完成。之后按真实容量安排一次行动与同口径复测，保留未完成项。两轮方向一致只表示该次测量稳定，不构成统计显著性证明。若A既未减少错误也未增加正确引用，或B只增加提及而没有合格引用，原机制须重审；没有点击和后续业务数据，不计算线索、成交或ROI。</p></section>\n<section data-role=\"assumptions\"><h2>假设、局限与适用边界</h2><p>所有工时、25个问题、0.10门槛、基线与期末计数均为示意，须用团队记录和业务容忍度校准。模型只提供明确条件下的行动程序，不证明现实效果。它要求单项任务、共享前置和复测成本可分开记账；成本变化须重算联合门槛及效率阈值。部分执行、不可核验样本与未实施选项不能伪装成完成或实测。</p><p>平台文档支持能力与展示边界，预印本提供描述性概念，NIST提供事实核验入口，咨询材料提供问题背景；这些来源不能互相替代效果证据。数值复算只检查提交的计算与情景，来源解释、表格覆盖、假设是否适用仍须独立复核。本文的贡献是将事实约束、完整可行性、联合选项和增量效率按明确优先序分开，使改变一个参数时能追溯推荐为何变化。</p></section>",
+    "tags": "GEO, AI搜索优化, 智能硬件, 资源配置, Eco-GEO, 品牌化GEO, GEO服务",
+    "decision_checks": {
+      "version": 2,
+      "models": {
+        "comparison": {
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "shared": "12",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "derived": [
+            {
+              "name": "joint",
+              "expression": "a_cost+b_cost-shared"
+            }
+          ],
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "INPUT"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "CORRECT_A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "ERROR_CAPACITY"
+            },
+            {
+              "when": "(capacity < a_cost or a_gain <= 0) and (capacity < b_cost or b_gain <= 0)",
+              "choice": "NO_GAIN"
+            },
+            {
+              "when": "capacity >= joint",
+              "choice": "JOINT_REVIEW"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "TIE_REVIEW"
+            }
+          ]
+        }
+      },
+      "calculations": [
+        {
+          "id": "shared_cost",
+          "quote": "共同前置12小时=基线采样与人工复核8小时+事实台账4小时。",
+          "inputs": {},
+          "expression": "8+4",
+          "expected": "12"
+        },
+        {
+          "id": "a_cost",
+          "quote": "A完整成本=12+20+8=40小时；B完整成本=12+28+8=48小时。",
+          "inputs": {},
+          "expression": "12+20+8",
+          "expected": "40"
+        },
+        {
+          "id": "b_cost",
+          "quote": "A完整成本=12+20+8=40小时；B完整成本=12+28+8=48小时。",
+          "inputs": {},
+          "expression": "12+28+8",
+          "expected": "48"
+        },
+        {
+          "id": "threshold",
+          "quote": "切换阈值T=6×48/40=7.2。",
+          "inputs": {},
+          "expression": "6*48/40",
+          "expected": "7.2"
+        },
+        {
+          "id": "a_gain",
+          "quote": "示意A期末16，ΔQ_A=16−10=6",
+          "inputs": {},
+          "expression": "16-10",
+          "expected": "6"
+        },
+        {
+          "id": "b_gain",
+          "quote": "B基准期末14，ΔQ_B=14−10=4",
+          "inputs": {},
+          "expression": "14-10",
+          "expected": "4"
+        },
+        {
+          "id": "b_high_gain",
+          "quote": "B较高产出期末19，ΔQ_B=19−10=9",
+          "inputs": {},
+          "expression": "19-10",
+          "expected": "9"
+        },
+        {
+          "id": "a_remaining48",
+          "quote": "容量48时，A后余48−40=8小时",
+          "inputs": {},
+          "expression": "48-40",
+          "expected": "8"
+        },
+        {
+          "id": "b_remaining48",
+          "quote": "容量48时，A后余48−40=8小时，B后余48−48=0小时。",
+          "inputs": {},
+          "expression": "48-48",
+          "expected": "0"
+        },
+        {
+          "id": "append_b",
+          "quote": "追加B仍需48−12=36小时，追加A仍需40−12=28小时。",
+          "inputs": {},
+          "expression": "48-12",
+          "expected": "36"
+        },
+        {
+          "id": "append_a",
+          "quote": "追加B仍需48−12=36小时，追加A仍需40−12=28小时。",
+          "inputs": {},
+          "expression": "40-12",
+          "expected": "28"
+        },
+        {
+          "id": "a_remaining75",
+          "quote": "容量75时，A后余75−40=35小时",
+          "inputs": {},
+          "expression": "75-40",
+          "expected": "35"
+        },
+        {
+          "id": "b_remaining75",
+          "quote": "B后余75−48=27小时，比追加A的28小时少1小时。",
+          "inputs": {},
+          "expression": "75-48",
+          "expected": "27"
+        },
+        {
+          "id": "append_b_gap75",
+          "quote": "容量75时，A后余75−40=35小时，比追加B的36小时少1小时；",
+          "inputs": {},
+          "expression": "36-(75-40)",
+          "expected": "1"
+        },
+        {
+          "id": "append_a_gap75",
+          "quote": "B后余75−48=27小时，比追加A的28小时少1小时。",
+          "inputs": {},
+          "expression": "28-(75-48)",
+          "expected": "1"
+        },
+        {
+          "id": "alternate_threshold",
+          "quote": "若B成本降为40，则T=6×40/40=6",
+          "inputs": {},
+          "expression": "6*40/40",
+          "expected": "6"
+        },
+        {
+          "id": "error_low",
+          "quote": "整数E至多2时达标，E至少3时越界。",
+          "inputs": {},
+          "expression": "2/25",
+          "expected": "0.08"
+        },
+        {
+          "id": "error_high",
+          "quote": "整数E至多2时达标，E至少3时越界。",
+          "inputs": {},
+          "expression": "3/25",
+          "expected": "0.12"
+        }
+      ],
+      "budgets": [
+        {
+          "id": "budget48",
+          "quote": "联合成本=40+48−12=76小时。",
+          "capacity": "48",
+          "shared": "12",
+          "option_a": "40",
+          "option_b": "48",
+          "exclusive": true
+        },
+        {
+          "id": "budget75",
+          "quote": "容量75时，A后余75−40=35小时，比追加B的36小时少1小时；",
+          "capacity": "75",
+          "shared": "12",
+          "option_a": "40",
+          "option_b": "48",
+          "exclusive": true
+        },
+        {
+          "id": "alternate_budget",
+          "quote": "联合成本=40+40−12=68，容量48仍为二选一，容量68则先触发联合评估。",
+          "capacity": "48",
+          "shared": "12",
+          "option_a": "40",
+          "option_b": "40",
+          "exclusive": true
+        }
+      ],
+      "cases": [
+        {
+          "id": "base",
+          "quote": "基准容量48，A增量6、B增量4；结果：选择A。",
+          "model": "comparison",
+          "inputs": {},
+          "expected_choice": "A"
+        },
+        {
+          "id": "capacity60",
+          "quote": "容量60，其余同基准；结果：选择A。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "60"
+          },
+          "expected_choice": "A"
+        },
+        {
+          "id": "capacity75",
+          "quote": "容量75，A后余35小时，小于B追加36小时；结果：选择A。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "75"
+          },
+          "expected_choice": "A"
+        },
+        {
+          "id": "capacity39",
+          "quote": "容量39，两项均不能完整执行；结果：无可行正增量。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "39"
+          },
+          "expected_choice": "NO_GAIN"
+        },
+        {
+          "id": "capacity40",
+          "quote": "容量40，仅A完整可行且增量为正；结果：选择A。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "40"
+          },
+          "expected_choice": "A"
+        },
+        {
+          "id": "capacity44",
+          "quote": "容量44，仅A完整可行且增量为正；结果：选择A。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "44"
+          },
+          "expected_choice": "A"
+        },
+        {
+          "id": "reverse",
+          "quote": "容量48，仅B增量改为9；结果：选择B。",
+          "model": "comparison",
+          "inputs": {
+            "b_gain": "9"
+          },
+          "expected_choice": "B"
+        },
+        {
+          "id": "below",
+          "quote": "容量48，仅B增量改为7，低于阈值7.2；结果：选择A。",
+          "model": "comparison",
+          "inputs": {
+            "b_gain": "7"
+          },
+          "expected_choice": "A"
+        },
+        {
+          "id": "above",
+          "quote": "容量48，仅B增量改为8，高于阈值7.2；结果：选择B。",
+          "model": "comparison",
+          "inputs": {
+            "b_gain": "8"
+          },
+          "expected_choice": "B"
+        },
+        {
+          "id": "expected_tie",
+          "quote": "期望对照：容量48，A期望增量6、B期望增量7.2，两者都非实测计数；结果：平局复查。",
+          "model": "comparison",
+          "inputs": {
+            "b_gain": "7.2"
+          },
+          "expected_choice": "TIE_REVIEW"
+        },
+        {
+          "id": "integer_tie",
+          "quote": "容量48，B成本40增量6，联合成本随之为68；结果：平局复查。",
+          "model": "comparison",
+          "inputs": {
+            "b_cost": "40",
+            "b_gain": "6"
+          },
+          "expected_choice": "TIE_REVIEW"
+        },
+        {
+          "id": "cost_joint_below",
+          "quote": "容量67，B成本40增量6，仍小于联合68；结果：平局复查。",
+          "model": "comparison",
+          "inputs": {
+            "b_cost": "40",
+            "b_gain": "6",
+            "capacity": "67"
+          },
+          "expected_choice": "TIE_REVIEW"
+        },
+        {
+          "id": "cost_joint_equal",
+          "quote": "容量68，B成本40增量6，恰好达到联合68；结果：评估联合。",
+          "model": "comparison",
+          "inputs": {
+            "b_cost": "40",
+            "b_gain": "6",
+            "capacity": "68"
+          },
+          "expected_choice": "JOINT_REVIEW"
+        },
+        {
+          "id": "zero_a",
+          "quote": "容量48，A增量0、B增量4；结果：选择B。",
+          "model": "comparison",
+          "inputs": {
+            "a_gain": "0"
+          },
+          "expected_choice": "B"
+        },
+        {
+          "id": "negative_a60",
+          "quote": "容量60，A增量负1、B增量4；结果：选择B。",
+          "model": "comparison",
+          "inputs": {
+            "a_gain": "-1",
+            "capacity": "60"
+          },
+          "expected_choice": "B"
+        },
+        {
+          "id": "only_b75",
+          "quote": "容量75，A增量0、B增量4；结果：选择B。",
+          "model": "comparison",
+          "inputs": {
+            "a_gain": "0",
+            "capacity": "75"
+          },
+          "expected_choice": "B"
+        },
+        {
+          "id": "zero_b",
+          "quote": "容量48，A增量6、B增量0；结果：选择A。",
+          "model": "comparison",
+          "inputs": {
+            "b_gain": "0"
+          },
+          "expected_choice": "A"
+        },
+        {
+          "id": "no_positive",
+          "quote": "容量48，A增量0、B增量负1；结果：无可行正增量。",
+          "model": "comparison",
+          "inputs": {
+            "a_gain": "0",
+            "b_gain": "-1"
+          },
+          "expected_choice": "NO_GAIN"
+        },
+        {
+          "id": "infeasible_positive",
+          "quote": "容量44，A增量0；B增量4但完整成本48；结果：无可行正增量。",
+          "model": "comparison",
+          "inputs": {
+            "a_gain": "0",
+            "capacity": "44"
+          },
+          "expected_choice": "NO_GAIN"
+        },
+        {
+          "id": "joint_base",
+          "quote": "容量76，A增量6、B增量4，错误达标；结果：评估联合。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "76"
+          },
+          "expected_choice": "JOINT_REVIEW"
+        },
+        {
+          "id": "joint_b_better",
+          "quote": "容量76，A增量6、B增量9，错误达标；结果：评估联合。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "76",
+            "b_gain": "9"
+          },
+          "expected_choice": "JOINT_REVIEW"
+        },
+        {
+          "id": "joint_only_a",
+          "quote": "容量76，A增量6、B增量0，仅A为正，错误达标；结果：评估联合。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "76",
+            "b_gain": "0"
+          },
+          "expected_choice": "JOINT_REVIEW"
+        },
+        {
+          "id": "joint_only_b",
+          "quote": "容量76，A增量0、B增量4，仅B为正，错误达标；结果：评估联合。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "76",
+            "a_gain": "0"
+          },
+          "expected_choice": "JOINT_REVIEW"
+        },
+        {
+          "id": "joint_neither",
+          "quote": "容量76，两项增量均为0，错误达标；结果：无可行正增量。",
+          "model": "comparison",
+          "inputs": {
+            "capacity": "76",
+            "a_gain": "0",
+            "b_gain": "0"
+          },
+          "expected_choice": "NO_GAIN"
+        },
+        {
+          "id": "error48",
+          "quote": "容量48，错误3/25，B增量9仍先纠错；结果：先纠错A。",
+          "model": "comparison",
+          "inputs": {
+            "errors": "3",
+            "b_gain": "9"
+          },
+          "expected_choice": "CORRECT_A"
+        },
+        {
+          "id": "error76",
+          "quote": "容量76，错误3/25，联合可行仍先纠错；结果：先纠错A。",
+          "model": "comparison",
+          "inputs": {
+            "errors": "3",
+            "capacity": "76",
+            "b_gain": "9"
+          },
+          "expected_choice": "CORRECT_A"
+        },
+        {
+          "id": "error39",
+          "quote": "容量39，错误3/25，无法完整执行纠错A；结果：纠错容量不足。",
+          "model": "comparison",
+          "inputs": {
+            "errors": "3",
+            "capacity": "39"
+          },
+          "expected_choice": "ERROR_CAPACITY"
+        },
+        {
+          "id": "error40zero",
+          "quote": "容量40，错误3/25，A增量0仍执行纠错目标；结果：先纠错A。",
+          "model": "comparison",
+          "inputs": {
+            "errors": "3",
+            "capacity": "40",
+            "a_gain": "0"
+          },
+          "expected_choice": "CORRECT_A"
+        },
+        {
+          "id": "no_errors",
+          "quote": "容量48，错误0/25，A增量6仍可比较；结果：选择A。",
+          "model": "comparison",
+          "inputs": {
+            "errors": "0"
+          },
+          "expected_choice": "A"
+        },
+        {
+          "id": "missing_records",
+          "quote": "容量76，台账不可靠，所填错误数尚未核实；结果：补齐输入。",
+          "model": "comparison",
+          "inputs": {
+            "records_ready": "0",
+            "capacity": "76",
+            "errors": "3"
+          },
+          "expected_choice": "INPUT"
+        },
+        {
+          "id": "unstable",
+          "quote": "容量48，台账可靠但两轮方向不稳定；结果：补齐输入。",
+          "model": "comparison",
+          "inputs": {
+            "stable": "0"
+          },
+          "expected_choice": "INPUT"
+        },
+        {
+          "id": "incomparable",
+          "quote": "容量48，方向稳定但增量口径不可比较；结果：补齐输入。",
+          "model": "comparison",
+          "inputs": {
+            "comparable": "0"
+          },
+          "expected_choice": "INPUT"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+      "url": "https://developers.google.com/search/docs/appearance/ai-features",
+      "publisher": "Google Search Central",
+      "published": "",
+      "retrieved_at": "2026-10-01T00:25:54+00:00",
+      "evidence_kind": "platform_documentation",
+      "excerpt_start": 0,
+      "excerpt_end": 5468,
+      "body_chars": 5468,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "google.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+      "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+    },
+    {
+      "id": "S2",
+      "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+      "url": "https://arxiv.org/html/2604.25707v2",
+      "publisher": "arXiv authors",
+      "published": "",
+      "retrieved_at": "2026-10-01T00:25:55+00:00",
+      "evidence_kind": "research_paper",
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "body_chars": 60461,
+      "excerpt_truncated": true,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "arxiv.org",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+      "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+    },
+    {
+      "id": "S3",
+      "title": "Introducing Copilot Search in Bing",
+      "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+      "publisher": "Microsoft Bing",
+      "published": "",
+      "retrieved_at": "2026-10-01T00:25:55+00:00",
+      "evidence_kind": "platform_announcement",
+      "excerpt_start": 0,
+      "excerpt_end": 5856,
+      "body_chars": 5856,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "bing.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+      "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+    },
+    {
+      "id": "S4",
+      "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+      "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+      "publisher": "BCG",
+      "published": "",
+      "retrieved_at": "2026-10-01T00:25:57+00:00",
+      "evidence_kind": "consulting_analysis",
+      "excerpt_start": 0,
+      "excerpt_end": 9276,
+      "body_chars": 9276,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "bcg.com",
+      "evidence_role": "general_context",
+      "industries": [],
+      "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+    },
+    {
+      "id": "S5",
+      "title": "Consumer IoT Cybersecurity",
+      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+      "publisher": "National Institute of Standards and Technology",
+      "published": "2021-11-09",
+      "retrieved_at": "2026-10-01T00:25:57+00:00",
+      "evidence_kind": "government_research",
+      "excerpt_start": 0,
+      "excerpt_end": 3490,
+      "body_chars": 3490,
+      "excerpt_truncated": false,
+      "retrieval_method": "https_fetch",
+      "publisher_domain": "nist.gov",
+      "evidence_role": "industry_context",
+      "industries": [
+        "smart_hardware"
+      ],
+      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593"
+    }
+  ],
+  "recorded_review": {
+    "scores": {
+      "thesis": 4,
+      "evidence": 4,
+      "mechanism": 4,
+      "tradeoffs": 4,
+      "actionability": 4,
+      "originality": 5
+    },
+    "issues": [
+      "表2大量行是同一分支的重复确认而非新增决策信息：第1-3组（容量48/60/75）同为R6a选A、第14-16组同为R5b选B、第20-21组同为R4。建议按“可行选项集合变化”归并，或对每行标注它改变了哪一个可行/正增量集合，使两表的决策增量可辨认，而非只列规则引擎输出。",
+      "测量精度未量化：m=25且计数为整数时最小可分辨变化为1/25=0.04，而示例增量ΔQ=4或6（16%/24%）。正文只说“差异不能与观察波动区分则先补测”，未给出在m=25下能否把ΔQ=4与波动分清的判定；建议补一条基于m（25/50/100）的可分辨阈敏感性，或把“先补测”写成由m与观察波动导出的显式门槛，否则复测的继续/停止判断不可执行。",
+      "方法段未标注来源日期与检索口径：S4的发布日期在来源中自相矛盾（2025-07-28/07-31），S1、S2（预印本）、S3均无可见日期。正文以平台文档支撑“能力与展示边界”，但未说明这些说明的适用时间窗口；建议逐源注明发布/检索时间与适用窗口，避免把某时点的平台说明当作长期准入约束。",
+      "适用边界只按台账/测量前提定义，未按目标市场或平台可用性分群：方法段第二条已引S3“可用区域不含俄罗斯与中国”，但表1、表2与执行路径未体现该约束。建议增补一张按平台可用性的适用/不适用小表，使“按目标市场确认入口”落到可执行分支。",
+      "表1 R4在“仅一项正增量”时仍进入联合评估（表2第22、23组），正文未解释为何单向正增量也要先评估联合，读者按表1自读可能直接选该项。建议在R4补一句该分支的理由（联合协同未知）或把它改为条件触发，使表-规则-读者直觉一致。",
+      "执行路径时间窗口不完整：第1至2周为准备期，但行动期与复测期的起止、以及行动后“结果恶化回到R1”的判定时点未明确，负责人未区分行动负责人与复测评审的交接节点。建议给出行动与复测的窗口长度、评审节点及回到R1的触发时点。"
+    ],
+    "blockers": [
+      "Each independent decision-check finding needs its ID and concrete current-body verification",
+      "Independent decision-check coverage must verify every submitted check ID exactly once"
+    ],
+    "claim_checks": [
+      {
+        "claim": "Google文档说明AI搜索相关展示依赖网页被索引、具备摘要展示资格并满足搜索技术要求，没有额外的专门技术要求",
+        "source_ids": [
+          "S1"
+        ],
+        "verdict": "supported",
+        "reason": "S1原文“must be indexed and eligible ... fulfilling the Search technical requirements. There are no additional technical requirements.”与之一致，且限定在展示资格而非效果保证。"
+      },
+      {
+        "claim": "结构化数据与可见正文一致被列为值得采用的SEO做法。本文不把这项有益做法提升为AI准入条件",
+        "source_ids": [
+          "S1"
+        ],
+        "verdict": "supported",
+        "reason": "S1把该做法列在“SEO best practices”并说“all existing SEO fundamentals continue to be worthwhile”，非准入要求；正文用“值得采用”“不升格为AI准入条件”复述准确。"
+      },
+      {
+        "claim": "微软介绍Copilot Search的摘要、内联链接与来源清单，并注明可用区域不包括俄罗斯和中国",
+        "source_ids": [
+          "S3"
+        ],
+        "verdict": "supported",
+        "reason": "S3描述summary、inline link整句/段落及来源清单，并脚注“Available WW except Russia and China”，与正文一致。"
+      },
+      {
+        "claim": "所读arXiv预印本（未确认同行评审状态）区分引用被选中与内容被采纳，并给出受控提示下的描述性统计",
+        "source_ids": [
+          "S2"
+        ],
+        "verdict": "supported",
+        "reason": "S2摘要区分citation selection与citation absorption，自述为public dataset上的描述性研究且标注为预印本；正文“未确认同行评审状态”与来源性质相符。"
+      },
+      {
+        "claim": "本文采用这个概念区分，不采用其中的相对百分比口径；这不是对那些百分比可复算性的否定",
+        "source_ids": [
+          "S2"
+        ],
+        "verdict": "inference",
+        "reason": "S2确给出-Q&A -5.74%等相对口径，但是否采用属作者的方法选择；正文以“不采用……这不是否定可复算性”限定，未把描述性百分比当效果。"
+      },
+      {
+        "claim": "示意完整成本为A40小时、B48小时，共同前置12小时；去重后的联合成本为76小时（40+48−12）",
+        "source_ids": [],
+        "verdict": "illustrative",
+        "reason": "属自设示意账本，正文多处标注“示意/须校准”；独立复算8+4=12、12+20+8=40、12+28+8=48、40+48−12=76均正确，非外部事实。"
+      },
+      {
+        "claim": "切换阈值T=6×48/40=7.2；B增量7时A单位成本更低，8时B更低",
+        "source_ids": [],
+        "verdict": "illustrative",
+        "reason": "内部计算，复算6×48/40=7.2、7×40=280<288<320=8×40成立；正文限定“期望小数不写成实测整数计数”。"
+      },
+      {
+        "claim": "E/25大于0.10才越界，整数E至多2时达标，E至少3时越界",
+        "source_ids": [],
+        "verdict": "illustrative",
+        "reason": "自设业务政策，正文声明“不是来源给出的最优值”；复算2/25=0.08≤0.10、3/25=0.12>0.10，严格不等号与决策规则一致。"
+      },
+      {
+        "claim": "NIST消费类IoT项目页是核查产品安全相关资料的入口，不表示某品牌已经通过认证，也不证明GEO有效",
+        "source_ids": [
+          "S5"
+        ],
+        "verdict": "supported",
+        "reason": "S5为NIST消费类IoT项目概览页（含里程碑），确为入口性资料；正文明确不据此推断认证或GEO效果，符合该来源边界。"
+      },
+      {
+        "claim": "咨询分析只用于提出生成式发现渠道的研究问题；本文不从其已读材料推出适用于本场景的收益系数或收入关系",
+        "source_ids": [
+          "S4"
+        ],
+        "verdict": "supported",
+        "reason": "S4为BCG咨询分析，讨论生成式发现与付费/自建智能体等方向，未给出可用于本场景的收益系数；正文以“研究问题”定位且未引述其宏观数字。"
+      }
+    ],
+    "blocker_checks": [
+      {
+        "issue_id": "r0-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "经济学段『T=6×48/40=7.2』与表2第8、9、10组",
+        "finding": "独立复算6×48/40=7.2，本轮一律写7.2；旧句『ΔQ_B>6』已不存在，摘要、表1、表2均未复述。"
+      },
+      {
+        "issue_id": "r0-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第8、9、10组与『B增量7时A单位成本更低，8时B更低……相等触发平局复查』",
+        "finding": "严格不等号：7<7.2判A、8>7.2判B、7.2相等判平局复查，与『接受边界不含等号』一致，未见旧的非严格判据。"
+      },
+      {
+        "issue_id": "r0-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表1 R6与表2第7、8、9组",
+        "finding": "反转条件统一为成本比阈值T=7.2（B单位增量成本低于A），第7组b_gain=9判B、第8组7判A；全文无『ΔQ_B高于ΔQ_A』表述。"
+      },
+      {
+        "issue_id": "r0-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "摘要第二条、表1 R5a/R3、表2第4、5组",
+        "finding": "容量阈值统一为40/48：容量39判R3无可行正增量、容量40判R5a选A，与A完整成本40一致，旧『少于50h』已删除。"
+      },
+      {
+        "issue_id": "r0-blocker-5",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "经济学段与假设区",
+        "finding": "旧句『在B的变量工时为28h的示例中即ΔQ_B>6』整句不存在，本轮改用7.2，标题、摘要、表1、表2未见复述。"
+      },
+      {
+        "issue_id": "r1-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2（现为分支-结果结构）与机制段",
+        "finding": "当前模型不含r0/E比值变量，旧含『情境3 r0=0.20』的三列式表格已整体不存在，该互斥配置在本轮正文无对应表述。"
+      },
+      {
+        "issue_id": "r1-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "机制段『错误为0也不自动排除A』与表2第29组",
+        "finding": "错误0时A增量6仍进入R6比较（第29组判A），旧『r0=0时A不进入比较、u_A无定义』规则在正文不存在。"
+      },
+      {
+        "issue_id": "r1-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "方法段第三条",
+        "finding": "现文写『已读取窗口不足以确认整个提示集的语言构成』，与S2已读窗口仅呈现中英文对比层一致，未再断言『以英文为主』。"
+      },
+      {
+        "issue_id": "r1-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "方法段第三条",
+        "finding": "旧短句『以英文为主的受控提示集上的静态快照』不存在，标题、摘要与结论未重引该断言。"
+      },
+      {
+        "issue_id": "r2-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "摘要第二条、经济学段、表1 R4/R6、表2第4组",
+        "finding": "容量改为48，联合76>48使二选一在自设账本内成立；旧80小时下『同一预算下二选一』与机会成本矛盾已消除。"
+      },
+      {
+        "issue_id": "r2-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "方法段第一条与机制段",
+        "finding": "『结构化数据与可见正文一致』表述为『值得采用的SEO做法』并明说『不把后者升格为AI准入条件』，机制段未再称其为基础技术条件，与S1的worthwhile定性一致。"
+      },
+      {
+        "issue_id": "r2-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "方法段第一条（唯一提及结构化数据处）",
+        "finding": "无『必须与页面可见文本一致』的规则边界定性，旧unsupported断言已删除，摘要与结论未复述。"
+      },
+      {
+        "issue_id": "r2-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第3组与剩余工时段",
+        "finding": "改以容量账本表述『容量75时A后余35小时，比追加B的36小时少1小时』，未出现『放弃本季度大部分扩覆盖产出』或把28小时当作放弃量的旧句。"
+      },
+      {
+        "issue_id": "r3-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表1 R2b/R3/R4与『暂缓原因分别记录，不再用同一个C代指不同动作』",
+        "finding": "暂缓拆为R2b（纠错容量不足）、R3（无可行正增量）、R4（评估联合），触发条件与动作分别对应，旧C行条件-动作错配已修正。"
+      },
+      {
+        "issue_id": "r3-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表1 R2/R3/R4优先序、表2第26、27组",
+        "finding": "第26组（容量76＋错误3/25）经R2a先纠错A，验证R2优先于R4；第27组（容量39＋错误3/25）命中R2b，两类边界已补齐且与正文一致。"
+      },
+      {
+        "issue_id": "r3-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第6、15、26、27组",
+        "finding": "容量≥76且错误越界（第26组）、容量<40且错误越界（第27组）、容量41-47单可行（第6组容量44）、ΔQ_A为负（第15组−1）均已覆盖并经引擎复算一致。"
+      },
+      {
+        "issue_id": "r3-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第26组",
+        "finding": "容量76、错误3/25时规则先命中R2a返回先纠错A，与正文『联合可行仍先纠错』一致，旧未定义的优先序冲突已消除。"
+      },
+      {
+        "issue_id": "r3-blocker-5",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第27组",
+        "finding": "容量39、错误3/25命中R2b，动作限定为停止扩张并重新安排资源，与R1『容量内事实核查』自洽。"
+      },
+      {
+        "issue_id": "r3-blocker-6",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第6组（容量44）",
+        "finding": "容量44、A增量6时B因48不可行，R5a判A，单可行区间已单列验证。"
+      },
+      {
+        "issue_id": "r3-blocker-7",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第15组与R5b",
+        "finding": "A增量−1经R5b判B，负增量不入效率比较、不进入分母的分支已被独立案例覆盖。"
+      },
+      {
+        "issue_id": "r3-blocker-8",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "剩余工时段与表2第3组",
+        "finding": "容量75选A余35、距追加B的36小时差1小时仍判A，与『剩余工时不足以完整执行另一方案时不计入完成』自洽，复算75−40=35、48−12=36一致。"
+      },
+      {
+        "issue_id": "r4-blocker-1",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表1 R4与R6的顺序、表2第21组",
+        "finding": "表1已改为有序R1-R6，R6触发含『联合不可行』；容量76、B增量9（B单位增量成本低于A）时R4判评估联合，旧B行与C-2行并立的互斥冲突已消除。"
+      },
+      {
+        "issue_id": "r4-blocker-2",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表1 R6相等分支与表2第11、12组",
+        "finding": "单位增量成本相等由R6『相等则平局复查』承接，第11、12组判平局复查，旧C-1未列相等情形的问题已覆盖。"
+      },
+      {
+        "issue_id": "r4-blocker-3",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第22、23、24组",
+        "finding": "容量76仅A正（第22组）、仅B正（第23组）判R4评估联合；两项均0（第24组）判R3；R4与R6优先关系已由案例确定。"
+      },
+      {
+        "issue_id": "r4-blocker-4",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第11、21、22、23、24组与正文『容量48仍为二选一』",
+        "finding": "容量76单位增量成本低于A（第21组）、仅一项正（22、23组）、两项无正（24组）与相等（11组）均已覆盖；B成本40时联合68>48的二选一前提由正文显式写明。"
+      },
+      {
+        "issue_id": "r4-blocker-5",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第21组（joint_b_better）",
+        "finding": "容量76、B增量9时R4判评估联合，验证R4优先于R6且表1无并行触发，同步了表1条件。"
+      },
+      {
+        "issue_id": "r4-blocker-6",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第22、23、24组",
+        "finding": "容量76仅一项正增量时判R4、两项均无正增量时判R3，R4与R6优先关系已定义并有对应案例。"
+      },
+      {
+        "issue_id": "r4-blocker-7",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表1 R6与表2第11、12组",
+        "finding": "相等分支归入R6平局复查并有两组案例，旧C-1触发列未含相等的映射问题已解决。"
+      },
+      {
+        "issue_id": "r4-blocker-8",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "表2第14、15、16组",
+        "finding": "容量48（A0/B4）、60（A−1/B4）、75（A0/B4）均判B，覆盖容量48-75仅B可行且为正的情形。"
+      },
+      {
+        "issue_id": "r4-blocker-9",
+        "status": "resolved",
+        "scope": "source_article",
+        "location": "经济学段『容量48仍为二选一，容量68则先触发联合评估』与表2第11、13组",
+        "finding": "B成本40时联合成本68被单列：容量48<68二选一（第11组平局复查）、容量68=68触发R4（第13组评估联合），隐含前提已显式化。"
+      }
+    ],
+    "decision_check_coverage": {
+      "verdict": "complete",
+      "finding": "逐项复算53项提交检查并与本轮正文表1、表2、摘要、经济学段、假设区对齐：18项算式（shared_cost、a_cost、b_cost、threshold、a_gain、b_gain、b_high_gain、a_remaining48、b_remaining48、append_b、append_a、a_remaining75、b_remaining75、append_b_gap75、append_a_gap75、alternate_threshold、error_low、error_high）数值全部正确；3项预算（budget48、budget75、alternate_budget）在容量48/75下联合76>容量、在B成本40时联合68>容量48，二选一成立；32项案例逐一代入有序规则R1→R6，输出与正文所述首个命中规则完全一致，含严格不等号（7/8与7.2相等分支）、零/负增量、错误0/1/3与分母25、容量39/40/44/48/60/67/68/75/76、以及R2优先于R4（第26组）、R4优先于R6（第21-23组）、R3先于R4（第24组）等优先序。",
+      "missing_checks": [],
+      "checks": [
+        {
+          "check_id": "shared_cost",
+          "finding": "经济学段『共同前置12小时=基线采样与人工复核8小时+事实台账4小时』，复算8+4=12，与表2共享12一致。"
+        },
+        {
+          "check_id": "a_cost",
+          "finding": "『A完整成本=12+20+8=40小时』复算40，与表2及预算的A成本40一致。"
+        },
+        {
+          "check_id": "b_cost",
+          "finding": "『B完整成本=12+28+8=48小时』复算48，与表2基准B成本48一致。"
+        },
+        {
+          "check_id": "threshold",
+          "finding": "『T=6×48/40=7.2』复算7.2，与表2第8、9组7/8分支及第10组相等分支一致。"
+        },
+        {
+          "check_id": "a_gain",
+          "finding": "『ΔQ_A=16−10=6』复算6，与表2各组A增量输入一致。"
+        },
+        {
+          "check_id": "b_gain",
+          "finding": "『ΔQ_B=14−10=4』复算4，与基准组B增量输入一致。"
+        },
+        {
+          "check_id": "b_high_gain",
+          "finding": "『ΔQ_B=19−10=9』复算9，与表2第7组反转向B一致。"
+        },
+        {
+          "check_id": "a_remaining48",
+          "finding": "『容量48时A后余48−40=8小时』复算8，与剩余工时段一致。"
+        },
+        {
+          "check_id": "b_remaining48",
+          "finding": "『B后余48−48=0小时』复算0，与剩余工时段一致。"
+        },
+        {
+          "check_id": "append_b",
+          "finding": "『追加B仍需48−12=36小时』复算36，与容量75余35不足36的第3组一致。"
+        },
+        {
+          "check_id": "append_a",
+          "finding": "『追加A仍需40−12=28小时』复算28，与容量75 B后余27不足28一致。"
+        },
+        {
+          "check_id": "a_remaining75",
+          "finding": "『容量75时A后余75−40=35小时』复算35，与第3组R6a一致。"
+        },
+        {
+          "check_id": "b_remaining75",
+          "finding": "『B后余75−48=27小时』复算27，与剩余工时段一致。"
+        },
+        {
+          "check_id": "append_b_gap75",
+          "finding": "『比追加B的36小时少1小时』复算36−35=1，与容量75判A一致。"
+        },
+        {
+          "check_id": "append_a_gap75",
+          "finding": "『比追加A的28小时少1小时』复算28−27=1，与容量75不能联合一致。"
+        },
+        {
+          "check_id": "alternate_threshold",
+          "finding": "『若B成本降为40，则T=6×40/40=6』复算6，与第11、12、13组一致。"
+        },
+        {
+          "check_id": "error_low",
+          "finding": "『整数E至多2时达标』复算2/25=0.08≤0.10，与严格不等号一致。"
+        },
+        {
+          "check_id": "error_high",
+          "finding": "『E至少3时越界』复算3/25=0.12>0.10，与第25-28组命中R2a一致。"
+        },
+        {
+          "check_id": "budget48",
+          "finding": "容量48、共享12、A40、B48，联合40+48−12=76>48，二选一成立，与摘要及表2第1组一致。"
+        },
+        {
+          "check_id": "budget75",
+          "finding": "容量75下联合76>75仍二选一，复算余35<36、27<28，与表2第3组R6a一致。"
+        },
+        {
+          "check_id": "alternate_budget",
+          "finding": "B成本40时联合68>容量48，容量48二选一、容量68触发联合，与第11、13组一致。"
+        },
+        {
+          "check_id": "base",
+          "finding": "容量48、A6、B4：4×40=160<6×48=288判A，与正文基准组选择A一致。"
+        },
+        {
+          "check_id": "capacity60",
+          "finding": "容量60<76，单项区内4×40<288判A，与正文一致。"
+        },
+        {
+          "check_id": "capacity75",
+          "finding": "容量75<76且余35<36，判A，与正文一致。"
+        },
+        {
+          "check_id": "capacity39",
+          "finding": "容量39<min(40,48)，R3无可行正增量，与正文一致。"
+        },
+        {
+          "check_id": "capacity40",
+          "finding": "容量40仅A可行且A为正，R5a选A，与正文一致。"
+        },
+        {
+          "check_id": "capacity44",
+          "finding": "容量44仅A可行，R5a选A，覆盖容量41-47单可行区间，与正文一致。"
+        },
+        {
+          "check_id": "reverse",
+          "finding": "b_gain9使9×40>6×48，R6b选B，与正文一致。"
+        },
+        {
+          "check_id": "below",
+          "finding": "b_gain7使7×40<288，R6a选A，与正文严格不等号表述一致。"
+        },
+        {
+          "check_id": "above",
+          "finding": "b_gain8使320>288，R6b选B，与正文一致。"
+        },
+        {
+          "check_id": "expected_tie",
+          "finding": "b_gain7.2使288=288触发R6平局复查，与『期望小数不写成实测计数』一致。"
+        },
+        {
+          "check_id": "integer_tie",
+          "finding": "b_cost40、b_gain6使240=240触发平局，联合68>48仍二选一，与正文一致。"
+        },
+        {
+          "check_id": "cost_joint_below",
+          "finding": "容量67<68，仍R6平局复查，与正文『仍小于联合68』一致。"
+        },
+        {
+          "check_id": "cost_joint_equal",
+          "finding": "容量68=联合68触发R4评估联合，与正文『恰好达到』一致。"
+        },
+        {
+          "check_id": "zero_a",
+          "finding": "A增量0不入效率比较，仅B正，R5b选B，与正文一致。"
+        },
+        {
+          "check_id": "negative_a60",
+          "finding": "A增量−1、容量60，R5b选B，覆盖容量48-75负增量分支，与正文一致。"
+        },
+        {
+          "check_id": "only_b75",
+          "finding": "容量75、A0、B4，R5b选B，覆盖容量75仅B可行且正，与正文一致。"
+        },
+        {
+          "check_id": "zero_b",
+          "finding": "B增量0，R5a选A，与正文一致。"
+        },
+        {
+          "check_id": "no_positive",
+          "finding": "A0、B−1，R3无可行正增量，与正文一致。"
+        },
+        {
+          "check_id": "infeasible_positive",
+          "finding": "容量44、A0、B成本48不可行，R3判无可行正增量，与正文一致。"
+        },
+        {
+          "check_id": "joint_base",
+          "finding": "容量76=联合76且A正，R4评估联合，与正文一致。"
+        },
+        {
+          "check_id": "joint_b_better",
+          "finding": "容量76、b_gain9（B单位增量成本低于A）仍R4评估联合，验证R4优先于R6，与正文『B较低也不直接选』一致。"
+        },
+        {
+          "check_id": "joint_only_a",
+          "finding": "容量76仅A正，R4评估联合，与正文『只有一项正增量也进入此行』一致。"
+        },
+        {
+          "check_id": "joint_only_b",
+          "finding": "容量76仅B正，R4评估联合，与正文一致。"
+        },
+        {
+          "check_id": "joint_neither",
+          "finding": "容量76两项均0，R3先命中，与正文『两项无正增量先命中R3』一致。"
+        },
+        {
+          "check_id": "error48",
+          "finding": "3/25>0.10且容量48≥40，R2a先纠错A，与正文『增量/联合不能越过R2』一致。"
+        },
+        {
+          "check_id": "error76",
+          "finding": "容量76联合可行仍经R2a先纠错，验证R2优先于R4，与正文一致。"
+        },
+        {
+          "check_id": "error39",
+          "finding": "3/25>0.10但容量39<40，R2b纠错容量不足，与正文一致。"
+        },
+        {
+          "check_id": "error40zero",
+          "finding": "容量40、错误越界、A增量0仍R2a先纠错，与『纠错目标独立于增量』一致。"
+        },
+        {
+          "check_id": "no_errors",
+          "finding": "0/25达标，A增量6进入R6判A，与『错误0不自动排除A』一致。"
+        },
+        {
+          "check_id": "missing_records",
+          "finding": "台账不可靠，R1补齐输入先于其余规则，与正文一致；该组并改容量为76，因R1优先不影响输出。"
+        },
+        {
+          "check_id": "unstable",
+          "finding": "方向不稳定时R1补齐输入，与正文一致。"
+        },
+        {
+          "check_id": "incomparable",
+          "finding": "口径不可比时R1补齐输入，与正文一致。"
+        }
+      ]
+    }
+  }
+}
