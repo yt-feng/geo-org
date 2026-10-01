@@ -130,7 +130,9 @@ class CrossLanguageResumeTests(unittest.TestCase):
 
         with mock.patch.dict(os.environ, {"INSIGHT_RESUME_MAX_ATTEMPTS": "1"}), mock.patch.object(ip, "request_json", side_effect=request):
             if status != "resolved" or scope not in ("source_article", "translation_only"):
-                with self.assertRaisesRegex(ip.InsightQualityError, "Cannot publish unresolved"):
+                message = ("contract remains incomplete" if scope not in ("source_article", "translation_only")
+                           else "Cannot publish unresolved")
+                with self.assertRaisesRegex(ip.InsightQualityError, message):
                     ip.produce_article(self.topic, self.sources, "test", resume_audit=loaded,
                         editorial_revision=candidate, audit_path=self.destination)
             else:
@@ -163,7 +165,7 @@ class CrossLanguageResumeTests(unittest.TestCase):
             with self.subTest(scope=scope, status=status):
                 saved, _ = self.editorial(scope=scope, status=status)
                 self.assertFalse(saved["passed"])
-                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
+                self.assertEqual(saved["attempts"][-1]["review_state"], "review_pending" if scope is None else "completed")
                 self.assertTrue(saved["attempts"][-1]["errors"])
                 self.assertTrue(ip.has_pending_cross_language_feedback(saved))
 

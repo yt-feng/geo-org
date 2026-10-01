@@ -277,7 +277,9 @@ class RevisionMetadataTests(unittest.TestCase):
             review = ip.review_article(self.article, self.sources, "test", "zh", required_fixes=self.feedback["required_fixes"])
         self.assertEqual(request.call_count, 2)
         self.assertTrue(ip.review_errors(review))
-        self.assertTrue(any("blocker_checks" in blocker for blocker in review["blockers"]))
+        self.assertEqual(review["review_status"], "format_invalid")
+        self.assertTrue(any("blocker_checks" in error for error in review["review_contract_errors"]))
+        self.assertEqual(review["blockers"], [])
 
     def test_review_budget_rejects_invalid_configuration(self):
         for value in ("0", "-1", "not-an-integer"):
@@ -318,7 +320,8 @@ class RevisionMetadataTests(unittest.TestCase):
                 review = ip.review_article(self.article, self.sources, "test", "zh")
             self.assertEqual(request.call_count, 2)
             self.assertTrue(ip.review_errors(review))
-            self.assertTrue(any("invalid review response" in error for error in review["blockers"]))
+            self.assertEqual(review["review_status"], "format_invalid")
+            self.assertTrue(review["review_contract_errors"])
 
     def test_repaired_classification_does_not_hide_an_unsupported_external_fact(self):
         original = self.good_review()
@@ -750,8 +753,12 @@ class ResumeTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 _, saved, stages, _ = self.run_resume(mode=mode, env={"INSIGHT_RESUME_MAX_ATTEMPTS": "1"})
                 self.assertFalse(saved["passed"])
-                self.assertTrue(saved["attempts"][-1]["review"]["blockers"])
-                self.assertEqual(saved["attempts"][-1]["review_state"], "completed")
+                if mode == "missing_checks":
+                    self.assertEqual(saved["attempts"][-1]["review"]["blockers"], [])
+                    self.assertTrue(saved["attempts"][-1]["review"]["review_contract_errors"])
+                else:
+                    self.assertTrue(saved["attempts"][-1]["review"]["blockers"])
+                self.assertEqual(saved["attempts"][-1]["review_state"], "review_pending" if mode == "missing_checks" else "completed")
                 self.assertTrue(saved["attempts"][-1]["errors"])
                 self.assertNotIn("publication_fallback", saved["attempts"][-1]["review"])
                 if mode == "missing_checks":

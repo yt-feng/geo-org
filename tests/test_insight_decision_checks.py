@@ -215,7 +215,8 @@ class DecisionCheckTests(unittest.TestCase):
                               "verdict": "supported", "reason": "Scoped evidence for claim."} for n in range(5)]}
         with patch.object(ip, "request_json", return_value=review):
             result = ip.review_article(article, sources, "key", "zh")
-        self.assertTrue(any("coverage" in value for value in result["blockers"]))
+        self.assertEqual(result["review_status"], "format_invalid")
+        self.assertTrue(any("coverage" in value for value in result["review_contract_errors"]))
 
     def test_new_checked_draft_cannot_publish_with_unavailable_semantic_review(self):
         raw = with_decision_checks(valid_article())
