@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import hymt_offline_translation as hymt
 import insight_offline_translation as offline
 from insight_quality import validate_translation_publication
-from translation_integrity import integrity_errors, missing_expressions, notation_warnings
+from translation_integrity import integrity_errors, missing_expressions, notation_warnings, language_warnings
 
 FIXTURE = json.loads((Path(__file__).parent / 'fixtures/row709-translation-integrity.json').read_text())
 
@@ -62,10 +62,44 @@ class TranslationIntegrityTests(unittest.TestCase):
             self.assertEqual(translator.translate(source, 'en', 'zh'), result)
             self.assertEqual(len(engine.inputs), 2)
 
-    def test_real_source_fallback_and_mixed_chinese_are_incomplete_not_completed(self):
-        for block in FIXTURE['resource_blocks'] + [dict(FIXTURE['mixed_source_block'], language='en')]:
-            with self.subTest(language=block['language']), self.assertRaisesRegex(hymt.OfflineTranslationError, 'Chinese source text'):
+    def test_real_source_fallback_is_incomplete_but_mixed_wording_is_a_quality_note(self):
+        for block in FIXTURE['resource_blocks']:
+            with self.subTest(language=block['language']), self.assertRaisesRegex(hymt.OfflineTranslationError, 'Chinese source block or sentence'):
                 offline.validate_block(block['source'], block['failed_translation'], block['language'], quality_mode='publish')
+        block = FIXTURE['mixed_source_block']
+        warnings = offline.validate_block(block['source'], block['failed_translation'], 'en', quality_mode='publish')
+        self.assertTrue(any('Chinese wording' in warning for warning in warnings))
+
+    def test_actual_cpu_formula_label_is_warning_at_decoder_block_and_publication(self):
+        event = json.loads((Path(__file__).parent / 'fixtures/hymt-formula-label-cpu-output.json').read_text())['event']
+        warnings = hymt.validate_result(event['model_input'], event['raw_translation'], 'zh', 'en', quality_mode='publish')
+        self.assertTrue(any('Chinese wording' in warning for warning in warnings))
+        source = FIXTURE['formula_sample']
+        masked, resources, terms = hymt._mask(source, 'en')
+        self.assertEqual(masked, event['model_input'])
+        result = hymt._restore_terms(event['raw_translation'], terms)
+        for token, original in resources.items(): result = result.replace(token, original)
+        self.assertFalse(missing_expressions(source, result))
+        self.assertTrue(any('Chinese wording' in warning for warning in offline.validate_block(source, result, 'en', quality_mode='publish')))
+        article = {'title': 'Example', 'excerpt': 'An illustration', 'tags': 'GEO', 'body_html': '<p>' + source + '</p>'}
+        publication = validate_translation_publication(dict(article, body_html='<p>' + result + '</p>'), [], 'en', article)
+        self.assertTrue(publication['passed'], publication['errors'])
+        self.assertTrue(any('Chinese wording' in warning for warning in publication['warnings']))
+
+    def test_complete_source_sentence_cannot_hide_in_translated_prose_or_brand_words(self):
+        source = 'Google说明AI搜索要求网页被索引。团队必须核查证据。'
+        for result in ('Google说明AI搜索要求网页被索引。The team must verify evidence.',
+                       'Google AI SEO GEO 团队必须核查证据。', 'Google说明AI搜索要求网页被索引。团队必须核查证据。'):
+            self.assertTrue(integrity_errors(source, result, 'en'), result)
+        # Surrounding English does not dilute a complete copied sentence.
+        self.assertTrue(integrity_errors(source, 'A fully translated introduction. 团队必须核查证据。 More translated explanation.', 'en'))
+        self.assertEqual(integrity_errors('示意：核查证据。', '示意: verify the evidence.', 'en'), [])
+
+    def test_localized_units_need_no_target_script_to_be_publishable(self):
+        for source, translated in [('1000元', '1000 CNY'), ('8小时', '8 h')]:
+            with self.subTest(source=source):
+                self.assertEqual(integrity_errors(source, translated, 'ar'), [])
+                self.assertTrue(offline.validate_block(source, translated, 'ar', quality_mode='publish'))
 
     def test_unrestored_placeholder_in_legacy_finished_block_is_not_publishable(self):
         source = '<p>核对原始资料。</p>'
@@ -124,7 +158,8 @@ class TranslationIntegrityTests(unittest.TestCase):
         target = dict(original, body_html=translated)
         self.assertTrue(validate_translation_publication(target, [], 'en', original)['passed'])
         self.assertTrue(integrity_errors(source, translated.replace('王明', '王敏'), 'en'))
-        self.assertTrue(integrity_errors(source, translated.replace(' gives ', '给出 '), 'en'))
+        self.assertEqual(integrity_errors(source, translated.replace(' gives ', '给出 '), 'en'), [])
+        self.assertTrue(language_warnings(source, translated.replace(' gives ', '给出 ')))
 
     def test_formula_entities_are_protected_atomically_before_inference(self):
         source = '当ΔQ_B&gt;7.2且E/25≤0.10时选B。'

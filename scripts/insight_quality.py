@@ -18,7 +18,7 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from insight_decision_checks import validate_decision_checks
-from translation_integrity import integrity_errors, notation_warnings
+from translation_integrity import integrity_errors, notation_warnings, language_warnings
 
 
 DRAFT_REQUIREMENTS = """
@@ -450,6 +450,7 @@ def validate_translation_publication(article, sources, lang, source_article):
                          (node.tag == "span" and node.attrs.get("lang", "").split('-')[0] == "zh")]
             errors.extend(integrity_errors(original.text(), translated.text(), lang, protected_terms=protected))
             notation_diagnostics.extend(notation_warnings(original.text(), translated.text()))
+            notation_diagnostics.extend(language_warnings(original.text(), translated.text(), lang, protected_terms=protected))
     for key in ("title", "excerpt", "tags"):
         before, after = source_article.get(key, ''), article.get(key, '')
         if isinstance(before, list):
@@ -459,6 +460,7 @@ def validate_translation_publication(article, sources, lang, source_article):
         if isinstance(before, str) and isinstance(after, str):
             errors.extend(integrity_errors(before, after, lang))
             notation_diagnostics.extend(notation_warnings(before, after))
+            notation_diagnostics.extend(language_warnings(before, after, lang))
     if not target.root.text().strip():
         errors.append("Translation has no visible body text.")
     errors = list(dict.fromkeys(errors))

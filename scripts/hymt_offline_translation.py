@@ -25,7 +25,7 @@ from typing import Callable, Sequence
 from compare_hymt_translation import LANGUAGES, request_json, require_actions, verify_model, file_sha256
 from financial_quantity_integrity import quantity_issues
 from translation_integrity import (TECHNICAL_EXPRESSION, SYMBOLIC_OPERATOR, PROTECTED_INLINE,
-                                   is_technical_expression, integrity_errors)
+                                   is_technical_expression, integrity_errors, language_warnings)
 
 MANIFEST_PATH = Path(__file__).with_name('hymt_translation_model_manifest.json')
 MANIFEST = json.loads(MANIFEST_PATH.read_text(encoding='utf-8'))
@@ -255,6 +255,8 @@ def validate_result(source: str, result: str, source_language: str, target: str,
     hard_errors = integrity_errors(source, result, target)
     if hard_errors:
         raise OfflineTranslationError('; '.join(hard_errors))
+    for warning in language_warnings(source, result, target):
+        quality_note(warning)
     problems = quantity_issues(source, result, source_language, target)
     if problems:
         quality_note('Hy-MT2 quantity warning: ' + '; '.join(problems))

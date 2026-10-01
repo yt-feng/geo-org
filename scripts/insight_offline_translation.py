@@ -17,7 +17,7 @@ import re
 from hymt_offline_translation import (HyMTOfflineTranslator, OfflineTranslationError, PROTECTED_TERM_PATTERN,
                                       atomic_json, substantial_text_omission)
 from insight_quality import _numbers
-from translation_integrity import integrity_errors, notation_warnings
+from translation_integrity import integrity_errors, notation_warnings, language_warnings
 
 ADAPTER_VERSION = "insight-html-blocks-v2-publish"
 _TAG = re.compile(r'''<!--.*?-->|</?[A-Za-z](?:"[^"]*"|'[^']*'|[^'">])*>''', re.DOTALL)
@@ -75,6 +75,8 @@ def validate_block(source: str, translated: str, target: str, *, quality_mode: s
     if hard_errors:
         raise OfflineTranslationError('; '.join(hard_errors))
     warnings.extend(notation_warnings(source, translated))
+    for warning in language_warnings(source, translated, target):
+        quality_note(warning)
     if Counter(_TERM.findall(source)) != Counter(_TERM.findall(translated)):
         quality_note("Offline translation changed a protected term")
     if re.findall(r"\[S\d+\]", source) != re.findall(r"\[S\d+\]", translated):

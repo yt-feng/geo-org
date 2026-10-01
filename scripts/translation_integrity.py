@@ -83,6 +83,31 @@ def notation_warnings(source: str, translated: str) -> list[str]:
     return warnings
 
 
+def language_warnings(source: str, translated: str, target: str | None = None, *, protected_terms=()) -> list[str]:
+    source_text, target_text = visible(source), visible(translated)
+    protected = [visible(match.group()) for match in PROTECTED_INLINE.finditer(source)] + list(protected_terms)
+    for term in protected:
+        if term:
+            source_text = source_text.replace(term, '')
+            target_text = target_text.replace(term, '')
+    warnings = (['Translation retains Chinese wording; language quality needs review']
+                if re.search(r'[\u3400-\u9fff]', target_text) else [])
+    # A numeric/unit cell can be correctly localized without Arabic letters or
+    # English words. Preserve the original script diagnostic, never infer that
+    # such a cell means the whole translation is incomplete.
+    scripts = {'en': r'[A-Za-z]', 'ar': r'[\u0600-\u06ff]'}
+    if target in scripts and re.search(r'[\u3400-\u9fff]', source_text) and not re.search(scripts[target], target_text):
+        warnings.append('Translation target script is not visible; numeric or unit localization may be valid')
+    return warnings
+
+
+def _wording(text: str) -> str:
+    # Ignore spacing/punctuation style while matching an unchanged source
+    # sentence. Do not classify completeness using arbitrary CJK char counts.
+    return ''.join(char for char in canonical(text).casefold()
+                   if not char.isspace() and not unicodedata.category(char).startswith('P'))
+
+
 def integrity_errors(source: str, translated: str, target: str, *, protected_terms=()) -> list[str]:
     """Hard local invariants only; ordinary wording still needs human review."""
     if target not in ('en', 'ar'):
@@ -104,10 +129,14 @@ def integrity_errors(source: str, translated: str, target: str, *, protected_ter
         if source_text.count(term) != target_text.count(term):
             errors.append('Translation changed protected source text')
         source_text, target_text = source_text.replace(term, ''), target_text.replace(term, '')
-    if re.search(r'[\u3400-\u9fff]', target_text):
-        errors.append('Translation retained Chinese source text')
     if re.search(r'[\u3400-\u9fff]', source_text):
-        script = r'[A-Za-z]' if target == 'en' else r'[\u0600-\u06ff]'
-        if not re.search(script, target_text):
-            errors.append('Translation is missing the target language')
+        normalized_target = _wording(target_text)
+        copied_block = _wording(source_text) == normalized_target
+        # A full unrendered source sentence cannot be diluted by surrounding
+        # translated text. Isolated words such as a caption label are warnings.
+        copied_sentence = any(re.search(r'[\u3400-\u9fff]', sentence) and
+                              _wording(sentence) in normalized_target
+                              for sentence in re.findall(r'[^。！？]+[。！？]', source_text))
+        if copied_block or copied_sentence:
+            errors.append('Translation retained a complete Chinese source block or sentence')
     return errors

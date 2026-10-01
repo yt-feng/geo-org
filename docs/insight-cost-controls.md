@@ -23,9 +23,13 @@ The Chinese original retains editorial review. Translations receive only local
 publication checks; they never call paid editorial review. Ordinary wording,
 terminology, numeric-format and language-quality differences are logged as
 nonblocking notes. Empty/truncated text, large omissions, broken placeholders,
-HTML or links still stop publication of an unusable translation. Unmarked Chinese
-source text in an English/Arabic block is incomplete translation, not a quality
-note; source-authored code or explicitly marked Chinese names remain protected.
+HTML or links still stop publication of an unusable translation. An unchanged
+Chinese source block or a complete source sentence is incomplete translation,
+even when surrounded by translated prose. Isolated Chinese wording (such as a
+caption label) remains a nonblocking language-quality note; no CJK character-count
+threshold decides completion. Source-authored code or explicitly marked Chinese
+names remain protected. A missing target script also remains a diagnostic:
+localized numeric/unit cells such as `1000 CNY` and `8 h` need no Arabic letters.
 
 Before decoding, complete formal expressions and comparison symbols receive
 atomic placeholders. Placeholder identity/count must survive, including during

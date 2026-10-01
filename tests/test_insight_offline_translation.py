@@ -304,8 +304,8 @@ class OfflineArticleTests(unittest.TestCase):
             with self.subTest(source=source):
                 self.assertTrue(offline.validate_block(source, translated, "en", quality_mode="publish"))
         self.assertTrue(hymt.validate_result("预算100元", "Budget 900 dollars", "zh", "en", quality_mode="publish"))
-        for source, translated, lang in (("中文原文", "中文原文", "en"),
-                ("中文原文", "English only", "ar")):
+        self.assertTrue(offline.validate_block("中文原文", "English only", "ar", quality_mode="publish"))
+        for source, translated, lang in (("中文原文", "中文原文", "en"),):
             with self.subTest(source=source), self.assertRaises(offline.OfflineTranslationError):
                 offline.validate_block(source, translated, lang, quality_mode="publish")
 
