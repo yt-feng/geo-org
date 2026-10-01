@@ -122,6 +122,11 @@ def complete_request(ticket, usage=None, status="completed"):
         "reasoning_tokens" in details and (type(details["reasoning_tokens"]) is not int or details["reasoning_tokens"] < 0))
     if isinstance(details, dict) and type(details.get("reasoning_tokens")) is int and details["reasoning_tokens"] >= 0:
         safe["reasoning_tokens"] = details["reasoning_tokens"]
+    prompt_details = usage.get("prompt_tokens_details", {})
+    invalid_counter = invalid_counter or not isinstance(prompt_details, dict) or (
+        "cached_tokens" in prompt_details and (type(prompt_details["cached_tokens"]) is not int or prompt_details["cached_tokens"] < 0))
+    if isinstance(prompt_details, dict) and type(prompt_details.get("cached_tokens")) is int and prompt_details["cached_tokens"] >= 0:
+        safe["cached_tokens"] = prompt_details["cached_tokens"]
     with _LOCK:
         path = _path()
         events = _events(path)
@@ -137,7 +142,9 @@ def complete_request(ticket, usage=None, status="completed"):
         if observed is not None:
             inconsistent = inconsistent or any(value > observed for key, value in safe.items()
                                                if key != "total_tokens")
-        cache = sum(safe.get(key, 0) for key in ("prompt_cache_hit_tokens", "prompt_cache_miss_tokens"))
+        if "cached_tokens" in safe and "prompt_cache_hit_tokens" in safe and safe["cached_tokens"] != safe["prompt_cache_hit_tokens"]:
+            inconsistent = True
+        cache = safe.get("prompt_cache_hit_tokens", safe.get("cached_tokens", 0)) + safe.get("prompt_cache_miss_tokens", 0)
         if observed is not None and cache > observed:
             inconsistent = True
         if "prompt_tokens" in safe and cache > safe["prompt_tokens"]:

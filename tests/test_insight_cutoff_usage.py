@@ -102,7 +102,10 @@ class CutoffUsageTests(unittest.TestCase):
                 {"completion_tokens_details": {"reasoning_tokens": 100}, "total_tokens": 1},
                 {"prompt_cache_hit_tokens": 80, "prompt_cache_miss_tokens": 80, "total_tokens": 100},
                 {"prompt_cache_hit_tokens": 80, "prompt_cache_miss_tokens": 80, "prompt_tokens": 100, "total_tokens": 200},
-                {"completion_tokens_details": {"reasoning_tokens": 150}, "completion_tokens": 100, "total_tokens": 200}):
+                {"completion_tokens_details": {"reasoning_tokens": 150}, "completion_tokens": 100, "total_tokens": 200},
+                {"prompt_tokens_details": {"cached_tokens": 100}, "total_tokens": 1},
+                {"prompt_tokens_details": {"cached_tokens": 100}, "prompt_tokens": 50, "total_tokens": 200},
+                {"prompt_tokens_details": {"cached_tokens": 100}, "prompt_cache_hit_tokens": 50, "total_tokens": 200}):
             with self.subTest(usage=usage):
                 self.path.unlink(missing_ok=True)
                 result = self.reject(chunk('{"partial":', "length", usage) + "data: [DONE]\n\n")
