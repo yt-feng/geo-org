@@ -294,7 +294,7 @@ class RevisionMetadataTests(unittest.TestCase):
             self.assertEqual([call.kwargs["stage"] for call in request.call_args_list], ["zh-review", "zh-review-format-repair"])
             self.assertEqual(ip.review_errors(review), [])
             self.assertEqual(review["format_repair"]["original_review"], bad)
-            article_json = json.dumps(self.article, ensure_ascii=False)
+            article_json = json.dumps(self.article, ensure_ascii=False, separators=(",", ":"))
             self.assertTrue(all(article_json in call.args[0] for call in request.call_args_list))
             self.assertIn("不得编造ID或机械绑定无关来源", request.call_args.args[0])
 

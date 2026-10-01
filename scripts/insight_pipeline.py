@@ -17,7 +17,7 @@ from pathlib import Path
 import generate_blog as gb
 from deepseek_cost_policy import begin_request, complete_request
 from insight_offline_translation import OfflineTranslationError, translate_article as translate_article_offline
-from insight_decision_checks import DECISION_CHECK_REQUIREMENTS
+from insight_decision_checks import DECISION_CHECK_REQUIREMENTS, compact_decision_checks, CheckError
 from insight_quality import DRAFT_REQUIREMENTS, REVIEW_RUBRIC, validate_insight, validate_translation_publication
 
 SCORE_KEYS = ("thesis", "evidence", "mechanism", "tradeoffs", "actionability", "originality")
@@ -99,14 +99,23 @@ class _CompletionError(ValueError):
 class _OutputLimitError(_CompletionError):
     """Only a provider length cutoff can request a larger completion budget."""
 
+    def __init__(self, message: str, *, retryable: bool = False, usage: object = None):
+        super().__init__(message, retryable=retryable)
+        self.usage = _safe_usage(usage)
+
 
 def _safe_usage(value: object) -> dict:
     if not isinstance(value, dict):
         return {}
     allowed = ("prompt_tokens", "completion_tokens", "total_tokens", "prompt_cache_hit_tokens", "prompt_cache_miss_tokens")
+    if any(key in value and (type(value[key]) is not int or value[key] < 0) for key in allowed):
+        return {}
     usage = {key: value[key] for key in allowed if type(value.get(key)) is int and value[key] >= 0}
     for key, fields in (("completion_tokens_details", ("reasoning_tokens",)), ("prompt_tokens_details", ("cached_tokens",))):
         detail = value.get(key)
+        if key in value and (not isinstance(detail, dict) or any(
+                name in detail and (type(detail[name]) is not int or detail[name] < 0) for name in fields)):
+            return {}
         if isinstance(detail, dict):
             safe = {name: detail[name] for name in fields if type(detail.get(name)) is int and detail[name] >= 0}
             if safe:
@@ -114,11 +123,12 @@ def _safe_usage(value: object) -> dict:
     return usage
 
 
-def _require_stopped(reason: object) -> None:
+def _require_stopped(reason: object, *, usage: object = None) -> None:
     if reason == "length":
         raise _OutputLimitError(
             "incomplete output (length); increase this stage's max_tokens or shorten the requested output; identical-budget retry disabled",
             retryable=False,
+            usage=usage,
         )
     if reason != "stop":
         label = reason if reason in {"length", "content_filter", "tool_calls", "insufficient_system_resource"} else "missing_or_unknown_finish_reason"
@@ -147,7 +157,7 @@ def _read_completion(response: object, progress: dict, cancelled: threading.Even
         choices = data.get("choices")
         if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
             raise _CompletionError("invalid completion choices")
-        _require_stopped(choices[0].get("finish_reason"))
+        _require_stopped(choices[0].get("finish_reason"), usage=data.get("usage"))
         message = choices[0].get("message")
         content = message.get("content") if isinstance(message, dict) else None
         if not isinstance(content, str):
@@ -157,6 +167,7 @@ def _read_completion(response: object, progress: dict, cancelled: threading.Even
 
     parts = []
     usage = {}
+    usage_inconsistent = False
     finish_reason = None
     seen_done = False
     received = 0
@@ -189,7 +200,15 @@ def _read_completion(response: object, progress: dict, cancelled: threading.Even
             raise _CompletionError("malformed SSE JSON chunk") from None
         if not isinstance(chunk, dict) or "error" in chunk:
             raise _CompletionError("provider returned an error chunk")
-        usage.update(_safe_usage(chunk.get("usage")))
+        observed_usage = _safe_usage(chunk.get("usage"))
+        if isinstance(chunk.get("usage"), dict) and chunk["usage"] and not observed_usage:
+            usage_inconsistent = True
+        # Some providers emit usage on both the finish and terminal chunks.
+        # A later count must never reduce an already observed charge.
+        for key, value in observed_usage.items():
+            if type(value) is int and type(usage.get(key)) is int and value < usage[key]:
+                usage_inconsistent = True
+        usage.update(observed_usage)
         choices = chunk.get("choices")
         if not isinstance(choices, list) or len(choices) > 1:
             raise _CompletionError("invalid SSE choices")
@@ -213,7 +232,10 @@ def _read_completion(response: object, progress: dict, cancelled: threading.Even
             progress["content_chars"] += len(content)
         # Do not collect, print, enqueue or return delta.reasoning_content.
         if choice.get("finish_reason") is not None:
-            _require_stopped(choice["finish_reason"])
+            # A length cutoff can still be followed by the provider's terminal
+            # usage chunk. Drain that bounded stream before rejecting the text.
+            if choice["finish_reason"] != "length":
+                _require_stopped(choice["finish_reason"])
             if finish_reason is not None:
                 raise _CompletionError("duplicate SSE finish marker")
             finish_reason = choice["finish_reason"]
@@ -221,7 +243,9 @@ def _read_completion(response: object, progress: dict, cancelled: threading.Even
         raise _CompletionError("request exceeded overall deadline")
     if not seen_done:
         raise _CompletionError("incomplete stream (missing [DONE])")
-    _require_stopped(finish_reason)
+    if usage_inconsistent:
+        usage = {}  # Keep the full reservation for contradictory provider data.
+    _require_stopped(finish_reason, usage=usage)
     return "".join(parts), usage
 
 
@@ -268,7 +292,8 @@ def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeou
                 result = _read_completion(response, progress, cancelled)
             completed.put((True, result))
         except Exception as exc:
-            completed.put((False, _provider_failure(exc)))
+            completed.put((False, (*_provider_failure(exc),
+                _safe_usage(exc.usage) if isinstance(exc, _OutputLimitError) else {})))
 
     threading.Thread(target=receive, name="insight-http-reader", daemon=True).start()
     next_report = started + 60
@@ -283,9 +308,9 @@ def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeou
                     raise _CompletionError("request exceeded overall deadline")
                 if success:
                     return value
-                reason, retryable, output_limited = value
+                reason, retryable, output_limited, usage = value
                 if output_limited:
-                    raise _OutputLimitError(reason, retryable=False)
+                    raise _OutputLimitError(reason, retryable=False, usage=usage)
                 if not retryable:
                     raise RuntimeError(reason)
                 raise _CompletionError(reason)
@@ -352,6 +377,10 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
             print(f"Insight {stage}: completed; usage={json.dumps(usage)}", flush=True)
             return result
         except _OutputLimitError as exc:
+            # Completed transport can report exact usage even when the model's
+            # output is unusable. Unknown usage still retains the full reserve.
+            complete_request(ticket, usage=exc.usage, status="output_limit")
+            accounted = True
             # Partial JSON never reaches callers. Permit one fresh, larger request
             # within the same total attempt limit; never repeat a cut-off budget.
             next_budget = min(payload["max_tokens"] * 2, length_retry_limit)
@@ -795,6 +824,66 @@ def _revision_feedback(audit: dict) -> dict:
             "acceptance": "每维至少4且总分至少25/30；blockers为空；结构与事实门槛不变"}
 
 
+def _prompt_article(article: dict) -> dict:
+    """An equivalent compact display, never a rewrite of the stored article."""
+    result = json.loads(json.dumps(article, ensure_ascii=False))
+    if "decision_checks" in result:
+        try:
+            result["decision_checks"] = compact_decision_checks(result["decision_checks"])
+        except CheckError:
+            # Malformed material remains visible rather than being discarded or
+            # silently repaired into an accepted model.
+            pass
+    return result
+
+
+def _prompt_feedback(feedback: dict) -> dict:
+    """Remove repeated instructions and success traces, never repair obligations."""
+    result = json.loads(json.dumps(feedback, ensure_ascii=False))
+    for fix in result.get("required_fixes", []):
+        if isinstance(fix, dict):
+            fix.pop("instruction", None)  # The enclosing prompt states it once.
+    decision = result.get("decision_checks")
+    if isinstance(decision, dict) and isinstance(decision.get("results"), list):
+        # All inputs are already in the complete prior article. Keep exact
+        # computed outputs and the selected rule, but do not repeat every
+        # inherited variable once again in repair feedback.
+        for item in decision["results"]:
+            if isinstance(item, dict):
+                item.pop("values", None)
+    return result
+
+
+def _compact_json(value) -> str:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def _revision_response_entries(raw: object) -> list[dict]:
+    """Expand shared author explanations without waiving any issue ID."""
+    if not isinstance(raw, list):
+        raise ValueError("Revision requires revision_response for every required_fixes ID.")
+    if len(raw) > 2000:
+        raise ValueError("revision_response exceeds bounded issue count")
+    expanded = []
+    for response in raw:
+        if not isinstance(response, dict):
+            raise ValueError("revision_response entries must be objects")
+        if "issue_ids" not in response:
+            expanded.append(response)
+            if len(expanded) > 2000:
+                raise ValueError("revision_response exceeds bounded issue count")
+            continue
+        ids = response["issue_ids"]
+        if ("issue_id" in response or not isinstance(ids, list) or not 1 <= len(ids) <= 500
+                or any(not isinstance(identifier, str) or not identifier.strip() for identifier in ids)):
+            raise ValueError("Grouped revision_response requires only a nonempty issue_ids array")
+        expanded.extend({**{key: value for key, value in response.items() if key != "issue_ids"}, "issue_id": identifier}
+                        for identifier in ids)
+        if len(expanded) > 2000:
+            raise ValueError("revision_response exceeds bounded issue count")
+    return expanded
+
+
 def _factual_repair_required(feedback: dict) -> bool:
     """Use a reasoning draft for known factual work, without adding attempts."""
     return (feedback.get("decision_checks", {}).get("passed") is False
@@ -810,9 +899,10 @@ def _revision_response_errors(raw: dict, feedback: dict) -> list[str]:
     required = {item["id"] for item in feedback.get("required_fixes", [])}
     if not required:
         return []
-    responses = raw.get("revision_response")
-    if not isinstance(responses, list):
-        return ["Revision requires revision_response for every required_fixes ID."]
+    try:
+        responses = _revision_response_entries(raw.get("revision_response"))
+    except ValueError as exc:
+        return [str(exc)]
     completed = set()
     errors = []
     for response in responses:
@@ -841,7 +931,8 @@ def _repair_revision_metadata(article: dict, previous_response: object, feedback
              "previous_response": previous_response}
     prompt = f"""修复当前稿件的辅助修订记录，只输出JSON对象，且唯一顶层字段是revision_response。
 正文已经固定，禁止返回title/excerpt/body_html/tags，禁止修改正文、补写新分析或判定文章通过。
-逐一回应required_fixes中的ID，每个恰好一次，字段为issue_id、change、location、verification，
+逐一回应required_fixes中的ID，每个恰好一次，字段为issue_id、change、location、verification；
+只有同一改动/位置/验证确实适用多个ID时，可用issue_ids数组共用说明，不得省略任何ID。
 均使用非空文字；“表2”等简短但准确的位置有效，不需要凑字数。
 根据当前正文如实说明具体改动和位置；无法确认已改时必须明确写“未确认”及原因，不能伪造修复。
 这只是审计说明，不会替代独立审稿对事实、评分和历史blocker的检查。
@@ -952,11 +1043,11 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
 后者须说明当前中文原本如何正确、错误仅出在译稿的具体依据，可记resolved。
 两类都必须有独立finding和正文location，无法判断则unverifiable；不要移用译稿评分。
 审稿输出保持紧凑：每项claim和finding各用一到两句，保留具体依据与限定条件；不要重复整段正文。
-待核历史blocker：{json.dumps(required_blockers, ensure_ascii=False)}
+待核历史blocker：{_compact_json(required_blockers)}
 语言：{lang}
 已读取来源（仅这些文字可为事实提供支持）：{research_text(sources)}
 中文原文（仅翻译审稿时提供）：{json.dumps(original, ensure_ascii=False) if original else '无'}
-待审文章：{json.dumps(article, ensure_ascii=False)}"""
+待审文章：{_compact_json(_prompt_article(article))}"""
     if "decision_checks" in article:
         prompt += """\n本文附有机器复算的decision_checks，它们不是通过证明。独立逐段核对所有重要算式、
 表格输入/结果、完整工时与共享成本、联合可行性、阈值两侧/等号/零值/容量边界和有序规则
@@ -1522,13 +1613,17 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 [{{"issue_id":"required_fixes中的原ID","change":"具体改了什么或怎样保留已完成的修复",
 "location":"本轮章节标题/表格行/段落位置","verification":"用本轮具体内容说明为何解决了该问题"}}]。
 每个ID恰好回应一次，不用“已优化”之类空话；不要把revision_response写进正文。
+为避免辅助记录淹没正文：只有同一改动、位置和验证说明确实适用多个ID时，允许一项使用
+issue_ids:["原ID1","原ID2"]替代issue_id，共用change/location/verification；验证器会逐ID
+展开，缺失/重复/未知ID仍拒绝。不同修复不得硬合并；独立审稿的历史blocker仍逐ID核验。
+输出紧凑JSON，避免重复正文原段、上次审稿原文或models内已声明的共同规则。
 作者的回应仅用于审计，最终仍由独立主编审稿，不能代替事实核查或改变分数门槛。
 repair_focus先列当前未解决或未核验的硬问题。latest_independent_check是上一稿的
 独立审稿结论，包含当时复算、正文位置和稿件指纹：resolved项要保留并逐项复核，
 不能因为再次看到最初问题就恢复旧公式、旧变量方向或旧推荐；unresolved/unverifiable
 项按最新finding具体修复。它们不是本轮稿件的通过证明，每个历史ID仍须回应并重新审查。
-上稿：{json.dumps(previous, ensure_ascii=False)}
-完整修订任务：{json.dumps(feedback, ensure_ascii=False)}"""
+上稿：{_compact_json(_prompt_article(previous))}
+完整修订任务：{_compact_json(_prompt_feedback(feedback))}"""
             draft_origin = "editorial_revision" if editorial_revision is not None and revision == start_revision else "model"
             if lang != "zh":
                 draft_origin = "offline_translation"

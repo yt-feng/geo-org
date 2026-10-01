@@ -7,32 +7,39 @@ coverage, and agreement with the visible article.
 from __future__ import annotations
 
 import ast
+from collections import Counter
+from copy import deepcopy
+import json
 from fractions import Fraction
 from html.parser import HTMLParser
 import re
 
 
-DECISION_CHECK_REQUIREMENTS = """中文新稿和续修稿必须另附 decision_checks（不放入HTML）。每次重写须同步重建，
-旧检查不是本轮正确性证明。所有关键算式、资源互斥假设、表格情景和边界均须覆盖；
-不要用无关算式或恒真规则充数。正文原句 quote 必须逐字匹配可见正文（至少12字符）。
-JSON结构：{"version":1,"calculations":[{"id":"threshold","quote":"正文中写明输入和结果的原句",
-"inputs":{"cost":"48","rate":"0.15"},"expression":"cost * rate","expected":"7.2"}],
-"budgets":[{"id":"hours","quote":"正文中写明共同前置、完整成本与容量的原句",
-"capacity":"48","shared":"12","option_a":"40","option_b":"48","exclusive":true}],
-"cases":[{"id":"below","quote":"正文中该情景的输入和最终推荐原句",
-"inputs":{"a_cost":"40","b_cost":"48","a_gain":"6","b_gain":"7","capacity":"48"},
-"derived":[{"name":"threshold","expression":"a_gain * b_cost / a_cost"}],
-"rules":[{"when":"capacity < a_cost and capacity < b_cost","choice":"defer"},
-{"when":"b_gain > threshold","choice":"B"},{"when":"b_gain == threshold","choice":"defer"},
-{"when":"True","choice":"A"}],"expected_choice":"A"}]}。
-这是协议示例，不是本文的固定模型或参数。calculations至少1项，cases至少2项且分别绑定
-不同真实情景；budgets在本文涉及容量/机会成本的量化比较时必填，否则可为空。
-数值用十进制字符串；允许+ - * /、括号、比较、and/or/not及True/False，不支持调用/幂运算。
-inputs只放原始输入，derived按依赖顺序计算；rules按先后顺序，第一条真条件决定最终选项。
-覆盖阈值两侧、等号、零产出和预算边界。预算的option_a/b是包含shared的完整成本，
-联合成本=option_a+option_b-shared。联合方案在容量内时不可声称仅由预算导致互斥；
-若真实排他原因是组织约束，正文说明该独立约束并令exclusive=false，不伪造工时。
-算术通过不代表假设真实、检查覆盖完整或正文推理正确，仍须独立逐段审稿。
+DECISION_CHECK_REQUIREMENTS = """中文新稿和续修稿必须另附紧凑的 decision_checks version=2（不放入HTML）。
+所有关键算式、资源互斥假设、表格情景和交叉边界均须覆盖；每次重写同步更新，旧检查
+不是本轮通过证明。quote逐字匹配当前可见正文至少12字符，不能引用无关原句充数。
+JSON结构：{"version":2,
+"models":{"comparison":{"inputs":{"a_cost":"40","b_cost":"48","a_gain":"6","b_gain":"4","capacity":"48"},
+"derived":[{"name":"threshold","expression":"a_gain*b_cost/a_cost"}],
+"rules":[{"when":"capacity<a_cost and capacity<b_cost","choice":"defer"},
+{"when":"b_gain>threshold","choice":"B"},{"when":"b_gain==threshold","choice":"defer"},
+{"when":"True","choice":"A"}]}},
+"calculations":[{"id":"threshold","quote":"正文写明输入和结果的原句","inputs":{"cost":"48","rate":"0.15"},"expression":"cost*rate","expected":"7.2"}],
+"budgets":[{"id":"hours","quote":"正文写明共同前置、完整成本与容量的原句","capacity":"48","shared":"12","option_a":"40","option_b":"48","exclusive":true}],
+"cases":[{"id":"below","quote":"正文对应情景的输入和最终推荐原句","model":"comparison","inputs":{"b_gain":"7"},"expected_choice":"A"},
+{"id":"above","quote":"正文另一情景的输入和最终推荐原句","model":"comparison","inputs":{"b_gain":"9"},"expected_choice":"B"}]}。
+这只是协议示例，不是本文固定的模型或参数。models每个模型仅定义一次默认inputs、
+derived和有序rules；每case引用model，inputs只写与默认值不同的覆盖值，禁止逐case
+重复rules/derived。展开默认值后逐案复算，第一条真条件决定最终选择。不要输出冗余
+缩进、重复默认输入、完整历史审稿原文。calculations至少1项；cases至少2项、最多40项，
+针对不同真实情景；正文量化容量/机会成本时budgets必填。数值用十进制字符串；允许
++ - * /、括号、比较、and/or/not、True/False，不支持调用/幂运算。derived按依赖顺序，
+不能覆盖原始输入。示意预算option_a/b包含shared，联合成本=option_a+option_b-shared；
+联合方案能放入容量时，不得仅凭预算宣称互斥。组织排他约束必须另说明，exclusive=false。
+正文只定义一套完整有序规则，其他段落和表格引用该规则的适用范围；不要把某个分支
+省略前序条件后又写成独立充分条件。覆盖相互作用：联合可行+错误越界、容量不足+错误
+越界、联合可行+零/负增量等；新增分支须核对所有既有案例和摘要/两表/执行路径。
+算术通过不代表假设真实、覆盖完整或正文推理正确；独立逐段来源及语义审稿仍须通过。
 """
 
 
@@ -164,13 +171,89 @@ def _inputs(raw):
     return {key: _number(value) for key, value in raw.items()}
 
 
+def compact_decision_checks(checks):
+    """Losslessly factor repeated v1 case programs; preserve every case and ID.
+
+    Default values are selected only for inputs present in every case of the
+    same program. Case overrides preserve the original raw numeric values.
+    This representation change grants no acceptance and does not mutate audits.
+    """
+    result = deepcopy(checks)
+    if not isinstance(checks, dict) or checks.get("version") not in (1, 2):
+        raise CheckError("cannot compact an unknown decision-check protocol")
+    if checks["version"] == 2:
+        return result
+    cases = checks.get("cases")
+    if not isinstance(cases, list) or not 2 <= len(cases) <= 40:
+        raise CheckError("cannot compact invalid case records")
+    grouped = {}
+    for case in cases:
+        if (not isinstance(case, dict) or not isinstance(case.get("inputs"), dict)
+                or not isinstance(case.get("rules"), list) or not isinstance(case.get("derived", []), list)
+                or "model" in case):
+            raise CheckError("cannot compact ambiguous case records")
+        program = {"derived": case.get("derived", []), "rules": case["rules"]}
+        key = json.dumps(program, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        grouped.setdefault(key, []).append(case)
+    models, assignment = {}, {}
+    for index, (key, group) in enumerate(grouped.items(), 1):
+        name = f"model_{index}"
+        common = set.intersection(*(set(case["inputs"]) for case in group))
+        defaults = {}
+        for variable in sorted(common):
+            values = [case["inputs"][variable] for case in group]
+            encoded = [json.dumps(value, ensure_ascii=False, sort_keys=True) for value in values]
+            most_common = Counter(encoded).most_common(1)[0][0]
+            defaults[variable] = json.loads(most_common)
+        models[name] = {"inputs": defaults, **json.loads(key)}
+        for case in group:
+            assignment[id(case)] = name
+    compact_cases = []
+    for case in cases:
+        name = assignment[id(case)]
+        defaults = models[name]["inputs"]
+        overrides = {key: value for key, value in case["inputs"].items()
+                     if key not in defaults or type(value) is not type(defaults[key]) or value != defaults[key]}
+        compact_cases.append({**{key: deepcopy(value) for key, value in case.items()
+                                 if key not in ("inputs", "derived", "rules")},
+                              "model": name, "inputs": overrides})
+    result.update(version=2, models=models, cases=compact_cases)
+    return result
+
+
+def expand_decision_case(case, models):
+    """Resolve the exact shared program and explicit per-case numeric overrides."""
+    if "rules" in case or "derived" in case:
+        raise CheckError("v2 cases must reference shared rules/derived, not override them")
+    name = case.get("model")
+    if not isinstance(name, str) or name not in models:
+        raise CheckError("case must reference an existing shared model")
+    model = models[name]
+    if not isinstance(model, dict):
+        raise CheckError("shared model must be an object")
+    defaults, overrides = model.get("inputs"), case.get("inputs")
+    _inputs(defaults)
+    _inputs(overrides)
+    return {**case, "inputs": {**defaults, **overrides},
+            "derived": model.get("derived", []), "rules": model.get("rules")}
+
+
 def validate_decision_checks(article, *, required=False):
     checks = article.get("decision_checks")
     if checks is None and not required:
         return {"passed": True, "errors": [], "status": "legacy_not_supplied"}
     errors, results = [], []
-    if not isinstance(checks, dict) or checks.get("version") != 1:
-        return {"passed": False, "errors": ["decision_checks version 1 is required for every new Chinese draft"], "results": []}
+    if not isinstance(checks, dict) or type(checks.get("version")) is not int or checks["version"] not in (1, 2):
+        return {"passed": False, "errors": ["decision_checks version 1 or 2 is required for every new Chinese draft"], "results": []}
+    models = checks.get("models", {})
+    if checks["version"] == 2:
+        if (not isinstance(models, dict) or not 1 <= len(models) <= 40
+                or any(not isinstance(name, str) or not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_]{0,39}", name) for name in models)):
+            return {"passed": False, "errors": ["decision_checks.models requires 1..40 named shared models"], "results": []}
+        used = {case.get("model") for case in checks.get("cases", [])
+                if isinstance(case, dict) and isinstance(case.get("model"), str)} if isinstance(checks.get("cases"), list) else set()
+        if set(models) != used:
+            errors.append("decision_checks.models must all be referenced; no missing or unused models")
     parser = _Text()
     parser.feed(article.get("body_html", ""))
     body = _compact("".join(parser.parts))
@@ -218,6 +301,8 @@ def validate_decision_checks(article, *, required=False):
                         raise CheckError(f"budget cannot imply exclusivity: combined {_display(combined)} <= capacity {_display(values['capacity'])}")
                     results.append({"id": identifier, "combined": _display(combined), "jointly_feasible": combined <= values["capacity"]})
                 else:
+                    if checks["version"] == 2:
+                        item = expand_decision_case(item, models)
                     variables = _inputs(item.get("inputs"))
                     signature = tuple(sorted((key, str(value)) for key, value in variables.items()))
                     if signature in scenario_inputs:
