@@ -1,5 +1,595 @@
 [
   {
+    "order": "718",
+    "row": "709",
+    "slug": "00709-seo-ai-geo-7961d3a6",
+    "title": "Eco-GEO：Should we correct errors first, evaluate the combination, or expand coverage? Separate judgment on full working hours from incremental changes.",
+    "excerpt": "Establish orderly action rules based on the schematic time logbook and verifiable increments: first verify input and error constraints, then assess overall feasibility, combined options, and individual efficiency; conditional conclusions do not represent actual performance in the smart hardware industry.",
+    "category": "Brand GEO",
+    "tags": "GEO, AIsearch optimization, intelligent hardware, resource configuration, Eco-GEO, branding GEO, GEOservices",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-01",
+    "image": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/en/blog/articles/00709-seo-ai-geo-7961d3a6/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:52+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:52+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S3",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:53+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      },
+      {
+        "id": "S4",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:54+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      },
+      {
+        "id": "S5",
+        "title": "Consumer IoT Cybersecurity",
+        "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+        "publisher": "National Institute of Standards and Technology",
+        "published": "2021-11-09",
+        "retrieved_at": "2026-10-01T05:06:54+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 3490,
+        "body_chars": 3490,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "nist.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "smart_hardware"
+        ],
+        "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+        "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "en",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "h2_count": 8,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 7,
+            "headers": 3,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 33,
+            "headers": 2,
+            "cells": 64
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "counterargument": 1,
+          "economics": 1,
+          "executive-summary": 1,
+          "method": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S2": 2,
+          "S3": 2,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 18626,
+        "zh_character_count": 102,
+        "word_count": 3563,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 8,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "nist.gov"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 8,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 7,
+                "headers": 3,
+                "cells": 18
+              },
+              {
+                "captions": 1,
+                "rows": 33,
+                "headers": 2,
+                "cells": 64
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "counterargument": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "method": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 2,
+              "S2": 2,
+              "S3": 2,
+              "S4": 1,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 16,
+                "0.1": 4,
+                "1": 14,
+                "10": 5,
+                "10000": 1,
+                "11": 1,
+                "12": 10,
+                "14": 2,
+                "16": 2,
+                "19": 2,
+                "2": 6,
+                "20": 2,
+                "2021": 1,
+                "2025": 1,
+                "2026": 1,
+                "25": 12,
+                "27": 1,
+                "28": 5,
+                "3": 6,
+                "31": 1,
+                "35": 2,
+                "36": 3,
+                "39": 2,
+                "4": 12,
+                "40": 22,
+                "44": 3,
+                "47": 1,
+                "48": 33,
+                "5": 1,
+                "6": 15,
+                "60": 5,
+                "67": 1,
+                "68": 6,
+                "7": 3,
+                "7.2": 6,
+                "75": 9,
+                "76": 13,
+                "8": 8,
+                "9": 6
+              },
+              "translated": {
+                "-1": 2,
+                "0": 15,
+                "0.1": 4,
+                "1": 12,
+                "10": 4,
+                "10000": 1,
+                "12": 10,
+                "14": 1,
+                "16": 1,
+                "19": 1,
+                "2": 7,
+                "20": 2,
+                "2021": 1,
+                "2025": 1,
+                "2026": 1,
+                "25": 12,
+                "27": 1,
+                "28": 5,
+                "3": 6,
+                "31": 1,
+                "35": 2,
+                "36": 3,
+                "39": 2,
+                "4": 12,
+                "40": 22,
+                "44": 3,
+                "47": 1,
+                "48": 32,
+                "5": 1,
+                "6": 15,
+                "60": 4,
+                "67": 1,
+                "68": 6,
+                "7": 2,
+                "7.2": 6,
+                "75": 8,
+                "76": 13,
+                "8": 8,
+                "9": 6
+              },
+              "missing": {
+                "0": 1,
+                "1": 2,
+                "10": 1,
+                "11": 1,
+                "14": 1,
+                "16": 1,
+                "19": 1,
+                "48": 1,
+                "60": 1,
+                "7": 1,
+                "75": 1
+              },
+              "added": {
+                "-1": 2,
+                "2": 1
+              },
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 6,
+                    "path": "/section[2]/p[1]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "来源口径为2026年10月1日00:25 UTC重新抓取的页面快照。S1、S2、S3的抓取记录未确认发布日期；S2只读取前10000字符，不据未读内容扩展结论。S4的发布日期字段分别为2025年7月28日与31日，存在冲突，故不选定其中一天；S5记录发布日期为2021年11月9日。以下平台描述仅对应已读快照，执行前须重核目标市场的实际入口，不能当作长期不变的能力承诺。",
+                    "numbers": {
+                      "0": 1,
+                      "1": 1,
+                      "10": 1,
+                      "10000": 1,
+                      "11": 1,
+                      "2021": 1,
+                      "2025": 1,
+                      "2026": 1,
+                      "25": 1,
+                      "28": 1,
+                      "31": 1,
+                      "7": 1,
+                      "9": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 6,
+                    "path": "/section[2]/p[1]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "The source data was retrieved from a page snapshot on October 1, 2026, at 00:25 UTC. The release dates for S1, S2, and S3 are unconfirmed; S2 only read the first 10,000 characters and did not extend its conclusions based on the remaining content. S4’s release dates are July 28 and 31, 2025, respectively, which creates a conflict, so neither date was selected. S5 records the release date as November 9, 2021. The descriptions below refer only to the read snapshots. Before execution, the actual entry points in the target market must be re-evaluated, and these cannot be considered long-term不变的 commitments.",
+                    "numbers": {
+                      "0": 1,
+                      "1": 1,
+                      "10000": 1,
+                      "2021": 1,
+                      "2025": 1,
+                      "2026": 1,
+                      "25": 1,
+                      "28": 1,
+                      "31": 1,
+                      "9": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "10": 1,
+                    "11": 1,
+                    "7": 1
+                  },
+                  "added": {}
+                },
+                {
+                  "source": {
+                    "block_index": 16,
+                    "path": "/section[4]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "以下都为示意假设，非行业基准。固定m=25个问题，每个平台独立记录：Q为在全部选定平台均满足正确引用标准的问题数，E为任一平台答案包含可核验严重错误的问题数，二者均以问题为单位、以25为分母。缺失或不可核验须单独记录，不能计为正确。负责人在看结果前批准示意容忍上限r_max=0.10；E/25大于0.10才越界，整数E至多2时达标，E至少3时越界。这个门槛是业务政策，不是来源给出的最优值，也不能用当前最差错误率自动设定。",
+                    "numbers": {
+                      "0.1": 2,
+                      "2": 1,
+                      "25": 3,
+                      "3": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 16,
+                    "path": "/section[4]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "The following are all illustrative assumptions, not industry benchmarks. Fix m=25 questions, with each platform recorded independently: Q is the number of questions that meet the correct citation criteria across all selected platforms, and E is the number of questions where the answers on any platform contain verifiable serious errors. Both are calculated per question, with 25 as the denominator. Missing or unverifiable errors must be recorded separately and cannot be counted as correct. The responsible person approves a suggested tolerance limit r_max=0.10 before reviewing the results; E/25 exceeds 0.10 indicates an exception, with the target being no more than 2 when E is an integer and at least 3 when it exceeds 2. This threshold is a business policy, not the optimal value provided by the source, and cannot be automatically set based on the current worst error rate.",
+                    "numbers": {
+                      "0.1": 2,
+                      "2": 2,
+                      "25": 3,
+                      "3": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "2": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 42,
+                    "path": "/section[5]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "选择A或B后，内容负责人按完整流程执行，独立评审复测。结果恶化、方向不稳或增量不为正，应回到R1重新判定；R2纠错任务是否达标另看错误指标，不能仅凭增量为0宣布纠错无效。所有结果都保留触发原因，联合评估、平局复查和容量不足不能被记录为已完成行动。",
+                    "numbers": {
+                      "0": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 42,
+                    "path": "/section[5]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "After selecting A or B, the content owner follows the complete process for independent review and retesting. If the results worsen, the direction becomes unstable, or the increment is not positive, a re-evaluation at R1 is required. Whether the R2 correction tasks meet the standards depends on the error metrics; a zero increment cannot be used to declare corrections ineffective. All results retain their triggering reasons, and joint evaluations, rechecks, and insufficient capacity cannot be recorded as completed actions.",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "0": 1
+                  },
+                  "added": {}
+                },
+                {
+                  "source": {
+                    "block_index": 46,
+                    "path": "/section[6]/p[3]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "同口径基线Q_base=10；示意A期末16，ΔQ_A=16−10=6；B基准期末14，ΔQ_B=14−10=4；B较高产出期末19，ΔQ_B=19−10=9。R6下，u_A=40/ΔQ_A、u_B=48/ΔQ_B；切换阈值T=6×48/40=7.2。B增量7时A单位成本更低，8时B更低；期望增量7.2只用于期望对照，成本比相等而触发平局复查，不能把7.2写成实测整数计数。若B成本降为40，则T=6×40/40=6，联合成本=40+40−12=68，容量48仍为二选一，容量68则先触发联合评估。",
+                    "numbers": {
+                      "10": 4,
+                      "12": 1,
+                      "14": 2,
+                      "16": 2,
+                      "19": 2,
+                      "4": 1,
+                      "40": 7,
+                      "48": 3,
+                      "6": 4,
+                      "68": 2,
+                      "7": 1,
+                      "7.2": 3,
+                      "8": 1,
+                      "9": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 46,
+                    "path": "/section[6]/p[3]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "The same caliber baseline Q_base=10; at the end of period A, ΔQ_A=16−10=6; at the base end of period B, ΔQ_B=14−10=4; at the higher output end of period B, ΔQ_B=19−10=9. Under R6, u_A=40/ΔQ_A, u_B=48/ΔQ_B; the switching threshold T=6×48/40=7.2. When the increment is 7, the unit cost of A is lower; when it is 8, the cost of B is lower. The expected increment of 7.2 is used only for the expected comparison; if the costs are equal, a tie review is triggered, and 7.2 cannot be written as a measured integer count. If B’s cost drops to 40, then T=6×40/40=6, and the combined cost=40+40−12=68. Capacity 48 still requires a choice between two options; capacity 68 triggers a combined evaluation first.",
+                    "numbers": {
+                      "10": 4,
+                      "12": 1,
+                      "14": 1,
+                      "16": 1,
+                      "19": 1,
+                      "4": 1,
+                      "40": 7,
+                      "48": 3,
+                      "6": 4,
+                      "68": 2,
+                      "7": 1,
+                      "7.2": 3,
+                      "8": 1,
+                      "9": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "14": 1,
+                    "16": 1,
+                    "19": 1
+                  },
+                  "added": {}
+                }
+              ],
+              "block_differences_total": 7,
+              "block_differences_truncated": true
+            }
+          }
+        },
+        "publication_policy": "readable-translation-v1",
+        "quality_warning_count": 1
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "body_html.32",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.32",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.32",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.36",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.36",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.80",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.80",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.84",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.228",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.228",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.240",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.248",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.248",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.252",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.252",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.450",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.450",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.486",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.486",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "tags",
+          "warning": "Offline translation changed a protected term"
+        },
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "717",
     "row": "708",
     "slug": "00708-geo-ai-6e397a6e",

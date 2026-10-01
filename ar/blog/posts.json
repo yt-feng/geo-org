@@ -1,5 +1,748 @@
 [
   {
+    "order": "718",
+    "row": "709",
+    "slug": "00709-seo-ai-geo-7961d3a6",
+    "title": "Eco-GEO：هل يجب تصحيح الأخطاء وتقييم العمل المشترك أولاً، أم توسيع نطاق التغطية؟ يجب التفريق بين الساعات الإجمالية والزيادات في العمل.",
+    "excerpt": "إنشاء قواعد تنظيمية للأفعال بناءً على دفتر ساعات العمل والزيادات القابلة للتحقق: أولاً، التحقق من المدخلات والقيود الخاطئة، ثم تقييم الجدوى الكاملة، وخيارات الانضمام، وكفاءة كل عنصر على حدة؛ لا تمثل النتائج الشرطية نتائج اختبار فعلية في صناعة الأجهزة الذكية.",
+    "category": "GEO للعلامات التجارية",
+    "tags": "GEO, AI搜索优化, 智能硬件, 资源配置, Eco-GEO, 品牌化GEO, GEO服务",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-01",
+    "image": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/ar/blog/articles/00709-seo-ai-geo-7961d3a6/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:52+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:52+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S3",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:53+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      },
+      {
+        "id": "S4",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-01T05:06:54+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      },
+      {
+        "id": "S5",
+        "title": "Consumer IoT Cybersecurity",
+        "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+        "publisher": "National Institute of Standards and Technology",
+        "published": "2021-11-09",
+        "retrieved_at": "2026-10-01T05:06:54+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 3490,
+        "body_chars": 3490,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "nist.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "smart_hardware"
+        ],
+        "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+        "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "ar",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "h2_count": 8,
+        "table_count": 2,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 7,
+            "headers": 3,
+            "cells": 18
+          },
+          {
+            "captions": 1,
+            "rows": 33,
+            "headers": 2,
+            "cells": 64
+          }
+        ],
+        "role_counts": {
+          "action-plan": 1,
+          "assumptions": 1,
+          "causal-mechanism": 1,
+          "counterargument": 1,
+          "economics": 1,
+          "executive-summary": 1,
+          "method": 1,
+          "segmentation": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S2": 2,
+          "S3": 2,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 15713,
+        "zh_character_count": 119,
+        "word_count": 3381,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 2,
+        "valid_citation_count": 8,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "nist.gov"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 8,
+            "table_count": 2,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 7,
+                "headers": 3,
+                "cells": 18
+              },
+              {
+                "captions": 1,
+                "rows": 33,
+                "headers": 2,
+                "cells": 64
+              }
+            ],
+            "role_counts": {
+              "action-plan": 1,
+              "assumptions": 1,
+              "causal-mechanism": 1,
+              "counterargument": 1,
+              "economics": 1,
+              "executive-summary": 1,
+              "method": 1,
+              "segmentation": 1
+            },
+            "citation_id_counts": {
+              "S1": 2,
+              "S2": 2,
+              "S3": 2,
+              "S4": 1,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "0": 16,
+                "0.1": 4,
+                "1": 14,
+                "10": 5,
+                "10000": 1,
+                "11": 1,
+                "12": 10,
+                "14": 2,
+                "16": 2,
+                "19": 2,
+                "2": 6,
+                "20": 2,
+                "2021": 1,
+                "2025": 1,
+                "2026": 1,
+                "25": 12,
+                "27": 1,
+                "28": 5,
+                "3": 6,
+                "31": 1,
+                "35": 2,
+                "36": 3,
+                "39": 2,
+                "4": 12,
+                "40": 22,
+                "44": 3,
+                "47": 1,
+                "48": 33,
+                "5": 1,
+                "6": 15,
+                "60": 5,
+                "67": 1,
+                "68": 6,
+                "7": 3,
+                "7.2": 6,
+                "75": 9,
+                "76": 13,
+                "8": 8,
+                "9": 6
+              },
+              "translated": {
+                "-1": 2,
+                "0": 13,
+                "0.1": 4,
+                "1": 9,
+                "10": 4,
+                "10000": 1,
+                "12": 10,
+                "14": 1,
+                "16": 1,
+                "19": 1,
+                "2": 4,
+                "20": 2,
+                "2021": 1,
+                "2025": 1,
+                "2026": 1,
+                "25": 12,
+                "27": 1,
+                "28": 5,
+                "3": 5,
+                "31": 1,
+                "35": 2,
+                "36": 3,
+                "39": 2,
+                "4": 11,
+                "40": 23,
+                "44": 3,
+                "47": 1,
+                "48": 34,
+                "6": 15,
+                "60": 5,
+                "67": 1,
+                "68": 6,
+                "7": 2,
+                "7.2": 6,
+                "75": 9,
+                "76": 13,
+                "8": 7,
+                "9": 6
+              },
+              "missing": {
+                "0": 3,
+                "1": 5,
+                "10": 1,
+                "11": 1,
+                "14": 1,
+                "16": 1,
+                "19": 1,
+                "2": 2,
+                "3": 1,
+                "4": 1,
+                "5": 1,
+                "7": 1,
+                "8": 1
+              },
+              "added": {
+                "-1": 2,
+                "40": 1,
+                "48": 1
+              },
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 3,
+                    "path": "/section[1]/ul[1]/li[2]",
+                    "fragment_index": 1,
+                    "tag": "li",
+                    "text": "示意完整成本为A40小时、B48小时，共同前置12小时；去重后的联合成本为76小时（40+48−12）。错误达标且A、B均完整可行、增量均为正时，48至75小时才进入二选一效率比较；40至47小时只能考虑完整可行的A。",
+                    "numbers": {
+                      "12": 2,
+                      "40": 2,
+                      "47": 1,
+                      "48": 2,
+                      "75": 1,
+                      "76": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 3,
+                    "path": "/section[1]/ul[1]/li[2]",
+                    "fragment_index": 1,
+                    "tag": "li",
+                    "text": "التكلفة الكاملة هي 40 ساعة لـ A، و48 ساعة لـ B، مع إضافة 12 ساعة مسبقة. التكلفة المشتركة بعد التخلص من التكرارات هي 76 ساعة (40+48−12). عندما يكون الهدف غير مكتمل ويكون كل من A وB قابلين للتطبيق، وعندما تكون الزيادات إيجابية، فإن النقاش يدور حول اختيار أفضل بين 48 و75 ساعة؛ أما في الفترة من 40 إلى 47 ساعة، فيمكن فقط النظر في الخيار القابل للتطبيق لـ A.",
+                    "numbers": {
+                      "12": 2,
+                      "40": 3,
+                      "47": 1,
+                      "48": 3,
+                      "75": 1,
+                      "76": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "40": 1,
+                    "48": 1
+                  }
+                },
+                {
+                  "source": {
+                    "block_index": 6,
+                    "path": "/section[2]/p[1]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "来源口径为2026年10月1日00:25 UTC重新抓取的页面快照。S1、S2、S3的抓取记录未确认发布日期；S2只读取前10000字符，不据未读内容扩展结论。S4的发布日期字段分别为2025年7月28日与31日，存在冲突，故不选定其中一天；S5记录发布日期为2021年11月9日。以下平台描述仅对应已读快照，执行前须重核目标市场的实际入口，不能当作长期不变的能力承诺。",
+                    "numbers": {
+                      "0": 1,
+                      "1": 1,
+                      "10": 1,
+                      "10000": 1,
+                      "11": 1,
+                      "2021": 1,
+                      "2025": 1,
+                      "2026": 1,
+                      "25": 1,
+                      "28": 1,
+                      "31": 1,
+                      "7": 1,
+                      "9": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 6,
+                    "path": "/section[2]/p[1]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "صورة الصفحة تم أخذها مرة أخرى في تاريخ 1 أكتوبر 2026 الساعة 00:25 بتوقيت UTC. تاريخ نشر سجلات جمع S1 وS2 وS3 لم يُحدد بعد؛ حيث قام S2 بقراءة الأبجدية الأولى من 10000 حرف فقط، ولا يمكن الاستنتاج بناءً على ما لم يتم قراءته. تاريخ نشر S4 هو 28 يوليو و31 يوليو 2025، وهناك تناقض، لذلك لم يتم اختيار أي من هذين التواريخ؛ أما تاريخ نشر S5 فهو 9 نوفمبر 2021. الوصف المذكور أدناه يتعلق فقط بالصور المسجلة، ويجب إعادة تقييم الأسواق المستهدفة قبل التنفيذ، ولا يمكن اعتبار ذلك وعدًا بقدرات ثابتة على المدى الطويل.",
+                    "numbers": {
+                      "0": 1,
+                      "1": 1,
+                      "10000": 1,
+                      "2021": 1,
+                      "2025": 1,
+                      "2026": 1,
+                      "25": 1,
+                      "28": 1,
+                      "31": 1,
+                      "9": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "10": 1,
+                    "11": 1,
+                    "7": 1
+                  },
+                  "added": {}
+                },
+                {
+                  "source": {
+                    "block_index": 13,
+                    "path": "/section[3]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "本模型将纠错目标置于增量效率目标之前，这是建议试验政策。错误越界时，即使A的正确引用增量为0，也可因纠错目标选择A；此时不宣称A的增量效率更优。错误为0也不自动排除A，因为证据整理仍可能增加正确引用。若A不能改善错误，或B扩覆盖不会增加错误传播，必须重估这条政策，不能给错误任意权重后与提及次数相加。",
+                    "numbers": {
+                      "0": 2
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 13,
+                    "path": "/section[3]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "يضع هذا النموذج هدف تصحيح الأخطاء قبل هدف الكفاءة المتزايدة، وهذا هو السياسة المقترحة للتجربة. عندما يتجاوز الخطأ الحد، حتى لو كان قيمة الاقتباس الصحيح لـ A صفرًا، يمكن اختيار A بسبب هدف تصحيح الأخطاء؛ وفي هذه الحالة لا يتم الإعلان عن أن كفاءة A المتزايدة أفضل. ولا يستبعد ذلك وجود خطأ صفرًا تلقائيًا، لأن تنظيم الأدلة قد يزيد من احتمالات الاقتباس الصحيح. إذا لم يتمكن A من تحسين الخطأ، أو إذا لم يزد توسيع نطاق B من انتشار الخطأ، فيجب إعادة تقييم هذه السياسة، ولا يمكن إعطاء وزن عشوائي للخطأ ثم جمعه مع عدد المرات المذكورة.",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "0": 2
+                  },
+                  "added": {}
+                },
+                {
+                  "source": {
+                    "block_index": 42,
+                    "path": "/section[5]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "选择A或B后，内容负责人按完整流程执行，独立评审复测。结果恶化、方向不稳或增量不为正，应回到R1重新判定；R2纠错任务是否达标另看错误指标，不能仅凭增量为0宣布纠错无效。所有结果都保留触发原因，联合评估、平局复查和容量不足不能被记录为已完成行动。",
+                    "numbers": {
+                      "0": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 42,
+                    "path": "/section[5]/p[2]",
+                    "fragment_index": 1,
+                    "tag": "p",
+                    "text": "بعد اختيار A أو B، يقوم الشخص المسؤول عن المحتوى بتنفيذ الإجراءات الكاملة، وإجراء تقييمات وتحققات مستقلة. إذا ساءت النتائج أو كانت الاتجاه غير مستقر أو لم يكن الزيادة موجبة، يجب العودة إلى R1 لتحديد القرار مرة أخرى؛ ويتم التحقق من مدى تحقيق مهام تصحيح الأخطاء في R2 بناءً على مؤشرات الخطأ، ولا يمكن اعتبار تصحيح الأخطاء غير فعال فقط بسبب عدم وجود زيادة. يتم الاحتفاظ بأسباب كل نتيجة، ولا يمكن تسجيل التقييم المشترك أو الفراغ في الفحص أو نقص السعة كإجراءات اكتملت.",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "missing": {
+                    "0": 1
+                  },
+                  "added": {}
+                }
+              ],
+              "block_differences_total": 10,
+              "block_differences_truncated": true
+            }
+          }
+        },
+        "publication_policy": "readable-translation-v1",
+        "quality_warning_count": 1
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "body_html.14",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.14",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.32",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.32",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.48",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "body_html.48",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "body_html.48",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        {
+          "block": "body_html.64",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.64",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.80",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.84",
+          "warning": "Offline translation changed comparison or formula operators"
+        },
+        {
+          "block": "body_html.130",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.146",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.162",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.178",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.194",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.210",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.228",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.228",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.240",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.240",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.244",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.244",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.248",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.248",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.252",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.286",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.298",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.310",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.322",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.334",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.346",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.358",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.370",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.382",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.430",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.442",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.450",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.450",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.454",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.466",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.478",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.486",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.486",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.490",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.502",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.514",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.526",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.538",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.550",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.562",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.574",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.586",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.598",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.610",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.622",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.634",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.646",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.658",
+          "warning": "Hy-MT2 target script missing"
+        },
+        {
+          "block": "body_html.684",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.684",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "tags",
+          "warning": "Hy-MT2 protected placeholder fallback retained source text"
+        },
+        {
+          "block": "tags",
+          "warning": "Offline translation is missing the target language"
+        },
+        {
+          "block": "tags",
+          "warning": "Offline translation retained Chinese source text"
+        },
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "717",
     "row": "708",
     "slug": "00708-geo-ai-6e397a6e",
