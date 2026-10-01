@@ -208,6 +208,20 @@ def _restore_terms(value: str, terms: dict[str, str]) -> str:
     return value
 
 
+def _restore_placeholder_spacing(source: str, result: str) -> str:
+    """Normalize only whitespace around a complete, source-known token ID."""
+    known = set(_PLACEHOLDERS.findall(source))
+    pattern = re.compile(r'__[ \t\r\n]*((?:HYMTPH|KC_PH)_\d+)[ \t\r\n]*__')
+    def restore(match):
+        token = '__' + match.group(1) + '__'
+        if token not in known:
+            raise OfflineTranslationError('Hy-MT2 emitted an unknown protected placeholder')
+        return token
+    # No IDs, prefixes or delimiters are inferred or changed. The original
+    # placeholder Counter must still match afterwards, including duplicates.
+    return pattern.sub(restore, result)
+
+
 def _restore_table_edges(source: str, result: str) -> str:
     """Restore optional row-edge pipes only when all data columns still match.
 
@@ -424,6 +438,7 @@ class HyMTOfflineTranslator:
                                                                'source_language': detected, 'target_language': target,
                                                                'controlled_terms': dict(terms)})
                                 output = _restore_table_edges(part, output)
+                                output = _restore_placeholder_spacing(part, output)
                                 validate_result(part, output, detected, target, quality_mode=self.quality_mode)
                                 outputs.append(output)
                             value = ''.join(outputs)

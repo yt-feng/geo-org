@@ -44,6 +44,13 @@ it does not infer mathematical conflicts from free prose or claim to solve
 algebra and verify semantic equivalence.
 Calendar dates, narrative units and written-out numbers retain ordinary warnings.
 
+If a decoder inserts whitespace just inside a placeholder's delimiters, only a
+complete prefix and full ID already present in that exact source input may be
+normalized. The original placeholder Counter still must match; missing, unknown,
+duplicate or altered IDs remain failures. Unresolved malformed namespaces also
+fail in restored article checkpoints. Raw smoke diagnostics retain the original
+output before this format restoration.
+
 Each locale receives one offline translation per attempt. Successful blocks are
 reused, including their nonblocking quality notes, rather than repeatedly
 polishing the same text. There is no paid translation review or automatic

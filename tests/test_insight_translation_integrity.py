@@ -20,6 +20,63 @@ FIXTURE = json.loads((Path(__file__).parent / 'fixtures/row709-translation-integ
 
 
 class TranslationIntegrityTests(unittest.TestCase):
+    def test_actual_arabic_spacing_restores_known_formula_token_without_editing_raw_diagnostic(self):
+        event = json.loads((Path(__file__).parent / 'fixtures/hymt-arabic-placeholder-spacing.json').read_text())['event']
+        source = FIXTURE['formula_sample']
+        captured = []
+        class Engine:
+            calls = 0
+            def translate(self, text, *_):
+                self.calls += 1
+                self.assert_input = text
+                return event['raw_translation']
+        engine = Engine()
+        with tempfile.TemporaryDirectory() as directory:
+            translator = hymt.HyMTOfflineTranslator(directory, engine_factory=lambda *_: engine, quality_mode='publish',
+                diagnostic_callback=captured.append)
+            result = translator.translate(source, 'ar', 'zh')
+            self.assertEqual(engine.calls, 1)
+            self.assertEqual(engine.assert_input, event['model_input'])
+            self.assertEqual(captured[0]['raw_translation'], event['raw_translation'])
+            self.assertIn('__ HYMTPH_0003__', captured[0]['raw_translation'])
+            self.assertNotIn('HYMTPH', result)
+            self.assertFalse(missing_expressions(source, result))
+            offline.validate_block(source, result, 'ar', quality_mode='publish')
+            article = {'title': 'Example', 'excerpt': 'An illustration', 'tags': 'GEO', 'body_html': '<p>' + source + '</p>'}
+            publication = validate_translation_publication(dict(article, body_html='<p>' + result + '</p>'), [], 'ar', article)
+            self.assertTrue(publication['passed'], publication['errors'])
+            self.assertEqual(translator.translate(source, 'ar', 'zh'), result)
+            self.assertEqual(engine.calls, 1)
+
+    def test_spacing_recovery_never_guesses_missing_unknown_duplicate_or_confused_ids(self):
+        source = '核对 __HYMTPH_0003__。'
+        cases = ['Check it.', 'Check __ HYMTPH_9999__.',
+                 'Check __HYMTPH_0003__ __ HYMTPH_9999__.',
+                 'Check __HYMTPH_0003__ __ HYMTPH_0003__.',
+                 'Check __ HYMTPH_003__.', 'Check __ HYMTPH_00 03__.',
+                 'Check __ hymtph_0003__.', 'Check __ HYMTP_0003__.',
+                 'Check __HYMTPH_0003__ __ hymtph_9999__.']
+        for raw in cases:
+            with self.subTest(raw=raw):
+                class Engine:
+                    def translate(self, *_): return raw
+                with tempfile.TemporaryDirectory() as directory:
+                    translator = hymt.HyMTOfflineTranslator(directory, engine_factory=lambda *_: Engine(), quality_mode='publish')
+                    with self.assertRaises(hymt.OfflineTranslationError):
+                        translator.translate(source, 'en', 'zh')
+                    self.assertEqual(list(Path(directory).rglob('*.json')), [])
+        self.assertEqual(hymt._restore_placeholder_spacing(source, 'Check __ \tHYMTPH_0003 \n__.'), 'Check __HYMTPH_0003__.')
+
+    def test_legacy_restored_block_cannot_hide_a_spaced_unknown_namespace(self):
+        source = '<p>核查证据。</p>'
+        bad = '<p>Verify the evidence __ HYMTPH_9999__.</p>'
+        with self.assertRaisesRegex(hymt.OfflineTranslationError, 'placeholder'):
+            offline.validate_block(source, bad, 'en', quality_mode='publish')
+        original = {'title': 'Example', 'excerpt': 'An illustration', 'tags': 'GEO', 'body_html': source}
+        publication = validate_translation_publication(dict(original, body_html=bad), [], 'en', original)
+        self.assertFalse(publication['passed'])
+        self.assertTrue(any('placeholder' in error for error in publication['errors']))
+
     def test_actual_cpu_omission_stays_rejected_while_semantic_abbreviations_remain_visible(self):
         trace = json.loads((Path(__file__).parent / 'fixtures/hymt-google-opaque-term-failure.json').read_text())
         for event in trace['events']:

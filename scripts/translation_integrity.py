@@ -123,6 +123,14 @@ def integrity_errors(source: str, translated: str, target: str, *, protected_ter
     placeholder = r'__(?:HYMTPH|KC_PH)_[A-Za-z0-9_]+?__'
     if Counter(re.findall(placeholder, source)) != Counter(re.findall(placeholder, translated)):
         errors.append('Translation contains an unresolved or changed placeholder')
+    # A spaced/otherwise damaged namespace is invisible to the canonical-token
+    # Counter. It must not survive beside valid tokens or in a legacy finished
+    # block. Only the decoder may restore source-known boundary whitespace.
+    def malformed_markers(text):
+        remainder = re.sub(placeholder, '', text)
+        return Counter(re.findall(r'__[ \t\r\n]*(?:HYMTPH|KC_PH)', remainder, re.I))
+    if malformed_markers(source) != malformed_markers(translated):
+        errors.append('Translation contains a malformed or unresolved placeholder')
     for term in protected:
         if not term:
             continue
