@@ -1,0 +1,1573 @@
+{
+  "origin_run": 36793098401,
+  "revision": 4,
+  "note": "Actual authored article and checks. Independent review rejected semantic coverage, not the already submitted arithmetic. No source bodies copied.",
+  "article": {
+    "title": "Eco-GEO：先纠错还是先扩背书：智能硬件品牌化GEO的三道条件式选择题",
+    "excerpt": "面向已建立版本化事实台账、能按平台重复采样、且本季度执行容量可预先锁定的渠道转型期智能硬件品牌：本文用错误门槛、去重联合成本与同口径增量给出先纠错、先扩背书还是暂缓的条件规则，所有工时与计数均为示意，必须用本团队记录校准。",
+    "body_html": "<section data-role=\"executive-summary\"><h2>核心判断：先问三个问题，再决定把工时投给纠错还是扩背书</h2><p>对已有版本化事实台账（型号、固件、接口、认证）、能按固定平台与问题清单重复采样、并能记录真实工时的渠道转型期智能硬件品牌，本季度的第一个决策不是「GEO 值不值得做」，而是：在错误率、可用容量与同口径增量这三项可观测条件下，先纠错、先扩第三方背书覆盖，还是暂缓并补测。本文给出的是条件式决策规则，不是中国智能硬件行业的实测规律；任何一条条件不成立，结论都会改变。</p><ul><li><strong>结论一：错误越界时，纠错优先于覆盖，即使容量足够同时启动覆盖。</strong>我们把「AI 答案中出现可核验的品牌事实错误」当作准入约束，而不是可以和提及数加权平均的指标。示意基准中错误 3/25 即 0.12 高于容忍上限 0.10，此时第三方背书扩展不进入效率排序，先执行容量内的纠错与证据源修复。</li><li><strong>结论二：错误门槛内，先看容量能否承担联合方案，再谈二选一。</strong>示意账本为 A（修事实与证据源）完整成本 40 小时、B（扩真实背书与问题覆盖）完整成本 48 小时、共同前置 12 小时，去重后的联合成本为 40+48−12=76 小时。容量达到 76 小时时，本轮的暂缓不是「监测等待」，而是暂停二选一、重新评估联合方案；容量在 40 至 75 小时之间时才做真正的 A/B 取舍。</li><li><strong>结论三：「引用数量多不等于被采纳深」目前只是来源窗口内的描述性观察，本文据此只能提出推断。</strong>若把被提及次数当作扩覆盖的验收指标，很可能把「出现」误当成「被采用」；这提示我们改测「经人工复核的合格正确引用问题数」，但该推断的方向与幅度必须在本场景复测，不能直接转成预算系数或收益系数。</li></ul></section>\n<section data-role=\"method\"><h2>来源能支持的边界：能力、描述性统计与核验入口</h2><p>Google 搜索文档说明，AI Overviews 与 AI Mode 会给出相关链接，被展示为支持链接的页面需已被索引、具备摘要展示资格并满足搜索技术要求，文档同时写明没有额外的专门技术要求；它把「结构化数据与页面可见文本一致」列为值得采用的 SEO 做法，而不是准入门槛。本文保留「技术要求」与「有益做法」的区别，不把后者升格为 AI 准入条件。<a href=\"https://developers.google.com/search/docs/appearance/ai-features\" data-source-id=\"S1\">[S1]</a></p><p>同一文档还描述了把一次检索扩展为多个子主题检索的 query fan-out 机制，并说明出现在 AI 功能中的站点流量计入 Search Console 的总体搜索数据。这两条只描述平台机制与计量口径，不证明任何品牌做某项优化后获得流量或推荐。<a href=\"https://developers.google.com/search/docs/appearance/ai-features\" data-source-id=\"S1\">[S1]</a></p><p>微软介绍 Copilot Search 会给出摘要、把整句或整段内联链接到来源，并提供所用链接清单，其注脚写明可用范围不包括俄罗斯和中国。面向中国市场的团队必须按实际目标市场选择可采样平台，不能假设每个入口都能测量。这是产品能力说明，不是效果实验。<a href=\"https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/\" data-source-id=\"S3\">[S3]</a></p><p>关于引用与采纳，本文读取的是 2026 年 4 月 29 日的 arXiv 预印本窗口，未确认同行评审状态。该资料给出 602 条受控提示、21,143 条搜索层引用与 23,745 条引用级特征记录等描述性统计，并提出引用选择与引用采纳的两阶段框架；已读窗口不能确认整个提示集的语言构成，也不能确认统计显著性，更不能代表中国智能硬件品牌的当前表现。本文不照抄其中口径难以复算的相对百分比，也不把描述性相关改写成因果提升。<a href=\"https://arxiv.org/html/2604.25707v2\" data-source-id=\"S2\">[S2]</a></p><p>NIST 的消费类 IoT 网络安全项目页列出 NIST IR 8425、消费级路由器要求草案与 U.S. Cyber Trust Mark 等项目与标准里程碑，可作为外部核验产品安全类事实的资料入口，但通篇未提及任何具体品牌通过认证，因此不能用来证明某品牌的 AI 可见度或商业表现。<a href=\"https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity\" data-source-id=\"S5\">[S5]</a></p><p>咨询分析对生成式发现渠道的讨论只用于提出研究问题。其已读材料提到部分品牌来自生成平台的推荐流量出现月度两位数增长，但未给出可核验样本、口径与行业拆分，因此本文不用它设置预算、增量或收益系数。来源文本中没有出现某项表述，不等于该平台从未作过该表述。<a href=\"https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you\" data-source-id=\"S4\">[S4]</a></p></section>\n<section data-role=\"causal-mechanism\"><h2>错误为什么必须先于覆盖：一条可被推翻的因果链</h2><p>来源支持的起点是：生成式搜索提供检索、综合回答与来源链接，且被选为引用来源与内容被深度采纳可以分开观察。<a href=\"https://developers.google.com/search/docs/appearance/ai-features\" data-source-id=\"S1\">[S1]</a><a href=\"https://arxiv.org/html/2604.25707v2\" data-source-id=\"S2\">[S2]</a><a href=\"https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/\" data-source-id=\"S3\">[S3]</a>本文在此基础上推断的链条是：前提一，页面须进入来源集合；前提二，页面文本被合成环节使用；前提三，页面含可核验的严重事实错误；前提四，该具体错误片段（而非同页的正确部分）被写进答案。四个前提同时成立，错误才可能进入答案。因此被引用本身不足以证明某个错误已经进入答案，必须核对答案片段与来源的对应关系。</p><p>中介变量是两个可观测对象：一是错误传播，即基线中「答案含可核验严重错误」的问题数占目标问题集的比例；二是覆盖增量，即同一问题集、同一时间窗、同一平台集下「经人工复核达到正确引用标准」的问题数增量。前者回答当前答案是否可信，后者回答投入是否扩大了正确覆盖面。它们单位相同、可以并置观察，但不能合成一个加权分数：用任意系数把错误数与提及数相加，会把两个方向相反的约束混成一个可被调参的指标。</p><p>使这条因果解释失败的条件很具体：若扩张第三方背书与问题覆盖后，含错误的问题数没有上升、甚至下降，那么先纠错的门槛政策就应重估；若 A 既没有降低错误率、也没有提高合格引用数，A 的机制在本场景不成立；若 B 带来的只是被提及而非合格正确引用，则应当回到测什么、怎么判的问题，而不是继续加预算。</p></section>\n<section data-role=\"segmentation\"><h2>按可观测条件分群：谁现在该纠错，谁该补测</h2><p>适用者首先要有四项可观测条件：版本化事实台账、固定的目标平台与问题清单、可记录的团队工时，以及不看到来源归属的独立复核。公开来源没有给出中国智能硬件品牌的错误率分布，因此本文不按公司规模或细分赛道分群，只按这四项条件是否成立分群。</p><p>情境甲：测量前提成立且错误越界。在有能力完整执行 A 的前提下先纠错，B 不进入效率排序。这是准入约束下的行动次序，不声称 A 在正确引用的单位成本上一定最优。</p><p>情境乙：测量前提成立、错误达标、两项均可行且联合方案超出容量。此时按同一分母比较完整工时与增量，谁的单位增量成本低谁优先，相等则先复查。</p><p>情境丙：测量前提成立、错误达标，且容量足以承担联合方案。此时二选一这个提法本身失效，应改为评估联合方案；只做其中一项未必最优，但需要联合方案的成本与增量口径能分别记账。</p><p>暂缓不是什么都不做：容量不足 40 小时、台账不可靠、两轮方向不一致或口径不可比时，暂缓的动作是完成容量内的部分纠错与补测，并记录缺项与复查日期。它不产生与 A 或 B 同等的效果，也不得把部分监测算作已完成的方案。</p></section>\n<section data-role=\"action-plan\"><h2>表1：三条路径的适用条件、放弃项与两类暂缓</h2><p>表中工时、门槛与容量均为示意试验值。r_max 由业务负责人在看到本轮结果前批准，用两轮基线确认测量稳定性后再按季度校准；不能把当前最差值自动当作可接受标准。总容量 48 小时是本文为演示取舍设定的示意账本，不是行业基准。</p><table><caption>表1：容量与错误约束下的行动、放弃项与停止条件（工时与门槛均为示意）</caption><thead><tr><th>行动</th><th>适用条件（可核验触发）</th><th>完整成本与放弃项</th><th>负责人与停止条件</th></tr></thead><tbody><tr><td>A：修可核验事实与证据源</td><td>测量前提成立，且错误率越界（示例 3/25 大于 0.10）；容量不少于 40 小时</td><td>12 小时共同前置 + 20 小时修复 + 8 小时复测 = 40 小时；48 小时容量下选 A 剩 8 小时，不足以承担 B 的 36 小时专属工时，推迟 B 的新增覆盖任务</td><td>产品核验事实、内容执行、独立评审复测。错误未改善则重新核查原因；增量不为正时不计算正向单位收益</td></tr><tr><td>B：扩真实第三方背书与问题覆盖</td><td>测量前提成立，错误率达标，容量不少于 48 小时，且 B 的单位增量成本低于 A</td><td>12 小时共同前置（必须先做）+ 28 小时扩展 + 8 小时复测 = 48 小时；选择 B 推迟 A 中不属于共同前置的证据整理任务</td><td>内容团队记录真实存在的第三方关系。不得伪造评价或背书；错误恶化或复测方向不稳定时停止扩张</td></tr><tr><td>C-1：补测型暂缓</td><td>台账不可靠、两轮方向不稳定、口径不可比、无正增量可行方案，或容量不足 40 小时；错误越界但容量不足以完整执行 A（示例容量 39、错误 3/25）也归此类</td><td>不设固定支出；动作是容量内的部分纠错与补测，未完成项如实记录</td><td>SEO 负责人安排容量内的监测与纠错，记录缺项与复查日期；测量前提补齐后重新执行全部规则</td></tr><tr><td>C-2：联合可行型暂缓</td><td>错误率达标，且容量达到去重联合成本（示例 76 小时），A 与 B 单独或联合都落在容量内</td><td>本轮不投二选一，支出转入联合方案的评估与试算；放弃用二选一结论锁定本季度预算</td><td>SEO 负责人与数据支持重估联合方案的增量与成本口径；若联合作业的成本或增量无法分别记账，退回二选一并重新执行规则</td></tr></tbody></table><p>执行次序固定为七条：R1 检查测量前提（台账、方向稳定性、口径可比），任一不成立判 C-1；R2 错误率越界且容量不少于 40 小时，先锁定 A，B 与联合方案都不在本轮比较内，这条优先于联合可行性；R3 错误率越界但容量不足 40 小时，判 C-1，动作是容量内的部分纠错与补测，不得冒称 A 通过；R4 错误门槛内且容量达到 76 小时，判 C-2，暂停二选一并重估联合方案；R5 容量同时低于 A 与 B 的完整成本，判 C-1；R6 只有一个可行且增量为正的方案时选它；R7 两项均可行且增量为正时，比较完整工时除以增量，严格按不等号判断，相等先复查。</p><p>剩余工时属于同一本容量账：容量 48 小时时选 A 余 8 小时、选 B 余 0 小时；容量 75 小时时选 A 余 35 小时，距 B 的 36 小时专属需求还差 1 小时，因此仍判 A 而不是联合。剩余工时不足以完整执行另一方案时，不计入该方案的完成。这条一刀切边界是本文为避免把部分执行算作完成而设的试验约定，不是来源证明的结论；若团队愿意并能够用部分工时取得可分别记账的联合增量，应改走 C-2，而不是沿用二选一的机会成本结论。</p></section>\n<section data-role=\"economics\"><h2>表2：同一账本下的公式、参数组与反转点</h2><p>以下数字均为示意假设，非行业基准、非实测。m 为 25 个预先固定的问题，每个问题在每个选定平台上分别记录；跨平台综合判定须在采样前固定：Q 为在所有选定平台的复核中均达到「正确引用品牌目标事实」标准的问题数，E 为任一平台答案含可核验严重错误的问题数。两者都以问题为单位、以 25 为分母，不把平台回答总数混入分母，也不使用任何加权合成指标。</p><p>共同前置 12 小时等于基线采样与人工复核 8 小时加事实台账梳理 4 小时，由 A、B 共同承担。A 完整成本 = 12+20+8 = 40 小时；B 完整成本 = 12+28+8 = 48 小时；去重后的联合成本 = 40+48−12 = 76 小时。48 小时容量下 76 大于 48，两项无法同时完整完成，二选一在该账本内成立。共同前置的成本与产出同时计入 A 与 B，不重复计费，也不把共享部分算成任一方案独有收益。</p><p>同一分母下的示意基线 Q_base = 10。A 期末 16，ΔQ_A = 16−10 = 6；B 基准期末 14，ΔQ_B = 14−10 = 4；B 较高产出期末 19，ΔQ_B = 9。两个方案都从同一条基线定义出发、使用同一问题集与时间窗，不能把 A 的增量与 B 的期末总量比较，也不能把一个方案的实测值与另一个方案的期望值混合排序。</p><p>当两项增量均为正且方案可行时，u_A = 40/ΔQ_A，u_B = 48/ΔQ_B。令 u_A 与 u_B 相等，得切换阈值 T = ΔQ_A × B_full / A_full = 6×48/40 = 7.2；只有 ΔQ_B 严格大于 7.2 时 B 的单位增量成本更低。期望值可以等于 7.2，但问题计数在执行时是整数：7 小于 7.2 判 A，8 大于 7.2 判 B，恰好等于阈值时按相等处理，先复查。实际只执行一个方案，未实施方案的增量只能来自口径一致的受控小试估计，不能当作同期实测。</p><table><caption>表2：同一示意账本下的参数组、校准方式与按有序规则的最终判断</caption><thead><tr><th>参数组</th><th>完整输入或变化</th><th>校准方式</th><th>按 R1–R7 的最终判断（主触发）</th></tr></thead><tbody><tr><td>1</td><td>台账不可靠，其余同基准（容量 48、错误 1/25、A 40/6、B 48/4）</td><td>2 周内按平台重复采样 × 2 轮，人工复核</td><td>R1：台账不可靠，测量前提不成立，判 C-1</td></tr><tr><td>2</td><td>两轮方向不稳定，其余同基准</td><td>同一问题集、同一平台再采一轮</td><td>R1：两轮观测方向不一致，判 C-1</td></tr><tr><td>3</td><td>口径不可比，其余同基准</td><td>采样前固定 Q 与 E 的判定口径与分母</td><td>R1：未建立同口径对照，判 C-1</td></tr><tr><td>4</td><td>容量 75（小于联合 76），错误 1/25，A 40/6，B 48/4</td><td>逐项记账；未消耗工时单列</td><td>R7：A 单位增量成本更低（约 6.7 对 12），判 A</td></tr><tr><td>5</td><td>容量 76（等于联合成本），错误 1/25，数据可比</td><td>联合成本按 40+48−12 逐项核验</td><td>R4：错误达标且容量达到联合成本，判 C-2（重估联合方案）</td></tr><tr><td>6</td><td>容量 60，错误 1/25，A 40/6，B 48/4</td><td>同上</td><td>R7：结论在 48 至 75 区间不随容量变化，判 A</td></tr><tr><td>7</td><td>基准：容量 48，错误 1/25，A 40/6，B 48/4</td><td>同上</td><td>R7：A 单位增量成本更低（约 6.7 对 12），判 A</td></tr><tr><td>8</td><td>高产出：仅 B 增量由 4 改为 9</td><td>B 复测同一问题集</td><td>R7：B 单位增量成本更低（约 5.3 对 6.7），判 B</td></tr><tr><td>9</td><td>阈值低侧：B 增量 7，小于 7.2</td><td>整数计数实测</td><td>R7：7 小于 7.2，B 不占优，判 A</td></tr><tr><td>10</td><td>整数高侧：B 增量 8，大于 7.2</td><td>整数计数实测</td><td>R7：8 大于 7.2，B 占优，判 B</td></tr><tr><td>11</td><td>期望相等：B 期望增量为 7.2</td><td>期望值比较，非实测计数</td><td>R7：期望值恰好相等，先复查，判 C-1</td></tr><tr><td>12</td><td>整数相等：B 成本降为 40、增量 6，错误 1/25</td><td>整数计数实测</td><td>R7：整数计数恰好相等，先复查，判 C-1</td></tr><tr><td>13</td><td>A 零增量、B 增量 4</td><td>A 复测同一问题集</td><td>R6：仅 B 有正增量，判 B</td></tr><tr><td>14</td><td>B 零增量、A 增量 6</td><td>B 复测同一问题集</td><td>R6：仅 A 有正增量，判 A</td></tr><tr><td>15</td><td>A 负增量（−1）、B 增量 4</td><td>A 复测；负增量不得放入分母</td><td>R6：A 为负增量，仅 B 为正，判 B</td></tr><tr><td>16</td><td>无正增量：A 增量 0、B 增量 −1</td><td>两方案分别复测</td><td>R6 与 R7 均不成立：无正增量方案，判 C-1</td></tr><tr><td>17</td><td>错误越界：容量 48，错误 3/25 即 0.12 大于 0.10，A 可行</td><td>2 周 × 2 轮采样加人工复核</td><td>R2：错误越界优先于效率比较，判 A</td></tr><tr><td>18</td><td>错误越界且联合可行：容量 76，错误 3/25，A 可行</td><td>同上</td><td>R2：错误越界优先于联合可行性，判 A</td></tr><tr><td>19</td><td>错误越界且容量不足：容量 39，错误 3/25</td><td>同上</td><td>R3：错误越界但容量不足以完整执行 A，判 C-1（容量内部分纠错与补测）</td></tr><tr><td>20</td><td>零错误：错误 0/25，其余同基准，A 增量 6</td><td>A 复测同一问题集</td><td>R7：零错误不自动排除 A，A 增量仍为正，判 A</td></tr><tr><td>21</td><td>容量不足：容量 39，错误 1/25，A 40/6，B 48/4</td><td>同上</td><td>R5：两项均不可完整执行，判 C-1</td></tr><tr><td>22</td><td>容量边界：容量 40，A 40/6，B 成本 48 不可行</td><td>同上</td><td>R6：仅 A 可行且为正，判 A</td></tr><tr><td>23</td><td>A 单可行区：容量 44，错误 1/25，A 40/6，B 48/4</td><td>同上</td><td>R6：B 缺 4 小时不可完整执行，仅 A 可行，判 A</td></tr></tbody></table><p>第 4 至第 7 组显示，容量在 48 至 75 小时之间、错误门槛内的区间里，结论不随容量变化而改变；只有跨过 76 小时的联合门槛，结构才从二选一变成重估联合。第 17 至 19 组校验 R2 与 R3 的优先关系：错误越界时，联合可行不再触发 C-2，容量不足也不等于只做监测。实测值取代示意值后，T、整数分支与最终选项都要按 R1–R7 重新求出，不能沿用本文示意结论。</p></section>\n<section><h2>由谁采集、如何复核，什么观察会推翻本文建议</h2><p>第 1 至 2 周由 SEO 负责人固定目标市场、可用平台、页面版本、登录状态与问题清单；产品人员提供版本化事实文件；内容人员保存答案及引用链接；两名独立评审按同一书面规则判断 Q 与 E，分歧由第三人裁决，评审不看到来源归属。平台不支持相同操作时，记录限制而不是补造样本；空响应、无法核验与实质错误分别记数，不能把缺失当正确。</p><p>指标口径需事先写清：Q 的分子是经人工复核达到正确引用标准的问题数，E 的分子是任一平台答案含可核验严重错误的问题数，分母同为固定的 25 个问题；抽样单位是同一问题乘同一平台乘同一时点的一次生成，观察窗口与平台集须在两个方案间保持一致。校准顺序是先测基线、再定阈值：r_max 由业务负责人在看结果前批准，再用两轮基线确认方向稳定。两轮同方向只说明本试验下方向一致，不构成统计显著性证明；估计差异小于可分辨波动时，先补测或暂缓。</p><p>最强的反方解释是：纠错与扩覆盖可以并行，先修后扩是按容量不足制造的先后。这个解释在什么条件下成立？如果真实账本中联合方案在容量内、且 B 不会把错误扩散到新的被引用路径，那么本文 R2 的门槛政策就应调整，直接评估联合方案。若 A 既没有降低错误率也没有增加合格引用，或 B 增加的只是提及而非合格引用，两条机制都需要重审。没有点击与后续业务数据，本篇不计算收入、线索或 ROI，也不把推荐流量增长当作本场景的收益参数。</p></section>\n<div data-role=\"assumptions\"><h2>假设、局限与失效条件</h2><p>所有工时、25 个问题、0.10 门槛、基线及期末计数均为示意，必须用本团队记录校准；示意算术只支持明确假设内的选择，不证明实际效果。平台文档支持能力与计量边界，预印本提供描述性线索，NIST 提供核验资料入口，咨询讨论只提供选题背景，来源之间不能互相替代效果证据。</p><p>本模型要求共同前置与两项专属任务可分别记账，正增量定义一致，成本包含复测。若另有共享任务，须重新去重；容量变化、任务依赖变化、平台不可用、台账不可靠或观测不稳定，都要重新执行可行性判断。若组织优先级另行强制排他，必须明示该独立约束，不能伪装成预算不足。容量 75 与 76 之间的差别来自联合成本门槛而非新的统计证据。检查算式只是最低验收，来源断言、情境覆盖与正文逻辑仍须独立复核。</p></div>",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索优化, 智能硬件, 资源配置, Eco-GEO, GEO服务",
+    "decision_checks": {
+      "version": 1,
+      "calculations": [
+        {
+          "id": "a_cost",
+          "quote": "A 完整成本 = 12+20+8 = 40 小时",
+          "inputs": {},
+          "expression": "12+20+8",
+          "expected": "40"
+        },
+        {
+          "id": "b_cost",
+          "quote": "B 完整成本 = 12+28+8 = 48 小时",
+          "inputs": {},
+          "expression": "12+28+8",
+          "expected": "48"
+        },
+        {
+          "id": "joint_cost",
+          "quote": "去重后的联合成本 = 40+48−12 = 76 小时",
+          "inputs": {},
+          "expression": "40+48-12",
+          "expected": "76"
+        },
+        {
+          "id": "threshold",
+          "quote": "T = ΔQ_A × B_full / A_full = 6×48/40 = 7.2",
+          "inputs": {},
+          "expression": "6*48/40",
+          "expected": "7.2"
+        },
+        {
+          "id": "a_gain",
+          "quote": "A 期末 16，ΔQ_A = 16−10 = 6",
+          "inputs": {},
+          "expression": "16-10",
+          "expected": "6"
+        },
+        {
+          "id": "b_gain",
+          "quote": "B 基准期末 14，ΔQ_B = 14−10 = 4",
+          "inputs": {},
+          "expression": "14-10",
+          "expected": "4"
+        },
+        {
+          "id": "b_high_gain",
+          "quote": "B 较高产出期末 19，ΔQ_B = 9",
+          "inputs": {},
+          "expression": "19-10",
+          "expected": "9"
+        }
+      ],
+      "budgets": [
+        {
+          "id": "capacity",
+          "quote": "48 小时容量下 76 大于 48，两项无法同时完整完成，二选一在该账本内成立。",
+          "capacity": "48",
+          "shared": "12",
+          "option_a": "40",
+          "option_b": "48",
+          "exclusive": true
+        }
+      ],
+      "cases": [
+        {
+          "id": "no_records",
+          "quote": "R1：台账不可靠，测量前提不成立，判 C-1",
+          "inputs": {
+            "records_ready": "0",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "unstable",
+          "quote": "R1：两轮观测方向不一致，判 C-1",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "0",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "incomparable",
+          "quote": "R1：未建立同口径对照，判 C-1",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "0",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "joint_below",
+          "quote": "R7：A 单位增量成本更低（约 6.7 对 12），判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "75",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "joint_equal",
+          "quote": "R4：错误达标且容量达到联合成本，判 C-2（重估联合方案）",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "76",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "mid_capacity",
+          "quote": "R7：结论在 48 至 75 区间不随容量变化，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "60",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "base",
+          "quote": "R7：A 单位增量成本更低（约 6.7 对 12），判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "reversal",
+          "quote": "R7：B 单位增量成本更低（约 5.3 对 6.7），判 B",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "9",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "B"
+        },
+        {
+          "id": "below",
+          "quote": "R7：7 小于 7.2，B 不占优，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "7",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "above",
+          "quote": "R7：8 大于 7.2，B 占优，判 B",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "8",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "B"
+        },
+        {
+          "id": "equal_expectation",
+          "quote": "R7：期望值恰好相等，先复查，判 C-1",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "7.2",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "equal_count",
+          "quote": "R7：整数计数恰好相等，先复查，判 C-1",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "40",
+            "a_gain": "6",
+            "b_gain": "6",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "zero_a",
+          "quote": "R6：仅 B 有正增量，判 B",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "0",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "B"
+        },
+        {
+          "id": "zero_b",
+          "quote": "R6：仅 A 有正增量，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "0",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "negative_a",
+          "quote": "R6：A 为负增量，仅 B 为正，判 B",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "-1",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "B"
+        },
+        {
+          "id": "nonpositive",
+          "quote": "R6 与 R7 均不成立：无正增量方案，判 C-1",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "0",
+            "b_gain": "-1",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "error_gate",
+          "quote": "R2：错误越界优先于效率比较，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "9",
+            "errors": "3",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "joint_with_error",
+          "quote": "R2：错误越界优先于联合可行性，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "76",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "3",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "low_capacity_error",
+          "quote": "R3：错误越界但容量不足以完整执行 A，判 C-1（容量内部分纠错与补测）",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "39",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "3",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "zero_errors",
+          "quote": "R7：零错误不自动排除 A，A 增量仍为正，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "48",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "0",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "low_capacity",
+          "quote": "R5：两项均不可完整执行，判 C-1",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "39",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "C"
+        },
+        {
+          "id": "a_only",
+          "quote": "R6：仅 A 可行且为正，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "40",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        },
+        {
+          "id": "mid_capacity_a_only",
+          "quote": "R6：B 缺 4 小时不可完整执行，仅 A 可行，判 A",
+          "inputs": {
+            "records_ready": "1",
+            "stable": "1",
+            "comparable": "1",
+            "shared": "12",
+            "capacity": "44",
+            "a_cost": "40",
+            "b_cost": "48",
+            "a_gain": "6",
+            "b_gain": "4",
+            "errors": "1",
+            "sample": "25",
+            "limit": "0.10"
+          },
+          "rules": [
+            {
+              "when": "records_ready == 0 or stable == 0 or comparable == 0",
+              "choice": "C"
+            },
+            {
+              "when": "errors / sample > limit and capacity >= a_cost",
+              "choice": "A"
+            },
+            {
+              "when": "errors / sample > limit",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost + b_cost - shared",
+              "choice": "C"
+            },
+            {
+              "when": "capacity < a_cost and capacity < b_cost",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and a_gain > 0 and (capacity < b_cost or b_gain <= 0)",
+              "choice": "A"
+            },
+            {
+              "when": "capacity >= b_cost and b_gain > 0 and (capacity < a_cost or a_gain <= 0)",
+              "choice": "B"
+            },
+            {
+              "when": "a_gain <= 0 and b_gain <= 0",
+              "choice": "C"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost > a_gain * b_cost",
+              "choice": "B"
+            },
+            {
+              "when": "capacity >= a_cost and capacity >= b_cost and a_gain > 0 and b_gain > 0 and b_gain * a_cost < a_gain * b_cost",
+              "choice": "A"
+            },
+            {
+              "when": "True",
+              "choice": "C"
+            }
+          ],
+          "expected_choice": "A"
+        }
+      ]
+    }
+  }
+}

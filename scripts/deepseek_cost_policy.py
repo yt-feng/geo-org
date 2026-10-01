@@ -109,15 +109,24 @@ def begin_request(stage, payload, timeout_seconds):
 
 
 def complete_request(ticket, usage=None, status="completed"):
-    if status not in {"completed", "failed_unknown_usage"}:
+    if status not in {"completed", "output_limit", "failed_unknown_usage"}:
         raise ValueError("Invalid usage status")
     usage = usage if isinstance(usage, dict) else {}
+    invalid_counter = any(key in usage and (type(usage[key]) is not int or usage[key] < 0)
+        for key in ("prompt_tokens", "completion_tokens", "total_tokens", "prompt_cache_hit_tokens", "prompt_cache_miss_tokens"))
     safe = {key: usage[key] for key in ("prompt_tokens", "completion_tokens", "total_tokens",
             "prompt_cache_hit_tokens", "prompt_cache_miss_tokens")
             if type(usage.get(key)) is int and usage[key] >= 0}
     details = usage.get("completion_tokens_details", {})
+    invalid_counter = invalid_counter or not isinstance(details, dict) or (
+        "reasoning_tokens" in details and (type(details["reasoning_tokens"]) is not int or details["reasoning_tokens"] < 0))
     if isinstance(details, dict) and type(details.get("reasoning_tokens")) is int and details["reasoning_tokens"] >= 0:
         safe["reasoning_tokens"] = details["reasoning_tokens"]
+    prompt_details = usage.get("prompt_tokens_details", {})
+    invalid_counter = invalid_counter or not isinstance(prompt_details, dict) or (
+        "cached_tokens" in prompt_details and (type(prompt_details["cached_tokens"]) is not int or prompt_details["cached_tokens"] < 0))
+    if isinstance(prompt_details, dict) and type(prompt_details.get("cached_tokens")) is int and prompt_details["cached_tokens"] >= 0:
+        safe["cached_tokens"] = prompt_details["cached_tokens"]
     with _LOCK:
         path = _path()
         events = _events(path)
@@ -125,9 +134,24 @@ def complete_request(ticket, usage=None, status="completed"):
             return
         request = next(event for event in events if event.get("event") == "request" and event.get("ticket") == ticket)
         observed = safe.get("total_tokens")
+        inconsistent = invalid_counter
         if "prompt_tokens" in safe and "completion_tokens" in safe:
+            inconsistent = inconsistent or (observed is not None
+                and safe["prompt_tokens"] + safe["completion_tokens"] > observed)
             observed = max(observed or 0, safe["prompt_tokens"] + safe["completion_tokens"])
-        known = observed is not None and observed > 0
+        if observed is not None:
+            inconsistent = inconsistent or any(value > observed for key, value in safe.items()
+                                               if key != "total_tokens")
+        if "cached_tokens" in safe and "prompt_cache_hit_tokens" in safe and safe["cached_tokens"] != safe["prompt_cache_hit_tokens"]:
+            inconsistent = True
+        cache = safe.get("prompt_cache_hit_tokens", safe.get("cached_tokens", 0)) + safe.get("prompt_cache_miss_tokens", 0)
+        if observed is not None and cache > observed:
+            inconsistent = True
+        if "prompt_tokens" in safe and cache > safe["prompt_tokens"]:
+            inconsistent = True
+        if "completion_tokens" in safe and safe.get("reasoning_tokens", 0) > safe["completion_tokens"]:
+            inconsistent = True
+        known = observed is not None and observed > 0 and not inconsistent
         _append(path, {"event": "result", "ticket": ticket, "run_id": request["run_id"],
             "timestamp": utcnow().isoformat(), "stage": request["stage"], "status": status,
             "usage": safe, "usage_known": known,

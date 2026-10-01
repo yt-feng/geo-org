@@ -42,3 +42,39 @@ Regression evidence includes the actual row 709 final article and independent
 blockers (authored content and source provenance only), not third-party source
 bodies. The regression demonstrates that old structural acceptance alone passed
 that article and the new joint-budget check rejects its 76 <= 80 contradiction.
+
+## Compact shared models and bounded recovery
+
+Recovery run 36793098401 exposed another problem: revision 4 repeated the same
+ordered program in all 23 cases. Its check sidecar was 27,883 bytes and the full
+article JSON was 50,643 bytes. Independent review also correctly identified
+missing interactions between resource feasibility and the error gate; arithmetic
+success did not establish semantic completeness.
+
+Version 2 defines `models` once, with default inputs, derived expressions and
+ordered rules. Each case supplies a model name, numeric input overrides, its
+current-body quote and expected choice. There are no per-case rule overrides.
+Version 1 remains readable. Prompt-only conversion preserves every case, input,
+program, ID and computed outcome; stored audits and their fingerprints are not
+rewritten. The real 23-case fixture falls to 5,632 check bytes, with identical
+computed results. Duplicate effective inputs remain prohibited after inheritance.
+
+Revision prompts avoid repeating successful case input traces already present in
+the article and state common instructions once. They retain all historical IDs,
+problem text, statuses, independent findings, numeric errors and final choices.
+Author-only `revision_response` can share one explanation via `issue_ids` when
+the same change, location and verification truly applies. Validation expands the
+IDs and still rejects missing, duplicate, unknown or malformed obligations.
+Independent blocker and coverage review remains per ID; it is never grouped away.
+
+New drafting instructions ask for one complete ordered rule system, with other
+tables referring to its scope, and explicit interacting boundaries. This avoids
+recreating partial conditions in multiple places. None of the compaction changes
+raises the attempt count, per-request token limits, daily spend rules or run cap.
+
+A length-limited completion is still rejected, including syntactically valid
+partial JSON. When its transport finishes cleanly, confirmed provider usage is
+recorded before the existing bounded recovery. Missing stream terminators,
+malformed frames, decreasing usage counts and totals inconsistent with their
+parts retain the full token reservation. No pricing window or spending limit
+changes, and this accounting repair never grants content acceptance.
