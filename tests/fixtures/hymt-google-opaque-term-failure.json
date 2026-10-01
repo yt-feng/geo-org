@@ -1,0 +1,21 @@
+{
+  "origin": "PR31 fixed-public-corpus CPU smoke diagnostic",
+  "events": [
+    {
+      "corpus": "fixed-public-smoke",
+      "model_input": "Google文档说明__HYMTPH_0000__搜索相关展示依赖网页被索引、具备摘要展示资格并满足搜索技术要求，没有额外的专门技术要求；结构化数据与可见正文一致被列为值得采用的__HYMTPH_0001__做法。本文不把这项有益做法提升为__HYMTPH_0002__准入条件，也不把平台说明当作品牌效果实验。__HYMTPH_0003____HYMTPH_0004____HYMTPH_0005__",
+      "raw_translation": "Google Docs instructions: The display of related results depends on whether the relevant web pages are indexed, have qualified for summary display, and meet search technical requirements. There are no additional specialized technical requirements. Structured data and visible text are listed as practices worthy of adoption under __HYMTPH_0001__. This article does not elevate this beneficial practice to the condition of __HYMTPH_0002__ eligibility criteria, nor does it treat platform instructions as a brand effect experiment. __HYMTPH_0003____HYMTPH_0004____HYMTPH_0005__",
+      "source_language": "zh",
+      "target_language": "en",
+      "controlled_terms": {}
+    },
+    {
+      "corpus": "fixed-public-smoke",
+      "model_input": "Google文档说明__HYMTPH_0000__搜索相关展示依赖网页被索引、具备摘要展示资格并满足搜索技术要求，没有额外的专门技术要求；结构化数据与可见正文一致被列为值得采用的__HYMTPH_0001__做法。",
+      "raw_translation": "Google Docs instructions: The display of related results depends on whether the relevant web pages are indexed, qualify for summary display, and meet search technical requirements. There are no additional specialized technical requirements. Structured data and visible text are considered acceptable practices worthy of adoption as __HYMTPH_0001__.",
+      "source_language": "zh",
+      "target_language": "en",
+      "controlled_terms": {}
+    }
+  ]
+}

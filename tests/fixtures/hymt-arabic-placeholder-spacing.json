@@ -1,0 +1,11 @@
+{
+  "origin": "PR31 fixed-public-corpus completion CPU smoke",
+  "event": {
+    "corpus": "fixed-public-smoke",
+    "model_input": "示意：__HYMTPH_0000__，__HYMTPH_0001__；当__HYMTPH_0002__时改选B；联合成本__HYMTPH_0004____HYMTPH_0003__小时。",
+    "raw_translation": "الرمز: __HYMTPH_0000__، __HYMTPH_0001__؛ عندما يكون __HYMTPH_0002__ يتم إعادة الانتخاب لـ B؛ التكلفة المشتركة __HYMTPH_0004____ HYMTPH_0003__ ساعة.",
+    "source_language": "zh",
+    "target_language": "ar",
+    "controlled_terms": {}
+  }
+}

@@ -23,13 +23,47 @@ The Chinese original retains editorial review. Translations receive only local
 publication checks; they never call paid editorial review. Ordinary wording,
 terminology, numeric-format and language-quality differences are logged as
 nonblocking notes. Empty/truncated text, large omissions, broken placeholders,
-HTML or links still stop publication of an unusable translation.
+HTML or links still stop publication of an unusable translation. An unchanged
+Chinese source block or a complete source sentence is incomplete translation,
+even when surrounded by translated prose. Isolated Chinese wording (such as a
+caption label) remains a nonblocking language-quality note; no CJK character-count
+threshold decides completion. Source-authored code or explicitly marked Chinese
+names remain protected. A missing target script also remains a diagnostic:
+localized numeric/unit cells such as `1000 CNY` and `8 h` need no Arabic letters.
+
+Before decoding, complete formal expressions and comparison symbols receive
+atomic placeholders. Placeholder identity/count must survive, including during
+local repair. Common abbreviations such as AI, SEO and GEO remain visible in
+their full sentence: hiding their meaning behind opaque tokens caused the
+model to omit “AI” from “AI search”. Standalone vocabulary tags still skip
+inference; HTML, URLs, citations and formulas remain strictly protected.
+Fragment cache keys bind the actual masked input and full resource
+and term mappings, so an older placeholder numbering cannot restore the wrong
+text. The publication check retains formula and numeric differences as diagnostics;
+it does not infer mathematical conflicts from free prose or claim to solve
+algebra and verify semantic equivalence.
+Calendar dates, narrative units and written-out numbers retain ordinary warnings.
+
+If a decoder inserts whitespace just inside a placeholder's delimiters, only a
+complete prefix and full ID already present in that exact source input may be
+normalized. The original placeholder Counter still must match; missing, unknown,
+duplicate or altered IDs remain failures. Unresolved malformed namespaces also
+fail in restored article checkpoints. Raw smoke diagnostics retain the original
+output before this format restoration.
 
 Each locale receives one offline translation per attempt. Successful blocks are
 reused, including their nonblocking quality notes, rather than repeatedly
 polishing the same text. There is no paid translation review or automatic
 Chinese-revision-and-retranslate loop. Source corrections use the
 existing explicit resume/editorial-revision path and create new source hashes.
+An invalid block gets at most two decoding attempts. The second may split at
+complete Chinese sentence boundaries into at most eight units (at most nine
+decoder calls including the failed whole-block call); it never splits ASCII
+periods in abbreviations, decimal values, links or protected formulas. Each unit
+and the recombined block must pass the same completion/placeholder checks.
+Failure leaves that block pending, never substitutes source Chinese, and never
+caches it as complete. Valid article checkpoint blocks are revalidated and reused;
+only rejected blocks are removed and translated again.
 
 ## Paid generation
 
@@ -54,4 +88,6 @@ counts. An observed subtotal is not an exact provider bill when usage is missing
 `Offline translation and cost controls` runs unit regressions plus real English
 and Arabic CPU inference without paid credentials. It verifies HTML/link/number
 preservation, nonblocking quality notes, interrupted resume and a repeated run with zero new inference,
-and retains translated samples in its smoke-test artifact for inspection.
+and retains translated samples in its smoke-test artifact for inspection. Its
+corpus includes the actual Google and NIST/BCG source paragraphs that previously
+fell back to Chinese, plus a variable/comparison formula sample.

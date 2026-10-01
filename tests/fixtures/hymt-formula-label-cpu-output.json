@@ -1,0 +1,11 @@
+{
+  "origin": "PR31 fixed-public-corpus visible-terms CPU smoke",
+  "event": {
+    "corpus": "fixed-public-smoke",
+    "model_input": "示意：__HYMTPH_0000__，__HYMTPH_0001__；当__HYMTPH_0002__时改选B；联合成本__HYMTPH_0004____HYMTPH_0003__小时。",
+    "raw_translation": "示意: __HYMTPH_0000__, __HYMTPH_0001__; when __HYMTPH_0002__, re-elect B; joint cost __HYMTPH_0004____HYMTPH_0003__ hours.",
+    "source_language": "zh",
+    "target_language": "en",
+    "controlled_terms": {}
+  }
+}

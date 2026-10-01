@@ -10,6 +10,7 @@ import atexit
 from collections import Counter
 from datetime import datetime, timezone
 import hashlib
+from html import unescape
 import json
 import os
 from pathlib import Path
@@ -23,6 +24,8 @@ from typing import Callable, Sequence
 
 from compare_hymt_translation import LANGUAGES, request_json, require_actions, verify_model, file_sha256
 from financial_quantity_integrity import quantity_issues
+from translation_integrity import (TECHNICAL_EXPRESSION, SYMBOLIC_OPERATOR, PROTECTED_INLINE,
+                                   is_technical_expression, integrity_errors, language_warnings)
 
 MANIFEST_PATH = Path(__file__).with_name('hymt_translation_model_manifest.json')
 MANIFEST = json.loads(MANIFEST_PATH.read_text(encoding='utf-8'))
@@ -31,12 +34,12 @@ MODEL = MANIFEST['model']['repository']
 REVISION = MANIFEST['model']['revision']
 MODEL_ID = f"{MODEL}@{REVISION}:Q8_0:insight-html-v3-domain-nouns:{hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()[:16]}"
 INSTALL_COMMAND = 'Use .github/actions/setup-offline-translation on a Linux GitHub Actions runner'
-_PLACEHOLDERS = re.compile(r'__[A-Za-z0-9_]+__')
+_PLACEHOLDERS = re.compile(r'__[A-Za-z0-9_]+?__')
 _LETTERS = re.compile(r'[A-Za-z\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af\u0600-\u06ff]')
 PROTECTED_TERM_PATTERN = r'(?<![A-Za-z])(?:Eco-GEO|GEO|SEO|AI|SOV|ROI|ChatGPT|DeepSeek)(?![A-Za-z])'
 # Financial amounts, dates, percentages, names, and predicates are intentionally
 # absent: splitting those away from the sentence changed financial meaning.
-_OPAQUE = re.compile(
+_RESOURCE_PATTERN = (
     r'(?<!`)(?P<ticks>`+)(?!`).*?(?<!`)(?P=ticks)(?!`)'
     r'|!\[(?:\\.|[^\]\\])*\]\((?:[^()\n]|\([^()\n]*\))*\)'
     r'|\[\[[A-Za-z0-9_:-]+\]\]'
@@ -49,8 +52,12 @@ _OPAQUE = re.compile(
     r'|(?:https?://|mailto:)(?:[^\s<>\[\]()]|\([^\s<>\[\]()]*\))+'
     r'|&(?:\#\d+|\#x[\da-fA-F]+|[A-Za-z]+);'
     r'|\[S\d+\]'
-    r'|' + PROTECTED_TERM_PATTERN +
-    r'|\\.', re.DOTALL)
+    r'|\\.')
+_RESOURCE_OPAQUE = re.compile(_RESOURCE_PATTERN, re.DOTALL)
+# Common abbreviations carry sentence meaning (e.g. AI search). Keep them
+# visible to the decoder; only the source detector / pure-vocabulary shortcut
+# treats them as already localized. Ordinary terminology changes stay warnings.
+_OPAQUE = re.compile(_RESOURCE_PATTERN + r'|' + PROTECTED_TERM_PATTERN, re.DOTALL)
 _ENGINES: dict[str, object] = {}
 _LOCK = threading.RLock()
 # Narrow noun concepts only, never whole claims, quantities, units or generic
@@ -149,6 +156,16 @@ def split_sentences(text: str, limit: int = 1800) -> list[str]:
     return parts
 
 
+def sentence_repair_parts(text: str) -> list[str] | None:
+    """One bounded repair at complete sentence ends, never inside quantities."""
+    # The authored input here is Chinese. ASCII periods may be abbreviations,
+    # decimals or part of a name; without an unambiguous boundary, do not split.
+    ends = [match.end() for match in re.finditer(r'[。！？](?:\s*)', text)]
+    edges = [0, *ends, len(text)]
+    parts = [text[start:end] for start, end in zip(edges, edges[1:]) if end > start]
+    return parts if 2 <= len(parts) <= 8 else None
+
+
 def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
     replacements: dict[str, str] = {}
     terms: dict[str, str] = {}
@@ -160,7 +177,22 @@ def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
             token = f'__HYMTPH_{index:04d}__'
         dictionary[token] = value
         return token
-    masked = _OPAQUE.sub(lambda match: reserve(match.group(), replacements), text)
+    masked = PROTECTED_INLINE.sub(lambda match: reserve(match.group(), replacements), text)
+    masked = _RESOURCE_OPAQUE.sub(lambda match: reserve(match.group(), replacements), masked)
+    # Math entities in text belong to the whole formula. Attributes/resources
+    # were already reserved as complete tokens and are never decoded here.
+    for token, original in list(replacements.items()):
+        if original.startswith('&') and unescape(original) in ('<', '>', '≤', '≥', '≠', '×', '÷'):
+            masked = masked.replace(token, unescape(original))
+            del replacements[token]
+    pieces = re.split(r'(__[A-Za-z0-9_]+?__)', masked)
+    for index, piece in enumerate(pieces):
+        if _PLACEHOLDERS.fullmatch(piece):
+            continue  # Existing resources must never become nested placeholders.
+        piece = TECHNICAL_EXPRESSION.sub(
+            lambda match: reserve(match.group(), replacements) if is_technical_expression(match.group()) else match.group(), piece)
+        pieces[index] = SYMBOLIC_OPERATOR.sub(lambda match: reserve(match.group(), replacements), piece)
+    masked = ''.join(pieces)
     for pattern, destinations in _INSIGHT_NOUN_GLOSSARY:
         if target in destinations:
             masked = re.sub(pattern, lambda _match, term=destinations[target]: reserve(term, terms), masked)
@@ -174,6 +206,20 @@ def _restore_terms(value: str, terms: dict[str, str]) -> str:
     for token, term in terms.items():
         value = value.replace(token, term)
     return value
+
+
+def _restore_placeholder_spacing(source: str, result: str) -> str:
+    """Normalize only whitespace around a complete, source-known token ID."""
+    known = set(_PLACEHOLDERS.findall(source))
+    pattern = re.compile(r'__[ \t\r\n]*((?:HYMTPH|KC_PH)_\d+)[ \t\r\n]*__')
+    def restore(match):
+        token = '__' + match.group(1) + '__'
+        if token not in known:
+            raise OfflineTranslationError('Hy-MT2 emitted an unknown protected placeholder')
+        return token
+    # No IDs, prefixes or delimiters are inferred or changed. The original
+    # placeholder Counter must still match afterwards, including duplicates.
+    return pattern.sub(restore, result)
 
 
 def _restore_table_edges(source: str, result: str) -> str:
@@ -220,6 +266,11 @@ def validate_result(source: str, result: str, source_language: str, target: str,
         raise OfflineTranslationError('Hy-MT2 omitted visible text')
     if substantial_text_omission(source, result):
         raise OfflineTranslationError('Hy-MT2 omitted most of a substantial text block')
+    hard_errors = integrity_errors(source, result, target)
+    if hard_errors:
+        raise OfflineTranslationError('; '.join(hard_errors))
+    for warning in language_warnings(source, result, target):
+        quality_note(warning)
     problems = quantity_issues(source, result, source_language, target)
     if problems:
         quality_note('Hy-MT2 quantity warning: ' + '; '.join(problems))
@@ -297,7 +348,7 @@ class _HyMTEngine:
                   'Note that you should only output the translated result without any additional explanation. '
                   'Preserve all __KC_PH_...__ and __HYMTPH_...__ placeholders exactly, including their order. '
                   'Do not append inferred units or percent signs to placeholders. '
-                  'Each __HYMTPH_...__ is an already translated noun or protected resource; integrate it without rewriting it. '
+                  'Each __HYMTPH_...__ is a translated noun, protected resource or complete mathematical expression; integrate it without rewriting it. '
                   'Preserve Markdown formatting. Do not change financial facts, units, or comparisons. '
                   'Keep source digits as digits (including 0 and 1), percentages, formulas, and comparison operators. '
                   + financial_glossary(text, target) + '\n' + text)
@@ -346,11 +397,13 @@ class HyMTOfflineTranslator:
         # inline tags are reserved once rather than edited inside attributes.
         if not core or detected == target or not _LETTERS.search(_PLACEHOLDERS.sub('', _OPAQUE.sub('', core))):
             return text
+        masked, replacements, terms = _mask(core, target)
         identity = {'provider': PROVIDER, 'model': MODEL_ID, 'source_language': detected,
-                    'target_language': target, 'source_sha256': hashlib.sha256(core.encode()).hexdigest()}
+                    'target_language': target, 'source_sha256': hashlib.sha256(core.encode()).hexdigest(),
+                    'mask_sha256': hashlib.sha256(json.dumps({'input': masked, 'resources': replacements,
+                        'terms': terms}, ensure_ascii=False, sort_keys=True).encode()).hexdigest()}
         key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
         path = self.cache_dir / key[:2] / f'{key}.json'
-        masked, replacements, terms = _mask(core, target)
         # A standalone controlled noun is already translated; do not ask the
         # model to infer prose from a string consisting only of placeholders.
         if not _LETTERS.search(_PLACEHOLDERS.sub('', masked)):
@@ -371,31 +424,33 @@ class HyMTOfflineTranslator:
             try:
                 with _LOCK:
                     engine = self._engine(detected, target)
+                    repair_parts = None
                     for attempt in range(2):
-                        value = engine.translate(masked, detected, target)
-                        if self._diagnostic_callback is not None:
-                            self._diagnostic_callback({'model_input': masked, 'raw_translation': value,
-                                                       'source_language': detected, 'target_language': target,
-                                                       'controlled_terms': dict(terms)})
-                        value = _restore_table_edges(masked, value)
                         try:
+                            outputs = []
+                            for part in repair_parts or [masked]:
+                                if repair_parts and not _LETTERS.search(_PLACEHOLDERS.sub('', part)):
+                                    outputs.append(part)  # Opaque resources alone need no inference.
+                                    continue
+                                output = engine.translate(part, detected, target)
+                                if self._diagnostic_callback is not None:
+                                    self._diagnostic_callback({'model_input': part, 'raw_translation': output,
+                                                               'source_language': detected, 'target_language': target,
+                                                               'controlled_terms': dict(terms)})
+                                output = _restore_table_edges(part, output)
+                                output = _restore_placeholder_spacing(part, output)
+                                validate_result(part, output, detected, target, quality_mode=self.quality_mode)
+                                outputs.append(output)
+                            value = ''.join(outputs)
                             warnings = validate_result(masked, value, detected, target, quality_mode=self.quality_mode)
                             break
                         except OfflineTranslationError as error:
-                            # The pinned model occasionally emits a malformed
-                            # placeholder on one decode. Retry that exact block
-                            # once; other structural failures remain fail-closed.
-                            if "protected placeholder" not in str(error):
-                                raise
                             if attempt == 1:
-                                if self.quality_mode != "publish":
-                                    raise
-                                # Never publish a fabricated resource-bearing
-                                # translation. Keep this block source-faithful
-                                # and let the HTML adapter record a warning.
-                                value = core
-                                warnings = ["Hy-MT2 protected placeholder fallback retained source text"]
-                                break
+                                raise
+                            # The second local decode can use complete sentences
+                            # to reduce placeholder/context load. No recursive
+                            # retry, paid provider or whole-article rewrite.
+                            repair_parts = sentence_repair_parts(masked)
             except OfflineTranslationError:
                 raise
             except Exception as error:

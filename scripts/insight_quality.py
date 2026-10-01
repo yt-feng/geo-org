@@ -18,6 +18,7 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from insight_decision_checks import validate_decision_checks
+from translation_integrity import integrity_errors, notation_warnings, language_warnings
 
 
 DRAFT_REQUIREMENTS = """
@@ -419,6 +420,7 @@ def validate_translation_publication(article, sources, lang, source_article):
     """
     diagnostics = validate_insight(article, sources, lang=lang, source_article=source_article)
     errors = []
+    notation_diagnostics = []
     if not isinstance(article, Mapping) or not isinstance(source_article, Mapping):
         return {"passed": False, "errors": ["Translation and source must be objects."], "warnings": [], "metrics": {}}
     for key in ("title", "excerpt", "body_html"):
@@ -443,12 +445,28 @@ def validate_translation_publication(article, sources, lang, source_article):
                 errors.append("Translation lost a nonempty content block.")
             elif before >= 200 and after < before * 0.15:
                 errors.append("Translation lost most of a substantial content block.")
+            protected = [node.text() for node in original.descendants()
+                         if node.tag in ("code", "pre") or
+                         (node.tag == "span" and node.attrs.get("lang", "").split('-')[0] == "zh")]
+            errors.extend(integrity_errors(original.text(), translated.text(), lang, protected_terms=protected))
+            notation_diagnostics.extend(notation_warnings(original.text(), translated.text()))
+            notation_diagnostics.extend(language_warnings(original.text(), translated.text(), lang, protected_terms=protected))
+    for key in ("title", "excerpt", "tags"):
+        before, after = source_article.get(key, ''), article.get(key, '')
+        if isinstance(before, list):
+            before = ', '.join(str(item) for item in before)
+        if isinstance(after, list):
+            after = ', '.join(str(item) for item in after)
+        if isinstance(before, str) and isinstance(after, str):
+            errors.extend(integrity_errors(before, after, lang))
+            notation_diagnostics.extend(notation_warnings(before, after))
+            notation_diagnostics.extend(language_warnings(before, after, lang))
     if not target.root.text().strip():
         errors.append("Translation has no visible body text.")
     errors = list(dict.fromkeys(errors))
-    warnings = [value for value in diagnostics["errors"] if value not in errors]
+    warnings = list(dict.fromkeys([value for value in diagnostics["errors"] if value not in errors] + notation_diagnostics))
     metrics = {**diagnostics["metrics"], "semantic_review_required": False,
-               "publication_policy": "readable-translation-v1", "quality_warning_count": len(warnings)}
+               "publication_policy": "translation-integrity-v2", "quality_warning_count": len(warnings)}
     return {"passed": not errors, "errors": errors, "warnings": warnings, "metrics": metrics}
 
 

@@ -141,7 +141,9 @@ class OfflineArticleTests(unittest.TestCase):
                 result = translator.translate(source, target, "zh")
                 self.assertEqual(len(model_inputs), 1)
                 self.assertIn("1000元", model_inputs[0])
-                self.assertIn("错误率≤5%", model_inputs[0])
+                self.assertIn("错误率", model_inputs[0])
+                self.assertIn("5%", model_inputs[0])
+                self.assertIn("≤5%", result)
                 self.assertNotIn("内容投入", model_inputs[0])
                 self.assertNotIn("内容投资", model_inputs[0])
                 self.assertIn("先核对事实，再扩大", model_inputs[0])
@@ -171,7 +173,7 @@ class OfflineArticleTests(unittest.TestCase):
         self.assertEqual(translator.stats["batch_requests"], 0)
         engine_factory.assert_not_called()
 
-    def test_real_translator_masks_visible_terms_and_keeps_resources_whole_for_arabic(self):
+    def test_real_translator_keeps_semantic_terms_visible_and_resources_whole_for_arabic(self):
         original = {"title": "Eco-GEO：分析", "excerpt": "AI分析",
                     "body_html": '<p>AI分析<a href="https://example.org/GEO?model=AI" data-source-id="S1">[S1]</a>。</p>',
                     "tags": ["GEO", "分析"]}
@@ -180,8 +182,8 @@ class OfflineArticleTests(unittest.TestCase):
         class Engine:
             def translate(self, text, source, target):
                 model_inputs.append(text)
-                # A real engine only sees placeholders for each whole resource
-                # and each visible protected term, not literal attributes.
+                # Resource internals remain hidden; semantic words such as AI
+                # stay visible alongside the prose that must be translated.
                 return text.replace("分析", "تحليل").replace("。", ".")
 
         with tempfile.TemporaryDirectory() as directory:
@@ -191,8 +193,9 @@ class OfflineArticleTests(unittest.TestCase):
         self.assertEqual(result["title"], "Eco-GEO：تحليل")
         self.assertIn('AIتحليل<a href="https://example.org/GEO?model=AI" data-source-id="S1">[S1]</a>', result["body_html"])
         self.assertEqual(len(model_inputs), 4)  # The pure GEO tag causes no fifth request.
+        self.assertTrue(any('Eco-GEO' in text for text in model_inputs))
+        self.assertTrue(any('AI分析' in text for text in model_inputs))
         for text in model_inputs:
-            self.assertIsNone(offline._TERM.search(text))
             self.assertNotIn("href", text)
             self.assertNotIn("https://", text)
         _, protected, _ = hymt._mask(original["body_html"], "ar")
@@ -268,11 +271,13 @@ class OfflineArticleTests(unittest.TestCase):
             with self.subTest(source=source), self.assertRaises(offline.OfflineTranslationError):
                 offline.validate_block(source, result, "en")
 
-    def test_protected_tokens_include_citations_and_geo_vocabulary(self):
+    def test_resource_tokens_protect_citations_but_keep_geo_vocabulary_visible(self):
         masked, protected, _ = hymt._mask('Eco-GEO与AI搜索：<a href="https://example.org">[S1]</a>', "ar")
-        for token in ("Eco-GEO", "AI", "[S1]"):
-            self.assertIn(token, protected.values())
-            self.assertNotIn(token, masked)
+        for token in ("Eco-GEO", "AI"):
+            self.assertNotIn(token, protected.values())
+            self.assertIn(token, masked)
+        self.assertIn('[S1]', protected.values())
+        self.assertNotIn('[S1]', masked)
 
     def test_publish_mode_records_quality_warnings_and_reuses_output_without_retranslation(self):
         class ImperfectTranslator(FakeTranslator):
@@ -293,13 +298,16 @@ class OfflineArticleTests(unittest.TestCase):
             self.assertEqual(replay["translation_provenance"]["quality_warnings"], warnings)
             self.assertEqual(replay["translation_provenance"]["translated_blocks"], 0)
 
-    def test_publish_mode_records_terms_script_operators_and_numeric_differences(self):
-        pairs = [("GEO分析", "SEO Analysis"), ("预算100元", "Budget 900 dollars"),
-                 ("中文原文", "中文原文"), ("错误率≤5%", "Error rate is below 5%")]
+    def test_publish_mode_keeps_ordinary_quality_notes_but_not_incomplete_or_changed_formal_content(self):
+        pairs = [("GEO分析", "SEO Analysis"), ("预算100元", "Budget 900 dollars")]
         for source, translated in pairs:
             with self.subTest(source=source):
-                self.assertTrue(offline.validate_block(source, translated, "ar", quality_mode="publish"))
-        self.assertTrue(hymt.validate_result("预算100元", "Budget 900 dollars", "zh", "ar", quality_mode="publish"))
+                self.assertTrue(offline.validate_block(source, translated, "en", quality_mode="publish"))
+        self.assertTrue(hymt.validate_result("预算100元", "Budget 900 dollars", "zh", "en", quality_mode="publish"))
+        self.assertTrue(offline.validate_block("中文原文", "English only", "ar", quality_mode="publish"))
+        for source, translated, lang in (("中文原文", "中文原文", "en"),):
+            with self.subTest(source=source), self.assertRaises(offline.OfflineTranslationError):
+                offline.validate_block(source, translated, lang, quality_mode="publish")
 
     def test_real_translator_publish_mode_preserves_quantity_warnings_in_provenance(self):
         class Engine:
@@ -332,7 +340,7 @@ class OfflineArticleTests(unittest.TestCase):
         self.assertEqual(engine.calls, 2)
         self.assertIn("GEO", result)
 
-    def test_publish_mode_retains_source_when_placeholder_decode_stays_invalid(self):
+    def test_publish_mode_never_returns_or_caches_source_when_placeholder_decode_stays_invalid(self):
         class BrokenEngine:
             calls = 0
 
@@ -344,10 +352,10 @@ class OfflineArticleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             translator = hymt.HyMTOfflineTranslator(cache_dir=Path(directory), quality_mode="publish",
                                                      engine_factory=lambda *_: engine)
-            result = translator.translate("GEO分析[S1]", "en", source="zh")
+            with self.assertRaisesRegex(hymt.OfflineTranslationError, "protected placeholder"):
+                translator.translate("GEO分析[S1]", "en", source="zh")
+            self.assertEqual(list(Path(directory).rglob('*.json')), [])
         self.assertEqual(engine.calls, 2)
-        self.assertEqual(result, "GEO分析[S1]")
-        self.assertTrue(any("retained source text" in item["warning"] for item in translator.quality_warnings))
 
     def test_publish_mode_still_stops_empty_structurally_broken_or_collapsed_output(self):
         pairs = [("正文", ""), ("正文", "..."), ('<strong>正文</strong>', '<em>Text</em>'),
@@ -370,6 +378,7 @@ class OfflineArticleTests(unittest.TestCase):
 class OfflinePipelineTests(unittest.TestCase):
     def run_pipeline(self, *, quality_warning=False, translation_failure=False):
         raw = copy.deepcopy(SOURCE)
+        raw["body_html"] = FakeTranslator().translate(SOURCE["body_html"], "en", "zh")
         raw.update({"title": "Eco-GEO: Title", "excerpt": "Budget 100 yuan", "tags": "GEO, Analysis",
                     "translation_provenance": {"paid_provider_requests": 0, "provider": "hymt-cpu",
                         "quality_warnings": [{"block": "excerpt", "warning": "numeric variation"}] if quality_warning else []}})
@@ -407,6 +416,7 @@ class OfflinePipelineTests(unittest.TestCase):
 
     def test_offline_translation_retries_from_checkpoint_after_transient_failure(self):
         raw = copy.deepcopy(SOURCE)
+        raw["body_html"] = FakeTranslator().translate(SOURCE["body_html"], "en", "zh")
         raw.update({"title": "Eco-GEO: Title", "excerpt": "Budget 100 yuan", "tags": "GEO, Analysis",
                     "translation_provenance": {"paid_provider_requests": 0, "provider": "hymt-cpu",
                                                  "quality_warnings": []}})
