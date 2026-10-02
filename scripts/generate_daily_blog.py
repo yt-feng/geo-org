@@ -547,6 +547,9 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
             if not checkpoint.DECISION.exists():
                 checkpoint.save_json(checkpoint.DECISION, {'action': 'selection_failed', 'topic': checkpoint.topic_identity(topic),
                                                          'reason': str(exc)[:500]})
+            # Seal an attempt-bound negative receipt. This says only that this
+            # attempt authored nothing; discovery must still inspect older work.
+            checkpoint.record_context(topic, phase='selection_failed')
             raise
         if selected['action'] == 'resume':
             resume_dir = Path(selected['resume_dir'])

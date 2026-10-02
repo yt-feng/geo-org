@@ -6,6 +6,7 @@ remain available through the explicit manual resume path, never as implicit pass
 from __future__ import annotations
 
 import argparse
+import ast
 import base64
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
@@ -31,7 +32,9 @@ MAX_ZIP = 10_000_000
 MAX_AUTO_RESUMES = 2
 MAX_RUNS = 30
 MAX_ARTIFACT_LOOKUPS = 10
-MAX_DOWNLOADS = 3
+# Preserve the previous worst-case transfer allowance (three 10 MB ZIPs),
+# rather than rejecting the fourth tiny checkpoint for an unrelated topic.
+MAX_DOWNLOAD_BYTES = 3 * MAX_ZIP
 CONTEXT = Path('.artifacts/resume-context.json')
 DECISION = Path('.artifacts/resume-selection.json')
 PRODUCTION_STEP = 'Generate one researched insight (production)'
@@ -44,6 +47,45 @@ PRODUCER_CONTRACT = (
     'path: ${{ runner.temp }}/daily-checkpoint/',
     "- name: ${{ inputs.preview == true && 'Generate one researched insight (preview)' || 'Generate one researched insight (production)' }}",
 )
+# The legacy producer wrote selection_failed only around select(), before
+# record_context/research/model calls. Pin that reviewed control flow; an
+# arbitrary missing audit or error string is never proof of no new work.
+LEGACY_SELECTION_PRODUCER_SHA256 = '19540a0f505493caa7c6c37cfa8578ff5f84fb344472dfcacbc20a4772126ad0'
+# Pin the full module, including helpers, imports, defaults and globals. Only
+# the part of generate_daily_article after its selection boundary may vary.
+SELECTION_FAILURE_BOUNDARY_SHA256 = 'ef6dc4955b71cfb8d353304e2370cbf853882cdd37b74614c188daee59dbb1ab'
+SELECTION_CHECKPOINT_SHA256 = '527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b'
+SELECTION_HELPERS_SHA256 = '80712176a5993ca4e44d73a10e52f8ea6d1ae87976999745aa1b9428832ed4c7'
+LEGACY_SELECTION_CHECKPOINT_SHA256 = 'c828ba3183ad46f0fb1a5af15edb9d48cbe5baf038c1551c1e91ce5f39db0ad0'
+
+
+def assert_no_authored_work(audit_root):
+    """Negative attestation must not coexist with any saved work or paid usage."""
+    audit_roots = {Path(audit_root), Path('.artifacts/insights')}
+    if os.environ.get('INSIGHT_AUDIT_DIR'):
+        audit_roots.add(Path(os.environ['INSIGHT_AUDIT_DIR']))
+    artifact_roots = {Path(audit_root).parent, CONTEXT.parent, Path('.artifacts')}
+    for root in artifact_roots:
+        audit_roots.add(root/'preview')
+    for path in audit_roots:
+        if path.is_symlink() or (path.exists() and (not path.is_dir() or any(path.iterdir()))):
+            raise ValueError('Selection failure contains unexpected authored history')
+    usage_paths = {Path('.artifacts/usage/deepseek.jsonl')}
+    if os.environ.get('DEEPSEEK_USAGE_LOG'):
+        usage_paths.add(Path(os.environ['DEEPSEEK_USAGE_LOG']))
+    for root in artifact_roots:
+        usage = root/'usage'
+        if usage.is_symlink() or (usage.exists() and not usage.is_dir()):
+            raise ValueError('Selection failure usage evidence is not a regular directory')
+        if usage.exists():
+            usage_paths.update(usage.iterdir())
+    for path in usage_paths:
+        if path.is_symlink() or (path.exists() and (not path.is_file() or path.stat().st_size)):
+            raise ValueError('Selection failure contains paid usage or unknown usage evidence')
+
+
+class FailedProductionWithoutCheckpoint(ValueError):
+    """Exact terminal production attempt; requires separate no-work evidence."""
 
 
 def sha(data):
@@ -77,7 +119,7 @@ def save_json(path, data):
     temporary.replace(path)
 
 
-def record_context(topic, *, preview=False, selected=None):
+def record_context(topic, *, preview=False, selected=None, phase='generation'):
     """Write the actual checkout's selected topic before any paid work starts."""
     context = {'schema': SCHEMA, 'topic': topic_identity(topic), 'preview': bool(preview),
                'producer': {key: os.environ.get(env, '') for key, env in (
@@ -85,7 +127,7 @@ def record_context(topic, *, preview=False, selected=None):
                    ('run_attempt', 'GITHUB_RUN_ATTEMPT'), ('head_sha', 'GITHUB_SHA'),
                    ('ref', 'GITHUB_REF'), ('event', 'GITHUB_EVENT_NAME'))},
                'automatic_resumes': (selected or {}).get('automatic_resumes', 0),
-               'selected_from': selected}
+               'selected_from': selected, 'phase': phase}
     save_json(CONTEXT, context)
     return context
 
@@ -152,6 +194,27 @@ def package(topic, context, audit_root, destination):
 
 def seal(topic, context, audit_root, destination):
     """Do not reset a cross-day budget when an interrupted retry saved no draft."""
+    if context.get('schema') != SCHEMA or context.get('topic') != topic_identity(topic):
+        raise ValueError('Checkpoint context does not match the selected topic')
+    if context.get('phase') == 'selection_failed':
+        # This state is written only by the selector exception boundary, before
+        # research/drafting starts. Do not hide any unexpectedly written audit.
+        if (context.get('preview') is not False or context.get('selected_from') is not None
+                or type(context.get('automatic_resumes')) is not int or context['automatic_resumes'] != 0
+                or (Path(audit_root)/context['topic']['slug']).exists()):
+            raise ValueError('Selection failure contains unexpected authored history')
+        assert_no_authored_work(audit_root)
+        decision = read_json(DECISION.read_bytes())
+        if decision.get('topic') != topic_identity(topic):
+            raise ValueError('Selection failure topic mismatch')
+        destination = Path(destination)
+        if destination.exists():
+            shutil.rmtree(destination)
+        destination.mkdir(parents=True)
+        manifest = {**context, 'state': 'no_new_work', 'files': [],
+                    'selection_failure': decision}
+        save_json(destination/'manifest.json', manifest)
+        return manifest
     try:
         return package(topic, context, audit_root, destination)
     except (ValueError, KeyError, TypeError, FileNotFoundError) as exc:
@@ -296,7 +359,160 @@ def absent_checkpoint_reason(api, repo, run):
         return 'preview_only_no_checkpoint'
     if step.get('status') == 'completed' and step.get('conclusion') == 'skipped':
         return 'verified_setup_only'
+    if step.get('status') == 'completed' and step.get('conclusion') == 'failure':
+        raise FailedProductionWithoutCheckpoint('Production generation step failed; saved findings may be missing')
     raise ValueError('Production generation started or its start state is unknown; saved findings may be missing')
+
+
+def valid_topic_identity(value):
+    return (isinstance(value, dict) and set(value) == {'row', 'slug', 'sha256'}
+            and type(value['row']) is int and value['row'] >= 2
+            and isinstance(value['slug'], str) and re.fullmatch(r'[a-z0-9-]+', value['slug'])
+            and isinstance(value['sha256'], str) and re.fullmatch(r'[0-9a-f]{64}', value['sha256']))
+
+
+def syntax_fingerprint(node):
+    # ast.dump changed its empty-list formatting in Python 3.13. Use a stable
+    # structural encoding across the local and Actions Python versions.
+    def encode(value):
+        if isinstance(value, ast.AST):
+            return [type(value).__name__, [[key, encode(item)] for key, item in ast.iter_fields(value)
+                                           if item is not None and item != []]]
+        if isinstance(value, list):
+            return [encode(item) for item in value]
+        return value
+    return sha(json.dumps(encode(node), ensure_ascii=False, separators=(',', ':')).encode())
+
+
+def selection_source_fingerprint(data, *, checkpoint=False):
+    module = ast.parse(data)
+    if checkpoint:
+        # Only proof literals are excluded to avoid a self-referential hash.
+        # The complete executable checkpoint module, imports and defaults stay.
+        proof_names = {'SELECTION_FAILURE_BOUNDARY_SHA256', 'SELECTION_CHECKPOINT_SHA256',
+                       'SELECTION_HELPERS_SHA256', 'LEGACY_SELECTION_CHECKPOINT_SHA256',
+                       'LEGACY_SELECTION_PRODUCER_SHA256'}
+        for node in module.body:
+            if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name) and node.targets[0].id in proof_names):
+                if not isinstance(node.value, ast.Constant) or not isinstance(node.value.value, str):
+                    raise ValueError('Executable checkpoint proof constant')
+                node.value = ast.Constant(value='reviewed-proof-literal')
+    else:
+        functions = [node for node in module.body if isinstance(node, ast.FunctionDef)
+                     and node.name == 'generate_daily_article']
+        if len(functions) != 1:
+            raise ValueError('Unrecognized pre-generation function')
+        function = functions[0]
+        boundaries = [index for index, node in enumerate(function.body) if isinstance(node, ast.If)
+                      and isinstance(node.test, ast.Name) and node.test.id == 'auto_resume']
+        if len(boundaries) != 1:
+            raise ValueError('Unrecognized pre-generation exception boundary')
+        # Preserve the full module, all helper definitions, imports, globals,
+        # decorators and function defaults. Only the later body may vary.
+        function.body = function.body[:boundaries[0]+1]
+    return syntax_fingerprint(module)
+
+
+def selection_producer(api, repo, run, cache, *, legacy=False):
+    """Pin the complete pre-work producer and its repository import surface."""
+    head = run['head_sha']
+    def source(name):
+        key = ('selection-source', head, name)
+        if key not in cache:
+            value = api.json(f'repos/{repo}/contents/scripts/{name}?ref={head}')
+            if (value.get('type') != 'file' or value.get('encoding') != 'base64'
+                    or type(value.get('size')) is not int or not 0 < value['size'] <= 100_000):
+                raise ValueError('Cannot establish pre-generation selection producer')
+            data = base64.b64decode(''.join(value['content'].split()), validate=True)
+            if len(data) != value['size']:
+                raise ValueError('Selection producer size mismatch')
+            cache[key] = data
+        return cache[key]
+    generator = source('generate_daily_blog.py')
+    expected = LEGACY_SELECTION_PRODUCER_SHA256 if legacy else SELECTION_FAILURE_BOUNDARY_SHA256
+    actual = sha(generator) if legacy else selection_source_fingerprint(generator)
+    if actual != expected:
+        raise ValueError('Unrecognized pre-generation selection producer')
+    checkpoint = source('daily_resume_checkpoint.py')
+    expected = LEGACY_SELECTION_CHECKPOINT_SHA256 if legacy else SELECTION_CHECKPOINT_SHA256
+    actual = sha(checkpoint) if legacy else selection_source_fingerprint(checkpoint, checkpoint=True)
+    if actual != expected:
+        raise ValueError('Unrecognized pre-generation checkpoint producer')
+    key = ('selection-imports', head)
+    if key not in cache:
+        entries = api.json(f'repos/{repo}/contents/scripts?ref={head}')
+        if (not isinstance(entries, list) or not 0 < len(entries) < 1000
+                or any(not isinstance(item, dict) or not isinstance(item.get('name'), str)
+                       or item.get('path') != 'scripts/'+item['name']
+                       or '/' in item['name'] or item['name'] in ('.', '..') for item in entries)
+                or len({item['name'] for item in entries}) != len(entries)):
+            raise ValueError('Incomplete pre-generation helper inventory')
+        helpers = []
+        for item in entries:
+            # New packages/native modules could shadow an otherwise pinned
+            # import. This reviewed directory contains only flat Python files
+            # and these two non-executable JSON resources.
+            if (item.get('type') != 'file' or not (item['name'].endswith('.py')
+                    or item['name'] in ('hymt_translation_model_manifest.json', 'research_source_catalog_seed.json'))):
+                raise ValueError('Unrecognized pre-generation import surface')
+            if not item['name'].endswith('.py') or item['name'] in ('generate_daily_blog.py', 'daily_resume_checkpoint.py'):
+                continue
+            if (item.get('type') != 'file' or not isinstance(item.get('sha'), str)
+                    or not re.fullmatch(r'[0-9a-f]{40}', item['sha'])):
+                raise ValueError('Invalid pre-generation helper identity')
+            helpers.append([item['path'], item['sha']])
+        cache[key] = sha(json.dumps(sorted(helpers), separators=(',', ':')).encode())
+    if cache[key] != SELECTION_HELPERS_SHA256:
+        raise ValueError('Unrecognized pre-generation imported helpers')
+
+
+def legacy_no_work(blob, api, repo, run, definitions):
+    """Attest old selector-only failures, never missing drafts after model work.
+
+    Old review artifacts lack an attempt suffix. Only attempt 1 is admissible;
+    later attempts require a new attempt-bound checkpoint receipt.
+    """
+    if run['run_attempt'] != 1:
+        raise ValueError('Legacy review artifact is not attempt-bound after rerun')
+    selection_producer(api, repo, run, definitions, legacy=True)
+    with zipfile.ZipFile(io.BytesIO(blob)) as archive:
+        entries = archive.infolist()
+        names = [entry.filename for entry in entries]
+        allowed = {'resume-selection.json', 'research-catalog-generator.json', 'research-catalog-preflight.json'}
+        if (len(names) != len(set(names)) or 'resume-selection.json' not in names
+                or not set(names) <= allowed or sum(e.file_size for e in entries) > MAX_BUNDLE
+                or any(e.is_dir() or e.file_size > MAX_FILE
+                       or (e.external_attr >> 16) & 0o170000 == 0o120000 for e in entries)):
+            raise ValueError('Legacy selection artifact contains unknown or authored work')
+        decision = read_json(archive.read('resume-selection.json'))
+        if (set(decision) != {'action', 'topic', 'reason'} or decision['action'] != 'selection_failed'
+                or not valid_topic_identity(decision['topic'])
+                or not isinstance(decision['reason'], str) or not decision['reason']):
+            raise ValueError('Legacy selection artifact does not prove a before-work failure')
+        return decision['topic']
+
+
+def artifact_inventory(api, repo, run):
+    response = api.json(f'repos/{repo}/actions/runs/{run["id"]}/artifacts?per_page=100')
+    artifacts = response.get('artifacts')
+    if (not isinstance(artifacts, list) or type(response.get('total_count')) is not int
+            or response['total_count'] != len(artifacts) or len(artifacts) > 100
+            or any(not isinstance(item, dict) or type(item.get('id')) is not int
+                   or not isinstance(item.get('name'), str) or type(item.get('expired')) is not bool
+                   for item in artifacts)
+            or len({item['id'] for item in artifacts}) != len(artifacts)):
+        raise ValueError('Incomplete or invalid checkpoint artifact inventory')
+    return artifacts
+
+
+def validate_artifact(artifact, run):
+    if (type(artifact.get('size_in_bytes')) is not int or not 0 < artifact['size_in_bytes'] <= MAX_ZIP
+            or not isinstance(artifact.get('digest'), str)
+            or not re.fullmatch(r'sha256:[0-9a-f]{64}', artifact['digest'])
+            or not isinstance(artifact.get('workflow_run'), dict)
+            or any(artifact['workflow_run'].get(key) != run[key] for key in ('id', 'head_sha', 'head_branch'))):
+        raise ValueError('Invalid checkpoint artifact size, digest or producer identity')
 
 
 def select(topic, *, repo, current_run_id, destination, api=None, now=None):
@@ -335,8 +551,29 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
         if cutoff <= created <= now:
             trusted.append(run)
     trusted.sort(key=lambda row: (row['updated_at'], row['id']), reverse=True)
-    downloads = 0
+    downloads, downloaded_bytes = 0, 0
     skipped = []
+    def download(artifact, run):
+        nonlocal downloads, downloaded_bytes
+        validate_artifact(artifact, run)
+        receipt = {'action': 'discovering', 'topic': expected, 'run_id': run['id'],
+                   'run_attempt': run['run_attempt'], 'downloads': downloads,
+                   'downloaded_bytes': downloaded_bytes, 'max_download_bytes': MAX_DOWNLOAD_BYTES,
+                   'skipped': skipped}
+        if downloaded_bytes + artifact['size_in_bytes'] > MAX_DOWNLOAD_BYTES:
+            save_json(DECISION, {**receipt, 'action': 'download_budget_exhausted'})
+            raise RuntimeError('Automatic resume compressed-byte budget exhausted; inspect saved selection')
+        save_json(DECISION, receipt)
+        # Stream cap counts actual bytes too; dishonest metadata cannot increase
+        # the aggregate budget or turn a partial archive into a valid checkpoint.
+        blob = api.read(f'repos/{repo}/actions/artifacts/{artifact["id"]}/zip',
+                        min(MAX_ZIP, MAX_DOWNLOAD_BYTES-downloaded_bytes))
+        downloaded_bytes += len(blob)
+        downloads += 1
+        if (len(blob) != artifact['size_in_bytes'] or downloaded_bytes > MAX_DOWNLOAD_BYTES
+                or artifact['digest'] != 'sha256:' + sha(blob)):
+            raise ValueError('GitHub checkpoint archive digest mismatch or size mismatch')
+        return blob
     capable, definitions = [], {}
     for run in trusted:
         if has_producer(api, repo, run, definitions):
@@ -345,27 +582,33 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
             skipped.append({'run_id': run['id'], 'reason': 'verified_legacy_workflow'})
     for run in capable[:MAX_ARTIFACT_LOOKUPS]:
         expected_name = f'daily-insight-checkpoint-{run["id"]}-{run["run_attempt"]}'
-        artifacts = api.json(f'repos/{repo}/actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts']
+        artifacts = artifact_inventory(api, repo, run)
         matches = [item for item in artifacts if item['name'] == expected_name and not item.get('expired')]
         if not matches:
             try:
                 reason = absent_checkpoint_reason(api, repo, run)
             except Exception as exc:
+                # The original selector could fail before it wrote a context.
+                # A strictly authenticated negative artifact can prove this
+                # attempt added no findings, but must not skip older history.
+                legacy = [item for item in artifacts if item['name'] == f'daily-insight-review-{run["id"]}'
+                          and not item['expired']]
+                if isinstance(exc, FailedProductionWithoutCheckpoint) and len(legacy) == 1 and run['run_attempt'] == 1:
+                    no_work_topic = legacy_no_work(download(legacy[0], run), api, repo, run, definitions)
+                    skipped.append({'run_id': run['id'], 'run_attempt': run['run_attempt'],
+                                    'artifact_id': legacy[0]['id'], 'artifact_digest': legacy[0]['digest'],
+                                    'topic': no_work_topic, 'reason': 'verified_legacy_selection_failure'})
+                    continue
                 message = f'Run {run["id"]} attempt {run["run_attempt"]} has no usable checkpoint: {exc}'
                 save_json(DECISION, {'action': 'checkpoint_missing', 'topic': expected,
                                     'run_id': run['id'], 'run_attempt': run['run_attempt'], 'reason': message})
                 raise ValueError(message) from exc
             skipped.append({'run_id': run['id'], 'reason': reason})
             continue
-        if len(matches) != 1 or not 0 < matches[0]['size_in_bytes'] <= MAX_ZIP:
+        if len(matches) != 1:
             raise ValueError('Ambiguous or oversized automatic checkpoint')
-        if downloads >= MAX_DOWNLOADS:
-            raise RuntimeError('Automatic resume download budget exhausted; inspect saved selection')
-        downloads += 1
         artifact = matches[0]
-        blob = api.read(f'repos/{repo}/actions/artifacts/{artifact["id"]}/zip', MAX_ZIP)
-        if artifact.get('digest') != 'sha256:' + sha(blob):
-            raise ValueError('GitHub checkpoint archive digest mismatch')
+        blob = download(artifact, run)
         with tempfile.TemporaryDirectory(prefix='candidate-', dir=destination) as folder:
             manifest = unpack(blob, folder)
             producer = manifest['producer']
@@ -374,6 +617,23 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
                         'run_attempt': str(run['run_attempt']), 'head_sha': run['head_sha'],
                         'ref': 'refs/heads/main', 'event': run['event']}):
                 raise ValueError('Checkpoint producer identity or attempt mismatch')
+            if not valid_topic_identity(manifest.get('topic')):
+                raise ValueError('Invalid checkpoint topic identity')
+            if manifest.get('state') == 'no_new_work':
+                selection_producer(api, repo, run, definitions)
+                failure = manifest.get('selection_failure')
+                if (manifest.get('phase') != 'selection_failed' or manifest['preview']
+                        or manifest.get('selected_from') is not None
+                        or type(manifest.get('automatic_resumes')) is not int or manifest['automatic_resumes'] != 0
+                        or manifest.get('files') != [] or not isinstance(failure, dict)
+                        or failure.get('topic') != manifest['topic']
+                        or failure.get('action') not in ('selection_failed', 'search_budget_exhausted',
+                                                       'checkpoint_missing', 'download_budget_exhausted', 'discovering')):
+                    raise ValueError('Invalid no-new-work checkpoint')
+                skipped.append({'run_id': run['id'], 'run_attempt': run['run_attempt'],
+                                'artifact_id': artifact['id'], 'topic': manifest['topic'],
+                                'reason': 'verified_selection_failure'})
+                continue
             if manifest['preview']:
                 skipped.append({'run_id': run['id'], 'reason': 'preview_only'})
                 continue
@@ -391,12 +651,14 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
             shutil.copytree(Path(folder)/'insights', target)
             result = {'action': 'resume', 'run_id': run['id'], 'run_attempt': run['run_attempt'],
                       'artifact_id': artifact['id'], 'topic': expected,
-                      'automatic_resumes': count+1, 'resume_dir': str(target), 'skipped': skipped}
+                      'automatic_resumes': count+1, 'resume_dir': str(target), 'skipped': skipped,
+                      'downloads': downloads, 'downloaded_bytes': downloaded_bytes}
             save_json(DECISION, result)
             return result
     if len(capable) > MAX_ARTIFACT_LOOKUPS:
         raise RuntimeError('Automatic resume search budget exhausted; no paid fresh run was started')
-    result = {'action': 'fresh_no_checkpoint', 'topic': expected, 'automatic_resumes': 0, 'skipped': skipped}
+    result = {'action': 'fresh_no_checkpoint', 'topic': expected, 'automatic_resumes': 0, 'skipped': skipped,
+              'downloads': downloads, 'downloaded_bytes': downloaded_bytes}
     save_json(DECISION, result)
     return result
 
