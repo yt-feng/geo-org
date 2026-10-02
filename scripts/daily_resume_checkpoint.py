@@ -51,10 +51,37 @@ PRODUCER_CONTRACT = (
 # record_context/research/model calls. Pin that reviewed control flow; an
 # arbitrary missing audit or error string is never proof of no new work.
 LEGACY_SELECTION_PRODUCER_SHA256 = '19540a0f505493caa7c6c37cfa8578ff5f84fb344472dfcacbc20a4772126ad0'
-# Pin the control-flow prefix through the automatic selection exception, not
-# unrelated rendering/translation code after it. Harmless later changes must
-# not make a previously valid negative receipt block every subsequent day.
-SELECTION_FAILURE_BOUNDARY_SHA256 = '820e67ca0fa3ba3f4b110eec994a01f34889b74acd42939ddd43dac9abc77a45'
+# Pin the full module, including helpers, imports, defaults and globals. Only
+# the part of generate_daily_article after its selection boundary may vary.
+SELECTION_FAILURE_BOUNDARY_SHA256 = 'ef6dc4955b71cfb8d353304e2370cbf853882cdd37b74614c188daee59dbb1ab'
+SELECTION_CHECKPOINT_SHA256 = '527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b'
+SELECTION_HELPERS_SHA256 = '80712176a5993ca4e44d73a10e52f8ea6d1ae87976999745aa1b9428832ed4c7'
+LEGACY_SELECTION_CHECKPOINT_SHA256 = 'c828ba3183ad46f0fb1a5af15edb9d48cbe5baf038c1551c1e91ce5f39db0ad0'
+
+
+def assert_no_authored_work(audit_root):
+    """Negative attestation must not coexist with any saved work or paid usage."""
+    audit_roots = {Path(audit_root), Path('.artifacts/insights')}
+    if os.environ.get('INSIGHT_AUDIT_DIR'):
+        audit_roots.add(Path(os.environ['INSIGHT_AUDIT_DIR']))
+    artifact_roots = {Path(audit_root).parent, CONTEXT.parent, Path('.artifacts')}
+    for root in artifact_roots:
+        audit_roots.add(root/'preview')
+    for path in audit_roots:
+        if path.is_symlink() or (path.exists() and (not path.is_dir() or any(path.iterdir()))):
+            raise ValueError('Selection failure contains unexpected authored history')
+    usage_paths = {Path('.artifacts/usage/deepseek.jsonl')}
+    if os.environ.get('DEEPSEEK_USAGE_LOG'):
+        usage_paths.add(Path(os.environ['DEEPSEEK_USAGE_LOG']))
+    for root in artifact_roots:
+        usage = root/'usage'
+        if usage.is_symlink() or (usage.exists() and not usage.is_dir()):
+            raise ValueError('Selection failure usage evidence is not a regular directory')
+        if usage.exists():
+            usage_paths.update(usage.iterdir())
+    for path in usage_paths:
+        if path.is_symlink() or (path.exists() and (not path.is_file() or path.stat().st_size)):
+            raise ValueError('Selection failure contains paid usage or unknown usage evidence')
 
 
 class FailedProductionWithoutCheckpoint(ValueError):
@@ -176,6 +203,7 @@ def seal(topic, context, audit_root, destination):
                 or type(context.get('automatic_resumes')) is not int or context['automatic_resumes'] != 0
                 or (Path(audit_root)/context['topic']['slug']).exists()):
             raise ValueError('Selection failure contains unexpected authored history')
+        assert_no_authored_work(audit_root)
         decision = read_json(DECISION.read_bytes())
         if decision.get('topic') != topic_identity(topic):
             raise ValueError('Selection failure topic mismatch')
@@ -356,32 +384,87 @@ def syntax_fingerprint(node):
     return sha(json.dumps(encode(node), ensure_ascii=False, separators=(',', ':')).encode())
 
 
-def selection_producer(api, repo, run, cache, *, legacy=False):
-    """Bind negative evidence to the reviewed before-research exception path."""
-    key = ('selection-producer', run['head_sha'])
-    if key not in cache:
-        value = api.json(f'repos/{repo}/contents/scripts/generate_daily_blog.py?ref={run["head_sha"]}')
-        if (value.get('type') != 'file' or value.get('encoding') != 'base64'
-                or type(value.get('size')) is not int or not 0 < value['size'] <= 100_000):
-            raise ValueError('Cannot establish pre-generation selection producer')
-        data = base64.b64decode(''.join(value['content'].split()), validate=True)
-        if len(data) != value['size']:
-            raise ValueError('Selection producer size mismatch')
-        module = ast.parse(data)
+def selection_source_fingerprint(data, *, checkpoint=False):
+    module = ast.parse(data)
+    if checkpoint:
+        # Only proof literals are excluded to avoid a self-referential hash.
+        # The complete executable checkpoint module, imports and defaults stay.
+        proof_names = {'SELECTION_FAILURE_BOUNDARY_SHA256', 'SELECTION_CHECKPOINT_SHA256',
+                       'SELECTION_HELPERS_SHA256', 'LEGACY_SELECTION_CHECKPOINT_SHA256',
+                       'LEGACY_SELECTION_PRODUCER_SHA256'}
+        for node in module.body:
+            if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name) and node.targets[0].id in proof_names):
+                if not isinstance(node.value, ast.Constant) or not isinstance(node.value.value, str):
+                    raise ValueError('Executable checkpoint proof constant')
+                node.value = ast.Constant(value='reviewed-proof-literal')
+    else:
         functions = [node for node in module.body if isinstance(node, ast.FunctionDef)
                      and node.name == 'generate_daily_article']
         if len(functions) != 1:
             raise ValueError('Unrecognized pre-generation function')
-        body = functions[0].body
-        boundaries = [index for index, node in enumerate(body) if isinstance(node, ast.If)
+        function = functions[0]
+        boundaries = [index for index, node in enumerate(function.body) if isinstance(node, ast.If)
                       and isinstance(node.test, ast.Name) and node.test.id == 'auto_resume']
         if len(boundaries) != 1:
             raise ValueError('Unrecognized pre-generation exception boundary')
-        prefix = ast.Module(body=body[:boundaries[0]+1], type_ignores=[])
-        cache[key] = (sha(data), syntax_fingerprint(prefix))
+        # Preserve the full module, all helper definitions, imports, globals,
+        # decorators and function defaults. Only the later body may vary.
+        function.body = function.body[:boundaries[0]+1]
+    return syntax_fingerprint(module)
+
+
+def selection_producer(api, repo, run, cache, *, legacy=False):
+    """Pin the complete pre-work producer and its repository import surface."""
+    head = run['head_sha']
+    def source(name):
+        key = ('selection-source', head, name)
+        if key not in cache:
+            value = api.json(f'repos/{repo}/contents/scripts/{name}?ref={head}')
+            if (value.get('type') != 'file' or value.get('encoding') != 'base64'
+                    or type(value.get('size')) is not int or not 0 < value['size'] <= 100_000):
+                raise ValueError('Cannot establish pre-generation selection producer')
+            data = base64.b64decode(''.join(value['content'].split()), validate=True)
+            if len(data) != value['size']:
+                raise ValueError('Selection producer size mismatch')
+            cache[key] = data
+        return cache[key]
+    generator = source('generate_daily_blog.py')
     expected = LEGACY_SELECTION_PRODUCER_SHA256 if legacy else SELECTION_FAILURE_BOUNDARY_SHA256
-    if cache[key][0 if legacy else 1] != expected:
+    actual = sha(generator) if legacy else selection_source_fingerprint(generator)
+    if actual != expected:
         raise ValueError('Unrecognized pre-generation selection producer')
+    checkpoint = source('daily_resume_checkpoint.py')
+    expected = LEGACY_SELECTION_CHECKPOINT_SHA256 if legacy else SELECTION_CHECKPOINT_SHA256
+    actual = sha(checkpoint) if legacy else selection_source_fingerprint(checkpoint, checkpoint=True)
+    if actual != expected:
+        raise ValueError('Unrecognized pre-generation checkpoint producer')
+    key = ('selection-imports', head)
+    if key not in cache:
+        entries = api.json(f'repos/{repo}/contents/scripts?ref={head}')
+        if (not isinstance(entries, list) or not 0 < len(entries) < 1000
+                or any(not isinstance(item, dict) or not isinstance(item.get('name'), str)
+                       or item.get('path') != 'scripts/'+item['name']
+                       or '/' in item['name'] or item['name'] in ('.', '..') for item in entries)
+                or len({item['name'] for item in entries}) != len(entries)):
+            raise ValueError('Incomplete pre-generation helper inventory')
+        helpers = []
+        for item in entries:
+            # New packages/native modules could shadow an otherwise pinned
+            # import. This reviewed directory contains only flat Python files
+            # and these two non-executable JSON resources.
+            if (item.get('type') != 'file' or not (item['name'].endswith('.py')
+                    or item['name'] in ('hymt_translation_model_manifest.json', 'research_source_catalog_seed.json'))):
+                raise ValueError('Unrecognized pre-generation import surface')
+            if not item['name'].endswith('.py') or item['name'] in ('generate_daily_blog.py', 'daily_resume_checkpoint.py'):
+                continue
+            if (item.get('type') != 'file' or not isinstance(item.get('sha'), str)
+                    or not re.fullmatch(r'[0-9a-f]{40}', item['sha'])):
+                raise ValueError('Invalid pre-generation helper identity')
+            helpers.append([item['path'], item['sha']])
+        cache[key] = sha(json.dumps(sorted(helpers), separators=(',', ':')).encode())
+    if cache[key] != SELECTION_HELPERS_SHA256:
+        raise ValueError('Unrecognized pre-generation imported helpers')
 
 
 def legacy_no_work(blob, api, repo, run, definitions):

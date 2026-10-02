@@ -27,10 +27,19 @@ class API:
 
     def json(self, path):
         self.calls.append(path)
+        if '/contents/scripts?' in path:
+            entries = []
+            for source in sorted(Path(cp.__file__).parent.glob('*.py')):
+                data = source.read_bytes()
+                import hashlib
+                digest = hashlib.sha1(b'blob '+str(len(data)).encode()+b'\x00'+data).hexdigest()
+                entries.append({'type': 'file', 'name': source.name, 'path': 'scripts/'+source.name, 'sha': digest})
+            return entries
         if '/contents/' in path:
             head = path.split('?ref=')[1]
-            if '/scripts/generate_daily_blog.py?' in path:
-                body = Path(cp.__file__).with_name('generate_daily_blog.py').read_bytes()
+            if '/scripts/generate_daily_blog.py?' in path or '/scripts/daily_resume_checkpoint.py?' in path:
+                name = path.split('/contents/scripts/')[1].split('?')[0]
+                body = Path(cp.__file__).with_name(name).read_bytes()
                 return {'type': 'file', 'encoding': 'base64', 'size': len(body), 'content': base64.b64encode(body).decode()}
             body = ((Path(__file__).parent/'fixtures/daily-workflow-before-checkpoints.yml').read_bytes()
                     if head in self.legacy_heads else '\n'.join((cp.PRODUCER_JOB, *cp.PRODUCER_CONTRACT)).encode())
@@ -237,6 +246,66 @@ class AutoResumeTests(unittest.TestCase):
                                    destination=self.root/location, api=api, now=self.now)
                 self.assertEqual(result['action'], 'fresh_no_checkpoint')
 
+    def test_complete_module_helpers_imports_defaults_and_checkpoint_are_pinned(self):
+        run = self.run_record(100)
+        for case in ('helper', 'import', 'global', 'default', 'decorator', 'checkpoint', 'dependency', 'shadow_package'):
+            api = API([run], {100: self.no_work_bundle(run)})
+            original = api.json
+            def source(path):
+                result = original(path)
+                if '/contents/scripts?' in path and case == 'dependency':
+                    next(item for item in result if item['name'] == 'generate_blog.py')['sha'] = '0'*40
+                if '/contents/scripts?' in path and case == 'shadow_package':
+                    result.append({'name': 'json', 'path': 'scripts/json', 'type': 'dir', 'sha': 'a'*40})
+                target = 'daily_resume_checkpoint.py' if case == 'checkpoint' else 'generate_daily_blog.py'
+                if '/scripts/'+target+'?' in path and case not in ('dependency', 'shadow_package'):
+                    body = base64.b64decode(result['content']).decode()
+                    if case == 'helper':
+                        body = body.replace('def load_posts(out_dir: Path) -> List[Dict[str, str]]:\n',
+                                            'def load_posts(out_dir: Path) -> List[Dict[str, str]]:\n    paid_model_call()\n')
+                    elif case == 'import': body = body.replace('import argparse', 'import unknown_paid_helper\nimport argparse', 1)
+                    elif case == 'global': body += '\npaid_model_call()\n'
+                    elif case == 'default': body = body.replace('dry_run: bool,', 'dry_run: bool = paid_model_call(),', 1)
+                    elif case == 'decorator': body = body.replace('def generate_daily_article(', '@paid_model_call()\ndef generate_daily_article(', 1)
+                    elif case == 'checkpoint': body = body.replace('def sha(data):', 'def sha(data=paid_model_call()):', 1)
+                    result.update(content=base64.b64encode(body.encode()).decode(), size=len(body.encode()))
+                return result
+            api.json = source
+            with self.subTest(case=case), self.assertRaisesRegex(ValueError, 'Unrecognized pre-generation'):
+                cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                          destination=self.root/case, api=api, now=self.now)
+
+    def test_negative_seal_rejects_all_usage_and_other_topic_authored_work(self):
+        with mock.patch.dict(os.environ, self.env):
+            context = cp.record_context(self.topic, phase='selection_failed')
+        cp.save_json(cp.DECISION, {'action': 'selection_failed', 'topic': cp.topic_identity(self.topic), 'reason': 'stopped'})
+        for case in ('configured_usage', 'artifact_usage', 'unknown_usage', 'symlink', 'other_topic', 'configured_audit'):
+            folder = self.root/case; folder.mkdir()
+            usage = folder/'outside.jsonl'
+            env = {}
+            if case == 'configured_usage':
+                usage.write_text('{"stage":"already-paid","input_tokens":321}\n')
+                env['DEEPSEEK_USAGE_LOG'] = str(usage)
+            elif case in ('artifact_usage', 'unknown_usage'):
+                usage = folder/'usage'/'another-model.jsonl'; usage.parent.mkdir()
+                if case == 'unknown_usage': usage.mkdir()
+                else: usage.write_text('paid')
+            elif case == 'symlink':
+                target = folder/'empty'; target.touch(); usage.symlink_to(target)
+                env['DEEPSEEK_USAGE_LOG'] = str(usage)
+            elif case == 'other_topic':
+                authored = folder/'insights'/'other-topic'/'zh.json'; authored.parent.mkdir(parents=True); authored.write_text('{}')
+            elif case == 'configured_audit':
+                authored = folder/'custom'/'topic'/'zh.json'; authored.parent.mkdir(parents=True); authored.write_text('{}')
+                env['INSIGHT_AUDIT_DIR'] = str(folder/'custom')
+            with self.subTest(case=case), mock.patch.dict(os.environ, env), self.assertRaises(ValueError):
+                cp.seal(self.topic, context, folder/'insights', folder/'negative')
+            self.assertFalse((folder/'negative'/'manifest.json').exists())
+        empty = self.root/'empty-usage.jsonl'; empty.touch()
+        with mock.patch.dict(os.environ, {'DEEPSEEK_USAGE_LOG': str(empty)}):
+            manifest = cp.seal(self.topic, context, self.root/'clean-audits', self.root/'clean-negative')
+        self.assertEqual(manifest['state'], 'no_new_work')
+
     def test_selection_failure_is_sealed_before_any_research_or_model_calls(self):
         with mock.patch.dict(os.environ, {**self.env, 'DEEPSEEK_API_KEY': 'test'}), \
                 mock.patch.object(daily.gb, 'read_topics', return_value=[self.topic]), \
@@ -260,7 +329,8 @@ class AutoResumeTests(unittest.TestCase):
         decision = {'action': 'selection_failed', 'topic': cp.topic_identity(self.topic), 'reason': 'download budget exhausted'}
         api = self.legacy_api(new, old, {'resume-selection.json': decision})
         actual_source_hash = cp.sha(Path(cp.__file__).with_name('generate_daily_blog.py').read_bytes())
-        with mock.patch.object(cp, 'LEGACY_SELECTION_PRODUCER_SHA256', actual_source_hash):
+        with mock.patch.object(cp, 'LEGACY_SELECTION_PRODUCER_SHA256', actual_source_hash), \
+                mock.patch.object(cp, 'LEGACY_SELECTION_CHECKPOINT_SHA256', cp.sha(Path(cp.__file__).read_bytes())):
             result = cp.select(self.topic, repo='owner/repo', current_run_id='300',
                                destination=self.root/'legacy-negative', api=api, now=self.now)
         self.assertEqual((result['run_id'], result['automatic_resumes']), (100, 2))
@@ -281,7 +351,8 @@ class AutoResumeTests(unittest.TestCase):
         for files, run in variants:
             api = self.legacy_api(run, old, files)
             with self.subTest(files=list(files), attempt=run['run_attempt']), \
-                    mock.patch.object(cp, 'LEGACY_SELECTION_PRODUCER_SHA256', actual_source_hash), self.assertRaises(ValueError):
+                    mock.patch.object(cp, 'LEGACY_SELECTION_PRODUCER_SHA256', actual_source_hash), \
+                    mock.patch.object(cp, 'LEGACY_SELECTION_CHECKPOINT_SHA256', cp.sha(Path(cp.__file__).read_bytes())), self.assertRaises(ValueError):
                 cp.select(self.topic, repo='owner/repo', current_run_id='300',
                           destination=self.root/'bad-negative', api=api, now=self.now)
             self.assertFalse(any('/runs/100/artifacts?' in path for path in api.calls))
