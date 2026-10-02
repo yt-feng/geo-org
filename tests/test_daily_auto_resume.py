@@ -29,6 +29,9 @@ class API:
         self.calls.append(path)
         if '/contents/' in path:
             head = path.split('?ref=')[1]
+            if '/scripts/generate_daily_blog.py?' in path:
+                body = Path(cp.__file__).with_name('generate_daily_blog.py').read_bytes()
+                return {'type': 'file', 'encoding': 'base64', 'size': len(body), 'content': base64.b64encode(body).decode()}
             body = ((Path(__file__).parent/'fixtures/daily-workflow-before-checkpoints.yml').read_bytes()
                     if head in self.legacy_heads else '\n'.join((cp.PRODUCER_JOB, *cp.PRODUCER_CONTRACT)).encode())
             return {'type': 'file', 'encoding': 'base64', 'size': len(body), 'content': base64.b64encode(body).decode()}
@@ -40,7 +43,8 @@ class API:
             return {'total_count': 1, 'jobs': [{'name': 'Generate one new article', 'run_id': run_id,
                     'run_attempt': run['run_attempt'], 'status': 'completed',
                     'steps': [{'name': cp.PRODUCTION_STEP, 'status': 'completed', 'conclusion': 'skipped'}]}]}
-        return {'artifacts': [self.bundles[run_id][0]] if run_id in self.bundles else []}
+        artifacts = [self.bundles[run_id][0]] if run_id in self.bundles else []
+        return {'artifacts': artifacts, 'total_count': len(artifacts)}
 
     def read(self, path, limit):
         self.calls.append(path)
@@ -91,13 +95,196 @@ class AutoResumeTests(unittest.TestCase):
                 archive.write(path, str(path.relative_to(destination)))
         blob = data.getvalue()
         return ({'id': run['id']*10, 'name': f'daily-insight-checkpoint-{run["id"]}-{run["run_attempt"]}',
-                 'expired': False, 'size_in_bytes': len(blob), 'digest': 'sha256:'+cp.sha(blob)}, blob)
+                 'expired': False, 'size_in_bytes': len(blob), 'digest': 'sha256:'+cp.sha(blob),
+                 'workflow_run': {key: run[key] for key in ('id', 'head_branch', 'head_sha')}}, blob)
 
     def choose(self, runs, bundles):
         api = API(runs, bundles)
         result = cp.select(self.topic, repo='owner/repo', current_run_id='300',
                            destination=self.root/'selection', api=api, now=self.now)
         return result, api
+
+
+    def archive_artifact(self, run, files, *, legacy=False):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w', zipfile.ZIP_DEFLATED) as archive:
+            for name, value in files.items():
+                archive.writestr(name, value if isinstance(value, bytes) else json.dumps(value))
+        blob = data.getvalue()
+        artifact = {'id': run['id']*10, 'name': (f'daily-insight-review-{run["id"]}' if legacy else
+                    f'daily-insight-checkpoint-{run["id"]}-{run["run_attempt"]}'),
+                    'expired': False, 'size_in_bytes': len(blob), 'digest': 'sha256:'+cp.sha(blob),
+                    'workflow_run': {key: run[key] for key in ('id', 'head_branch', 'head_sha')}}
+        return artifact, blob
+
+    def no_work_bundle(self, run, *, mutate=None):
+        with mock.patch.dict(os.environ, {**self.env, 'GITHUB_RUN_ID': str(run['id']),
+                        'GITHUB_SHA': run['head_sha'], 'GITHUB_RUN_ATTEMPT': str(run['run_attempt'])}):
+            context = cp.record_context(self.topic, phase='selection_failed')
+        cp.save_json(cp.DECISION, {'action': 'selection_failed', 'topic': cp.topic_identity(self.topic),
+                                  'reason': 'Discovery stopped before research'})
+        manifest = cp.seal(self.topic, context, self.root/'absent-audits', self.root/f'negative-{run["id"]}')
+        if mutate: mutate(manifest)
+        return self.archive_artifact(run, {'manifest.json': manifest})
+
+    def legacy_api(self, new, old, files):
+        api = API([new, old], {new['id']: self.archive_artifact(new, files, legacy=True),
+                             old['id']: self.bundle(old, count=1)})
+        original = api.json
+        def json_response(path):
+            result = original(path)
+            if f'/runs/{new["id"]}/' in path and '/jobs?' in path:
+                result['jobs'][0]['steps'][0]['conclusion'] = 'failure'
+            return result
+        api.json = json_response
+        return api
+
+    def test_four_small_unrelated_checkpoints_do_not_exhaust_three_maximum_zips(self):
+        runs = [self.run_record(n) for n in range(101, 105)]
+        other = copy.deepcopy(self.topic); other.context['scope'] = 'other topic'
+        bundles = {run['id']: self.bundle(run, topic=other) for run in runs}
+        result, api = self.choose(runs, bundles)
+        self.assertEqual(result['action'], 'fresh_no_checkpoint')
+        self.assertEqual(result['downloads'], 4)
+        self.assertEqual(result['downloaded_bytes'], sum(len(blob) for _, blob in bundles.values()))
+        self.assertLess(result['downloaded_bytes'], cp.MAX_DOWNLOAD_BYTES)
+        self.assertEqual(len(result['skipped']), 4)
+
+    def test_small_different_topics_do_not_hide_latest_matching_history_or_count(self):
+        runs = [self.run_record(n, age=5-n+100) for n in range(101, 105)]
+        other = copy.deepcopy(self.topic); other.context['scope'] = 'other topic'
+        bundles = {run['id']: self.bundle(run, topic=other) for run in runs[1:]}
+        bundles[101] = self.bundle(runs[0], count=1)
+        result, _ = self.choose(runs, bundles)
+        self.assertEqual((result['run_id'], result['automatic_resumes'], result['downloads']), (101, 2, 4))
+        self.assertEqual(daily.load_resume_audit(Path(result['resume_dir']), self.topic)['attempts'], self.audit['attempts'])
+        bundles[101] = self.bundle(runs[0], count=2)
+        with self.assertRaisesRegex(RuntimeError, 'continuation budget exhausted'):
+            self.choose(runs, bundles)
+
+    def test_aggregate_archive_bytes_and_actual_size_fail_closed(self):
+        runs = [self.run_record(100, age=2), self.run_record(200)]
+        other = copy.deepcopy(self.topic); other.context['scope'] = 'other topic'
+        bundles = {r['id']: self.bundle(r, topic=other) for r in runs}
+        limit = len(bundles[200][1]) + len(bundles[100][1]) - 1
+        with mock.patch.object(cp, 'MAX_DOWNLOAD_BYTES', limit), self.assertRaisesRegex(RuntimeError, 'compressed-byte budget'):
+            self.choose(runs, bundles)
+        receipt = json.loads(cp.DECISION.read_text())
+        self.assertEqual((receipt['action'], receipt['downloads']), ('download_budget_exhausted', 1))
+        self.assertEqual(len(receipt['skipped']), 1)
+        artifact, blob = self.bundle(runs[0])
+        artifact['size_in_bytes'] -= 1
+        with self.assertRaisesRegex(ValueError, 'size mismatch'):
+            self.choose([runs[0]], {100: (artifact, blob)})
+        self.assertEqual(cp.MAX_DOWNLOAD_BYTES, 3 * cp.MAX_ZIP)
+
+    def test_invalid_artifact_inventory_and_metadata_cannot_be_a_fresh_start(self):
+        run = self.run_record(100)
+        for field, value in [('size_in_bytes', True), ('digest', None), ('workflow_run', {}), ('expired', None)]:
+            artifact, blob = self.bundle(run); artifact[field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.choose([run], {100: (artifact, blob)})
+        api = API([run], {100: self.bundle(run)}); original = api.json
+        def response(path):
+            result = original(path)
+            if '/artifacts?' in path: result['total_count'] += 1
+            return result
+        api.json = response
+        with self.assertRaisesRegex(ValueError, 'artifact inventory'):
+            cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                      destination=self.root/'invalid-inventory', api=api, now=self.now)
+
+    def test_new_no_work_receipt_continues_older_findings_without_resetting_budget(self):
+        old, new = self.run_record(100, age=2), self.run_record(200)
+        result, _ = self.choose([new, old], {100: self.bundle(old, count=1), 200: self.no_work_bundle(new)})
+        self.assertEqual((result['run_id'], result['automatic_resumes']), (100, 2))
+        self.assertEqual(result['skipped'][0]['reason'], 'verified_selection_failure')
+        self.assertEqual(daily.load_resume_audit(Path(result['resume_dir']), self.topic)['attempts'], self.audit['attempts'])
+
+    def test_malformed_no_work_receipt_cannot_hide_findings(self):
+        run = self.run_record(100)
+        for field, value in [('phase', 'generation'), ('automatic_resumes', 1), ('automatic_resumes', False),
+                             ('selected_from', {'action': 'resume'}), ('preview', True),
+                             ('selection_failure', {'action': 'fresh_no_checkpoint'})]:
+            with self.subTest(field=field, value=value):
+                pair = self.no_work_bundle(run, mutate=lambda m: m.update({field: value}))
+                with self.assertRaisesRegex(ValueError, 'no-new-work'):
+                    self.choose([run], {100: pair})
+
+    def test_negative_receipt_source_boundary_tolerates_later_code_only(self):
+        run = self.run_record(100)
+        for location in ('after', 'before'):
+            api = API([run], {100: self.no_work_bundle(run)})
+            original = api.json
+            def source(path):
+                result = original(path)
+                if '/scripts/generate_daily_blog.py?' in path:
+                    body = base64.b64decode(result['content']).decode()
+                    if location == 'after':
+                        body = body.replace('    metadata = insight_pipeline.public_sources(sources)',
+                                            '    print("later rendering change")\n    metadata = insight_pipeline.public_sources(sources)')
+                    else:
+                        body = body.replace('    selected = None', '    unexpected_paid_call()\n    selected = None')
+                    result.update(content=base64.b64encode(body.encode()).decode(), size=len(body.encode()))
+                return result
+            api.json = source
+            if location == 'before':
+                with self.assertRaisesRegex(ValueError, 'Unrecognized pre-generation'):
+                    cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                              destination=self.root/location, api=api, now=self.now)
+            else:
+                result = cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                                   destination=self.root/location, api=api, now=self.now)
+                self.assertEqual(result['action'], 'fresh_no_checkpoint')
+
+    def test_selection_failure_is_sealed_before_any_research_or_model_calls(self):
+        with mock.patch.dict(os.environ, {**self.env, 'DEEPSEEK_API_KEY': 'test'}), \
+                mock.patch.object(daily.gb, 'read_topics', return_value=[self.topic]), \
+                mock.patch.object(daily, 'load_posts', return_value=[]), \
+                mock.patch.object(cp, 'select', side_effect=RuntimeError('discovery failure')), \
+                mock.patch.object(daily, 'build_research_pack') as research, \
+                mock.patch.object(ip, 'produce_article') as model:
+            with self.assertRaisesRegex(RuntimeError, 'discovery failure'):
+                daily.generate_daily_article(Path('unused'), self.root/'blog', 2, False, auto_resume=True)
+        research.assert_not_called(); model.assert_not_called()
+        context = json.loads(cp.CONTEXT.read_text())
+        manifest = cp.seal(self.topic, context, self.root/'absent', self.root/'negative')
+        self.assertEqual((manifest['state'], manifest['files']), ('no_new_work', []))
+        audit = self.root/'absent'/cp.topic_identity(self.topic)['slug']
+        audit.mkdir(parents=True)
+        with self.assertRaisesRegex(ValueError, 'unexpected authored history'):
+            cp.seal(self.topic, context, self.root/'absent', self.root/'negative')
+
+    def test_legacy_negative_proof_requires_exact_source_and_preserves_older_history(self):
+        old, new = self.run_record(100, age=2), self.run_record(200)
+        decision = {'action': 'selection_failed', 'topic': cp.topic_identity(self.topic), 'reason': 'download budget exhausted'}
+        api = self.legacy_api(new, old, {'resume-selection.json': decision})
+        actual_source_hash = cp.sha(Path(cp.__file__).with_name('generate_daily_blog.py').read_bytes())
+        with mock.patch.object(cp, 'LEGACY_SELECTION_PRODUCER_SHA256', actual_source_hash):
+            result = cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                               destination=self.root/'legacy-negative', api=api, now=self.now)
+        self.assertEqual((result['run_id'], result['automatic_resumes']), (100, 2))
+        self.assertEqual(result['skipped'][0]['reason'], 'verified_legacy_selection_failure')
+        api = self.legacy_api(new, old, {'resume-selection.json': decision})
+        with self.assertRaisesRegex(ValueError, 'Unrecognized pre-generation'):
+            cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                      destination=self.root/'unknown-producer', api=api, now=self.now)
+
+    def test_legacy_no_work_contamination_unknown_scope_and_reruns_are_rejected(self):
+        old, new = self.run_record(100, age=2), self.run_record(200)
+        decision = {'action': 'selection_failed', 'topic': cp.topic_identity(self.topic), 'reason': 'download budget exhausted'}
+        actual_source_hash = cp.sha(Path(cp.__file__).with_name('generate_daily_blog.py').read_bytes())
+        variants = [({'resume-selection.json': decision, name: {}}, new) for name in
+                    ['resume-context.json', 'usage/deepseek.jsonl', 'insights/topic/zh.json', '../escape', 'unknown.json']]
+        variants += [({'resume-selection.json': {**decision, 'action': 'fresh_no_checkpoint'}}, new),
+                     ({'resume-selection.json': decision}, {**new, 'run_attempt': 2})]
+        for files, run in variants:
+            api = self.legacy_api(run, old, files)
+            with self.subTest(files=list(files), attempt=run['run_attempt']), \
+                    mock.patch.object(cp, 'LEGACY_SELECTION_PRODUCER_SHA256', actual_source_hash), self.assertRaises(ValueError):
+                cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                          destination=self.root/'bad-negative', api=api, now=self.now)
+            self.assertFalse(any('/runs/100/artifacts?' in path for path in api.calls))
 
     def test_two_failures_on_different_days_resume_latest_history_without_a_new_brief(self):
         first, second = self.run_record(100, age=2), self.run_record(200)
