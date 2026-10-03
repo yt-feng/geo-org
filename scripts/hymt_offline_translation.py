@@ -188,20 +188,23 @@ def sentence_repair_parts(text: str) -> list[str] | None:
 def formatted_label_repair_parts(masked: str, resources: dict[str, str]) -> list[tuple[str, str, str]] | None:
     """Keep a short introductory label's format outside the second decode.
 
-    A label is not a quantity or predicate. The following complete sentence,
+    The source's colon-terminated label keeps its wording and protected values.
+    The following complete sentence,
     including every number, formula, noun and unit, remains one model input.
     Source-known opening/closing tokens stay at their original boundary and the
     combined output still must pass the unchanged full placeholder contract.
     """
-    match = re.fullmatch(r'(__HYMTPH_\d+__)([^<>。！？\n]{1,16}[：:])(__HYMTPH_\d+__)(.+)', masked, re.S)
+    match = re.fullmatch(r'(__HYMTPH_\d+__)([^<>。！？\n]{1,72}?[：:])(__HYMTPH_\d+__)(.+)', masked, re.S)
     if not match:
         return None
     opening, label, closing, sentence = match.groups()
     tag = re.fullmatch(r'<(strong|em|b|i)(?:\s[^<>]*)?>', resources.get(opening, ''), re.I)
     if not tag or not re.fullmatch(r'</' + tag.group(1) + r'\s*>', resources.get(closing, ''), re.I):
         return None
-    if (not re.fullmatch(r'[\u3400-\u9fff\s]+[：:]', label)
-            or re.search(r'率|金额|利润|收入|成本|工时|增量|数量|计数|比例|百分|日期|单位|预算|门槛|阈值', label)):
+    # Colon-terminated source labels may name units, thresholds or variables.
+    # They contain no terminal sentence boundary; any masked formula inside the
+    # label is still checked by validate_result, as is the full following sentence.
+    if not re.search(r'[\u3400-\u9fff]', _PLACEHOLDERS.sub('', label)):
         return None
     return [(label, opening, closing), (sentence, '', '')]
 

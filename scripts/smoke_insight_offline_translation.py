@@ -37,7 +37,14 @@ ARTICLE['body_html'] += '<section data-role="regression">' + ''.join(
     '<p>' + block['source'] + '</p>' for block in _regression['resource_blocks']) + '<p>' + _regression['formula_sample'] + '</p></section>'
 # Exact pending block from row710: both locales repeatedly dropped a protected
 # token around the short formatted label. Keep this sentence in the real smoke.
-ARTICLE['body_html'] += '<section data-role="row710-regression"><p><strong>问题集：</strong>与云产品决策直接相关的目标问题，示意m=25个，覆盖区域可用性、SLA赔偿口径、计费单位、认证状态、版本与配额五类。</p></section>'
+# Cover source-known label classes, including units and parenthesized variables,
+# rather than adding a special production translation for a particular sentence.
+_LABEL_REGRESSIONS = [
+    '<strong>问题集：</strong>与云产品决策直接相关的目标问题，示意m=25个，覆盖区域可用性、SLA赔偿口径、计费单位、认证状态、版本与配额五类。',
+    '<strong>抽样单位：</strong>一个问题在一个平台上的一次回答记为一次采样记录；同一组问题至少在两个平台重复采样，采样顺序一致。',
+    '<strong>严重事实错误（E）：</strong>某问题在任一平台答案中出现至少一处与官方事实台账冲突的陈述，该问题计1。',
+]
+ARTICLE['body_html'] += '<section data-role="row710-regression">' + ''.join('<p>' + text + '</p>' for text in _LABEL_REGRESSIONS) + '</section>'
 
 
 class InterruptAfterThree:
