@@ -337,6 +337,29 @@ def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeou
             threading.Thread(target=close_response, name="insight-http-close", daemon=True).start()
 
 
+def _recover_draft_output(payload: dict, stage: str) -> None:
+    """Reserve a bounded retry for complete draft output, not repeated reasoning.
+
+    Reviews retain independent reasoning. Source text, previous drafts and every
+    required fix stay in the same request; no partial response becomes an input.
+    """
+    if not re.fullmatch(r"zh-draft-\d+", stage):
+        return
+    payload["thinking"] = {"type": "disabled"}
+    recovery = """输出恢复：上一请求未能返回可解析的完整JSON，不能视为完成修订。
+本次直接输出完整文章与decision_checks、revision_response，不输出分析过程。
+保留原始来源、全部历史问题ID与事实核验要求；独立审稿和发布门槛不变。
+先统一计算口径、变量单位、预算构成与阈值两侧规则，再输出最终正文。
+用最少的独立变量解释当前决策；删去不必要的新情境和重复规则，不能删去必要
+的边界检查、来源限定或本轮修复记录。共同规则在models只声明一次；
+revision_response可在确实相同的改动下使用issue_ids，但每个原ID仍须回应。
+只返回严格JSON对象，所有字符串正确转义，完成最后一个字段和闭合括号。"""
+    if not payload["messages"][-1]["content"].endswith(recovery):
+        payload["messages"][-1]["content"] += "\n" + recovery
+        # Track the local mutation without adding an unsupported provider field.
+        print(f"Insight {stage}: complete-output recovery; draft thinking=disabled", flush=True)
+
+
 def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 48000,
                  thinking: str | None = None) -> dict:
     """Read complete streamed JSON, with bounded retries and safe progress logs."""
@@ -392,6 +415,7 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
                 raise RuntimeError(f"Insight {stage}: {exc}; bounded length recovery exhausted") from None
             length_recovered = True
             payload["max_tokens"] = next_budget
+            _recover_draft_output(payload, stage)
             print(f"Insight {stage}: output truncated; one larger-budget retry max_tokens={next_budget}", flush=True)
             continue
         except RuntimeError as exc:
@@ -399,6 +423,8 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
             raise RuntimeError(f"Insight {stage}: {exc}") from None
         except _CompletionError as exc:
             error = str(exc)
+            if error in ("completion content is not valid JSON", "response must be a JSON object"):
+                _recover_draft_output(payload, stage)
         finally:
             if not accounted:
                 complete_request(ticket, status="failed_unknown_usage")
