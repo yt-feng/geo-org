@@ -31,6 +31,9 @@ jobs:
       contents: read
       actions: read
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
       - name: Inspect only the article schema in the cloud
         env:
           GH_TOKEN: ${{ github.token }}
@@ -62,10 +65,12 @@ jobs:
                   'revision_response': attempt.get('revision_response'),
                   'review': attempt.get('review'),
                   'historical_fixes': [{'revision': a.get('revision'), 'blockers': a.get('review', {}).get('blockers'), 'issues': a.get('review', {}).get('issues')} for a in attempts if isinstance(a.get('review'), dict)],
-                  'body_html': body,
               }
               print('EDITORIAL_INSPECTION=' + json.dumps(summary, ensure_ascii=False, separators=(',', ':')))
           PY
+          if [ "$INSPECT_RUN_ID" = "37152742304" ]; then
+            python editorial/apply_saved_revision.py --recipe row710-exact-arithmetic-v1 --source-run "$INSPECT_RUN_ID" --resume-root "$RUNNER_TEMP/inspect" --out "$RUNNER_TEMP/authored-preview.json"
+          fi
   verify:
     name: Editorial regression gate
     runs-on: ubuntu-24.04
