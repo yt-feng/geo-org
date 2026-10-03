@@ -337,14 +337,14 @@ def _completion_attempt(request: urllib.request.Request, stage: str, idle_timeou
             threading.Thread(target=close_response, name="insight-http-close", daemon=True).start()
 
 
-def _recover_draft_output(payload: dict, stage: str) -> None:
+def _recover_draft_output(payload: dict, stage: str) -> bool:
     """Reserve a bounded retry for complete draft output, not repeated reasoning.
 
     Reviews retain independent reasoning. Source text, previous drafts and every
     required fix stay in the same request; no partial response becomes an input.
     """
     if not re.fullmatch(r"zh-draft-\d+", stage):
-        return
+        return False
     payload["thinking"] = {"type": "disabled"}
     recovery = """输出恢复：上一请求未能返回可解析的完整JSON，不能视为完成修订。
 本次直接输出完整文章与decision_checks、revision_response，不输出分析过程。
@@ -358,13 +358,17 @@ revision_response可在确实相同的改动下使用issue_ids，但每个原ID�
         payload["messages"][-1]["content"] += "\n" + recovery
         # Track the local mutation without adding an unsupported provider field.
         print(f"Insight {stage}: complete-output recovery; draft thinking=disabled", flush=True)
+    return True
 
 
 def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 48000,
-                 thinking: str | None = None) -> dict:
+                 thinking: str | None = None, output_recovery: bool = False,
+                 on_output_recovery=None) -> dict:
     """Read complete streamed JSON, with bounded retries and safe progress logs."""
     if type(max_tokens) is not int or max_tokens <= 0:
         raise ValueError("max_tokens must be a positive integer")
+    if type(output_recovery) is not bool:
+        raise ValueError("output_recovery must be boolean")
     length_retry_limit = token_budget("INSIGHT_LENGTH_RETRY_MAX_TOKENS", 96000)
     length_recovered = False
     if thinking is None:
@@ -381,6 +385,11 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
         "stream": True,
         "stream_options": {"include_usage": True},
     }
+    def recover_output():
+        if _recover_draft_output(payload, stage) and on_output_recovery is not None:
+            on_output_recovery()
+    if output_recovery:
+        recover_output()
     idle_timeout = int(os.environ.get("INSIGHT_API_TIMEOUT", "300"))
     total_timeout = int(os.environ.get("INSIGHT_API_DEADLINE", "1200"))
     if idle_timeout <= 0 or total_timeout <= 0:
@@ -415,7 +424,7 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
                 raise RuntimeError(f"Insight {stage}: {exc}; bounded length recovery exhausted") from None
             length_recovered = True
             payload["max_tokens"] = next_budget
-            _recover_draft_output(payload, stage)
+            recover_output()
             print(f"Insight {stage}: output truncated; one larger-budget retry max_tokens={next_budget}", flush=True)
             continue
         except RuntimeError as exc:
@@ -424,7 +433,7 @@ def request_json(prompt: str, api_key: str, *, stage: str, max_tokens: int = 480
         except _CompletionError as exc:
             error = str(exc)
             if error in ("completion content is not valid JSON", "response must be a JSON object"):
-                _recover_draft_output(payload, stage)
+                recover_output()
         finally:
             if not accounted:
                 complete_request(ticket, status="failed_unknown_usage")
@@ -1257,6 +1266,14 @@ def _resume_article_audit(resume_audit: dict, topic: gb.TopicRow, sources: list[
     audit["sources"] = current_sources  # Provenance only; never copy source bodies.
     audit["version"] = "insights-v3"
     audit["passed"] = False  # An old pass is never authority to skip a new review.
+    # The output mode grants no acceptance. Retain it across source-bound runs
+    # so a known length failure is not deliberately repeated for every draft.
+    previous_error = str(resume_record.get("previous_error") or "")
+    if ("incomplete output (length)" in previous_error
+            or ("run token budget reached" in previous_error
+                and attempts[-1].get("draft_thinking") == "enabled"
+                and attempts[-1].get("structure", {}).get("passed") is False)):
+        audit["draft_output_recovery"] = True
     audit.pop("error", None)
     return audit
 
@@ -1752,9 +1769,16 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                 draft_thinking = (os.environ.get("INSIGHT_REPAIR_THINKING", "enabled")
                                   if _factual_repair_required(feedback)
                                   else os.environ.get("INSIGHT_THINKING", "disabled"))
+                def remember_output_recovery():
+                    audit["draft_output_recovery"] = True
+                    write_audit(audit_path, audit)
+                output_recovery = audit.get("draft_output_recovery") is True
+                if output_recovery:
+                    draft_thinking = "disabled"
                 raw = request_json(prompt, api_key, stage=f"{lang}-draft-{revision}",
                                    max_tokens=token_budget("INSIGHT_MAX_TOKENS", 48000),
-                                   thinking=draft_thinking)
+                                   thinking=draft_thinking, output_recovery=output_recovery,
+                                   on_output_recovery=remember_output_recovery)
             normalization = {}
             try:
                 article = normalize_article(raw, lang, normalization=normalization)

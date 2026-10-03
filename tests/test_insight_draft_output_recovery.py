@@ -66,6 +66,48 @@ class DraftOutputRecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "bounded length recovery exhausted"):
             self.run_requests([ip._OutputLimitError("length"), ip._OutputLimitError("length")])
 
+    def test_saved_recovery_starts_direct_output_without_extra_request(self):
+        payloads=[]
+        def attempt(request,*args):
+            payloads.append(json.loads(request.data));return '{}',{}
+        with patch.object(ip, "begin_request"), patch.object(ip, "complete_request"), \
+                patch.object(ip, "_completion_attempt", side_effect=attempt), \
+                contextlib.redirect_stdout(io.StringIO()):
+            ip.request_json("original blockers remain", "unused", stage="zh-draft-8",
+                            thinking="enabled", output_recovery=True)
+        self.assertEqual(len(payloads),1)
+        self.assertEqual(payloads[0]["thinking"]["type"],"disabled")
+        self.assertEqual(payloads[0]["max_tokens"],48000)
+        self.assertIn("original blockers remain",payloads[0]["messages"][-1]["content"])
+
+    def test_recovery_is_remembered_even_when_budget_blocks_the_retry(self):
+        remembered=[]
+        with patch.object(ip.gb, "RETRIES", 2), patch.object(ip, "begin_request",
+                side_effect=["ticket",RuntimeError("run token budget reached")]), \
+                patch.object(ip, "complete_request"), \
+                patch.object(ip, "_completion_attempt", side_effect=ip._OutputLimitError("length")), \
+                contextlib.redirect_stdout(io.StringIO()),self.assertRaisesRegex(RuntimeError,"run token budget"):
+            ip.request_json("source", "unused", stage="zh-draft-7", thinking="enabled",
+                            on_output_recovery=lambda:remembered.append(True))
+        self.assertEqual(remembered,[True])
+
+    def test_source_bound_resume_preserves_recovery_and_review_obligations(self):
+        import copy
+        from test_insight_revision_history import RevisionHistoryTests
+        fixture=RevisionHistoryTests();fixture.setUp()
+        for error in ("incomplete output (length); bounded length recovery exhausted",
+                      "DeepSeek deferred: run token budget reached"):
+            original=copy.deepcopy(fixture.audit)
+            original["error"]=error
+            original["attempts"][-1]["draft_thinking"]="enabled"
+            original["attempts"][-1]["structure"]["passed"]=False
+            resumed=ip._resume_article_audit(original,fixture.topic,fixture.sources,"zh")
+            self.assertTrue(resumed["draft_output_recovery"])
+            self.assertFalse(resumed["passed"])
+            self.assertEqual(resumed["attempts"],original["attempts"])
+            self.assertEqual(resumed["resume_history"][-1]["previous_error"],error)
+            self.assertNotIn("draft_output_recovery",original)
+
     def test_output_recovery_is_idempotent_and_only_targets_drafts(self):
         payload = {"thinking":{"type":"enabled"}, "messages":[{"content":"original"}]}
         ip._recover_draft_output(payload, "research-brief")

@@ -54,11 +54,11 @@ LEGACY_SELECTION_PRODUCER_SHA256 = '19540a0f505493caa7c6c37cfa8578ff5f84fb344472
 # Pin the full module, including helpers, imports, defaults and globals. Only
 # the part of generate_daily_article after its selection boundary may vary.
 SELECTION_FAILURE_BOUNDARY_SHA256 = 'ef6dc4955b71cfb8d353304e2370cbf853882cdd37b74614c188daee59dbb1ab'
-SELECTION_CHECKPOINT_SHA256 = '1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8'
+SELECTION_CHECKPOINT_SHA256 = '5d07b85c052dcdb64c3fc7a402ddfa629efdcd86e5293915bdf0673bd272b13e'
 SELECTION_HELPERS_SHA256 = '80712176a5993ca4e44d73a10e52f8ea6d1ae87976999745aa1b9428832ed4c7'
 # Keep the reviewed earlier producer/import inventory valid across output-only repairs.
-SELECTION_PREVIOUS_CHECKPOINT_SHA256 = '527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b'
-SELECTION_NEW_HELPERS_SHA256 = '49fc907b16380041d34dde1e572107cc2f5ee7cda4366627fdb6fc29aac200f0'
+SELECTION_PREVIOUS_CHECKPOINT_SHA256 = '527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b,1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8'
+SELECTION_NEW_HELPERS_SHA256 = '49fc907b16380041d34dde1e572107cc2f5ee7cda4366627fdb6fc29aac200f0,0dfedf534fccd84b78a336ccb487cf386618958492dc4a67e4dd2dac8a894b25'
 LEGACY_SELECTION_CHECKPOINT_SHA256 = 'c828ba3183ad46f0fb1a5af15edb9d48cbe5baf038c1551c1e91ce5f39db0ad0'
 
 
@@ -440,7 +440,7 @@ def selection_producer(api, repo, run, cache, *, legacy=False):
         raise ValueError('Unrecognized pre-generation selection producer')
     checkpoint = source('daily_resume_checkpoint.py')
     expected = (LEGACY_SELECTION_CHECKPOINT_SHA256,) if legacy else (
-        SELECTION_CHECKPOINT_SHA256, SELECTION_PREVIOUS_CHECKPOINT_SHA256)
+        SELECTION_CHECKPOINT_SHA256, *SELECTION_PREVIOUS_CHECKPOINT_SHA256.split(","))
     actual = sha(checkpoint) if legacy else selection_source_fingerprint(checkpoint, checkpoint=True)
     if actual not in expected:
         raise ValueError('Unrecognized pre-generation checkpoint producer')
@@ -468,7 +468,7 @@ def selection_producer(api, repo, run, cache, *, legacy=False):
                 raise ValueError('Invalid pre-generation helper identity')
             helpers.append([item['path'], item['sha']])
         cache[key] = sha(json.dumps(sorted(helpers), separators=(',', ':')).encode())
-    if cache[key] not in (SELECTION_HELPERS_SHA256, SELECTION_NEW_HELPERS_SHA256):
+    if cache[key] not in (SELECTION_HELPERS_SHA256, *SELECTION_NEW_HELPERS_SHA256.split(",")):
         raise ValueError('Unrecognized pre-generation imported helpers')
 
 

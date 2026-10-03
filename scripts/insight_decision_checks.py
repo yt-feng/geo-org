@@ -32,7 +32,11 @@ JSON结构：{"version":2,
 derived和有序rules；每case引用model，inputs只写与默认值不同的覆盖值，禁止逐case
 重复rules/derived。展开默认值后逐案复算，第一条真条件决定最终选择。不要输出冗余
 缩进、重复默认输入、完整历史审稿原文。calculations至少1项；cases至少2项、最多40项，
-针对不同真实情景；正文量化容量/机会成本时budgets必填。数值用十进制字符串；允许
+针对不同真实情景；展开models默认inputs后完全相同的情景只能保留一项，即使ID不同，
+不得用重复项充当新增边界覆盖。正文量化容量/机会成本时budgets必填。输入数值用十进制
+字符串；calculations.expected必须为精确值，除法产生循环小数时写有界分数字符串，例如
+35/3的expected为"35/3"，不能写11.7或11.66666667；正文可明确标注约11.7，但检查另保留
+精确商。不要为了有限小数协议删掉真实的除法计算。允许
 + - * /、括号、比较、and/or/not、True/False，不支持调用/幂运算。derived按依赖顺序，
 不能覆盖原始输入。示意预算option_a/b包含shared，联合成本=option_a+option_b-shared；
 联合方案能放入容量时，不得仅凭预算宣称互斥。组织排他约束必须另说明，exclusive=false。
@@ -67,6 +71,15 @@ def _number(value):
     if not re.fullmatch(r"[+-]?\d{1,15}(?:\.\d{1,15})?", raw):
         raise CheckError("numbers must be bounded finite decimals")
     return Fraction(raw)
+
+
+def _expected_number(value):
+    """Expected quotients may be exact bounded fractions; inputs stay decimal."""
+    if isinstance(value, str) and "/" in value:
+        if not re.fullmatch(r"[+-]?\d{1,15}/[1-9]\d{0,14}", value):
+            raise CheckError("expected fractions require bounded integers and a positive nonzero denominator")
+        return Fraction(value)
+    return _number(value)
 
 
 def _display(value):
@@ -287,7 +300,7 @@ def validate_decision_checks(article, *, required=False):
                     value = evaluate(expression, _inputs(item.get("inputs")))
                     if not any(isinstance(node, ast.BinOp) for node in ast.walk(ast.parse(expression, mode="eval"))):
                         raise CheckError("calculation must recompute an arithmetic expression, not repeat a literal")
-                    if isinstance(value, bool) or value != _number(item.get("expected")):
+                    if isinstance(value, bool) or value != _expected_number(item.get("expected")):
                         raise CheckError(f"calculation mismatch: computed {_display(value)}, expected {item.get('expected')}")
                     results.append({"id": identifier, "computed": _display(value)})
                 elif group == "budgets":
