@@ -58,10 +58,11 @@ jobs:
                   'error': audit.get('error'), 'body_sha256': hashlib.sha256(body.encode()).hexdigest(),
                   'candidate_bytes': len(json.dumps(candidate, ensure_ascii=False).encode()),
                   'decision_checks': article.get('decision_checks'),
-                  'structural': attempt.get('structural'),
+                  'structural': attempt.get('structure'),
                   'revision_response': attempt.get('revision_response'),
                   'review': attempt.get('review'),
-                  'historical_fixes': [a.get('review', {}).get('required_fixes') for a in attempts if isinstance(a.get('review'), dict)],
+                  'historical_fixes': [{'revision': a.get('revision'), 'blockers': a.get('review', {}).get('blockers'), 'issues': a.get('review', {}).get('issues')} for a in attempts if isinstance(a.get('review'), dict)],
+                  'body_html': body,
               }
               print('EDITORIAL_INSPECTION=' + json.dumps(summary, ensure_ascii=False, separators=(',', ':')))
           PY
