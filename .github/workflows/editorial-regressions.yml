@@ -45,8 +45,11 @@ jobs:
           gh run view "$INSPECT_RUN_ID" --json workflowName,conclusion,headBranch --jq '.workflowName == "Generate Daily Blog Article" and .headBranch == "main" and (.conclusion == "failure" or .conclusion == "cancelled")' | grep -qx true
           gh run download "$INSPECT_RUN_ID" --name "daily-insight-review-$INSPECT_RUN_ID" --dir "$RUNNER_TEMP/inspect"
           python - <<'PY'
-          import hashlib, json, os
+          import hashlib, json, os, sys
           from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from insight_offline_translation import html_parts, digest
+          from hymt_offline_translation import _mask
           for path in sorted((Path(os.environ['RUNNER_TEMP']) / 'inspect' / 'insights').glob('*/zh.json')):
               audit = json.loads(path.read_text(encoding='utf-8'))
               attempts = audit.get('attempts', [])
@@ -67,6 +70,28 @@ jobs:
                   'historical_fixes': [{'revision': a.get('revision'), 'blockers': a.get('review', {}).get('blockers'), 'issues': a.get('review', {}).get('issues')} for a in attempts if isinstance(a.get('review'), dict)],
               }
               print('EDITORIAL_INSPECTION=' + json.dumps(summary, ensure_ascii=False, separators=(',', ':')))
+              parts = html_parts(body)
+              for checkpoint_path in sorted((Path(os.environ['RUNNER_TEMP']) / 'inspect' / 'offline-translations').glob('*.json')):
+                  checkpoint = json.loads(checkpoint_path.read_text(encoding='utf-8'))
+                  target = checkpoint.get('target_language')
+                  if target not in ('en', 'ar'):
+                      continue
+                  for key, pending in checkpoint.get('pending_blocks', {}).items():
+                      if key.startswith('body_html.'):
+                          text = parts[int(key.split('.')[1])][1]
+                      elif key in ('title', 'excerpt'):
+                          text = article[key]
+                      elif key.startswith('tags.'):
+                          text = article['tags'][int(key.split('.')[1])]
+                      else:
+                          continue
+                      assert digest(text) == pending['source_sha256'], 'Pending source identity differs'
+                      assert len(text) < 6000, 'Diagnostic block exceeds its bound'
+                      masked, resources, terms = _mask(text, target)
+                      detail = {'target': target, 'block': key, 'completed_blocks': len(checkpoint['blocks']),
+                                'source_text': text, 'masked': masked, 'resources': resources, 'terms': terms,
+                                'error': pending['error']}
+                      print('OFFLINE_PENDING=' + json.dumps(detail, ensure_ascii=False, separators=(',', ':')))
           PY
           if [ "$INSPECT_RUN_ID" = "37152742304" ]; then
             python editorial/apply_saved_revision.py --recipe row710-exact-arithmetic-v1 --source-run "$INSPECT_RUN_ID" --resume-root "$RUNNER_TEMP/inspect" --out "$RUNNER_TEMP/authored-preview.json"
