@@ -3,6 +3,266 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+      "title": "NIST SP 500-292",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-10-03T22:43:34+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
+      "body_chars": 75496,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
+      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "2021-11-02",
+      "retrieved_at": "2026-10-03T19:31:53+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
+      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
+      "body_chars": 2038,
+      "excerpt_start": 0,
+      "excerpt_end": 2038,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://support.google.com/localservices/answer/7496631?hl=en",
+      "title": "Reviews and Ratings on Local Services Ads - Local Services Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-03T19:31:43+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "5885ad922b63438b1dd08a727beb92b70d3274966fae24bd5c4137c8ae60dfab",
+      "body_chars": 1423,
+      "excerpt_start": 0,
+      "excerpt_end": 1423,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
+      "title": "直播电商监督管理办法",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "2026-01-07",
+      "retrieved_at": "2026-10-03T19:31:29+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction.",
+      "text_sha256": "66f12a13fd10de196fbef32962cf7af0ea8f8130e0f0e2e2f744ea5dcd7603ab",
+      "body_chars": 11552,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/x/the-multiplier/commerce-everywhere-agents-in-charge",
+      "title": "Commerce Everywhere, Agents in Charge",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-03T19:31:27+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2026-01-27; visible datePublished=2026-01-29). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "d07c7c997d0f5deac79fe77857e4a693edb11ba95f9345afaf004de3d51f9be5",
+      "body_chars": 19450,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/annexes-1.html",
+      "title": "附件1: 案例研究摘要",
+      "publisher": "Food and Agriculture Organization of the United Nations",
+      "publisher_domain": "fao.org",
+      "published": "",
+      "retrieved_at": "2026-10-03T19:31:15+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "agriculture_technology"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "438ea7848eafd95b099a60cddf40718cc854cd7102a6124d7d0a2d1085f9b01b",
+      "body_chars": 18718,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://ers.usda.gov/sites/default/files/_laserfiche/publications/80326/ERR-217.pdf",
+      "title": "Farm Profits and Adoption of Precision Agriculture",
+      "publisher": "USDA Economic Research Service",
+      "publisher_domain": "usda.gov",
+      "published": "",
+      "retrieved_at": "2026-10-03T19:31:13+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "agriculture_technology"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "8aa78d0de551b243dd2a4ad7eee36373dc976bbbd29759e98761f17bb861daa8",
+      "body_chars": 120229,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
+      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
+      "publisher": "State Council of the People's Republic of China",
+      "publisher_domain": "gov.cn",
+      "published": "",
+      "retrieved_at": "2026-10-03T19:31:00+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
+      "body_chars": 5243,
+      "excerpt_start": 0,
+      "excerpt_end": 5243,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://support.google.com/adspolicy/answer/6245891?hl=zh-Hans",
+      "title": "本地生活服务广告要求 - Google Ads 政策帮助",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-02T21:03:18+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "d363ee2f8a1429d61c22cc1fe67402bc6de7ae56ae2ad62afd00b8cd78596985",
+      "body_chars": 4406,
+      "excerpt_start": 0,
+      "excerpt_end": 4406,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2023/social-commerce-is-remaking-online-shopping",
+      "title": "Social Commerce Is Remaking Online Shopping",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2023-03-08",
+      "retrieved_at": "2026-10-02T21:03:10+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e2907962d125f37bd28e3cbc005dfaac0d1248ff6a595a0ccb2dd94b5c6ad3a5",
+      "body_chars": 22785,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.samr.gov.cn/xw/mtjj/art/2026/art_24b2336bec16491b9ef96d6876ac0e79.html",
+      "title": "直播电商贡献电子商务80%增量",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "",
+      "retrieved_at": "2026-10-02T21:03:08+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ee441dd937c42f49c1af0ba9fd5055559e0523feb6cc45328cc416e93782d2e9",
+      "body_chars": 1867,
+      "excerpt_start": 0,
+      "excerpt_end": 1867,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/95273160-e592-4bc6-b48f-efab84936973/content",
+      "title": "CL 164/9 - 国际数字粮食及农业平台",
+      "publisher": "Food and Agriculture Organization of the United Nations",
+      "publisher_domain": "fao.org",
+      "published": "",
+      "retrieved_at": "2026-10-02T21:02:55+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "agriculture_technology"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ad95dd42edbbf3387f352443f8aad75fa3255bc6467611cc1ae45b9795b45de3",
+      "body_chars": 25487,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/business/answer/9918094?hl=en",
+      "title": "Understand your Business Profile performance & insights - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-01T21:26:37+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ab91985fae34f1eb5245ceeb374aed9b40ccf7e194139a203cd642acaa7f4c4b",
+      "body_chars": 6374,
+      "excerpt_start": 0,
+      "excerpt_end": 6374,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
       "title": "Consumer IoT Cybersecurity",
       "publisher": "National Institute of Standards and Technology",
@@ -23,66 +283,6 @@
       "excerpt_truncated": false
     },
     {
-      "url": "https://support.google.com/adspolicy/answer/6245891?hl=zh-Hans",
-      "title": "本地生活服务广告要求 - Google Ads 政策帮助",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-09-30T21:03:23+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "local_services"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "d363ee2f8a1429d61c22cc1fe67402bc6de7ae56ae2ad62afd00b8cd78596985",
-      "body_chars": 4406,
-      "excerpt_start": 0,
-      "excerpt_end": 4406,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
-      "title": "直播电商监督管理办法",
-      "publisher": "State Administration for Market Regulation",
-      "publisher_domain": "samr.gov.cn",
-      "published": "2026-01-07",
-      "retrieved_at": "2026-09-30T21:03:14+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "livestream_commerce"
-      ],
-      "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction.",
-      "text_sha256": "66f12a13fd10de196fbef32962cf7af0ea8f8130e0f0e2e2f744ea5dcd7603ab",
-      "body_chars": 11552,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/publications/2023/social-commerce-is-remaking-online-shopping",
-      "title": "Social Commerce Is Remaking Online Shopping",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2023-03-08",
-      "retrieved_at": "2026-09-30T21:03:11+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "livestream_commerce"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "e2907962d125f37bd28e3cbc005dfaac0d1248ff6a595a0ccb2dd94b5c6ad3a5",
-      "body_chars": 22785,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
       "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/national-strategies-agricultural-automation.html",
       "title": "针对农业的政策、立法和投资",
       "publisher": "Food and Agriculture Organization of the United Nations",
@@ -101,26 +301,6 @@
       "excerpt_start": 0,
       "excerpt_end": 9703,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
-      "title": "NIST SP 500-292",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-09-30T21:02:49+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
-      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
-      "body_chars": 75496,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
@@ -178,26 +358,6 @@
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
       "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
       "body_chars": 31831,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/annexes-1.html",
-      "title": "附件1: 案例研究摘要",
-      "publisher": "Food and Agriculture Organization of the United Nations",
-      "publisher_domain": "fao.org",
-      "published": "",
-      "retrieved_at": "2026-09-29T21:05:49+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "agriculture_technology"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "438ea7848eafd95b099a60cddf40718cc854cd7102a6124d7d0a2d1085f9b01b",
-      "body_chars": 18718,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
@@ -441,26 +601,6 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
-      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
-      "publisher": "State Administration for Market Regulation",
-      "publisher_domain": "samr.gov.cn",
-      "published": "2021-11-02",
-      "retrieved_at": "2026-09-13T05:03:16+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "medical_aesthetics"
-      ],
-      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
-      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
-      "body_chars": 2038,
-      "excerpt_start": 0,
-      "excerpt_end": 2038,
-      "excerpt_truncated": false
     },
     {
       "url": "https://www.fda.gov/medical-devices/aesthetic-cosmetic-devices/dermal-fillers-soft-tissue-fillers",

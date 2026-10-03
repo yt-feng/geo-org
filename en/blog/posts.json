@@ -1,9 +1,213 @@
 [
   {
+    "order": "719",
+    "row": "710",
+    "slug": "00710-geo-012e1e51",
+    "title": "Eco-GEO：A cloud computing brand. GEO: First organize the facts, then answer customer questions.",
+    "excerpt": "Start with product information, troubleshooting pages, and observation records, and continue to publish clear, source-driven content about cloud computing brands. Do not equate providing answers with closing deals.",
+    "category": "Brand GEO",
+    "tags": "GEO, cloud computing, content optimization, Eco-GEO, branded GEO, GEO services, AI search optimization",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-04",
+    "image": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/en/blog/articles/00710-geo-012e1e51/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:33+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:33+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S3",
+        "title": "NIST SP 500-292",
+        "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+        "publisher": "National Institute of Standards and Technology",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:34+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 75496,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "nist.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "cloud_computing"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+        "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:38+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:39+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "en",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "quality_profile": "research",
+        "h2_count": 3,
+        "table_count": 0,
+        "table_shapes": [],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S2": 1,
+          "S4": 1
+        },
+        "visible_character_count": 5477,
+        "zh_character_count": 0,
+        "word_count": 938,
+        "executive_summary_takeaways": 2,
+        "tables_meeting_structure": 0,
+        "valid_citation_count": 4,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S4"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "blogs.bing.com",
+          "developers.google.com"
+        ],
+        "unique_cited_sources": 3,
+        "unique_cited_domains": 3,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 3,
+            "table_count": 0,
+            "table_shapes": [],
+            "role_counts": {
+              "assumptions": 1,
+              "executive-summary": 1
+            },
+            "citation_id_counts": {
+              "S1": 2,
+              "S2": 1,
+              "S4": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            }
+          }
+        },
+        "publication_policy": "translation-integrity-v2",
+        "quality_warning_count": 3
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "body_html.24",
+          "warning": "Offline translation changed a protected term"
+        },
+        "Article has 3 h2 sections; at least 6 are required.",
+        "Executive summary has 2 takeaways; at least 3 are required.",
+        "Only 0 tables meet the analytical-table structure; at least 2 are required."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "718",
     "row": "709",
     "slug": "00709-seo-ai-geo-7961d3a6",
-    "title": "Eco-GEO: Correct errors, assess a joint option, or expand coverage? Separate full effort from incremental gain",
+    "title": "Eco-GEO：Correct errors, assess a joint option, or expand coverage? Separate full effort from incremental gain",
     "excerpt": "Use an illustrative effort ledger and verifiable gains to define ordered action rules: check inputs and error constraints first, then full feasibility, joint options and individual efficiency. These conditional conclusions are not measured outcomes for the smart hardware industry.",
     "category": "Brand GEO",
     "tags": "GEO, AI search optimization, Smart hardware, Resource allocation, Eco-GEO, Brand GEO, GEO services",
