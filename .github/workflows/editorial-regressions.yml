@@ -7,6 +7,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      inspect_run_id:
+        description: "Read only: inspect saved article decision checks from a failed daily run"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -17,6 +22,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  inspect:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.inspect_run_id != '' }}
+    name: Inspect saved editorial metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Inspect only the article schema in the cloud
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          INSPECT_RUN_ID: ${{ inputs.inspect_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$INSPECT_RUN_ID" =~ ^[0-9]+$ ]] || exit 1
+          gh run view "$INSPECT_RUN_ID" --json workflowName,conclusion,headBranch --jq '.workflowName == "Generate Daily Blog Article" and .headBranch == "main" and (.conclusion == "failure" or .conclusion == "cancelled")' | grep -qx true
+          gh run download "$INSPECT_RUN_ID" --name "daily-insight-review-$INSPECT_RUN_ID" --dir "$RUNNER_TEMP/inspect"
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          for path in sorted((Path(os.environ['RUNNER_TEMP']) / 'inspect' / 'insights').glob('*/zh.json')):
+              audit = json.loads(path.read_text(encoding='utf-8'))
+              attempts = audit.get('attempts', [])
+              if not attempts:
+                  continue
+              attempt = attempts[-1]
+              article = attempt['article']
+              body = article.get('body_html', '')
+              candidate = {key: article[key] for key in ('title', 'excerpt', 'body_html', 'tags', 'decision_checks') if key in article}
+              summary = {
+                  'row': audit.get('row'), 'revision': attempt.get('revision'),
+                  'error': audit.get('error'), 'body_sha256': hashlib.sha256(body.encode()).hexdigest(),
+                  'candidate_bytes': len(json.dumps(candidate, ensure_ascii=False).encode()),
+                  'decision_checks': article.get('decision_checks'),
+                  'structural': attempt.get('structure'),
+                  'revision_response': attempt.get('revision_response'),
+                  'review': attempt.get('review'),
+                  'historical_fixes': [{'revision': a.get('revision'), 'blockers': a.get('review', {}).get('blockers'), 'issues': a.get('review', {}).get('issues')} for a in attempts if isinstance(a.get('review'), dict)],
+              }
+              print('EDITORIAL_INSPECTION=' + json.dumps(summary, ensure_ascii=False, separators=(',', ':')))
+          PY
+          if [ "$INSPECT_RUN_ID" = "37152742304" ]; then
+            python editorial/apply_saved_revision.py --recipe row710-exact-arithmetic-v1 --source-run "$INSPECT_RUN_ID" --resume-root "$RUNNER_TEMP/inspect" --out "$RUNNER_TEMP/authored-preview.json"
+          fi
   verify:
     name: Editorial regression gate
     runs-on: ubuntu-24.04

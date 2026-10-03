@@ -18,6 +18,11 @@ on:
         description: "Optional authored repair of a resumed Chinese draft; all reviews still apply"
         type: string
         default: ""
+      saved_editorial_repair:
+        description: "Apply an explicit source-bound authored repair in the cloud; all reviews remain required"
+        type: choice
+        options: [none, row710-exact-arithmetic-v1]
+        default: none
 
 permissions:
   contents: write
@@ -121,6 +126,7 @@ jobs:
           PREVIEW_ONLY: ${{ inputs.preview }}
           RESUME_RUN_ID: ${{ inputs.resume_run_id }}
           EDITORIAL_REVISION_JSON: ${{ inputs.editorial_revision_json }}
+          SAVED_EDITORIAL_REPAIR: ${{ inputs.saved_editorial_repair }}
           GH_TOKEN: ${{ github.token }}
           NEWS_MAX_ITEMS: "3"
           TAVILY_MAX_QUERIES: "3"
@@ -144,8 +150,14 @@ jobs:
             args+=(--auto-resume)
           fi
           if [ -n "$EDITORIAL_REVISION_JSON" ]; then
+            [ -z "$SAVED_EDITORIAL_REPAIR" ] || [ "$SAVED_EDITORIAL_REPAIR" = "none" ] || { echo "Choose one authored revision input"; exit 1; }
             [ -n "$RESUME_RUN_ID" ] || { echo "An authored repair requires a resume run"; exit 1; }
             python -c 'import json,os,pathlib; raw=os.environ["EDITORIAL_REVISION_JSON"]; assert len(raw.encode()) <= 60000, "Revision exceeds 60 KB"; assert isinstance(json.loads(raw),dict), "Revision must be JSON object"; pathlib.Path(os.environ["RUNNER_TEMP"],"editorial-revision.json").write_text(raw,encoding="utf-8")'
+            args+=(--editorial-revision "$RUNNER_TEMP/editorial-revision.json")
+          fi
+          if [ -n "$SAVED_EDITORIAL_REPAIR" ] && [ "$SAVED_EDITORIAL_REPAIR" != "none" ]; then
+            [ -n "$RESUME_RUN_ID" ] || { echo "A saved authored repair requires its exact source run"; exit 1; }
+            python editorial/apply_saved_revision.py --recipe "$SAVED_EDITORIAL_REPAIR" --source-run "$RESUME_RUN_ID" --resume-root "$RUNNER_TEMP/insight-resume" --out "$RUNNER_TEMP/editorial-revision.json"
             args+=(--editorial-revision "$RUNNER_TEMP/editorial-revision.json")
           fi
           python scripts/generate_daily_blog.py --excel assets/blog_articles.xlsx --out blog "${args[@]}"
