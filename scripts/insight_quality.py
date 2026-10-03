@@ -65,6 +65,35 @@ DRAFT_REQUIREMENTS = """
 """.strip()
 
 
+PRACTICAL_DRAFT_REQUIREMENTS = """
+写一篇服务SEO/GEO的实用文章，回答一个具体问题，语言清晰，避免重复关键词。
+输出严格JSON：title, excerpt, body_html, tags。正文目标1200–2000汉字，至少3个有内容的h2小节。
+开头用data-role="executive-summary"容器给出至少2条li要点；用data-role="assumptions"
+容器简要说明适用范围和局限。至少引用2份已读取来源，来源域名可相同；事实与引用相邻。
+正文引用使用<a href="给定来源完整URL" data-source-id="S1">[S1]</a>，ID、URL必须原样对应。
+保留事实、推论和建议的边界，不编造案例、统计、平台保证或客户实绩。资料不足就缩小断言。
+表格、计算模型、敏感性分析均可选，不为填格式编数字。若给出算例，标明假设并核对单位/结果。
+使用语义HTML片段，不输出html/head/body外壳、脚本、图片、iframe、表单、内联style或事件属性。
+只写实际有用的做法和证据，不要求咨询报告深度或新颖理论。每份来源直接引用不超过25个英文词。
+""".strip()
+
+PRACTICAL_REVIEW_RUBRIC = """
+你是SEO/GEO实用文章的独立事实编辑。文章只需清楚、有用、事实有据，不要求咨询级原创框架。
+六维scores仍用0–5整数记录thesis,evidence,mechanism,tradeoffs,actionability,originality；
+evidence至少3分表示关键事实有基本充分的来源；其余分数和普通表达/深度/原创性建议只作warnings，
+不因缺少表格、模型、敏感性分析而拦截。
+blockers只记录具体事实错误、伪造来源、引用不支持关键外部论断、错误计算、未标假设的数据、
+危险HTML或翻译丢失/新增事实；不要把普通文风偏好列为blocker。只核当前正文及给定来源。
+返回JSON scores, issues, blockers, claim_checks。至少核查5项实际论断；每项包含claim,
+source_ids, verdict(supported|unsupported|inference|illustrative), reason。
+supported必须有确切支持的来源ID，至少核实来自2份来源的实际外部论断；
+unsupported须列为blocker；建议/假设按其真实性质分类，不为数量编造事实。
+若有历史blocker，返回blocker_checks，逐个原ID包含issue_id,status(resolved|unresolved|unverifiable),
+location,finding；仅核当前正文，已删除错误可以resolved，未解决或未确认的问题仍属blocker。
+带origin_language的历史问题另注明scope=source_article或translation_only并说明依据。
+""".strip()
+
+
 REVIEW_DIMENSIONS = (
     "thesis", "evidence", "mechanism", "tradeoffs", "actionability", "originality"
 )
@@ -476,6 +505,7 @@ def validate_insight(
     lang: str = "zh",
     source_article: Mapping[str, Any] | None = None,
     require_decision_checks: bool = False,
+    profile: str = "research",
 ) -> dict[str, Any]:
     """Return ``passed``, actionable ``errors``, and inspectable ``metrics``.
 
@@ -484,8 +514,11 @@ def validate_insight(
     Translations require their source article and preserve its structure and values.
     No substitute/fallback text is created by this function.
     """
+    if profile not in {"research", "seo-practical"}:
+        raise ValueError("Unknown insight quality profile")
+    practical = profile == "seo-practical"
     errors: list[str] = []
-    metrics: dict[str, Any] = {"language": lang, "gate_version": 1, "semantic_review_required": True}
+    metrics: dict[str, Any] = {"language": lang, "gate_version": 1, "semantic_review_required": True, "quality_profile": profile}
     if not isinstance(article, Mapping):
         return {"passed": False, "errors": ["Article must be an object."], "metrics": metrics}
     for key in ("title", "excerpt", "body_html"):
@@ -514,17 +547,18 @@ def validate_insight(
         errors.extend(decision["errors"])
     if language == "zh":
         try:
-            minimum = int(os.environ.get("INSIGHT_MIN_ZH_CHARS", "2600"))
+            minimum = int(os.environ.get("INSIGHT_MIN_ZH_CHARS", "900" if practical else "2600"))
             if minimum <= 0:
                 raise ValueError
         except ValueError:
-            minimum = 2600
+            minimum = 900 if practical else 2600
             errors.append("INSIGHT_MIN_ZH_CHARS must be a positive integer.")
         metrics["minimum_zh_characters"] = minimum
         if metrics["zh_character_count"] < minimum:
             errors.append(f"Chinese body has {metrics['zh_character_count']} Han characters; minimum is {minimum}.")
-    if shape["h2_count"] < 6:
-        errors.append(f"Article has {shape['h2_count']} h2 sections; at least 6 are required.")
+    minimum_sections = 3 if practical else 6
+    if shape["h2_count"] < minimum_sections:
+        errors.append(f"Article has {shape['h2_count']} h2 sections; at least {minimum_sections} are required.")
     empty_h2 = sum(not node.text().strip() for node in parser.root.descendants("h2"))
     if empty_h2:
         errors.append(f"Article contains {empty_h2} empty h2 headings.")
@@ -535,8 +569,9 @@ def validate_insight(
     summary_nodes = [node for node in nodes if node.attrs.get("data-role") == "executive-summary"]
     takeaways = max((sum(bool(item.text().strip()) for item in node.descendants("li")) for node in summary_nodes), default=0)
     metrics["executive_summary_takeaways"] = takeaways
-    if takeaways < 3:
-        errors.append(f"Executive summary has {takeaways} takeaways; at least 3 are required.")
+    minimum_takeaways = 2 if practical else 3
+    if takeaways < minimum_takeaways:
+        errors.append(f"Executive summary has {takeaways} takeaways; at least {minimum_takeaways} are required.")
 
     analytical_tables = 0
     for index, table in enumerate(parser.root.descendants("table"), 1):
@@ -548,7 +583,7 @@ def validate_insight(
         else:
             errors.append(f"Table {index} needs one nonempty caption, nonempty th headers, and at least 2 data rows.")
     metrics["tables_meeting_structure"] = analytical_tables
-    if analytical_tables < 2:
+    if not practical and analytical_tables < 2:
         errors.append(f"Only {analytical_tables} tables meet the analytical-table structure; at least 2 are required.")
 
     source_map: dict[str, str] = {}
@@ -591,9 +626,10 @@ def validate_insight(
         "cited_domains": cited_domains, "unique_cited_sources": len(cited_ids),
         "unique_cited_domains": len(cited_domains),
     })
-    if len(valid_citations) < 3 or len(cited_ids) < 3:
-        errors.append("At least 3 exact citations covering 3 supplied sources are required.")
-    if len(cited_domains) < 2:
+    minimum_sources = 2 if practical else 3
+    if len(valid_citations) < minimum_sources or len(cited_ids) < minimum_sources:
+        errors.append(f"At least {minimum_sources} exact citations covering {minimum_sources} supplied sources are required.")
+    if not practical and len(cited_domains) < 2:
         errors.append("Citations must cover at least 2 different source domains.")
 
     paragraphs = [_normal_text(node.text()) for node in parser.root.descendants("p")]

@@ -35,6 +35,9 @@ ARTICLE = {
 _regression = json.loads((Path(__file__).resolve().parents[1] / 'tests/fixtures/row709-translation-integrity.json').read_text())
 ARTICLE['body_html'] += '<section data-role="regression">' + ''.join(
     '<p>' + block['source'] + '</p>' for block in _regression['resource_blocks']) + '<p>' + _regression['formula_sample'] + '</p></section>'
+# Exact pending block from row710: both locales repeatedly dropped a protected
+# token around the short formatted label. Keep this sentence in the real smoke.
+ARTICLE['body_html'] += '<section data-role="row710-regression"><p><strong>问题集：</strong>与云产品决策直接相关的目标问题，示意m=25个，覆盖区域可用性、SLA赔偿口径、计费单位、认证状态、版本与配额五类。</p></section>'
 
 
 class InterruptAfterThree:

@@ -185,6 +185,27 @@ def sentence_repair_parts(text: str) -> list[str] | None:
     return parts if 2 <= len(parts) <= 8 else None
 
 
+def formatted_label_repair_parts(masked: str, resources: dict[str, str]) -> list[tuple[str, str, str]] | None:
+    """Keep a short introductory label's format outside the second decode.
+
+    A label is not a quantity or predicate. The following complete sentence,
+    including every number, formula, noun and unit, remains one model input.
+    Source-known opening/closing tokens stay at their original boundary and the
+    combined output still must pass the unchanged full placeholder contract.
+    """
+    match = re.fullmatch(r'(__HYMTPH_\d+__)([^<>。！？\n]{1,16}[：:])(__HYMTPH_\d+__)(.+)', masked, re.S)
+    if not match:
+        return None
+    opening, label, closing, sentence = match.groups()
+    tag = re.fullmatch(r'<(strong|em|b|i)(?:\s[^<>]*)?>', resources.get(opening, ''), re.I)
+    if not tag or not re.fullmatch(r'</' + tag.group(1) + r'\s*>', resources.get(closing, ''), re.I):
+        return None
+    if (not re.fullmatch(r'[\u3400-\u9fff\s]+[：:]', label)
+            or re.search(r'率|金额|利润|收入|成本|工时|增量|数量|计数|比例|百分|日期|单位|预算|门槛|阈值', label)):
+        return None
+    return [(label, opening, closing), (sentence, '', '')]
+
+
 def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
     replacements: dict[str, str] = {}
     terms: dict[str, str] = {}
@@ -447,9 +468,10 @@ class HyMTOfflineTranslator:
                     for attempt in range(2):
                         try:
                             outputs = []
-                            for part in repair_parts or [masked]:
+                            for entry in repair_parts or [masked]:
+                                part, prefix, suffix = entry if isinstance(entry, tuple) else (entry, '', '')
                                 if repair_parts and not _LETTERS.search(_PLACEHOLDERS.sub('', part)):
-                                    outputs.append(part)  # Opaque resources alone need no inference.
+                                    outputs.append(prefix + part + suffix)  # Opaque resources alone need no inference.
                                     continue
                                 output = engine.translate(part, detected, target)
                                 if self._diagnostic_callback is not None:
@@ -459,7 +481,7 @@ class HyMTOfflineTranslator:
                                 output = _restore_table_edges(part, output)
                                 output = _restore_placeholder_spacing(part, output)
                                 validate_result(part, output, detected, target, quality_mode=self.quality_mode)
-                                outputs.append(output)
+                                outputs.append(prefix + output + suffix)
                             value = ''.join(outputs)
                             warnings = validate_result(masked, value, detected, target, quality_mode=self.quality_mode)
                             break
@@ -469,7 +491,8 @@ class HyMTOfflineTranslator:
                             # The second local decode can use complete sentences
                             # to reduce placeholder/context load. No recursive
                             # retry, paid provider or whole-article rewrite.
-                            repair_parts = sentence_repair_parts(masked)
+                            repair_parts = (formatted_label_repair_parts(masked, replacements)
+                                            or sentence_repair_parts(masked))
             except OfflineTranslationError:
                 raise
             except Exception as error:

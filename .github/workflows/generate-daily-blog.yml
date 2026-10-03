@@ -121,7 +121,8 @@ jobs:
           INSIGHT_RESUME_MAX_ATTEMPTS: "3"
           INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS: "0"
           INSIGHT_TRANSLATION_RETRIES: "2"
-          INSIGHT_MIN_ZH_CHARS: "2600"
+          INSIGHT_QUALITY_PROFILE: "seo-practical"
+          INSIGHT_MIN_ZH_CHARS: "900"
           INSIGHT_API_TIMEOUT: "300"
           PREVIEW_ONLY: ${{ inputs.preview }}
           RESUME_RUN_ID: ${{ inputs.resume_run_id }}
