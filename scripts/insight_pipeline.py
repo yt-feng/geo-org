@@ -18,7 +18,21 @@ import generate_blog as gb
 from deepseek_cost_policy import begin_request, complete_request
 from insight_offline_translation import OfflineTranslationError, translate_article as translate_article_offline
 from insight_decision_checks import DECISION_CHECK_REQUIREMENTS, compact_decision_checks, CheckError
-from insight_quality import DRAFT_REQUIREMENTS, REVIEW_RUBRIC, validate_insight, validate_translation_publication
+from insight_quality import (DRAFT_REQUIREMENTS, REVIEW_RUBRIC, PRACTICAL_DRAFT_REQUIREMENTS,
+    PRACTICAL_REVIEW_RUBRIC, validate_insight as validate_insight_structure, validate_translation_publication)
+
+
+def quality_profile() -> str:
+    value = os.environ.get("INSIGHT_QUALITY_PROFILE", "research")
+    if value not in {"research", "seo-practical"}:
+        raise ValueError("INSIGHT_QUALITY_PROFILE must be research or seo-practical")
+    return value
+
+
+def validate_insight(*args, **kwargs):
+    kwargs.setdefault("profile", quality_profile())
+    return validate_insight_structure(*args, **kwargs)
+
 
 SCORE_KEYS = ("thesis", "evidence", "mechanism", "tradeoffs", "actionability", "originality")
 SYSTEM = """You are an evidence-led strategy editor for Eco-GEO. Return a strict JSON object.
@@ -567,10 +581,12 @@ def review_errors(review: dict) -> list[str]:
     scores = review.get("scores", {})
     if not isinstance(scores, dict) or any(type(scores.get(key)) is not int or not 0 <= scores[key] <= 5 for key in SCORE_KEYS):
         return ["editorial review must score all six dimensions from 0 to 5"]
+    if quality_profile() == "seo-practical" and scores["evidence"] < 3:
+        errors.append(f"evidence: {scores['evidence']}/5 (minimum 3)")
     for key in SCORE_KEYS:
-        if scores[key] < 4:
+        if quality_profile() != "seo-practical" and scores[key] < 4:
             errors.append(f"{key}: {scores[key]}/5 (minimum 4)")
-    if sum(scores[key] for key in SCORE_KEYS) < 25:
+    if quality_profile() != "seo-practical" and sum(scores[key] for key in SCORE_KEYS) < 25:
         errors.append("editorial total below 25/30")
     for name in ("issues", "blockers"):
         if not isinstance(review.get(name), list) or any(not isinstance(item, str) or not item.strip() for item in review[name]):
@@ -1118,6 +1134,13 @@ scope="source_article"或"translation_only"：前者核验本轮中文是否解�
 已读取来源（仅这些文字可为事实提供支持）：{research_text(sources)}
 中文原文（仅翻译审稿时提供）：{json.dumps(original, ensure_ascii=False) if original else '无'}
 待审文章：{_compact_json(_prompt_article(article))}"""
+    if quality_profile() == "seo-practical":
+        prompt = f"""{PRACTICAL_REVIEW_RUBRIC}
+待核历史blocker：{_compact_json(required_blockers)}
+语言：{lang}
+已读取来源：{research_text(sources)}
+中文原文：{json.dumps(original, ensure_ascii=False) if original else '无'}
+待审文章：{_compact_json(_prompt_article(article))}"""
     if "decision_checks" in article:
         prompt += """\n本文附有机器复算的decision_checks，它们不是通过证明。独立逐段核对所有重要算式、
 表格输入/结果、完整工时与共享成本、联合可行性、阈值两侧/等号/零值/容量边界和有序规则
@@ -1612,12 +1635,18 @@ def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, la
     if resume_audit is not None:
         # Validate before writing the destination audit or making a model call.
         audit = _resume_article_audit(resume_audit, topic, sources, lang)
+    audit["quality_profile"] = quality_profile()
     write_audit(audit_path, audit)
     try:
         if lang == "zh":
             brief = audit["brief"] if resume_audit is not None else None
             if brief is None:
-                brief = request_json(f"""为Eco-GEO撰写深度行业洞察的研究提纲；先研究，再写作。
+                brief = request_json((f"""为SEO/GEO实用文章写简短提纲（300–500汉字），回答一个具体读者问题。
+不要求经济模型、表格或原创理论。返回JSON thesis,evidence_map（claim/source_ids/边界）,outline,management_actions,unknowns。
+只归纳已读取材料；不编造数字、案例或保证。
+近30篇选题：{json.dumps((recent_posts or [])[:30], ensure_ascii=False)}
+当前选题：{json.dumps(vars(topic), ensure_ascii=False)}
+已读取资料：{research_text(sources)}""" if quality_profile() == "seo-practical" else f"""为Eco-GEO撰写深度行业洞察的研究提纲；先研究，再写作。
 面向品牌或增长决策者，挑选一个具体决策矛盾，不泛讲GEO基础。
 提纲目标约1500–2200汉字，简洁但完整；保留所有决策和证据字段，表格只给结构、
 关键比较关系和假设，不提前写文章全文，不用重复解释填充字段。
@@ -1634,7 +1663,7 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 不要把BCG的调研等同于中国本行业事实，不得把引用/提及/点击/成交等同。
 近30篇选题用于避免套路与重复：{json.dumps((recent_posts or [])[:30], ensure_ascii=False)}
 当前选题：{json.dumps(vars(topic), ensure_ascii=False)}
-已读取原始资料：{research_text(sources)}""", api_key, stage="research-brief", max_tokens=token_budget("INSIGHT_RESEARCH_MAX_TOKENS", 48000))
+已读取原始资料：{research_text(sources)}"""), api_key, stage="research-brief", max_tokens=token_budget("INSIGHT_RESEARCH_MAX_TOKENS", 48000))
                 brief_fields = {"decision_question", "thesis", "causal_chain", "evidence_map",
                     "segments_and_tradeoffs", "counterargument", "worked_example", "exhibits",
                     "management_actions", "unknowns", "outline", "decision_model"}
@@ -1663,6 +1692,11 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
 选题：{json.dumps(vars(topic), ensure_ascii=False)}
 {brief_label}：{json.dumps(brief, ensure_ascii=False)}
 已读取原始资料：{research_text(sources)}"""
+            if quality_profile() == "seo-practical":
+                base_prompt = f"""{PRACTICAL_DRAFT_REQUIREMENTS}
+选题：{json.dumps(vars(topic), ensure_ascii=False)}
+提纲仅供参考，已指出的错误不得重引：{json.dumps(brief, ensure_ascii=False)}
+已读取资料：{research_text(sources)}"""
             if editorial_revision is not None:
                 base_prompt += """\n编辑稿续修规则：本次编辑稿的方案、指标定义、预算/工时与观察时间窗是当前基准。
 在下方最新上稿中保留这些基准及按独立审稿要求完成的修正，针对本轮具体issues补足机制、
@@ -1717,7 +1751,13 @@ evidence_map只保留简短原创论断、来源ID与适用边界。
                         revision=saved_attempt["revision"])
         for revision in range(start_revision, start_revision + attempt_budget):
             prompt = base_prompt
-            if feedback and lang == "zh":
+            if feedback and lang == "zh" and quality_profile() == "seo-practical":
+                prompt += f"""\n仅修复下列事实、引用、计算和基本结构问题；普通文风评分无需扩写。
+保留已正确的内容，不恢复被删除的错误。若上稿已有decision_checks，同步保留并核对它们。
+输出完整title,excerpt,body_html,tags，另附revision_response，逐个required_fixes原ID给出issue_id,change,location,verification。
+上稿：{_compact_json(_prompt_article(previous))}
+修订任务：{_compact_json(_prompt_feedback(feedback))}"""
+            elif feedback and lang == "zh":
                 prompt += f"""\n上稿未通过审查。逐项处理required_fixes的每一个ID，先解决全部blocker
 和结构问题，再重构低分维度对应的论证、表格或计算；不能只追加免责声明、增加篇幅，
 不能删除实质分析来躲避审查。保留过去已修正的事实边界，不得重新引入此前blocker。
@@ -1783,7 +1823,7 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
             try:
                 article = normalize_article(raw, lang, normalization=normalization)
                 structural = (validate_translation_publication(article, sources, lang, original) if lang != "zh"
-                              else validate_insight(article, sources, lang=lang, source_article=original, require_decision_checks=True))
+                              else validate_insight(article, sources, lang=lang, source_article=original, require_decision_checks=quality_profile() != "seo-practical"))
             except ValueError as exc:
                 structural = {"passed": False, "errors": [str(exc)], "metrics": {}}
                 article = {key: raw.get(key) for key in ("title", "excerpt", "body_html", "tags")}
@@ -1853,6 +1893,8 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
                 else:
                     attempt["review_state"] = "completed"
                 attempt["review"] = review
+                if quality_profile() == "seo-practical":
+                    attempt.setdefault("warnings", []).extend(review.get("issues", []))
                 if (review.get("review_status") == "format_invalid"
                         or ("decision_checks" in article and review.get("review_status") == "unavailable")):
                     attempt["review_state"] = "review_pending"
@@ -1881,6 +1923,7 @@ repair_focus先列当前未解决或未核验的硬问题。latest_independent_c
             if not errors:
                 article["quality"] = {"version": audit["version"], "metrics": structural["metrics"],
                                       "revisions": revision,
+                                      **({"warnings": attempt.get("warnings", [])} if quality_profile() == "seo-practical" else {}),
                                       "review_type": "automated editorial review" if attempt["review_state"] == "completed"
                                       else "structural publish fallback after invalid review JSON",
                                       **({"scores": review["scores"]} if "scores" in review else {})}
