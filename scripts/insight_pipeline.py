@@ -570,7 +570,8 @@ def public_sources(sources: list[dict]) -> list[dict]:
              "text_sha256": hashlib.sha256(source["text"].encode()).hexdigest()} for source in sources]
 
 
-def review_errors(review: dict) -> list[str]:
+def review_errors(review: dict, *, profile: str | None = None) -> list[str]:
+    profile = profile or quality_profile()
     if review.get("review_status") == "format_invalid":
         return list(review.get("review_contract_errors") or ["independent review contract is incomplete"]) + list(review.get("blockers", []))
     if review.get("review_status") == "unavailable":
@@ -581,12 +582,12 @@ def review_errors(review: dict) -> list[str]:
     scores = review.get("scores", {})
     if not isinstance(scores, dict) or any(type(scores.get(key)) is not int or not 0 <= scores[key] <= 5 for key in SCORE_KEYS):
         return ["editorial review must score all six dimensions from 0 to 5"]
-    if quality_profile() == "seo-practical" and scores["evidence"] < 3:
+    if profile == "seo-practical" and scores["evidence"] < 3:
         errors.append(f"evidence: {scores['evidence']}/5 (minimum 3)")
     for key in SCORE_KEYS:
-        if quality_profile() != "seo-practical" and scores[key] < 4:
+        if profile != "seo-practical" and scores[key] < 4:
             errors.append(f"{key}: {scores[key]}/5 (minimum 4)")
-    if quality_profile() != "seo-practical" and sum(scores[key] for key in SCORE_KEYS) < 25:
+    if profile != "seo-practical" and sum(scores[key] for key in SCORE_KEYS) < 25:
         errors.append("editorial total below 25/30")
     for name in ("issues", "blockers"):
         if not isinstance(review.get(name), list) or any(not isinstance(item, str) or not item.strip() for item in review[name]):
@@ -1320,7 +1321,7 @@ def _format_repair_fact_failures(review: dict) -> list[str]:
     return failures
 
 
-def _saved_pass_review_errors(review: dict, sources: list[dict], required: list[dict]) -> list[str]:
+def _saved_pass_review_errors(review: dict, sources: list[dict], required: list[dict], *, profile: str | None = None) -> list[str]:
     if not isinstance(review, dict):
         return ["saved pass requires a complete independent review"]
     blocking = _publication_blocking_errors(review, sources, required)
@@ -1328,7 +1329,7 @@ def _saved_pass_review_errors(review: dict, sources: list[dict], required: list[
         return blocking
     if _publishable_review_fallback(review, required):
         return []
-    return review_errors(review)
+    return review_errors(review, profile=profile)
 
 
 def _publication_blocking_errors(review: dict, sources: list[dict], required: list[dict]) -> list[str]:
@@ -1518,14 +1519,15 @@ def validate_passed_chinese_audit(audit: dict, topic: gb.TopicRow) -> dict:
         fingerprints.append(repair["article_sha256"])
     if any(value != digest for value in fingerprints):
         raise invalid("complete article SHA256 does not match title, excerpt, body and tags")
-    structural = validate_insight(article, sources, lang="zh")
+    profile = audit.get("quality_profile", "research")
+    structural = validate_insight(article, sources, lang="zh", profile=profile)
     if structural["passed"] is not True or structural["errors"]:
         raise invalid("current structure gate failed: " + "; ".join(structural["errors"]))
     shape_keys = ("h2_count", "table_count", "table_shapes", "role_counts", "citation_id_counts", "visible_character_count", "zh_character_count")
     if any(key not in old_structure["metrics"] or old_structure["metrics"][key] != structural["metrics"].get(key) for key in shape_keys):
         raise invalid("saved structural signature does not match the current article")
     required.extend(cross_language_required_fixes(audit))
-    errors = _saved_pass_review_errors(last.get("review"), sources, required)
+    errors = _saved_pass_review_errors(last.get("review"), sources, required, profile=profile)
     if errors:
         raise invalid("independent review rejected: " + "; ".join(errors))
     return {"article": article, "article_sha256": digest, "structure": structural,

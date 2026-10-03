@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import tempfile
@@ -63,6 +64,10 @@ class PracticalProfileTests(unittest.TestCase):
     def test_production_path_accepts_short_fact_checked_draft_without_style_rewrite(self):
         with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {'INSIGHT_QUALITY_PROFILE':'seo-practical'}, clear=True), patch.object(ip, 'request_json', side_effect=[{'thesis':'实用说明'}, article(), review()]) as request:
             result = ip.produce_article(ip.gb.TopicRow(2, 'Example', {}, 'Brand', 'GEO'), SOURCES, 'unused', audit_path=Path(temporary)/'audit.json')
+            saved = json.loads((Path(temporary)/'audit.json').read_text())
+        with patch.dict(os.environ, {}, clear=True):
+            validated = ip.validate_passed_chinese_audit(saved, ip.gb.TopicRow(2, 'Example', {}, 'Brand', 'GEO'))
+        self.assertEqual(validated['structure']['metrics']['quality_profile'], 'seo-practical')
         self.assertEqual([c.kwargs['stage'] for c in request.call_args_list], ['research-brief', 'zh-draft-0', 'zh-review'])
         self.assertIn('300–500', request.call_args_list[0].args[0])
         self.assertIn('1200–2000', request.call_args_list[1].args[0])
