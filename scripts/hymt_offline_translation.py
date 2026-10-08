@@ -387,11 +387,17 @@ class _HyMTEngine:
         self.log.close()
 
     def translate(self, text: str, source: str, target: str) -> str:
-        prompt = (f'Translate the following text into {LANGUAGES[target]}. '
-                  'Note that you should only output the translated result without any additional explanation. '
+        # Token examples in an ordinary heading can be copied into its decode.
+        # Only describe the placeholder contract when this input contains one;
+        # inputs with protected resources retain the identical existing prompt.
+        placeholder_instruction = (
                   'Preserve all __KC_PH_...__ and __HYMTPH_...__ placeholders exactly, including their order. '
                   'Do not append inferred units or percent signs to placeholders. '
                   'Each __HYMTPH_...__ is a translated noun, protected resource or complete mathematical expression; integrate it without rewriting it. '
+                  ) if _PLACEHOLDERS.search(text) else ''
+        prompt = (f'Translate the following text into {LANGUAGES[target]}. '
+                  'Note that you should only output the translated result without any additional explanation. '
+                  + placeholder_instruction +
                   'Preserve Markdown formatting. Do not change financial facts, units, or comparisons. '
                   'Keep source digits as digits (including 0 and 1), percentages, formulas, and comparison operators. '
                   + financial_glossary(text, target) + '\n' + text)

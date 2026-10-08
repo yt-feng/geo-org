@@ -45,6 +45,10 @@ _LABEL_REGRESSIONS = [
     '<strong>严重事实错误（E）：</strong>某问题在任一平台答案中出现至少一处与官方事实台账冲突的陈述，该问题计1。',
 ]
 ARTICLE['body_html'] += '<section data-role="row710-regression">' + ''.join('<p>' + text + '</p>' for text in _LABEL_REGRESSIONS) + '</section>'
+# Exact row711 heading: a token-free input repeatedly acquired a malformed
+# placeholder from the decoder's unconditional token-preservation examples.
+# The existing raw-decode artifact proves the pinned model's actual behavior.
+ARTICLE['body_html'] += '<h2>四、品牌事实统一：官网、媒体、社媒、案例说同一套话</h2>'
 
 
 class InterruptAfterThree:
