@@ -75,8 +75,9 @@ class ReviewRecoveryTests(unittest.TestCase):
 
     def test_existing_retry_budget_is_never_reset(self):
         self.context['automatic_resumes'] = cp.MAX_AUTO_RESUMES
-        with self.assertRaisesRegex(RuntimeError, 'budget exhausted'):
-            self.select(self.api())
+        for conclusion in ('success', 'failure'):
+            with self.subTest(conclusion=conclusion), self.assertRaisesRegex(RuntimeError, 'budget exhausted'):
+                self.select(self.api(conclusion=conclusion))
 
     def test_foreign_topic_is_skipped_only_after_validating_its_saved_audit(self):
         other = fixtures.ip.gb.TopicRow(695, 'Next topic', {}, 'Brand', 'GEO')
@@ -111,10 +112,21 @@ class ReviewRecoveryTests(unittest.TestCase):
                 cp.recover_review_checkpoint(self.archive(files), self.topic, 'owner/repo', self.run)
         self.assertFalse((self.root.parent/'escape.json').exists())
 
-    def test_generation_must_have_completed_successfully(self):
-        # A failed production step keeps the original strict no-work proof path.
+    def test_failed_generation_retains_complete_failed_findings(self):
+        self.audit['passed'] = False
+        self.audit['attempts'][-1]['review']['blockers'] = ['A factual finding remains unresolved.']
+        self.audit['attempts'][-1]['errors'] = ['A factual finding remains unresolved.']
+        with mock.patch.object(fixtures.ip, 'request_json') as model:
+            result = self.select(self.api(conclusion='failure'))
+        model.assert_not_called()
+        audit = json.loads((Path(result['resume_dir'])/self.context['topic']['slug']/'zh.json').read_text())
+        self.assertEqual(audit, self.audit)
+        self.assertFalse(audit['passed'])
+        self.assertEqual(result['automatic_resumes'], 1)
+
+    def test_unknown_or_interrupted_generation_is_not_promoted(self):
         with self.assertRaises(ValueError):
-            self.select(self.api(conclusion='failure'))
+            self.select(self.api(conclusion='cancelled'))
 
     def test_artifact_digest_is_still_verified_before_recovery(self):
         api = self.api(); api.bundles[200][0]['digest'] = 'sha256:'+'0'*64

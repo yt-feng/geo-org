@@ -443,9 +443,16 @@ class AutoResumeTests(unittest.TestCase):
         run = self.run_record(100)
         with self.assertRaisesRegex(RuntimeError, 'continuation budget exhausted'):
             self.choose([run], {100: self.bundle(run, count=cp.MAX_AUTO_RESUMES)})
-        runs = [self.run_record(n) for n in range(100, 111)]
+        runs = [self.run_record(n) for n in range(100, 100+cp.MAX_RUNS+1)]
         with self.assertRaisesRegex(RuntimeError, 'search budget exhausted'):
             self.choose(runs, {})
+
+    def test_more_than_ten_verified_setup_failures_do_not_deadlock_the_next_topic(self):
+        runs = [self.run_record(n) for n in range(100, 111)]
+        result, api = self.choose(runs, {})
+        self.assertEqual(result['action'], 'fresh_no_checkpoint')
+        self.assertEqual(len(result['skipped']), 11)
+        self.assertEqual(sum('/artifacts?' in path for path in api.calls), 11)
 
     def test_eighteen_verified_legacy_failures_allow_first_checkpoint_bootstrap(self):
         runs = [self.run_record(n) for n in range(100, 118)]
@@ -471,7 +478,7 @@ class AutoResumeTests(unittest.TestCase):
                 cp.select(self.topic, repo='owner/repo', current_run_id='300', destination=self.root/'bad-contract', api=api, now=self.now)
 
     def test_truncated_inventory_cannot_reset_the_hidden_continuation_budget(self):
-        newer = [self.run_record(n) for n in range(400, 430)]
+        newer = [self.run_record(n) for n in range(400, 400+cp.MAX_RUNS)]
         for run in newer: run['conclusion'] = 'success'
         exhausted = self.run_record(100, age=2)
         api = API([*newer, exhausted], {100: self.bundle(exhausted, count=2)})
@@ -480,14 +487,14 @@ class AutoResumeTests(unittest.TestCase):
                       destination=self.root/'truncated', api=api, now=self.now)
         receipt = json.loads(cp.DECISION.read_text())
         self.assertEqual(receipt['action'], 'search_budget_exhausted')
-        self.assertEqual((receipt['returned_runs'], receipt['total_runs']), (30, 31))
+        self.assertEqual((receipt['returned_runs'], receipt['total_runs']), (cp.MAX_RUNS, cp.MAX_RUNS+1))
         self.assertIn('created=', api.calls[0])
         self.assertEqual(len(api.calls), 1)
         # Creation-order pages can hide an older-created, more recently rerun
         # checkpoint. A matching first-page audit must not roll back that count.
         known = self.run_record(500, age=0)
         exhausted['updated_at'] = self.now.isoformat()
-        api = API([known, *newer[:29], exhausted],
+        api = API([known, *newer[:cp.MAX_RUNS-1], exhausted],
                   {500: self.bundle(known), 100: self.bundle(exhausted, count=2)})
         with self.assertRaisesRegex(RuntimeError, 'before covering the 14-day creation window'):
             cp.select(self.topic, repo='owner/repo', current_run_id='300',
