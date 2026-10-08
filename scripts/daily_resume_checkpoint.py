@@ -1,7 +1,7 @@
 """Small, attempt-bound checkpoints for bounded continuation of a pending topic.
 
-Only this manifest format is discovered automatically. Legacy review artifacts
-remain available through the explicit manual resume path, never as implicit passes.
+Small manifests are preferred for automatic continuation. A terminal original
+attempt's full review may be re-sealed after artifact identity and audit checks.
 """
 from __future__ import annotations
 
@@ -30,8 +30,11 @@ MAX_FILE = 10_000_000
 MAX_BUNDLE = 30_100_000
 MAX_ZIP = 10_000_000
 MAX_AUTO_RESUMES = 2
-MAX_RUNS = 30
-MAX_ARTIFACT_LOOKUPS = 10
+# Cover the complete bounded API page, including recovery attempts for earlier
+# topics. A smaller independent lookup cap can make a cleared topic block its
+# successor indefinitely; transfer bytes and the API deadline remain bounded.
+MAX_RUNS = 100
+MAX_ARTIFACT_LOOKUPS = MAX_RUNS
 # Preserve the previous worst-case transfer allowance (three 10 MB ZIPs),
 # rather than rejecting the fourth tiny checkpoint for an unrelated topic.
 MAX_DOWNLOAD_BYTES = 3 * MAX_ZIP
@@ -54,11 +57,11 @@ LEGACY_SELECTION_PRODUCER_SHA256 = '19540a0f505493caa7c6c37cfa8578ff5f84fb344472
 # Pin the full module, including helpers, imports, defaults and globals. Only
 # the part of generate_daily_article after its selection boundary may vary.
 SELECTION_FAILURE_BOUNDARY_SHA256 = 'ef6dc4955b71cfb8d353304e2370cbf853882cdd37b74614c188daee59dbb1ab'
-SELECTION_CHECKPOINT_SHA256 = '5d07b85c052dcdb64c3fc7a402ddfa629efdcd86e5293915bdf0673bd272b13e'
+SELECTION_CHECKPOINT_SHA256 = 'b4d90226338f8ef4c864076b18c99b683e79dc4d717f8e326470da6ef2c32a3e'
 SELECTION_HELPERS_SHA256 = '80712176a5993ca4e44d73a10e52f8ea6d1ae87976999745aa1b9428832ed4c7'
 # Keep the reviewed earlier producer/import inventory valid across output-only repairs.
-SELECTION_PREVIOUS_CHECKPOINT_SHA256 = '527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b,1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8'
-SELECTION_NEW_HELPERS_SHA256 = '49fc907b16380041d34dde1e572107cc2f5ee7cda4366627fdb6fc29aac200f0,0dfedf534fccd84b78a336ccb487cf386618958492dc4a67e4dd2dac8a894b25,49a80fea1db0ff144907d10aa2c9184d1fdb771cb36b2a053396a81ef38fcbcf,e0de0c8f1fa9b4a4b398c1d2d4edfefb303a0e068cec852c30acc20a394a6b80'
+SELECTION_PREVIOUS_CHECKPOINT_SHA256 = '527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b,1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8,5d07b85c052dcdb64c3fc7a402ddfa629efdcd86e5293915bdf0673bd272b13e,e7e1cbc2e7d8779aee9f6987381b4f4cc8ffa01f7f22086b0372e0a9db572950'
+SELECTION_NEW_HELPERS_SHA256 = '49fc907b16380041d34dde1e572107cc2f5ee7cda4366627fdb6fc29aac200f0,0dfedf534fccd84b78a336ccb487cf386618958492dc4a67e4dd2dac8a894b25,49a80fea1db0ff144907d10aa2c9184d1fdb771cb36b2a053396a81ef38fcbcf,e0de0c8f1fa9b4a4b398c1d2d4edfefb303a0e068cec852c30acc20a394a6b80,b40548d3c21dcadc812b6c9221d11a466750a355254735541c054cff78990bda'
 LEGACY_SELECTION_CHECKPOINT_SHA256 = 'c828ba3183ad46f0fb1a5af15edb9d48cbe5baf038c1551c1e91ce5f39db0ad0'
 
 
@@ -89,6 +92,10 @@ def assert_no_authored_work(audit_root):
 
 class FailedProductionWithoutCheckpoint(ValueError):
     """Exact terminal production attempt; requires separate no-work evidence."""
+
+
+class CompletedProductionWithoutCheckpoint(ValueError):
+    """Completed generation may be recovered from its authenticated full review."""
 
 
 def sha(data):
@@ -364,6 +371,8 @@ def absent_checkpoint_reason(api, repo, run):
         return 'verified_setup_only'
     if step.get('status') == 'completed' and step.get('conclusion') == 'failure':
         raise FailedProductionWithoutCheckpoint('Production generation step failed; saved findings may be missing')
+    if step.get('status') == 'completed' and step.get('conclusion') == 'success':
+        raise CompletedProductionWithoutCheckpoint('Production generation completed but its small checkpoint is missing')
     raise ValueError('Production generation started or its start state is unknown; saved findings may be missing')
 
 
@@ -520,6 +529,60 @@ def validate_artifact(artifact, run):
         raise ValueError('Invalid checkpoint artifact size, digest or producer identity')
 
 
+def recover_review_checkpoint(blob, topic, repo, run):
+    """Re-seal a terminal attempt's full review without regenerating its drafts.
+
+    The caller verifies the artifact digest and exact terminal production step.
+    Review names lack an attempt suffix, so only the original attempt is eligible.
+    Copy only bound audit bytes, then use the ordinary source/review validators.
+    """
+    if run['run_attempt'] != 1 or len(blob) > MAX_ZIP:
+        raise ValueError('Full review recovery requires the original bounded attempt')
+    with zipfile.ZipFile(io.BytesIO(blob)) as archive, tempfile.TemporaryDirectory() as temporary:
+        entries = archive.infolist()
+        names = [entry.filename for entry in entries]
+        if (len(entries) > 1000 or len(names) != len(set(names)) or 'resume-context.json' not in names
+                or sum(entry.file_size for entry in entries) > MAX_BUNDLE
+                or any(entry.file_size > MAX_FILE or entry.is_dir()
+                       or (entry.external_attr >> 16) & 0o170000 == 0o120000
+                       or entry.filename.startswith('/') or '\\' in entry.filename
+                       or any(part in ('', '.', '..') for part in entry.filename.split('/'))
+                       for entry in entries)):
+            raise ValueError('Invalid full review archive')
+        context = read_json(archive.read('resume-context.json'))
+        producer = {'repository': repo, 'run_id': str(run['id']), 'run_attempt': '1',
+                    'head_sha': run['head_sha'], 'ref': 'refs/heads/main', 'event': run['event']}
+        if (not isinstance(context, dict)
+                or set(context) != {'schema', 'topic', 'preview', 'producer', 'automatic_resumes', 'selected_from', 'phase'}
+                or context['schema'] != SCHEMA or context['producer'] != producer
+                or context['preview'] is not False or context['phase'] != 'generation'
+                or not valid_topic_identity(context['topic'])
+                or type(context['automatic_resumes']) is not int
+                or not 0 <= context['automatic_resumes'] <= MAX_AUTO_RESUMES):
+            raise ValueError('Full review context is not bound to the terminal production attempt')
+        if context['topic'] != topic_identity(topic):
+            import generate_blog as gb
+            topic = next((candidate for candidate in gb.read_topics(Path('assets/blog_articles.xlsx'), start_row=2, limit=0)
+                          if topic_identity(candidate) == context['topic']), None)
+            if topic is None:
+                raise ValueError('Full review topic is absent or changed in the current source backlog')
+        prefix = 'insights/' + context['topic']['slug'] + '/'
+        allowed = {prefix + lang + '.json' for lang in ('zh', 'en', 'ar')}
+        if prefix + 'zh.json' not in names or any(name.startswith('insights/') and name not in allowed for name in names):
+            raise ValueError('Full review contains missing or foreign authored audits')
+        root = Path(temporary)
+        for name in allowed.intersection(names):
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(archive.read(name))
+        package(topic, context, root/'insights', root/'checkpoint')
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as recovered:
+            for path in sorted((root/'checkpoint').rglob('*.json')):
+                recovered.write(path, path.relative_to(root/'checkpoint').as_posix())
+        return output.getvalue()
+
+
 def select(topic, *, repo, current_run_id, destination, api=None, now=None):
     """Select the newest coherent main failure; discovery errors never start fresh work."""
     import generate_daily_blog as daily
@@ -589,6 +652,7 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
         expected_name = f'daily-insight-checkpoint-{run["id"]}-{run["run_attempt"]}'
         artifacts = artifact_inventory(api, repo, run)
         matches = [item for item in artifacts if item['name'] == expected_name and not item.get('expired')]
+        recovered_review = False
         if not matches:
             try:
                 reason = absent_checkpoint_reason(api, repo, run)
@@ -598,22 +662,32 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
                 # attempt added no findings, but must not skip older history.
                 legacy = [item for item in artifacts if item['name'] == f'daily-insight-review-{run["id"]}'
                           and not item['expired']]
-                if isinstance(exc, FailedProductionWithoutCheckpoint) and len(legacy) == 1 and run['run_attempt'] == 1:
-                    no_work_topic = legacy_no_work(download(legacy[0], run), api, repo, run, definitions)
-                    skipped.append({'run_id': run['id'], 'run_attempt': run['run_attempt'],
-                                    'artifact_id': legacy[0]['id'], 'artifact_digest': legacy[0]['digest'],
-                                    'topic': no_work_topic, 'reason': 'verified_legacy_selection_failure'})
-                    continue
-                message = f'Run {run["id"]} attempt {run["run_attempt"]} has no usable checkpoint: {exc}'
-                save_json(DECISION, {'action': 'checkpoint_missing', 'topic': expected,
-                                    'run_id': run['id'], 'run_attempt': run['run_attempt'], 'reason': message})
-                raise ValueError(message) from exc
-            skipped.append({'run_id': run['id'], 'reason': reason})
-            continue
-        if len(matches) != 1:
-            raise ValueError('Ambiguous or oversized automatic checkpoint')
-        artifact = matches[0]
-        blob = download(artifact, run)
+                if isinstance(exc, (FailedProductionWithoutCheckpoint, CompletedProductionWithoutCheckpoint)) and len(legacy) == 1 and run['run_attempt'] == 1:
+                    artifact = legacy[0]
+                    review_blob = download(artifact, run)
+                    with zipfile.ZipFile(io.BytesIO(review_blob)) as review_archive:
+                        has_context = 'resume-context.json' in review_archive.namelist()
+                    if not has_context and isinstance(exc, FailedProductionWithoutCheckpoint):
+                        no_work_topic = legacy_no_work(review_blob, api, repo, run, definitions)
+                        skipped.append({'run_id': run['id'], 'run_attempt': run['run_attempt'],
+                                        'artifact_id': artifact['id'], 'artifact_digest': artifact['digest'],
+                                        'topic': no_work_topic, 'reason': 'verified_legacy_selection_failure'})
+                        continue
+                    blob = recover_review_checkpoint(review_blob, topic, repo, run)
+                    recovered_review = True
+                else:
+                    message = f'Run {run["id"]} attempt {run["run_attempt"]} has no usable checkpoint: {exc}'
+                    save_json(DECISION, {'action': 'checkpoint_missing', 'topic': expected,
+                                        'run_id': run['id'], 'run_attempt': run['run_attempt'], 'reason': message})
+                    raise ValueError(message) from exc
+            else:
+                skipped.append({'run_id': run['id'], 'reason': reason})
+                continue
+        else:
+            if len(matches) != 1:
+                raise ValueError('Ambiguous or oversized automatic checkpoint')
+            artifact = matches[0]
+            blob = download(artifact, run)
         with tempfile.TemporaryDirectory(prefix='candidate-', dir=destination) as folder:
             manifest = unpack(blob, folder)
             producer = manifest['producer']
@@ -643,7 +717,8 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
                 skipped.append({'run_id': run['id'], 'reason': 'preview_only'})
                 continue
             if manifest['topic'] != expected:
-                skipped.append({'run_id': run['id'], 'reason': 'different_topic_fingerprint'})
+                skipped.append({'run_id': run['id'], 'reason': 'different_topic_fingerprint',
+                                'recovered_review': recovered_review})
                 continue
             if manifest.get('state') != 'ready':
                 raise ValueError('Newest topic checkpoint is incomplete; refusing to restart paid drafting or reuse an older pass')
@@ -658,6 +733,8 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
                       'artifact_id': artifact['id'], 'topic': expected,
                       'automatic_resumes': count+1, 'resume_dir': str(target), 'skipped': skipped,
                       'downloads': downloads, 'downloaded_bytes': downloaded_bytes}
+            if recovered_review:
+                result['recovered_review'] = {'artifact_id': artifact['id'], 'artifact_digest': artifact['digest']}
             save_json(DECISION, result)
             return result
     if len(capable) > MAX_ARTIFACT_LOOKUPS:

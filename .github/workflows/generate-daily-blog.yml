@@ -197,6 +197,9 @@ jobs:
       - name: Seal a small resumable topic checkpoint
         if: always()
         id: checkpoint
+        env:
+          INSIGHT_QUALITY_PROFILE: "seo-practical"
+          INSIGHT_MIN_ZH_CHARS: "900"
         run: python scripts/daily_resume_checkpoint.py --package "$RUNNER_TEMP/daily-checkpoint"
 
       - name: Preserve attempt-bound continuation checkpoint

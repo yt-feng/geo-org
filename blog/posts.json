@@ -1,5 +1,177 @@
 [
   {
+    "order": "719",
+    "row": "710",
+    "slug": "00710-geo-012e1e51",
+    "title": "Eco-GEO：云计算品牌做GEO：先整理事实，再回答客户问题",
+    "excerpt": "从产品资料、问题页面和观察记录开始，持续发布清楚、有来源的云计算品牌内容，不把答案引用等同于成交。",
+    "category": "云计算",
+    "tags": "GEO, 云计算, 内容优化, Eco-GEO, 品牌化GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-04",
+    "image": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00710-geo-012e1e51/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:33+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:33+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S3",
+        "title": "NIST SP 500-292",
+        "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+        "publisher": "National Institute of Standards and Technology",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:34+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 75496,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "nist.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "cloud_computing"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+        "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:38+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-03T22:43:39+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "quality_profile": "seo-practical",
+        "h2_count": 3,
+        "table_count": 0,
+        "table_shapes": [],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 2,
+          "S2": 1,
+          "S4": 1
+        },
+        "visible_character_count": 1513,
+        "zh_character_count": 1337,
+        "word_count": 121,
+        "minimum_zh_characters": 900,
+        "executive_summary_takeaways": 2,
+        "tables_meeting_structure": 0,
+        "valid_citation_count": 4,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S4"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "blogs.bing.com",
+          "developers.google.com"
+        ],
+        "unique_cited_sources": 3,
+        "unique_cited_domains": 3,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 8,
+      "warnings": [
+        "全文结构与『用观察结果安排下一步』一节：文章反复声明『不承诺被引用或带来订单』（摘要、第一节、观察节、assumptions节共三至四处），重复度偏高，占用篇幅却未补充新的可操作信息；建议保留一处总声明，其余位置改为具体做法，例如给出观察记录应包含哪些字段。（severity: low）",
+        "tradeoffs 维度整体缺失：文章只给出『先做少量页面、资料冲突先解决资料』等零散取舍，未讨论该路径的资源代价与机会成本（例如整理事实与发布新页面的时间如何分配、何时不值得继续维护旧页面）。不属事实错误，但作为实用文章可读性受损。（severity: low）",
+        "『用观察结果安排下一步』一节：『记录出现了哪些来源、品牌事实是否正确』缺少最低可用的记录字段示例（问题、平台、日期、来源、事实正确与否），读者难以直接落地；建议补一个极简记录清单。（severity: low）",
+        "『来源应靠近它支持的事实』一段（引[S2]处）：对[S2]的转述准确，但可再点明该研究的 influence 指标是『答案层面吸收的代理指标、属描述性统计』，避免读者把『影响答案』读成因果或商业效果。此为表述精确性建议，非事实错误。（severity: low）",
+        "全文：未使用来源S3（NIST云参考架构，2011）与S5（BCG观点文章）。未引用不构成问题，且S3为历史技术文档、S5为观点性分析，均不宜支撑本文的流程建议；此处仅记录来源覆盖情况。（severity: info）"
+      ],
+      "review_type": "automated editorial review",
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 3,
+        "tradeoffs": 2,
+        "actionability": 4,
+        "originality": 2
+      }
+    }
+  },
+  {
     "order": "718",
     "row": "709",
     "slug": "00709-seo-ai-geo-7961d3a6",

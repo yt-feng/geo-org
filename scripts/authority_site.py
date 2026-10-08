@@ -664,7 +664,8 @@ def normalize_authors(root: Path = Path(".")) -> None:
             slug = post.get("slug")
             if slug:
                 expected_url = f"{SITE_URL}/blog/articles/{slug}/" if lang == "zh" else f"{SITE_URL}/{lang}/blog/articles/{slug}/"
-            title = ensure_title_prefix(post.get("title", ""))
+            title = (ensure_title_prefix(post.get("title", "")) if lang == "zh"
+                     else str(post.get("title", "")).strip())
             if post.get("title") != title:
                 post["title"] = title
                 changed = True
