@@ -57,10 +57,10 @@ LEGACY_SELECTION_PRODUCER_SHA256 = '19540a0f505493caa7c6c37cfa8578ff5f84fb344472
 # Pin the full module, including helpers, imports, defaults and globals. Only
 # the part of generate_daily_article after its selection boundary may vary.
 SELECTION_FAILURE_BOUNDARY_SHA256 = 'ef6dc4955b71cfb8d353304e2370cbf853882cdd37b74614c188daee59dbb1ab'
-SELECTION_CHECKPOINT_SHA256 = 'b4d90226338f8ef4c864076b18c99b683e79dc4d717f8e326470da6ef2c32a3e'
+SELECTION_CHECKPOINT_SHA256 = '3041131b1ba40f7bbc4eb089f977f024c911650488783f3a9b37f20f7986c0a3'
 SELECTION_HELPERS_SHA256 = '80712176a5993ca4e44d73a10e52f8ea6d1ae87976999745aa1b9428832ed4c7'
 # Keep the reviewed earlier producer/import inventory valid across output-only repairs.
-SELECTION_PREVIOUS_CHECKPOINT_SHA256 = '527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b,1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8,5d07b85c052dcdb64c3fc7a402ddfa629efdcd86e5293915bdf0673bd272b13e,e7e1cbc2e7d8779aee9f6987381b4f4cc8ffa01f7f22086b0372e0a9db572950'
+SELECTION_PREVIOUS_CHECKPOINT_SHA256 = 'b4d90226338f8ef4c864076b18c99b683e79dc4d717f8e326470da6ef2c32a3e,527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b,1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8,5d07b85c052dcdb64c3fc7a402ddfa629efdcd86e5293915bdf0673bd272b13e,e7e1cbc2e7d8779aee9f6987381b4f4cc8ffa01f7f22086b0372e0a9db572950'
 SELECTION_NEW_HELPERS_SHA256 = '49fc907b16380041d34dde1e572107cc2f5ee7cda4366627fdb6fc29aac200f0,0dfedf534fccd84b78a336ccb487cf386618958492dc4a67e4dd2dac8a894b25,49a80fea1db0ff144907d10aa2c9184d1fdb771cb36b2a053396a81ef38fcbcf,e0de0c8f1fa9b4a4b398c1d2d4edfefb303a0e068cec852c30acc20a394a6b80,b40548d3c21dcadc812b6c9221d11a466750a355254735541c054cff78990bda'
 LEGACY_SELECTION_CHECKPOINT_SHA256 = 'c828ba3183ad46f0fb1a5af15edb9d48cbe5baf038c1551c1e91ce5f39db0ad0'
 
@@ -248,38 +248,75 @@ def seal(topic, context, audit_root, destination):
         return None
 
 
+class CheckpointRequestError(RuntimeError):
+    def __init__(self, status=None):
+        self.status = status
+        detail = f' (HTTP {status})' if status else ' (unclassified request failure)'
+        super().__init__('GitHub checkpoint request failed' + detail + '; no fresh paid run was started')
+
+
 class GitHub:
     """A fixed total deadline and streamed byte caps apply to every API response."""
     def __init__(self, repo, seconds=120):
         self.repo, self.deadline = repo, time.monotonic() + seconds
 
     def read(self, path, limit):
+        for attempt in range(3):
+            try:
+                return self._read_once(path, limit)
+            except CheckpointRequestError as error:
+                # Retry only explicit server responses to this identical GET.
+                # Transport, permission, missing artifacts and unknown failures
+                # stop immediately; all attempts share the original deadline.
+                if error.status not in (500, 502, 503, 504) or attempt == 2:
+                    raise
+                delay = attempt + 1
+                if time.monotonic() + delay >= self.deadline:
+                    raise TimeoutError('Automatic resume discovery deadline exhausted') from error
+                print(f'GitHub checkpoint GET received HTTP {error.status}; retry {attempt + 2}/3', flush=True)
+                time.sleep(delay)
+
+    def _read_once(self, path, limit):
         deadline = min(self.deadline, time.monotonic() + 30)
         if deadline <= time.monotonic():
             raise TimeoutError('Automatic resume discovery deadline exhausted')
-        process = subprocess.Popen(['gh', 'api', path], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        process = subprocess.Popen(['gh', 'api', path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         data = bytearray()
+        diagnostic = bytearray()
         try:
             with selectors.DefaultSelector() as selector:
-                selector.register(process.stdout, selectors.EVENT_READ)
-                while True:
+                selector.register(process.stdout, selectors.EVENT_READ, 'body')
+                selector.register(process.stderr, selectors.EVENT_READ, 'diagnostic')
+                while selector.get_map():
                     remaining = deadline - time.monotonic()
-                    if remaining <= 0 or not selector.select(remaining):
+                    if remaining <= 0:
                         raise TimeoutError('GitHub checkpoint request timed out')
-                    chunk = os.read(process.stdout.fileno(), 65536)
-                    if not chunk:
-                        break
-                    data.extend(chunk)
-                    if len(data) > limit:
-                        raise ValueError('GitHub checkpoint response exceeds byte limit')
+                    ready = selector.select(remaining)
+                    if not ready:
+                        raise TimeoutError('GitHub checkpoint request timed out')
+                    for key, _ in ready:
+                        chunk = os.read(key.fileobj.fileno(), 65536)
+                        if not chunk:
+                            selector.unregister(key.fileobj)
+                        elif key.data == 'body':
+                            data.extend(chunk)
+                            if len(data) > limit:
+                                raise ValueError('GitHub checkpoint response exceeds byte limit')
+                        else:
+                            diagnostic.extend(chunk)
+                            del diagnostic[:-4096]
             if process.wait(timeout=max(.01, deadline-time.monotonic())):
-                raise RuntimeError('GitHub checkpoint request failed; no fresh paid run was started')
+                # Never print gh stderr: redirects may contain signed URLs.
+                match = re.search(r'^gh: [^\r\n]* \(HTTP ([0-9]{3})\)\s*$',
+                                  diagnostic.decode('utf-8', errors='replace'), re.M)
+                raise CheckpointRequestError(int(match[1]) if match else None)
             return bytes(data)
         finally:
             if process.poll() is None:
                 process.kill()
             process.wait()
             process.stdout.close()
+            process.stderr.close()
 
     def json(self, path):
         return read_json(self.read(path, 2_000_000))
