@@ -3,21 +3,21 @@
   "metadata_only": true,
   "sources": [
     {
-      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
-      "title": "NIST SP 500-292",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
+      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/annexes-1.html",
+      "title": "附件1: 案例研究摘要",
+      "publisher": "Food and Agriculture Organization of the United Nations",
+      "publisher_domain": "fao.org",
       "published": "",
-      "retrieved_at": "2026-10-03T22:43:34+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
+      "retrieved_at": "2026-10-08T14:30:18+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
       "evidence_role": "industry_context",
       "industries": [
-        "cloud_computing"
+        "agriculture_technology"
       ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
-      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
-      "body_chars": 75496,
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "438ea7848eafd95b099a60cddf40718cc854cd7102a6124d7d0a2d1085f9b01b",
+      "body_chars": 18718,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
@@ -28,7 +28,7 @@
       "publisher": "State Administration for Market Regulation",
       "publisher_domain": "samr.gov.cn",
       "published": "2021-11-02",
-      "retrieved_at": "2026-10-03T19:31:53+00:00",
+      "retrieved_at": "2026-10-07T21:39:30+00:00",
       "retrieval_method": "https_fetch",
       "evidence_kind": "regulatory_documentation",
       "evidence_role": "industry_context",
@@ -43,12 +43,32 @@
       "excerpt_truncated": false
     },
     {
-      "url": "https://support.google.com/localservices/answer/7496631?hl=en",
-      "title": "Reviews and Ratings on Local Services Ads - Local Services Help",
+      "url": "https://www.fda.gov/media/146870/download",
+      "title": "GPSDP-032321-FDA-ExecutiveSummaryfinal",
+      "publisher": "US Food and Drug Administration",
+      "publisher_domain": "fda.gov",
+      "published": "",
+      "retrieved_at": "2026-10-07T21:39:29+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "838544eb4e08e360dedfaaf3a9c9453be4c4d8b076c3895807d7c548d4239553",
+      "body_chars": 85431,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/business/answer/9918094?hl=en",
+      "title": "Understand your Business Profile performance & insights - Google Business Profile Help",
       "publisher": "Google",
       "publisher_domain": "google.com",
       "published": "",
-      "retrieved_at": "2026-10-03T19:31:43+00:00",
+      "retrieved_at": "2026-10-07T21:39:18+00:00",
       "retrieval_method": "https_fetch",
       "evidence_kind": "platform_documentation",
       "evidence_role": "industry_context",
@@ -56,10 +76,10 @@
         "local_services"
       ],
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "5885ad922b63438b1dd08a727beb92b70d3274966fae24bd5c4137c8ae60dfab",
-      "body_chars": 1423,
+      "text_sha256": "ab91985fae34f1eb5245ceeb374aed9b40ccf7e194139a203cd642acaa7f4c4b",
+      "body_chars": 6374,
       "excerpt_start": 0,
-      "excerpt_end": 1423,
+      "excerpt_end": 6374,
       "excerpt_truncated": false
     },
     {
@@ -68,7 +88,7 @@
       "publisher": "State Administration for Market Regulation",
       "publisher_domain": "samr.gov.cn",
       "published": "2026-01-07",
-      "retrieved_at": "2026-10-03T19:31:29+00:00",
+      "retrieved_at": "2026-10-07T21:39:08+00:00",
       "retrieval_method": "https_fetch",
       "evidence_kind": "regulatory_documentation",
       "evidence_role": "industry_context",
@@ -88,7 +108,7 @@
       "publisher": "BCG",
       "publisher_domain": "bcg.com",
       "published": "",
-      "retrieved_at": "2026-10-03T19:31:27+00:00",
+      "retrieved_at": "2026-10-07T21:39:05+00:00",
       "retrieval_method": "https_fetch",
       "evidence_kind": "consulting_analysis",
       "evidence_role": "industry_context",
@@ -103,12 +123,12 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/annexes-1.html",
-      "title": "附件1: 案例研究摘要",
+      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/national-strategies-agricultural-automation.html",
+      "title": "针对农业的政策、立法和投资",
       "publisher": "Food and Agriculture Organization of the United Nations",
       "publisher_domain": "fao.org",
       "published": "",
-      "retrieved_at": "2026-10-03T19:31:15+00:00",
+      "retrieved_at": "2026-10-07T21:38:54+00:00",
       "retrieval_method": "https_fetch",
       "evidence_kind": "institutional_research",
       "evidence_role": "industry_context",
@@ -116,11 +136,11 @@
         "agriculture_technology"
       ],
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "438ea7848eafd95b099a60cddf40718cc854cd7102a6124d7d0a2d1085f9b01b",
-      "body_chars": 18718,
+      "text_sha256": "342a5aa67d3cb7c1eb3a99a4e991b4dac866c0ac104fa6282d5b83de6b8a6b4b",
+      "body_chars": 9703,
       "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
+      "excerpt_end": 9703,
+      "excerpt_truncated": false
     },
     {
       "url": "https://ers.usda.gov/sites/default/files/_laserfiche/publications/80326/ERR-217.pdf",
@@ -128,7 +148,7 @@
       "publisher": "USDA Economic Research Service",
       "publisher_domain": "usda.gov",
       "published": "",
-      "retrieved_at": "2026-10-03T19:31:13+00:00",
+      "retrieved_at": "2026-10-07T21:38:52+00:00",
       "retrieval_method": "https_pdf_text",
       "evidence_kind": "government_research",
       "evidence_role": "industry_context",
@@ -148,7 +168,7 @@
       "publisher": "State Council of the People's Republic of China",
       "publisher_domain": "gov.cn",
       "published": "",
-      "retrieved_at": "2026-10-03T19:31:00+00:00",
+      "retrieved_at": "2026-10-07T21:38:40+00:00",
       "retrieval_method": "https_pdf_text",
       "evidence_kind": "government_documentation",
       "evidence_role": "industry_context",
@@ -168,7 +188,7 @@
       "publisher": "Google",
       "publisher_domain": "google.com",
       "published": "",
-      "retrieved_at": "2026-10-02T21:03:18+00:00",
+      "retrieved_at": "2026-10-06T21:18:13+00:00",
       "retrieval_method": "https_fetch",
       "evidence_kind": "platform_documentation",
       "evidence_role": "industry_context",
@@ -180,6 +200,106 @@
       "body_chars": 4406,
       "excerpt_start": 0,
       "excerpt_end": 4406,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+      "title": "NIST SP 500-292",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-10-06T21:17:29+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
+      "body_chars": 75496,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/google-ads/answer/7167635?hl=zh-Hans",
+      "title": "关于高级验证 - Google Ads帮助",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-04T19:51:49+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "63f7e67714fa8645471fad5ca74cbf8f3fabf8056df28321b2c143d2f7fb51fc",
+      "body_chars": 3351,
+      "excerpt_start": 0,
+      "excerpt_end": 3351,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.ers.usda.gov/amber-waves/2016/december/precision-agriculture-technologies-and-factors-affecting-their-adoption",
+      "title": "Precision Agriculture Technologies and Factors Affecting Their Adoption | Economic Research Service",
+      "publisher": "USDA Economic Research Service",
+      "publisher_domain": "usda.gov",
+      "published": "",
+      "retrieved_at": "2026-10-04T19:50:43+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "agriculture_technology"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "0f1e5ab73c8ccbe9d86fc36802660b25fa4ff81128a7aa8a1b49aa86ba0762ff",
+      "body_chars": 6436,
+      "excerpt_start": 0,
+      "excerpt_end": 6436,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.nist.gov/system/files/documents/itl/cloud/SP_500_293_volumeII.pdf",
+      "title": "NIST US Government Cloud Computing Technology Roadmap",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-10-04T19:50:31+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "066aacfb895e9a36182f0e1af11b8f2a6c098443812ae811704b1408895becf5",
+      "body_chars": 223631,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/localservices/answer/7496631?hl=en",
+      "title": "Reviews and Ratings on Local Services Ads - Local Services Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-03T19:31:43+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "5885ad922b63438b1dd08a727beb92b70d3274966fae24bd5c4137c8ae60dfab",
+      "body_chars": 1423,
+      "excerpt_start": 0,
+      "excerpt_end": 1423,
       "excerpt_truncated": false
     },
     {
@@ -243,26 +363,6 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://support.google.com/business/answer/9918094?hl=en",
-      "title": "Understand your Business Profile performance & insights - Google Business Profile Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-10-01T21:26:37+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "local_services"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "ab91985fae34f1eb5245ceeb374aed9b40ccf7e194139a203cd642acaa7f4c4b",
-      "body_chars": 6374,
-      "excerpt_start": 0,
-      "excerpt_end": 6374,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
       "title": "Consumer IoT Cybersecurity",
       "publisher": "National Institute of Standards and Technology",
@@ -280,26 +380,6 @@
       "body_chars": 3490,
       "excerpt_start": 0,
       "excerpt_end": 3490,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/national-strategies-agricultural-automation.html",
-      "title": "针对农业的政策、立法和投资",
-      "publisher": "Food and Agriculture Organization of the United Nations",
-      "publisher_domain": "fao.org",
-      "published": "",
-      "retrieved_at": "2026-09-30T21:03:00+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "agriculture_technology"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "342a5aa67d3cb7c1eb3a99a4e991b4dac866c0ac104fa6282d5b83de6b8a6b4b",
-      "body_chars": 9703,
-      "excerpt_start": 0,
-      "excerpt_end": 9703,
       "excerpt_truncated": false
     },
     {
