@@ -1,5 +1,322 @@
 [
   {
+    "order": "721",
+    "row": "712",
+    "slug": "00712-geo-pmf-ai-807ae726",
+    "title": "Eco-GEO: إيكو-جيوجيو: مرحلة استكشاف القدرة على تحقيق الربح في التجارة عبر البث المباشر، ومرحلة تجهيز العلامات التجارية. جيوجيو: دع الذكاء الاصطناعي يوضح حقائق العلامة التجارية، بدلاً من محاولة الحصول على المراكز الأولى.",
+    "excerpt": "عندما يسلم المشتري عملية التفاوض والفحص للأهلية والاستفسارات المتعلقة بالخدمة بعد البيع إلى مساعد الذكاء الاصطناعي، فإن الجملة التي يقولها الذكاء الاصطناعي تصبح الانطباع الأول عن العلامة التجارية. هذا المقال موجه لفرق التجارة عبر الإنترنت في مرحلة استكشاف PMF وللمجلس الإداري، ويفسر الفرق بين مفهوم GEO التجاري وتفكير الترتيب، ويقدم إجراءات توحيد الحقائق، وحدود IP المؤسسين/الخبراء، وكذلك قائمة أساسية يمكن مراجعتها.",
+    "category": "GEO للعلامات التجارية",
+    "tags": "العلامة التجارية GEO، GEO بقبعة بيضاء، البحث بالذكاء الاصطناعي، التجارة عبر البث المباشر، التوافق بين العلامة التجارية والمؤسسة، فترة استكشاف PMF، Eco-GEO، خدمات GEO، تحسين البحث بالذكاء الاصطناعي",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-09",
+    "image": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/ar/blog/articles/00712-geo-pmf-ai-807ae726/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-08T23:26:34+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Commerce Everywhere, Agents in Charge",
+        "url": "https://www.bcg.com/x/the-multiplier/commerce-everywhere-agents-in-charge",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-08T23:26:36+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 19450,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "livestream_commerce"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2026-01-27; visible datePublished=2026-01-29). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "d07c7c997d0f5deac79fe77857e4a693edb11ba95f9345afaf004de3d51f9be5"
+      },
+      {
+        "id": "S3",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-08T23:26:36+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S4",
+        "title": "直播电商监督管理办法",
+        "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
+        "publisher": "State Administration for Market Regulation",
+        "published": "2026-01-07",
+        "retrieved_at": "2026-10-08T23:26:39+00:00",
+        "evidence_kind": "regulatory_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 11552,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "samr.gov.cn",
+        "evidence_role": "industry_context",
+        "industries": [
+          "livestream_commerce"
+        ],
+        "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction.",
+        "text_sha256": "66f12a13fd10de196fbef32962cf7af0ea8f8130e0f0e2e2f744ea5dcd7603ab"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-08T23:26:40+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "ar",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "quality_profile": "research",
+        "h2_count": 5,
+        "table_count": 1,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 5,
+            "headers": 3,
+            "cells": 12
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 3,
+          "S2": 1,
+          "S3": 4,
+          "S4": 4,
+          "S5": 1
+        },
+        "visible_character_count": 10529,
+        "zh_character_count": 0,
+        "word_count": 2054,
+        "executive_summary_takeaways": 4,
+        "tables_meeting_structure": 1,
+        "valid_citation_count": 13,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "samr.gov.cn"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 5,
+            "table_count": 1,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 5,
+                "headers": 3,
+                "cells": 12
+              }
+            ],
+            "role_counts": {
+              "assumptions": 1,
+              "executive-summary": 1
+            },
+            "citation_id_counts": {
+              "S1": 3,
+              "S2": 1,
+              "S3": 4,
+              "S4": 4,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "-5.74%": 2,
+                "1": 1,
+                "15": 1,
+                "7": 2
+              },
+              "translated": {
+                "-5.74%": 2,
+                "1": 1,
+                "15": 1,
+                "7": 2
+              },
+              "missing": {},
+              "added": {}
+            }
+          }
+        },
+        "publication_policy": "translation-integrity-v2",
+        "quality_warning_count": 2
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "title",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "excerpt",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.10",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.22",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.38",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.62",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.66",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.70",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.74",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.78",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.82",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.94",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.102",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.110",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.122",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.130",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.138",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.142",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.208",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.258",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "tags",
+          "warning": "Offline translation changed a protected term"
+        },
+        "Article has 5 h2 sections; at least 6 are required.",
+        "Only 1 tables meet the analytical-table structure; at least 2 are required."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "720",
     "row": "711",
     "slug": "00711-ai-geo-bc647c5c",

@@ -3,6 +3,166 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
+      "title": "直播电商监督管理办法",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "2026-01-07",
+      "retrieved_at": "2026-10-08T23:26:39+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction.",
+      "text_sha256": "66f12a13fd10de196fbef32962cf7af0ea8f8130e0f0e2e2f744ea5dcd7603ab",
+      "body_chars": 11552,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/x/the-multiplier/commerce-everywhere-agents-in-charge",
+      "title": "Commerce Everywhere, Agents in Charge",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-08T23:26:36+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2026-01-27; visible datePublished=2026-01-29). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "d07c7c997d0f5deac79fe77857e4a693edb11ba95f9345afaf004de3d51f9be5",
+      "body_chars": 19450,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/business/answer/7091?hl=en",
+      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-08T21:34:56+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
+      "body_chars": 3585,
+      "excerpt_start": 0,
+      "excerpt_end": 3585,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2026/the-new-rules-of-customer-experience-in-the-age-of-ai",
+      "title": "The New Rules of Customer Experience in the Age of Agents",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2026-05-04",
+      "retrieved_at": "2026-10-08T21:34:54+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "4548509d67995ec33d6edb969be7efd4bbfc662dc4e9a8d04b375dc1459b028f",
+      "body_chars": 9890,
+      "excerpt_start": 0,
+      "excerpt_end": 9890,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.nist.gov/news-events/news/evidence-suggests-increased-flow-time-suppressed-us-manufacturing-productivity",
+      "title": "Evidence Suggests Increased Flow Time Suppressed US Manufacturing Productivity",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-10-08T21:34:42+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: only creation, modification or unspecified date metadata was found; these dates are not substituted for publication.",
+      "text_sha256": "aeba023e08f27cdaf61b78f0a5121c6f4fe1fbe2a432f82e47eaf72e762a0640",
+      "body_chars": 3080,
+      "excerpt_start": 0,
+      "excerpt_end": 3080,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
+      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "2021-11-02",
+      "retrieved_at": "2026-10-08T21:34:31+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
+      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
+      "body_chars": 2038,
+      "excerpt_start": 0,
+      "excerpt_end": 2038,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://support.google.com/localservices/answer/7496631?hl=en",
+      "title": "Reviews and Ratings on Local Services Ads - Local Services Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-08T21:34:18+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "5885ad922b63438b1dd08a727beb92b70d3274966fae24bd5c4137c8ae60dfab",
+      "body_chars": 1423,
+      "excerpt_start": 0,
+      "excerpt_end": 1423,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.samr.gov.cn/xw/mtjj/art/2026/art_24b2336bec16491b9ef96d6876ac0e79.html",
+      "title": "直播电商贡献电子商务80%增量",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "",
+      "retrieved_at": "2026-10-08T21:34:06+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "livestream_commerce"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ee441dd937c42f49c1af0ba9fd5055559e0523feb6cc45328cc416e93782d2e9",
+      "body_chars": 1867,
+      "excerpt_start": 0,
+      "excerpt_end": 1867,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/annexes-1.html",
       "title": "附件1: 案例研究摘要",
       "publisher": "Food and Agriculture Organization of the United Nations",
@@ -21,26 +181,6 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
-      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
-      "publisher": "State Administration for Market Regulation",
-      "publisher_domain": "samr.gov.cn",
-      "published": "2021-11-02",
-      "retrieved_at": "2026-10-07T21:39:30+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "medical_aesthetics"
-      ],
-      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
-      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
-      "body_chars": 2038,
-      "excerpt_start": 0,
-      "excerpt_end": 2038,
-      "excerpt_truncated": false
     },
     {
       "url": "https://www.fda.gov/media/146870/download",
@@ -81,46 +221,6 @@
       "excerpt_start": 0,
       "excerpt_end": 6374,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
-      "title": "直播电商监督管理办法",
-      "publisher": "State Administration for Market Regulation",
-      "publisher_domain": "samr.gov.cn",
-      "published": "2026-01-07",
-      "retrieved_at": "2026-10-07T21:39:08+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "livestream_commerce"
-      ],
-      "scope_notes": "Chinese rules for livestream commerce. Supports only the stated obligations and scope; it is not a measure of market growth, customer acquisition or GEO effectiveness. Check applicability before transferring an obligation to a different actor or jurisdiction.",
-      "text_sha256": "66f12a13fd10de196fbef32962cf7af0ea8f8130e0f0e2e2f744ea5dcd7603ab",
-      "body_chars": 11552,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/x/the-multiplier/commerce-everywhere-agents-in-charge",
-      "title": "Commerce Everywhere, Agents in Charge",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "",
-      "retrieved_at": "2026-10-07T21:39:05+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "livestream_commerce"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2026-01-27; visible datePublished=2026-01-29). Neither date is assumed to be a creation timestamp.",
-      "text_sha256": "d07c7c997d0f5deac79fe77857e4a693edb11ba95f9345afaf004de3d51f9be5",
-      "body_chars": 19450,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/national-strategies-agricultural-automation.html",
@@ -283,26 +383,6 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://support.google.com/localservices/answer/7496631?hl=en",
-      "title": "Reviews and Ratings on Local Services Ads - Local Services Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-10-03T19:31:43+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "local_services"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "5885ad922b63438b1dd08a727beb92b70d3274966fae24bd5c4137c8ae60dfab",
-      "body_chars": 1423,
-      "excerpt_start": 0,
-      "excerpt_end": 1423,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://www.bcg.com/publications/2023/social-commerce-is-remaking-online-shopping",
       "title": "Social Commerce Is Remaking Online Shopping",
       "publisher": "BCG",
@@ -321,26 +401,6 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.samr.gov.cn/xw/mtjj/art/2026/art_24b2336bec16491b9ef96d6876ac0e79.html",
-      "title": "直播电商贡献电子商务80%增量",
-      "publisher": "State Administration for Market Regulation",
-      "publisher_domain": "samr.gov.cn",
-      "published": "",
-      "retrieved_at": "2026-10-02T21:03:08+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "livestream_commerce"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "ee441dd937c42f49c1af0ba9fd5055559e0523feb6cc45328cc416e93782d2e9",
-      "body_chars": 1867,
-      "excerpt_start": 0,
-      "excerpt_end": 1867,
-      "excerpt_truncated": false
     },
     {
       "url": "https://openknowledge.fao.org/server/api/core/bitstreams/95273160-e592-4bc6-b48f-efab84936973/content",
@@ -540,26 +600,6 @@
       "body_chars": 5527,
       "excerpt_start": 0,
       "excerpt_end": 5527,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://support.google.com/business/answer/7091?hl=en",
-      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-09-23T21:34:29+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
-      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
-      "body_chars": 3585,
-      "excerpt_start": 0,
-      "excerpt_end": 3585,
       "excerpt_truncated": false
     },
     {
