@@ -40,6 +40,24 @@ class FakeTranslator:
 
 
 class OfflineArticleTests(unittest.TestCase):
+    def test_decoder_describes_placeholders_only_when_input_has_them(self):
+        engine = object.__new__(hymt._HyMTEngine)
+        engine.port = 12345
+        response = {'choices': [{'finish_reason': 'stop', 'message': {'content': 'translated'}}]}
+        for text, protected in (
+                ('四、品牌事实统一：官网、媒体、社媒、案例说同一套话', False),
+                ('普通标题', False),
+                ('参见 __HYMTPH_0000__ 和 __KC_PH_0001__', True)):
+            with self.subTest(text=text), patch.object(hymt, 'request_json', return_value=response) as request:
+                engine.translate(text, 'zh', 'ar')
+                prompt = request.call_args.args[2]['messages'][0]['content']
+                instruction, actual = prompt.rsplit('\n', 1)
+                self.assertEqual(actual, text)
+                self.assertEqual('Preserve all __KC_PH_...__' in instruction, protected)
+                self.assertEqual('__HYMTPH_...__' in instruction, protected)
+                self.assertIn('Do not change financial facts, units, or comparisons.', instruction)
+                self.assertEqual(request.call_args.args[2]['stream'], False)
+
     def test_real_partial_comparison_is_safe_when_joined_to_next_block_tag(self):
         fixture = json.loads((Path(__file__).parent / "fixtures" /
             "translation-angle-assembly-36351630936.json").read_text())
