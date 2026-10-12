@@ -222,13 +222,15 @@ def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
         return token
     masked = PROTECTED_INLINE.sub(lambda match: reserve(match.group(), replacements), text)
     masked = _RESOURCE_OPAQUE.sub(lambda match: reserve(match.group(), replacements), masked)
-    opaque_resources = set(replacements)
     # Math entities in text belong to the whole formula. Attributes/resources
     # were already reserved as complete tokens and are never decoded here.
     for token, original in list(replacements.items()):
         if original.startswith('&') and unescape(original) in ('<', '>', '≤', '≥', '≠', '×', '÷'):
             masked = masked.replace(token, unescape(original))
             del replacements[token]
+    # Removed entity IDs can be reused by formula masking below. Snapshot only
+    # the surviving opaque IDs before reserving those new mathematical tokens.
+    opaque_resources = set(replacements)
     pieces = re.split(r'(__[A-Za-z0-9_]+?__)', masked)
     for index, piece in enumerate(pieces):
         if _PLACEHOLDERS.fullmatch(piece):

@@ -137,6 +137,15 @@ class TranslationIntegrityTests(unittest.TestCase):
         self.assertIn('[S2]', resources.values())
         self.assertTrue(all('__' not in value for value in resources.values()))
 
+    def test_decoded_math_entity_id_cannot_be_reused_as_an_opaque_resource(self):
+        link = '<a href="https://example.org">[S1]</a>'
+        for formula in ('x&lt;5', 'x<5'):
+            with self.subTest(formula=formula):
+                masked, resources, terms = hymt._mask('说明' + link + formula, 'en')
+                self.assertEqual(list(resources.values()), [link, 'x<5'])
+                self.assertEqual(len(hymt._PLACEHOLDERS.findall(masked)), 2)
+                self.assertFalse(terms)
+
     def test_visible_term_mapping_invalidates_old_fragment_but_reuses_new_success(self):
         source = 'AI分析<a href="https://example.org">[S1]</a>'
         new_mask = hymt._mask(source, 'en')
