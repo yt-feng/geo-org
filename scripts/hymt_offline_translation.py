@@ -209,6 +209,39 @@ def formatted_label_repair_parts(masked: str, resources: dict[str, str]) -> list
     return [(label, opening, closing), (sentence, '', '')]
 
 
+def citation_clause_repair_parts(masked: str, resources: dict[str, str]) -> list[tuple[str, str, str]] | None:
+    """Keep citation-only links outside one bounded clause-level repair.
+
+    A Chinese clause terminator followed by a citation and an explicit discourse
+    connective proves a source boundary. Preserve the link at that boundary;
+    never infer where a token omitted by the model should go. Ordinary inline
+    citations, visible anchor labels, formulas and caller-owned tokens cannot
+    select this repair. All quantities stay with their complete source clause.
+    """
+    citation_link = re.compile(
+        r'''(?:<a\b(?:"[^"]*"|'[^']*'|[^'">])*>\s*\[S\d+\]\s*</a>)+''', re.I)
+    boundaries = list(re.finditer(
+        r'(?<=[，；。！？])(\s*)(__HYMTPH_\d+__)(\s*)(?=因此|所以|由此|然而|此外|同时|不过)', masked))
+    if not 1 <= len(boundaries) <= 3:
+        return None
+    parts, offset, prefix = [], 0, ''
+    for boundary in boundaries:
+        before, token, after = boundary.groups()
+        if not citation_link.fullmatch(resources.get(token, '')):
+            return None
+        clause = masked[offset:boundary.start()]
+        if not re.search(r'[\u3400-\u9fff]', _PLACEHOLDERS.sub('', clause)):
+            return None
+        parts.append((clause, prefix, ''))
+        prefix = before + token + after
+        offset = boundary.end()
+    final_clause = masked[offset:]
+    if not re.search(r'[\u3400-\u9fff]', _PLACEHOLDERS.sub('', final_clause)):
+        return None
+    parts.append((final_clause, prefix, ''))
+    return parts
+
+
 def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
     replacements: dict[str, str] = {}
     terms: dict[str, str] = {}
@@ -518,10 +551,11 @@ class HyMTOfflineTranslator:
                         except OfflineTranslationError as error:
                             if attempt == 1:
                                 raise
-                            # The second local decode can use complete sentences
-                            # to reduce placeholder/context load. No recursive
-                            # retry, paid provider or whole-article rewrite.
+                            # The second local decode uses a proven formatting
+                            # or citation clause boundary, or complete sentences.
+                            # No recursive retry, paid provider or article rewrite.
                             repair_parts = (formatted_label_repair_parts(masked, replacements)
+                                            or citation_clause_repair_parts(masked, replacements)
                                             or sentence_repair_parts(masked))
             except OfflineTranslationError:
                 raise

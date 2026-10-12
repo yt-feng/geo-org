@@ -7,5 +7,14 @@
   "languages": [
     "en",
     "ar"
-  ]
+  ],
+  "atomic_decode_run_url": "https://github.com/yt-feng/geo-org/actions/runs/38194779758",
+  "failed_atomic_decode": {
+    "corpus": "fixed-public-smoke",
+    "model_input": "为专业内容标注作者身份与可核验依据。谁写的、依据什么，比形容词更有用。研究把“更多指向可核验来源的外链”列为被偏好域名的特征之一，__HYMTPH_0000__ 因此页面内引用资质文件、行业标准、可公开查证的登记信息，比自述更可靠。",
+    "raw_translation": "Mark the author’s identity and verifiable basis for professional content. Who wrote it and what basis it is based on are more useful than adjectives. Research lists “more external links pointing to verifiable sources” as one of the characteristics of preferred domains. Therefore, within a page, citing qualified documents, industry standards, and publicly verifiable registration information is more reliable than self-descriptions.",
+    "source_language": "zh",
+    "target_language": "en",
+    "controlled_terms": {}
+  }
 }

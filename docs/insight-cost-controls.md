@@ -102,3 +102,12 @@ protection. Every emitted
 token must still occur exactly as often as in the masked input, and restored
 HTML/URLs pass the same structural checks. The fragment cache identity includes
 the resource mapping, while accepted article checkpoint blocks remain reusable.
+
+If the first decode omits an opaque citation, the existing one-repair budget may
+translate complete clauses on either side of a source-proven boundary: Chinese
+clause punctuation, a citation-only link, then an explicit connective such as
+“因此”. The original citation and spacing stay at that exact boundary outside
+inference. Generic inline citations, visible link labels, formulas and
+caller-owned placeholders cannot select this repair. Each clause and the
+recombined block still pass the existing completion and resource checks; a
+missing clause or any unrelated changed token remains a failed, uncached block.
