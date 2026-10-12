@@ -90,4 +90,14 @@ and Arabic CPU inference without paid credentials. It verifies HTML/link/number
 preservation, nonblocking quality notes, interrupted resume and a repeated run with zero new inference,
 and retains translated samples in its smoke-test artifact for inspection. Its
 corpus includes the actual Google and NIST/BCG source paragraphs that previously
-fell back to Chinese, plus a variable/comparison formula sample.
+fell back to Chinese, plus a variable/comparison formula sample and row713's
+repeatedly failing citation paragraph.
+
+Contiguous opaque source resources share one atomic model placeholder. For
+example, a citation-only anchor's opening tag, `[S3]` and closing tag travel as
+one unit; adjacent opaque links preserve their exact original order and bytes.
+Visible link labels, whitespace, caller-owned placeholders, translated glossary
+nouns and mathematical expressions remain separate boundaries. Every emitted
+token must still occur exactly as often as in the masked input, and restored
+HTML/URLs pass the same structural checks. The fragment cache identity includes
+the resource mapping, while accepted article checkpoint blocks remain reusable.

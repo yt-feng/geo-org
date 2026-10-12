@@ -217,7 +217,7 @@ class OfflineArticleTests(unittest.TestCase):
             self.assertNotIn("href", text)
             self.assertNotIn("https://", text)
         _, protected, _ = hymt._mask(original["body_html"], "ar")
-        self.assertIn('<a href="https://example.org/GEO?model=AI" data-source-id="S1">', protected.values())
+        self.assertIn('<a href="https://example.org/GEO?model=AI" data-source-id="S1">[S1]</a>', protected.values())
 
     def test_arabic_currency_and_date_aliases_preserve_quantity_identity(self):
         for source, translated in (("预算为1000元。", "الميزانية 1000 يوان."),
@@ -294,7 +294,7 @@ class OfflineArticleTests(unittest.TestCase):
         for token in ("Eco-GEO", "AI"):
             self.assertNotIn(token, protected.values())
             self.assertIn(token, masked)
-        self.assertIn('[S1]', protected.values())
+        self.assertIn('<a href="https://example.org">[S1]</a>', protected.values())
         self.assertNotIn('[S1]', masked)
 
     def test_publish_mode_records_quality_warnings_and_reuses_output_without_retranslation(self):

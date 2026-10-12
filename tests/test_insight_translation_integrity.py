@@ -88,12 +88,54 @@ class TranslationIntegrityTests(unittest.TestCase):
         masked, resources, terms = hymt._mask(source, 'en')
         for phrase in ('AI搜索', 'SEO做法', 'AI准入'):
             self.assertIn(phrase, masked)
-        self.assertEqual(len(hymt._PLACEHOLDERS.findall(masked)), 3)  # link open, citation, close
+        self.assertEqual(len(hymt._PLACEHOLDERS.findall(masked)), 1)  # one complete opaque citation link
         self.assertFalse({'AI', 'SEO'} & set(resources.values()))
         restored = hymt._restore_terms(masked, terms)
         for token, original in resources.items():
             restored = restored.replace(token, original)
         self.assertEqual(restored, source)
+
+    def test_row713_opaque_citation_is_one_token_and_restores_exact_resources(self):
+        fixture = json.loads((Path(__file__).parent / 'fixtures/row713-citation-resources.json').read_text())
+        source = fixture['source']
+        for target in fixture['languages']:
+            with self.subTest(target=target):
+                masked, resources, terms = hymt._mask(source, target)
+                self.assertEqual(len(resources), 1)
+                self.assertFalse(terms)
+                token, resource = next(iter(resources.items()))
+                self.assertEqual(resource, '<a href="https://arxiv.org/html/2512.09483v1" data-source-id="S3">[S3]</a>')
+                self.assertEqual(masked.replace(token, resource), source)
+                self.assertEqual(masked.count('。'), source.count('。'))
+                prose = 'Verify the author and evidence. ' if target == 'en' else 'تحقق من المؤلف والأدلة. '
+                output = prose * 10 + token
+                hymt.validate_result(masked, output, 'zh', target, quality_mode='publish')
+                restored = output.replace(token, resource)
+                offline.validate_block(source, restored, target, quality_mode='publish')
+                for invalid in (output.replace(token, ''), output + token, output.replace(token, '__HYMTPH_9999__')):
+                    with self.assertRaisesRegex(hymt.OfflineTranslationError, 'protected placeholder'):
+                        hymt.validate_result(masked, invalid, 'zh', target, quality_mode='publish')
+
+    def test_atomic_resources_preserve_adjacent_links_and_keep_visible_labels_translatable(self):
+        links = '<a href="https://example.org/one">[S1]</a><a href="https://example.org/two">[S2]</a>'
+        source = '核对' + links + '以及<a href="https://example.org/three">官方资料</a>。'
+        masked, resources, terms = hymt._mask(source, 'en')
+        self.assertIn(links, resources.values())
+        self.assertIn('官方资料', masked)
+        self.assertNotIn('官方资料', ''.join(resources.values()))
+        restored = hymt._restore_terms(masked, terms)
+        for token, resource in resources.items():
+            restored = restored.replace(token, resource)
+        self.assertEqual(restored, source)
+        # Neither a caller-owned token nor a translated noun becomes nested in
+        # the source mapping, and whitespace stays a genuine prose boundary.
+        source = '<b>__KC_PH_0010__</b> 内容投入[S1] [S2]'
+        masked, resources, terms = hymt._mask(source, 'en')
+        self.assertIn('__KC_PH_0010__', masked)
+        self.assertEqual(len(terms), 1)
+        self.assertIn('[S1]', resources.values())
+        self.assertIn('[S2]', resources.values())
+        self.assertTrue(all('__' not in value for value in resources.values()))
 
     def test_visible_term_mapping_invalidates_old_fragment_but_reuses_new_success(self):
         source = 'AI分析<a href="https://example.org">[S1]</a>'

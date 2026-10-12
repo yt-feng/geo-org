@@ -222,6 +222,7 @@ def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
         return token
     masked = PROTECTED_INLINE.sub(lambda match: reserve(match.group(), replacements), text)
     masked = _RESOURCE_OPAQUE.sub(lambda match: reserve(match.group(), replacements), masked)
+    opaque_resources = set(replacements)
     # Math entities in text belong to the whole formula. Attributes/resources
     # were already reserved as complete tokens and are never decoded here.
     for token, original in list(replacements.items()):
@@ -242,6 +243,24 @@ def _mask(text: str, target: str) -> tuple[str, dict[str, str], dict[str, str]]:
     if target == 'ko':
         for pattern, term, _is_rate in _KOREAN_FINANCIAL_TERMS:
             masked = re.sub(pattern, lambda _match, term=term: reserve(term, terms), masked, flags=re.I)
+    # A citation-only link is one opaque resource, not three adjacent decoder
+    # tokens for its opening tag, citation and closing tag. Fold every contiguous
+    # run of source resources this way; visible prose, whitespace, caller-owned
+    # placeholders and controlled translated nouns always remain boundaries.
+    # Preserve each byte and the original order, including adjacent links. The
+    # fragment identity already binds this mapping, so only changed masks miss
+    # cache; valid completed article blocks remain reusable.
+    opaque_resources.intersection_update(replacements)
+    if opaque_resources:
+        resource_token = '(?:' + '|'.join(re.escape(token) for token in sorted(opaque_resources)) + ')'
+        def coalesce(match):
+            tokens = _PLACEHOLDERS.findall(match.group())
+            first = tokens[0]
+            replacements[first] = ''.join(replacements[token] for token in tokens)
+            for token in tokens[1:]:
+                del replacements[token]
+            return first
+        masked = re.sub(resource_token + '{2,}', coalesce, masked)
     return masked, replacements, terms
 
 

@@ -49,6 +49,10 @@ ARTICLE['body_html'] += '<section data-role="row710-regression">' + ''.join('<p>
 # placeholder from the decoder's unconditional token-preservation examples.
 # The existing raw-decode artifact proves the pinned model's actual behavior.
 ARTICLE['body_html'] += '<h2>四、品牌事实统一：官网、媒体、社媒、案例说同一套话</h2>'
+# Exact row713 pending block: a citation-only link previously became three
+# adjacent placeholders, and both locales dropped one even after sentence repair.
+_citation_regression = json.loads((Path(__file__).resolve().parents[1] / 'tests/fixtures/row713-citation-resources.json').read_text())
+ARTICLE['body_html'] += '<section data-role="row713-regression"><p>' + _citation_regression['source'] + '</p></section>'
 
 
 class InterruptAfterThree:
