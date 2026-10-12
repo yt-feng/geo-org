@@ -96,8 +96,9 @@ repeatedly failing citation paragraph.
 Contiguous opaque source resources share one atomic model placeholder. For
 example, a citation-only anchor's opening tag, `[S3]` and closing tag travel as
 one unit; adjacent opaque links preserve their exact original order and bytes.
-Visible link labels, whitespace, caller-owned placeholders, translated glossary
-nouns and mathematical expressions remain separate boundaries. Every emitted
+Visible link labels, whitespace, caller-owned placeholders and translated
+glossary nouns remain separate boundaries; formulas keep their existing
+protection. Every emitted
 token must still occur exactly as often as in the masked input, and restored
 HTML/URLs pass the same structural checks. The fragment cache identity includes
 the resource mapping, while accepted article checkpoint blocks remain reusable.
