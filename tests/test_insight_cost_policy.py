@@ -1,6 +1,7 @@
 import json
 import os
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
@@ -32,6 +33,21 @@ class CostPolicyTests(unittest.TestCase):
         policy.assert_offpeak(1200, now=self.instant("2026-09-20T01:30:00"))
         with self.assertRaises(policy.CostDeferredError):
             policy.assert_offpeak(7200, now=self.instant("2026-09-20T23:30:00"))
+
+    def test_daily_schedule_tolerates_observed_delivery_delay_and_full_job(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/generate-daily-blog.yml").read_text()
+        minute, hour = map(int, re.search(r'cron: "(\d+) (\d+) \* \* \*"', workflow).groups())
+        job_minutes = int(re.search(r"timeout-minutes: (\d+)", workflow).group(1))
+        # 2026-10-13 arrived 6h30 late at 00:47 UTC; the former 18:17
+        # schedule could not admit even its first 20-minute request.
+        observed_delay = timedelta(hours=6, minutes=30)
+        with self.assertRaises(policy.CostDeferredError):
+            policy.assert_offpeak(now=self.instant("2026-10-13T00:47:00"))
+        for day in range(12, 19):
+            scheduled = datetime(2026, 10, day, hour, minute, tzinfo=timezone.utc)
+            for delay in (timedelta(), observed_delay):
+                with self.subTest(day=day, delay=delay):
+                    policy.assert_offpeak(job_minutes * 60, now=scheduled + delay)
 
     def test_naive_clock_is_rejected(self):
         with self.assertRaises(ValueError):

@@ -71,3 +71,13 @@ carries the unchanged selected history under the incremented count. A newer
 incomplete audit is recorded as incomplete and blocks automatic rollback to an
 older pass. Audit writes are atomic, so an interrupted write leaves the previous
 complete JSON intact. No workflow dispatch loop is introduced.
+
+Daily generation is scheduled for 10:17 UTC (18:17 Beijing), near the start
+of the long off-peak interval. Source preflight runs at 08:47 UTC and makes no
+DeepSeek requests. GitHub may deliver scheduled events hours late: the
+2026-10-13 event arrived 6 hours 30 minutes after the former 18:17 UTC schedule
+and was refused at 00:47 UTC. The new time leaves room for that observed delay
+and the complete 150-minute job before the next weekday peak. Actual admission
+at startup and before every paid request remains authoritative; an even later
+run still stops and retains its checkpoints for the next daily continuation.
+A refused run does not count as article publication.
