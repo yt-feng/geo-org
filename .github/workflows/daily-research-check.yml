@@ -2,7 +2,7 @@ name: Daily research preflight
 
 on:
   schedule:
-    - cron: '47 16 * * *' # Verify five upcoming topics before the 18:17 UTC generator.
+    - cron: '47 8 * * *' # Verify five upcoming topics before the 10:17 UTC generator (no DeepSeek calls).
   pull_request:
     paths:
       - 'scripts/insight_research.py'

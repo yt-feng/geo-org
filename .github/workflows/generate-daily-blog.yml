@@ -3,7 +3,9 @@ name: Generate Daily Blog Article
 
 on:
   schedule:
-    - cron: "17 18 * * *" # Beijing 02:17; every paid request also checks its actual start/deadline
+    # Start near the beginning of the long off-peak window. GitHub can deliver
+    # scheduled events hours late; keep the actual per-request admission guard.
+    - cron: "17 10 * * *" # Beijing 18:17; next weekday peak starts at 01:00 UTC
   workflow_dispatch:
     inputs:
       preview:
