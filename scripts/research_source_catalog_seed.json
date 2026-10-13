@@ -3,6 +3,286 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://support.google.com/business/answer/9918094?hl=en",
+      "title": "Understand your Business Profile performance & insights - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-13T04:43:08+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ab91985fae34f1eb5245ceeb374aed9b40ccf7e194139a203cd642acaa7f4c4b",
+      "body_chars": 6374,
+      "excerpt_start": 0,
+      "excerpt_end": 6374,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.wipo.int/en/web/ip-statistics",
+      "title": "Intellectual Property Statistics",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-10-12T23:17:14+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "intellectual_property"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
+      "body_chars": 6764,
+      "excerpt_start": 0,
+      "excerpt_end": 6764,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2014/consumer-insight-globalization-brazil-next-consumer-frontier-capturing-growth-rising-interior",
+      "title": "Brazil’s Next Consumer Frontier: Capturing Growth in the Rising Interior",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-12T23:17:03+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2021-01-08; visible datePublished=2021-01-08; visible datePublished=2014-06-03). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "f5a6da00e5d091aedc3f182f30ebf758dea70f151e328ad7c2e60782aae7d975",
+      "body_chars": 31174,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2026/the-new-rules-of-customer-experience-in-the-age-of-ai",
+      "title": "The New Rules of Customer Experience in the Age of Agents",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2026-05-04",
+      "retrieved_at": "2026-10-12T23:17:01+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "4548509d67995ec33d6edb969be7efd4bbfc662dc4e9a8d04b375dc1459b028f",
+      "body_chars": 9890,
+      "excerpt_start": 0,
+      "excerpt_end": 9890,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/ams/NIST.AMS.600-16.pdf",
+      "title": "Annual Report on the U.S. Manufacturing Economy: 2024",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-10-12T23:16:51+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ba00b05af8122d6224fe16aeba701d0aa8c0c912edde31af1709e0546afcc586",
+      "body_chars": 127319,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
+      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "2021-11-02",
+      "retrieved_at": "2026-10-12T23:16:37+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
+      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
+      "body_chars": 2038,
+      "excerpt_start": 0,
+      "excerpt_end": 2038,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/local-business",
+      "title": "Local Business (LocalBusiness) Structured Data | Google Search Central  |  Documentation  |  Google for Developers",
+      "publisher": "Google Search Central",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-12T23:16:24+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e4c268b4616c6a726b1bee0c7e7c7a22f0d35b0e378729b395e213fdc200f524",
+      "body_chars": 16768,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/en/web/ip-statistics/index",
+      "title": "Intellectual Property Statistics",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-10-11T20:38:39+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "intellectual_property"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
+      "body_chars": 6764,
+      "excerpt_start": 0,
+      "excerpt_end": 6764,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/how-retailers-de-risk-2025-holiday-shopping-season",
+      "title": "How Retailers Can De-Risk the 2025 Holiday Shopping Season",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-09-10",
+      "retrieved_at": "2026-10-11T20:38:28+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "65bea072c43d737f7a6839ee9379fe0e1cf2ca93847f53b1bbbff2c1f389668b",
+      "body_chars": 17883,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/business/answer/7091?hl=en",
+      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-11T20:38:27+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
+      "body_chars": 3585,
+      "excerpt_start": 0,
+      "excerpt_end": 3585,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/europeans-brace-for-more-uncertainty",
+      "title": "European Consumers Brace for More Uncertainty",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-05-28",
+      "retrieved_at": "2026-10-09T21:21:27+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "c2ab9cd1edebec0304ad63f5a6d2a6dd55f9aa85d28f7c28a4f730933b57acfe",
+      "body_chars": 14089,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2021/norwegian-consumer-sentiment-survey",
+      "title": "Norwegian Consumer Sentiment 2021",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2021-08-05",
+      "retrieved_at": "2026-10-09T21:21:24+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "166b8c31dda99883b848652ceb6de01581517c71baf6e9b8d2b0dbffd595ee1c",
+      "body_chars": 29360,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.fda.gov/media/146870/download",
+      "title": "GPSDP-032321-FDA-ExecutiveSummaryfinal",
+      "publisher": "US Food and Drug Administration",
+      "publisher_domain": "fda.gov",
+      "published": "",
+      "retrieved_at": "2026-10-09T21:20:55+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "838544eb4e08e360dedfaaf3a9c9453be4c4d8b076c3895807d7c548d4239553",
+      "body_chars": 85431,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://support.google.com/localservices/answer/7496631?hl=en",
+      "title": "Reviews and Ratings on Local Services Ads - Local Services Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-09T21:20:44+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "local_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "5885ad922b63438b1dd08a727beb92b70d3274966fae24bd5c4137c8ae60dfab",
+      "body_chars": 1423,
+      "excerpt_start": 0,
+      "excerpt_end": 1423,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_ce66ea61fcec4583b5dbd677f470088b.html",
       "title": "直播电商监督管理办法",
       "publisher": "State Administration for Market Regulation",
@@ -43,46 +323,6 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://support.google.com/business/answer/7091?hl=en",
-      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-10-08T21:34:56+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
-      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
-      "body_chars": 3585,
-      "excerpt_start": 0,
-      "excerpt_end": 3585,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/publications/2026/the-new-rules-of-customer-experience-in-the-age-of-ai",
-      "title": "The New Rules of Customer Experience in the Age of Agents",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2026-05-04",
-      "retrieved_at": "2026-10-08T21:34:54+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "4548509d67995ec33d6edb969be7efd4bbfc662dc4e9a8d04b375dc1459b028f",
-      "body_chars": 9890,
-      "excerpt_start": 0,
-      "excerpt_end": 9890,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://www.nist.gov/news-events/news/evidence-suggests-increased-flow-time-suppressed-us-manufacturing-productivity",
       "title": "Evidence Suggests Increased Flow Time Suppressed US Manufacturing Productivity",
       "publisher": "National Institute of Standards and Technology",
@@ -100,46 +340,6 @@
       "body_chars": 3080,
       "excerpt_start": 0,
       "excerpt_end": 3080,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
-      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
-      "publisher": "State Administration for Market Regulation",
-      "publisher_domain": "samr.gov.cn",
-      "published": "2021-11-02",
-      "retrieved_at": "2026-10-08T21:34:31+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "medical_aesthetics"
-      ],
-      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
-      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
-      "body_chars": 2038,
-      "excerpt_start": 0,
-      "excerpt_end": 2038,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://support.google.com/localservices/answer/7496631?hl=en",
-      "title": "Reviews and Ratings on Local Services Ads - Local Services Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-10-08T21:34:18+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "local_services"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "5885ad922b63438b1dd08a727beb92b70d3274966fae24bd5c4137c8ae60dfab",
-      "body_chars": 1423,
-      "excerpt_start": 0,
-      "excerpt_end": 1423,
       "excerpt_truncated": false
     },
     {
@@ -181,46 +381,6 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.fda.gov/media/146870/download",
-      "title": "GPSDP-032321-FDA-ExecutiveSummaryfinal",
-      "publisher": "US Food and Drug Administration",
-      "publisher_domain": "fda.gov",
-      "published": "",
-      "retrieved_at": "2026-10-07T21:39:29+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "medical_aesthetics"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "838544eb4e08e360dedfaaf3a9c9453be4c4d8b076c3895807d7c548d4239553",
-      "body_chars": 85431,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://support.google.com/business/answer/9918094?hl=en",
-      "title": "Understand your Business Profile performance & insights - Google Business Profile Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-10-07T21:39:18+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "local_services"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "ab91985fae34f1eb5245ceeb374aed9b40ccf7e194139a203cd642acaa7f4c4b",
-      "body_chars": 6374,
-      "excerpt_start": 0,
-      "excerpt_end": 6374,
-      "excerpt_truncated": false
     },
     {
       "url": "https://openknowledge.fao.org/server/api/core/bitstreams/4ac2b0c4-3be3-4ba6-82f4-511f3396b059/content/sofa-2022/national-strategies-agricultural-automation.html",

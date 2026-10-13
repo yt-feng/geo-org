@@ -1,5 +1,194 @@
 [
   {
+    "order": "722",
+    "row": "713",
+    "slug": "00713-geo-ai-930ed263",
+    "title": "Eco-GEO：预算有限怎么做品牌化GEO：本地生活把品牌事实变成AI可引用的答案",
+    "excerpt": "不追排名，先修事实。本文为本地生活品牌的公关负责人拆解：如何在有限预算下，用专家署名、可核验来源与统一品牌表述，让AI在回答“这家店靠谱吗”时复述你的标准答案；附一份两周可上手的起步清单与复核方法。",
+    "category": "本地生活",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, 本地生活, 第三方背书, 竞争加剧期, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-13",
+    "image": "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00713-geo-ai-930ed263/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-13T04:43:08+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Understand your Business Profile performance & insights - Google Business Profile Help",
+        "url": "https://support.google.com/business/answer/9918094?hl=en",
+        "publisher": "Google",
+        "published": "",
+        "retrieved_at": "2026-10-13T04:43:08+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 6374,
+        "body_chars": 6374,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "local_services"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "ab91985fae34f1eb5245ceeb374aed9b40ccf7e194139a203cd642acaa7f4c4b"
+      },
+      {
+        "id": "S3",
+        "title": "Source Coverage and Citation Bias in LLM-based vs. Traditional Search Engines",
+        "url": "https://arxiv.org/html/2512.09483v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-13T04:43:09+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 78799,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "667b88d6b0ba41c66ef518148bb0afe6ed2e7abc595fd245989c9437129ddb0c"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-13T04:43:09+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      },
+      {
+        "id": "S5",
+        "title": "Reimagining Discoverability: How Generative Engines Bring the Web to You",
+        "url": "https://www.bcg.com/x/the-multiplier/how-generative-engines-bring-web-to-you",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-13T04:43:10+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 9276,
+        "body_chars": 9276,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. Publication date unconfirmed: conflicting publication fields (article:published_time=2025-07-28; visible datePublished=2025-07-31). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "bec32e74ba785c71317d6d8097a43d8727fb70efadf662bd5e73a20e89e64d4f"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "quality_profile": "seo-practical",
+        "h2_count": 6,
+        "table_count": 1,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 3,
+            "cells": 9
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 9,
+          "S2": 3,
+          "S3": 7,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 3148,
+        "zh_character_count": 2600,
+        "word_count": 358,
+        "minimum_zh_characters": 900,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 1,
+        "valid_citation_count": 21,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "support.google.com"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 1,
+      "review_type": "automated editorial review",
+      "warnings": [
+        "开场第2段：“有研究把它称为 query fan-out”——query fan-out 这一术语及其定义出自 Google 官方文档 S1（平台说明文档），S3 只描述 RAG 把复杂查询分解为 sub-queries 的机制，全文未使用该术语。建议改为“Google 官方文档称其为 query fan-out”，避免把平台文档表述成研究结论。",
+        "开场第2段：S1 原文为 AI Overviews 与 AI Mode “may use a 'query fan-out' technique”（可能使用），正文写成“会把这些问句拆解成多个子查询分别检索”，语气偏绝对化，建议加“可能/通常”以贴合来源强度。",
+        "核心判断第3层：S3 结论(4)列出的被偏好域名特征包含 “lower domain popularity”（域名流行度较低），正文紧随其后的概括句“结构清晰、来源可追溯的内容在概率上更占优势”省略了该项，属选择性引用，建议在该概括句一并列出，避免读者误以为流行度与特征无关。",
+        "正文与对照表多处把 S3 的 “more outlinks to reputable sources” 译为“更多指向可核验来源的外链”：reputable（可信/有信誉）与“可核验”并不等价，属词义偏移，建议保留“可信/权威来源”原意，或在表格注释中说明为中文转述。",
+        "白帽做法一：“图片里的菜单、扫描件中的证照、PDF 里的价格，对检索系统不如文字友好。[S1]”——S1 只要求“重要内容以文本形式呈现”并支持高质量图片与视频，未涉及 PDF、扫描件在检索中的表现差异，该句为合理外推，建议显式标为推论而非来源结论。",
+        "核心判断第2层：“答案引擎会显著标注来源。[S4]”——S4 描述的是 Bing Copilot Search 的引用呈现方式，正文将其推广为“答案引擎”整体行为，属范围泛化，建议限定为“以 Bing Copilot Search 为例”。",
+        "开场第1段：“本地生活的决策链条短而具体”与“后续再多的内容投放也很难扳回”均为本批材料无来源的行业前提与因果断言；文末“适用范围与局限”已声明本地生活购买周期与转化缺依据，两处表述存在张力，建议把这两句改为假设语气（如“我们假设……”）以保持一致。",
+        "白帽做法一：“对AI来说，这类句子既无法核验，也无法归属，很难成为可引用的支撑材料。”这是对 S3 特征分析的解释性推论，并非 S3 的实测结论，建议在句中标为“推论/待验证”，与文章其余处“相关性非因果”的谨慎口径统一。",
+        "要点摘要第2条在复述 S3 特征时同样省略“域名流行度较低”，与核心判断第3层问题重复但位置不同，建议二处一并统一措辞。"
+      ],
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 3,
+        "tradeoffs": 3,
+        "actionability": 4,
+        "originality": 3
+      }
+    }
+  },
+  {
     "order": "721",
     "row": "712",
     "slug": "00712-geo-pmf-ai-807ae726",
