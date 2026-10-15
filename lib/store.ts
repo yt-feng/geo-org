@@ -39,10 +39,15 @@ export async function listApiKeys(userId: string): Promise<ApiKeyRow[]> {
       `SELECT id, label, key_prefix, created_at, last_used_at, revoked_at
        FROM api_keys
        WHERE user_id = ?
-       ORDER BY created_at DESC
-       LIMIT 20`,
+         AND (revoked_at IS NULL OR id IN (
+           SELECT id FROM api_keys
+           WHERE user_id = ? AND revoked_at IS NOT NULL
+           ORDER BY revoked_at DESC, created_at DESC, id DESC
+           LIMIT 20
+         ))
+       ORDER BY (revoked_at IS NOT NULL) ASC, created_at DESC, id DESC`,
     )
-    .bind(userId)
+    .bind(userId, userId)
     .all<ApiKeyRow>();
   return result.results || [];
 }

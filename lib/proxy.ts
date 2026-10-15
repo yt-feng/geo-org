@@ -220,7 +220,7 @@ async function handleLocalGatewayEndpoint(
     return localEnvelope(requestId, path, {
       version: "1.0.0",
       download_url: null,
-      homepage: runtimeEnv().PUBLIC_BASE_URL || "https://api.eco-geo.com",
+      homepage: runtimeEnv().PUBLIC_BASE_URL || "https://api.eco-geo.org",
     });
   }
 

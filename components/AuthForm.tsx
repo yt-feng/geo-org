@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { Icon } from "@/components/Icon";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
@@ -13,7 +15,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     setPending(true);
     setMessage("");
     setIsError(false);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       email: String(form.get("email") || ""),
       password: String(form.get("password") || ""),
@@ -41,7 +44,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           ? "账户已创建。请打开验证邮件，然后返回登录。"
           : "账户已创建，现在可以登录。",
       );
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (error) {
       setIsError(true);
       setMessage(error instanceof Error ? error.message : "请求失败，请稍后再试。");
@@ -70,24 +73,27 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           autoComplete={isLogin ? "username" : "email"}
           inputMode={isLogin ? "text" : "email"}
           name="email"
-          placeholder={isLogin ? "admin 或 name@example.com" : "name@example.com"}
+          placeholder={isLogin ? "输入用户名或邮箱" : "name@example.com"}
           required
           type={isLogin ? "text" : "email"}
         />
       </label>
       <label>
         <span>密码</span>
+        <div className="auth-password-wrap">
         <input
           autoComplete={isLogin ? "current-password" : "new-password"}
           minLength={isLogin ? undefined : 10}
           name="password"
           placeholder={isLogin ? "输入密码" : "至少 10 位"}
           required
-          type="password"
+          type={showPassword ? "text" : "password"}
         />
+        <button type="button" className="auth-password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"}><Icon name={showPassword ? "shield" : "key"} size={15} /></button>
+        </div>
       </label>
       <button className="button button-primary auth-submit" disabled={pending} type="submit">
-        {pending ? "请稍候…" : isLogin ? "登录" : "创建账户"}
+        {pending ? "请稍候…" : isLogin ? "登录" : "创建账户"}<Icon name="arrow-right" size={15} />
       </button>
       {message ? (
         <p className={isError ? "form-message error" : "form-message success"} role="status">
