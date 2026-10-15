@@ -8,6 +8,14 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
+export const providerSettings = sqliteTable("provider_settings", {
+  provider: text("provider").primaryKey(),
+  encryptedKey: text("encrypted_key").notNull(),
+  keyHint: text("key_hint").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  verifiedAt: text("verified_at").notNull(),
+});
+
 export const users = sqliteTable(
   "users",
   {

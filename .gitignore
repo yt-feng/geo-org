@@ -33,6 +33,10 @@ yarn-error.log*
 !.env.example
 !.dev.vars.example
 /.npm-cache/
+/.artifacts/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
 
 # vercel
 .vercel

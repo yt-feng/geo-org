@@ -22,6 +22,13 @@
       "when": 1783691364167,
       "tag": "0002_milky_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792044060143,
+      "tag": "0003_dazzling_silver_fox",
+      "breakpoints": true
     }
   ]
 }
