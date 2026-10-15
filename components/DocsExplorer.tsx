@@ -156,7 +156,7 @@ export function DocsExplorer({ baseUrl }: { baseUrl: string }) {
             ) : null}
             <section>
               <h3>cURL 示例</h3>
-              <pre><code>{`curl --request ${selected.method} \\\n+  --url '${baseUrl}${selected.path}' \\\n+  --header 'Authorization: Bearer eco_live_your_api_key'`}</code></pre>
+              <pre><code>{`curl --request ${selected.method} \\\n  --url '${baseUrl}${selected.path}' \\\n  --header 'Authorization: Bearer eco_live_your_api_key'`}</code></pre>
             </section>
           </>
         ) : (

@@ -168,11 +168,10 @@ export function ProviderSettingsPanel() {
     <section className="panel provider-settings" aria-labelledby="provider-settings-title">
       <div className="panel-header">
         <div>
-          <span className="section-kicker">ECO-GEO · API PROVIDERS</span>
-          <h2 id="provider-settings-title">上游服务管理</h2>
-          <p className="provider-intro">在 Eco-GEO 统一管理社交数据 API 与 AI 模型服务。</p>
+          <h2 id="provider-settings-title">服务连接</h2>
+          <p className="provider-intro">你的社交数据与 AI 模型服务，都在这里。</p>
         </div>
-        <span className="private-badge">仅管理员可见</span>
+        <span className="record-count">2 个服务</span>
       </div>
 
       {loadError ? (
@@ -198,6 +197,7 @@ export function ProviderSettingsPanel() {
             <strong>由部署环境管理</strong>
             <p>此处展示配置状态；现有接口与平台调用统计继续使用该服务。</p>
           </div>
+          <div className="provider-endpoint"><span>ECO-GEO 数据接口</span><code>/api/v1/*</code><span>调用凭证与接口文档可在左侧导航中管理。</span></div>
         </article>
 
         <article className="provider-card provider-apimart">
@@ -289,7 +289,7 @@ export function ProviderSettingsPanel() {
         </div>
       ) : null}
 
-      <p className="provider-scope-note">当前支持 APIMart 密钥配置、连接验证和模型目录查询。模型调用与生成工作台尚未在 Eco-GEO 开放。</p>
+      <p className="provider-scope-note">APIMart 支持密钥配置、连接验证与模型目录查询。Playground 可预览请求参数，AI 模型调用尚未开放。</p>
     </section>
   );
 }

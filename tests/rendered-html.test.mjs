@@ -8,17 +8,20 @@ async function source(path) {
 }
 
 test("replaces all starter metadata and keeps public copy documentation-free", async () => {
-  const [page, layout, packageJson] = await Promise.all([
+  const [page, landing, layout, packageJson] = await Promise.all([
     source("../app/page.tsx"),
+    source("../components/PublicLanding.tsx"),
     source("../app/layout.tsx"),
     source("../package.json"),
   ]);
-  assert.match(page, /进入控制台/);
-  assert.match(page, /文档与调用凭证不对外公开/);
+  assert.match(`${page}\n${landing}`, /进入控制台/);
+  assert.match(landing, /文档与调用凭证不对外公开/);
   assert.match(layout, /Eco Geo API/);
   assert.match(layout, /index:\s*false/);
   assert.doesNotMatch(`${page}\n${layout}\n${packageJson}`, /codex-preview|react-loading-skeleton|SkeletonPreview/i);
   assert.doesNotMatch(page, /eco_live_your_api_key|curl --request|\/api\/v1\//i);
+  assert.doesNotMatch(landing, /eco_live_[a-z0-9]{12,}/i);
+  assert.match(landing, /\/api\/v1\/ENDPOINT/);
 });
 
 test("keeps the OpenAPI document behind a server-side session check", async () => {

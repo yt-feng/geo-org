@@ -20,6 +20,26 @@ Cloudflare-native vinext Worker with D1 persistence.
   replacement, and generic relay errors.
 - Fail-closed activation: the relay is disabled until `SERVICE_ENABLED=true`.
 
+## Interface
+
+The gateway uses a shared monochrome ECO-GEO design inspired by APIMart, with
+local Geist fonts, light/dark themes, responsive navigation and model artwork.
+
+- `/` — public product page, capability cards, integration guide and FAQ.
+- `/models` — curated public capability catalogue with category/provider search,
+  grid/list views and model details. This is not a live availability or price list.
+- `/dashboard` — real account quota, aggregate metrics and a 30-day usage trend.
+- `/dashboard/keys` — all active keys and the 20 most recently revoked keys.
+- `/dashboard/usage` — per-user request totals and searchable exception records.
+- `/dashboard/docs` — authenticated API reference.
+- `/admin` — APIMart/TikHub configuration, platform usage and members.
+- `/playground` — authenticated model parameter and JSON/cURL request preview.
+  Preview remains local; it does not submit AI generation or consume quota.
+
+Model artwork source references are in `public/model-art/SOURCES.md` and the
+font license is in `public/fonts/OFL.txt`. Existing account data, credentials,
+quota checks and data-relay behavior remain connected to the same D1 database.
+
 ## Free-tier guardrails
 
 The checked-in defaults reserve headroom below the infrastructure analysis:
@@ -51,7 +71,7 @@ Secrets belong in the hosting platform and must not be committed.
 ## APIMart configuration
 
 Open `https://api.eco-geo.org/admin` with the existing administrator account.
-Under **上游服务管理 → APIMart**, enter an API key and select **验证并保存**.
+Under **服务连接 → APIMart**, enter an API key and select **验证并保存**.
 The server validates it using APIMart's read-only `GET /v1/balance` endpoint
 before replacing the saved key. A failed validation leaves the previous
 configuration intact. The input is cleared on success and only the last four

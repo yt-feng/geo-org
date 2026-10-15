@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProviderSettingsPanel } from "@/components/ProviderSettingsPanel";
+import { Icon } from "@/components/Icon";
 import { requireAdminUser } from "@/lib/auth";
 import { getAdminOverview } from "@/lib/store";
 
@@ -18,17 +19,18 @@ export default async function AdminPage() {
     <DashboardShell active="admin" user={user}>
       <header className="dashboard-header">
         <div>
-          <span className="section-kicker">ADMINISTRATION</span>
-          <h1>Eco-GEO 管理后台</h1>
-          <p>统一管理 API 上游服务、成员账户与平台调用额度。</p>
+          <span className="section-kicker">WORKSPACE / SETTINGS</span>
+          <h1>上游服务</h1>
+          <p>连接你的 API 服务，在一个工作空间完成管理。</p>
         </div>
+        <span className="private-badge"><Icon name="shield" size={12} /> 管理员工作空间</span>
       </header>
-
+      <nav className="admin-tabs" aria-label="管理分区"><a href="#provider-settings-title">服务连接</a><a href="#platform-usage">平台用量</a><a href="#members">成员账户</a></nav>
       <ProviderSettingsPanel />
-
+      <div className="admin-quotas" id="platform-usage">
       <section className="panel admin-quota">
         <div>
-          <span className="section-kicker">PLATFORM GUARDRAIL</span>
+          <span className="section-kicker">DAILY REQUESTS</span>
           <h2>今日平台调用</h2>
         </div>
         <div className="quota-number">
@@ -38,11 +40,12 @@ export default async function AdminPage() {
         <div className="progress-track large" aria-label={`已使用 ${percent}%`}>
           <span style={{ width: `${percent}%` }} />
         </div>
+        <p>已使用今日平台额度的 {percent}%</p>
       </section>
 
       <section className="panel admin-quota">
         <div>
-          <span className="section-kicker">UPSTREAM SPEND GUARD</span>
+          <span className="section-kicker">UPSTREAM USAGE</span>
           <h2>中转累计预留成本</h2>
         </div>
         <div className="quota-number">
@@ -62,9 +65,10 @@ export default async function AdminPage() {
             }}
           />
         </div>
+        <p>按现有数据接口的请求预留成本累计。</p>
       </section>
-
-      <section className="panel">
+      </div>
+      <section className="panel" id="members">
         <div className="panel-header">
           <div>
             <span className="section-kicker">MEMBERS</span>
