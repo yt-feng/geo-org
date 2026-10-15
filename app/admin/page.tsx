@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/DashboardShell";
+import { ProviderSettingsPanel } from "@/components/ProviderSettingsPanel";
 import { requireAdminUser } from "@/lib/auth";
 import { getAdminOverview } from "@/lib/store";
 
@@ -18,10 +19,12 @@ export default async function AdminPage() {
       <header className="dashboard-header">
         <div>
           <span className="section-kicker">ADMINISTRATION</span>
-          <h1>管理员控制台</h1>
-          <p>查看成员、密钥数量与平台级免费额度。</p>
+          <h1>Eco-GEO 管理后台</h1>
+          <p>统一管理 API 上游服务、成员账户与平台调用额度。</p>
         </div>
       </header>
+
+      <ProviderSettingsPanel />
 
       <section className="panel admin-quota">
         <div>
