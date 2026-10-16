@@ -400,7 +400,14 @@ def localize_reviewed_article(topic, sources, api_key, original, audit_dir):
             try:
                 results[lang] = future.result()
             except Exception as exc:
-                failures.append(exc)
+                if (os.environ.get("INSIGHT_TRANSLATION_FALLBACK") == "source"
+                        and insight_pipeline.quality_profile() == "seo-practical"
+                        and isinstance(exc, (insight_pipeline.OfflineTranslationError,
+                                             insight_pipeline.InsightQualityError))):
+                    results[lang] = insight_pipeline.publish_source_original(
+                        topic, sources, original, lang, audit_dir, exc)
+                else:
+                    failures.append(exc)
         # A completed content rejection must not hide a sibling's provider,
         # credential, or programming failure and send it into editorial retries.
         for failure in failures:
@@ -572,7 +579,7 @@ def generate_daily_article(excel_path: Path, out_dir: Path, start_row: int, dry_
         try:
             sources = reread_research_pack(resume_audit["sources"])
         except ResearchSourceDrift as exc:
-            if not auto_resume:
+            if not auto_resume or (selected or {}).get('localization_only'):
                 raise
             print(f"Source evidence changed; discarding automatic draft reuse and researching afresh: {exc}", flush=True)
             selected = {**selected, 'action': 'fresh_source_drift', 'reason': str(exc)}

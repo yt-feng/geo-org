@@ -1614,6 +1614,41 @@ def reuse_passed_chinese_audit(topic: gb.TopicRow, sources: list[dict], api_key:
     return article
 
 
+def publish_source_original(topic, sources, original, lang, audit_dir, failure):
+    """Keep a reviewed original readable when an optional translation fails.
+
+    This does not pass the failed translation or alter a successful sibling.
+    The visible language notice and audit distinguish the original from a translation.
+    """
+    if lang not in ("en", "ar"):
+        raise ValueError("Source fallback is only available for translations")
+    source_audit = json.loads((audit_dir / "zh.json").read_text(encoding="utf-8"))
+    validated = validate_passed_chinese_audit(source_audit, topic)
+    if (_article_sha256(normalize_article(original, "zh")) != validated["article_sha256"]
+            or _source_fingerprints(source_audit["sources"]) != _source_fingerprints(public_sources(sources))
+            or has_pending_cross_language_feedback(source_audit)):
+        raise ValueError("Source fallback requires the exact reviewed Chinese original and sources")
+    notice = {
+        "en": "The English translation is unavailable. The reviewed Chinese original is provided below.",
+        "ar": "الترجمة العربية غير متاحة. يُعرض أدناه النص الصيني الأصلي الذي تمت مراجعته.",
+    }[lang]
+    article = dict(validated["article"])
+    article["body_html"] = (f'<aside class="translation-notice" lang="{lang}"><p>{notice}</p></aside>'
+                            '<div lang="zh-CN" dir="ltr">' + article["body_html"] + '</div>')
+    article["quality"] = {"version": "insights-v3", "review_type": "reviewed Chinese original",
+        "translation_status": "source_original", "source_language": "zh-CN", "requested_language": lang,
+        "source_article_sha256": validated["article_sha256"], "paid_translation_calls": 0,
+        "warnings": ["Translation unavailable; the complete reviewed Chinese original is displayed."]}
+    path = audit_dir / f"{lang}.json"
+    audit = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {
+        "version": "insights-v3", "row": topic.idx, "language": lang, "passed": False,
+        "sources": public_sources(sources), "attempts": []}
+    audit["publication_fallback"] = {**article["quality"], "failure_type": type(failure).__name__}
+    write_audit(path, audit)
+    print(f"Insight {lang}: translation unavailable; publishing the labeled reviewed Chinese original", flush=True)
+    return article
+
+
 def produce_article(topic: gb.TopicRow, sources: list[dict], api_key: str, *, lang: str = "zh",
                     original: dict | None = None, recent_posts: list[dict] | None = None,
                     audit_path: Path, resume_audit: dict | None = None,
