@@ -60,7 +60,7 @@ SELECTION_FAILURE_BOUNDARY_SHA256 = 'ef6dc4955b71cfb8d353304e2370cbf853882cdd37b
 SELECTION_CHECKPOINT_SHA256 = '3041131b1ba40f7bbc4eb089f977f024c911650488783f3a9b37f20f7986c0a3'
 SELECTION_HELPERS_SHA256 = '80712176a5993ca4e44d73a10e52f8ea6d1ae87976999745aa1b9428832ed4c7'
 # Keep the reviewed earlier producer/import inventory valid across output-only repairs.
-SELECTION_PREVIOUS_CHECKPOINT_SHA256 = 'b4d90226338f8ef4c864076b18c99b683e79dc4d717f8e326470da6ef2c32a3e,527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b,1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8,5d07b85c052dcdb64c3fc7a402ddfa629efdcd86e5293915bdf0673bd272b13e,e7e1cbc2e7d8779aee9f6987381b4f4cc8ffa01f7f22086b0372e0a9db572950,8ebc0fb96e0952c81c7e73d23c4e44ca65ad275495ac14a56248cb8e1fed3cca'
+SELECTION_PREVIOUS_CHECKPOINT_SHA256 = 'b4d90226338f8ef4c864076b18c99b683e79dc4d717f8e326470da6ef2c32a3e,527feaf657da33cdf81077acc7c245c79c3fd85da127fdf5d68027f418cb722b,1d204b1fea7d047e6a4b206dba1e9b254195a620f258080966c359c02bf49aa8,5d07b85c052dcdb64c3fc7a402ddfa629efdcd86e5293915bdf0673bd272b13e,e7e1cbc2e7d8779aee9f6987381b4f4cc8ffa01f7f22086b0372e0a9db572950,8ebc0fb96e0952c81c7e73d23c4e44ca65ad275495ac14a56248cb8e1fed3cca,17f08b31feef11bd004e13db1e35372aa8424b582db0abfad44081bfebad5436'
 SELECTION_NEW_HELPERS_SHA256 = 'dacf10218839bb9be77a216b4c983f128ca9ffeb25d35c709b4fec86d9edcf0c,49fc907b16380041d34dde1e572107cc2f5ee7cda4366627fdb6fc29aac200f0,0dfedf534fccd84b78a336ccb487cf386618958492dc4a67e4dd2dac8a894b25,49a80fea1db0ff144907d10aa2c9184d1fdb771cb36b2a053396a81ef38fcbcf,e0de0c8f1fa9b4a4b398c1d2d4edfefb303a0e068cec852c30acc20a394a6b80,b40548d3c21dcadc812b6c9221d11a466750a355254735541c054cff78990bda,ec25e70a05b8617add6b36b287103db0eb6f64bf074d7525a3d9517f3912ff80,787fb4d3d6516ce0bb42e543759e9b21050493ddea7bfdfef0c036be9d51ffbe'
 LEGACY_SELECTION_CHECKPOINT_SHA256 = 'c828ba3183ad46f0fb1a5af15edb9d48cbe5baf038c1551c1e91ce5f39db0ad0'
 
@@ -382,6 +382,7 @@ def has_producer(api, repo, run, cache):
         if any(present) and (not all(present) or PRODUCER_JOB not in lines):
             raise ValueError('Unknown or partial checkpoint producer contract')
         cache[head] = all(present)
+        cache[('best_effort_schedule', head)] = "continue-on-error: ${{ github.event_name == 'schedule' }}" in lines
     return cache[head]
 
 
@@ -647,7 +648,7 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
     trusted = []
     for run in runs[:MAX_RUNS]:
         if (str(run['id']) == str(current_run_id) or run.get('status') != 'completed'
-                or run.get('conclusion') not in ('failure', 'cancelled')
+                or run.get('conclusion') not in ('failure', 'cancelled', 'success')
                 or run.get('head_branch') != 'main' or run.get('path', '').split('@')[0] != WORKFLOW
                 or run.get('repository', {}).get('full_name') != repo
                 or run.get('event') not in ('schedule', 'workflow_dispatch')):
@@ -682,7 +683,12 @@ def select(topic, *, repo, current_run_id, destination, api=None, now=None):
     capable, definitions = [], {}
     for run in trusted:
         if has_producer(api, repo, run, definitions):
-            capable.append(run)
+            # A best-effort schedule can report success while retaining an
+            # unfinished draft. Its saved work must still be resumed; otherwise
+            # notification suppression would restart paid work on the next day.
+            if run.get('conclusion') != 'success' or (run.get('event') == 'schedule'
+                    and definitions.get(('best_effort_schedule', run['head_sha']))):
+                capable.append(run)
         else:
             skipped.append({'run_id': run['id'], 'reason': 'verified_legacy_workflow'})
     for run in capable[:MAX_ARTIFACT_LOOKUPS]:

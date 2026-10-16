@@ -464,6 +464,23 @@ class AutoResumeTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'continuation budget exhausted'):
                 self.choose([run], {100: self.bundle(run, count=cp.MAX_AUTO_RESUMES)})
 
+    def test_best_effort_schedule_keeps_unfinished_checkpoint_despite_success_status(self):
+        run = self.run_record(100)
+        run['conclusion'] = 'success'
+        api = API([run], {100: self.bundle(run, count=1)})
+        original = api.json
+        def response(path):
+            result = original(path)
+            if '/contents/.github/workflows/' in path:
+                data = base64.b64decode(result['content']) + b"\ncontinue-on-error: ${{ github.event_name == 'schedule' }}\n"
+                result = {**result, 'content': base64.b64encode(data).decode(), 'size': len(data)}
+            return result
+        with mock.patch.object(api, 'json', side_effect=response):
+            result = cp.select(self.topic, repo='owner/repo', current_run_id='300',
+                destination=self.root/'best-effort', api=api, now=self.now)
+        self.assertEqual(result['action'], 'resume')
+        self.assertEqual(result['automatic_resumes'], 2)
+
     def test_more_than_ten_verified_setup_failures_do_not_deadlock_the_next_topic(self):
         runs = [self.run_record(n) for n in range(100, 111)]
         result, api = self.choose(runs, {})
