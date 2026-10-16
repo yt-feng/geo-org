@@ -38,6 +38,10 @@ concurrency:
 jobs:
   generate:
     name: Generate one new article
+    # Daily content is best effort. Preserve diagnostics and the existing site
+    # when an upstream service is unavailable, without recurring failure mail.
+    # Manual runs and PR regression gates still report failures normally.
+    continue-on-error: ${{ github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     env:
@@ -124,6 +128,7 @@ jobs:
           INSIGHT_CROSS_LANGUAGE_RECOVERY_ROUNDS: "0"
           INSIGHT_TRANSLATION_RETRIES: "2"
           INSIGHT_QUALITY_PROFILE: "seo-practical"
+          INSIGHT_TRANSLATION_FALLBACK: "source"
           INSIGHT_MIN_ZH_CHARS: "900"
           INSIGHT_API_TIMEOUT: "300"
           PREVIEW_ONLY: ${{ inputs.preview }}
@@ -242,3 +247,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run pages.yml --ref main
+
+      - name: Record publication outcome
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          PUBLISHED: ${{ steps.commit.outputs.changed }}
+        run: |
+          if [ "$JOB_STATUS" = "failure" ]; then
+            echo 'Daily processing did not finish. The existing published site remains available; inspect the commit/deployment steps and saved checkpoints above for the exact outcome.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$PUBLISHED" = "true" ]; then
+            echo 'Daily article committed and deployment requested. Optional translations may display the labeled reviewed original.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Daily processing completed without a new production commit.' >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -447,6 +447,23 @@ class AutoResumeTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'search budget exhausted'):
             self.choose(runs, {})
 
+    def test_passed_source_localization_does_not_spend_editorial_retry_budget(self):
+        audit = copy.deepcopy(self.audit)
+        audit['passed'] = True
+        audit['attempts'][-1].update(review=self.good_review(), errors=[])
+        run = self.run_record(100)
+        bundles = {100: self.bundle(run, audit=audit, count=cp.MAX_AUTO_RESUMES)}
+        with mock.patch.dict(os.environ, {'INSIGHT_TRANSLATION_FALLBACK': 'source', 'INSIGHT_QUALITY_PROFILE': 'seo-practical'}):
+            result, _ = self.choose([run], bundles)
+        self.assertTrue(result['localization_only'])
+        self.assertEqual(result['automatic_resumes'], cp.MAX_AUTO_RESUMES)
+
+    def test_source_fallback_does_not_reset_failed_editorial_budget(self):
+        run = self.run_record(100)
+        with mock.patch.dict(os.environ, {'INSIGHT_TRANSLATION_FALLBACK': 'source', 'INSIGHT_QUALITY_PROFILE': 'seo-practical'}):
+            with self.assertRaisesRegex(RuntimeError, 'continuation budget exhausted'):
+                self.choose([run], {100: self.bundle(run, count=cp.MAX_AUTO_RESUMES)})
+
     def test_more_than_ten_verified_setup_failures_do_not_deadlock_the_next_topic(self):
         runs = [self.run_record(n) for n in range(100, 111)]
         result, api = self.choose(runs, {})
