@@ -3,6 +3,246 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
+      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
+      "publisher": "State Administration for Market Regulation",
+      "publisher_domain": "samr.gov.cn",
+      "published": "",
+      "retrieved_at": "2026-10-16T17:38:37+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data. Publication date unconfirmed on reread; the previous audit date was not carried forward without current publication evidence.",
+      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
+      "body_chars": 2038,
+      "excerpt_start": 0,
+      "excerpt_end": 2038,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/press/24october2024-ai-adoption-in-2024-74-of-companies-struggle-to-achieve-and-scale-value",
+      "title": "AI Adoption in 2024: 74% of Companies Struggle to Achieve and Scale Value",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-16T13:34:24+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "f087ef92099c912210f8dfc19ddafad5c6e624869e43b6de5d02e1747e7e74ae",
+      "body_chars": 7158,
+      "excerpt_start": 0,
+      "excerpt_end": 7158,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.nist.gov/programs-projects/ai-measurement-and-evaluation/nist-ai-measurement-and-evaluation-projects",
+      "title": "NIST AI Measurement and Evaluation Projects",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2022-03-15",
+      "retrieved_at": "2026-10-16T13:34:22+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "58719d39111e5d2f818d71816fd5433937358faa84550aa0ad0b9f1ca147a20a",
+      "body_chars": 17357,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/en/web/ip-statistics",
+      "title": "Intellectual Property Statistics",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-10-16T13:34:14+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "intellectual_property"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
+      "body_chars": 6764,
+      "excerpt_start": 0,
+      "excerpt_end": 6764,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://support.google.com/business/answer/7091?hl=en",
+      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-16T13:34:01+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
+      "body_chars": 3585,
+      "excerpt_start": 0,
+      "excerpt_end": 3585,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2026/the-new-rules-of-customer-experience-in-the-age-of-ai",
+      "title": "The New Rules of Customer Experience in the Age of Agents",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2026-05-04",
+      "retrieved_at": "2026-10-16T13:33:59+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "4548509d67995ec33d6edb969be7efd4bbfc662dc4e9a8d04b375dc1459b028f",
+      "body_chars": 9890,
+      "excerpt_start": 0,
+      "excerpt_end": 9890,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
+      "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-16T13:33:47+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11",
+      "body_chars": 26558,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/ams/NIST.AMS.600-16.pdf",
+      "title": "Annual Report on the U.S. Manufacturing Economy: 2024",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-10-16T13:33:44+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ba00b05af8122d6224fe16aeba701d0aa8c0c912edde31af1709e0546afcc586",
+      "body_chars": 127319,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2026/07/generative-ai-experimentation-in-government_706b6f2b/42815683-en.pdf",
+      "title": "Generative AI experimentation in government (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-10-15T13:44:14+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "41e571723334c9b355cbae0a8c3e20a501b4204b491d464cd4d9a06ae76535a9",
+      "body_chars": 207325,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/how-retailers-de-risk-2025-holiday-shopping-season",
+      "title": "How Retailers Can De-Risk the 2025 Holiday Shopping Season",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-09-10",
+      "retrieved_at": "2026-10-15T13:43:46+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "65bea072c43d737f7a6839ee9379fe0e1cf2ca93847f53b1bbbff2c1f389668b",
+      "body_chars": 17883,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.fda.gov/media/159946/download",
+      "title": "CV MURAD ALAM",
+      "publisher": "US Food and Drug Administration",
+      "publisher_domain": "fda.gov",
+      "published": "",
+      "retrieved_at": "2026-10-14T14:04:45+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "regulatory_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "medical_aesthetics"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "f0580dab0a44e421422a4debe42696f15d113806228f0ee8da3c37d04d454406",
+      "body_chars": 267885,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/ai-measurement-and-evaluation",
+      "title": "AI measurement and evaluation",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2022-07-05",
+      "retrieved_at": "2026-10-13T16:29:49+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "d11757f6cc7ecc75107f85586d339ff833cfe5b68a03f3e9a8b2bf237b0f8800",
+      "body_chars": 5568,
+      "excerpt_start": 0,
+      "excerpt_end": 5568,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://support.google.com/business/answer/9918094?hl=en",
       "title": "Understand your Business Profile performance & insights - Google Business Profile Help",
       "publisher": "Google",
@@ -20,26 +260,6 @@
       "body_chars": 6374,
       "excerpt_start": 0,
       "excerpt_end": 6374,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.wipo.int/en/web/ip-statistics",
-      "title": "Intellectual Property Statistics",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-10-12T23:17:14+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "intellectual_property"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
-      "body_chars": 6764,
-      "excerpt_start": 0,
-      "excerpt_end": 6764,
       "excerpt_truncated": false
     },
     {
@@ -61,66 +281,6 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/publications/2026/the-new-rules-of-customer-experience-in-the-age-of-ai",
-      "title": "The New Rules of Customer Experience in the Age of Agents",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2026-05-04",
-      "retrieved_at": "2026-10-12T23:17:01+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "4548509d67995ec33d6edb969be7efd4bbfc662dc4e9a8d04b375dc1459b028f",
-      "body_chars": 9890,
-      "excerpt_start": 0,
-      "excerpt_end": 9890,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://nvlpubs.nist.gov/nistpubs/ams/NIST.AMS.600-16.pdf",
-      "title": "Annual Report on the U.S. Manufacturing Economy: 2024",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-10-12T23:16:51+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "manufacturing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "ba00b05af8122d6224fe16aeba701d0aa8c0c912edde31af1709e0546afcc586",
-      "body_chars": 127319,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
-      "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
-      "publisher": "State Administration for Market Regulation",
-      "publisher_domain": "samr.gov.cn",
-      "published": "2021-11-02",
-      "retrieved_at": "2026-10-12T23:16:37+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "regulatory_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "medical_aesthetics"
-      ],
-      "scope_notes": "SAMR's 2021 Chinese medical-aesthetics advertising enforcement guidance, including the distinction between public service information and advertising. The URL migration year is not the publication year. Check current applicable rules before making a legal claim; this is not efficacy, demand or acquisition data.",
-      "text_sha256": "0810f865f74b1256022a2298cfa56423bb075d158223e9a381ce53a1b003caf5",
-      "body_chars": 2038,
-      "excerpt_start": 0,
-      "excerpt_end": 2038,
-      "excerpt_truncated": false
     },
     {
       "url": "https://developers.google.com/search/docs/appearance/structured-data/local-business",
@@ -160,46 +320,6 @@
       "body_chars": 6764,
       "excerpt_start": 0,
       "excerpt_end": 6764,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/publications/2025/how-retailers-de-risk-2025-holiday-shopping-season",
-      "title": "How Retailers Can De-Risk the 2025 Holiday Shopping Season",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2025-09-10",
-      "retrieved_at": "2026-10-11T20:38:28+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "65bea072c43d737f7a6839ee9379fe0e1cf2ca93847f53b1bbbff2c1f389668b",
-      "body_chars": 17883,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://support.google.com/business/answer/7091?hl=en",
-      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-10-11T20:38:27+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
-      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
-      "body_chars": 3585,
-      "excerpt_start": 0,
-      "excerpt_end": 3585,
       "excerpt_truncated": false
     },
     {
