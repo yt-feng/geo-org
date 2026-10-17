@@ -29,7 +29,7 @@ function prices() {
 async function setup(t, options = {}) {
   const sqlite = new DatabaseSync(":memory:"); sqlite.exec(schema); t.after(() => sqlite.close());
   const DB = { prepare(query) { const statement = sqlite.prepare(query); const execute = (args = []) => ({ bind(...next) { return execute(next); }, async first() { const result = statement.get(...args) || null; options.onFirst?.(query, args, result); return result; }, async all() { return { results: statement.all(...args) }; }, async run() { return { success: true, meta: { changes: statement.run(...args).changes } }; } }); return execute(); } };
-  const calls = [], env = { DB, ADMIN_SESSION_SECRET: SECRET, SERVICE_ENABLED: "true", ...options.env };
+  const calls = [], timeouts = [], env = { DB, ADMIN_SESSION_SECRET: SECRET, SERVICE_ENABLED: "true", ...options.env };
   const fetcher = async (url, init = {}) => {
     calls.push({ url, init });
     if (options.fetcher) { const custom = await options.fetcher(url, init, sqlite); if (custom) return custom; }
@@ -51,8 +51,8 @@ async function setup(t, options = {}) {
     constructor(...args) { if (args.length) super(...args); else super(options.clock()); }
     static now() { return options.clock(); }
   } : Date;
-  const api = await load("../lib/tokenhub-audit.ts", { "./provider-settings": helpers, "./tokenhub-audit-cases": fixtures }, { fetch: fetcher, Date: ClockDate });
-  return { ...api, sqlite, calls, env, now: new Date(), async start(now = new Date()) { return api.startAudit(env, { apiKey: KEY, budgetMicros: 5_000_000 }, now); } };
+  const api = await load("../lib/tokenhub-audit.ts", { "./provider-settings": helpers, "./tokenhub-audit-cases": fixtures }, { fetch: fetcher, Date: ClockDate, AbortSignal: { timeout(ms) { timeouts.push(ms); return AbortSignal.timeout(ms); } } });
+  return { ...api, sqlite, calls, timeouts, env, now: new Date(), async start(now = new Date()) { return api.startAudit(env, { apiKey: KEY, budgetMicros: 5_000_000 }, now); } };
 }
 function noSecret(value) { const text = JSON.stringify(value); for (const secret of [KEY, SECRET]) assert.ok(!text.includes(secret), "Credential exposed"); }
 
@@ -231,4 +231,11 @@ test("model-specific caps cover 4608 input and 8192 output tokens under each res
     assert.ok(Math.ceil((4608 * policy.inputMicros + 8192 * policy.outputMicros) / 1e6) <= policy.reservedMicros);
     assert.ok(policy.cacheReadMicros <= policy.inputMicros);
   }
+});
+
+test("new paid requests wait up to five minutes while catalog and price reads keep short timeouts", async t => {
+  const f = await setup(t); await f.start(f.now); await f.runAuditTick(f.env, { now: f.now, maxCases: 1 });
+  assert.equal(f.AUDIT_PAID_TIMEOUT_MS, 300000);
+  assert.deepEqual(f.timeouts, [10000, 10000, 300000]);
+  assert.equal(f.calls.filter(call => call.init.method === "POST").length, 1);
 });

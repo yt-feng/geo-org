@@ -16,6 +16,13 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 BOS, EOS = "<｜begin▁of▁sentence｜>", "<｜end▁of▁sentence｜>"
 USER, ASSISTANT = "<｜User｜>", "<｜Assistant｜>"
+# Literal high-effort prefix reviewed in both pinned official encoding files.
+# Their SHA-256 is recorded in the manifest; no downloaded Python is executed.
+HIGH_EFFORT_PREFIX = (
+    "Reasoning Effort: Absolute maximum with no shortcuts permitted.\n"
+    "You MUST be very thorough in your thinking and comprehensively decompose the problem to resolve the root cause, rigorously stress-testing your logic against all potential paths, edge cases, and adversarial scenarios.\n"
+    "Explicitly write out your entire deliberation process, documenting every intermediate step, considered alternative, and rejected hypothesis to ensure absolutely no assumption is left unchecked.\n\n"
+)
 
 
 def obj(value):
@@ -137,7 +144,7 @@ def prompt_candidates(body):
     messages = body.get("messages")
     if not isinstance(messages, list) or not 1 <= len(messages) <= 2:
         return None
-    if body.get("tools") or body.get("response_format") or body.get("reasoning_effort") not in (None, "low"):
+    if body.get("tools") or body.get("response_format") or body.get("reasoning_effort") not in (None, "low", "high"):
         return None
     if any(not isinstance(m, dict) or not isinstance(m.get("content"), str) or set(m) - {"role", "content"} for m in messages):
         return None
@@ -146,7 +153,8 @@ def prompt_candidates(body):
         return None
     system = messages[0]["content"] if len(messages) == 2 else ""
     prefix = BOS + system + USER + messages[-1]["content"] + ASSISTANT
-    return {"chat": prefix + "</think>", "thinking": prefix + "<think>"}
+    return {"chat": prefix + "</think>", "thinking": prefix + "<think>",
+            "thinking_high": BOS + HIGH_EFFORT_PREFIX + system + USER + messages[-1]["content"] + ASSISTANT + "<think>"}
 
 
 def capability(case, response):
@@ -327,14 +335,29 @@ def analyze_case(case, tokenizers):
         local["promptCandidates"] = {mode: count(tokenizer, text) for mode, text in candidates.items()}
         reported = usage.get("prompt_tokens")
         local["promptResiduals"] = {mode: reported - value for mode, value in local["promptCandidates"].items()} if integer(reported) else None
+        local["matchingPromptCandidates"] = [mode for mode, value in local["promptCandidates"].items() if reported == value] if integer(reported) else []
+        local["highEffortPrefixAdditionalTokens"] = local["promptCandidates"]["thinking_high"] - local["promptCandidates"]["thinking"]
+        local["reportedReasoningEffort"] = body.get("reasoning_effort")
+        local["promptMatchInterpretation"] = (
+            "Matches official high-effort prefix candidate; added prefix tokens explain the low-template residual. Upstream framing and model identity remain unverified."
+            if "thinking_high" in local["matchingPromptCandidates"] else "Candidate framing only; neither a matching nor mismatching count authenticates the model."
+        )
     visible = message.get("content")
     reasoning = reasoning_evidence["selected"]
     if isinstance(visible, str) and not message.get("tool_calls"):
-        local["completionCandidates"] = {"chat_with_eos": count(tokenizer, visible + EOS)}
-        if isinstance(reasoning, str):
-            local["completionCandidates"]["visible_thinking_with_eos"] = count(tokenizer, reasoning + "</think>" + visible + EOS)
+        if choice.get("finish_reason") == "length":
+            local["completionCandidates"] = {"chat_length_without_eos": count(tokenizer, visible)}
+            if isinstance(reasoning, str):
+                raw = reasoning + "</think>" + visible if visible else reasoning
+                local["completionCandidates"]["visible_thinking_length_without_eos"] = count(tokenizer, raw)
+            local["completionFramingNote"] = "Length truncation does not justify appending ungenerated EOS/close-thinking tokens; candidates omit them."
+        else:
+            local["completionCandidates"] = {"chat_with_eos": count(tokenizer, visible + EOS)}
+            if isinstance(reasoning, str):
+                local["completionCandidates"]["visible_thinking_with_eos"] = count(tokenizer, reasoning + "</think>" + visible + EOS)
         reported = usage.get("completion_tokens")
         local["completionResiduals"] = {mode: reported - value for mode, value in local["completionCandidates"].items()} if integer(reported) else None
+        local["matchingCompletionCandidates"] = [mode for mode, value in local["completionCandidates"].items() if reported == value] if integer(reported) else []
     result.update(localTokens=local, tokenVerification="provisional_local_counts_not_model_authentication")
     if result["findings"]:
         result["status"] = "needs_review"
