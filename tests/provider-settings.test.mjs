@@ -187,7 +187,7 @@ test("saving verifies a key with a read-only official request and persists only 
     assert.equal(url, "https://api.apimart.ai/v1/balance");
     assert.equal(init.method, "GET");
     assert.equal(new Headers(init.headers).get("Authorization"), `Bearer ${KEY}`);
-    assert.equal(init.redirect, "error");
+    assert.equal(init.redirect, "manual");
     assert.equal(init.cache, "no-store");
     assert.ok(init.signal instanceof AbortSignal);
   }
@@ -267,13 +267,14 @@ test("upstream rejection, malformed responses and transport failures are reporte
     ["unauthorized", () => new Response(KEY, { status: 401 }), 422],
     ["forbidden", () => new Response(KEY, { status: 403 }), 422],
     ["rate limited", () => new Response(KEY, { status: 429 }), 429],
+    ["redirect refused", () => new Response(null, { status: 302, headers: { Location: "https://unexpected.example/capture" } }), 502],
     ["unavailable", () => new Response(KEY, { status: 503 }), 502],
     ["non JSON", () => new Response(`<html>${KEY}</html>`), 502],
     ["oversized", () => new Response("x".repeat(2_000_001)), 502],
     ["missing balance", () => Response.json({ success: true }), 502],
     ["invalid balance", () => Response.json({ success: true, remain_balance: -1, unlimited_quota: false }), 502],
     ["timeout", () => { throw new DOMException(KEY, "TimeoutError"); }, 502],
-    ["redirect refused", () => { throw new TypeError(`redirect ${KEY}`); }, 502],
+    ["redirect transport failure", () => { throw new TypeError(`redirect ${KEY}`); }, 502],
   ];
   for (const [name, response, status] of cases) {
     await t.test(name, async () => {

@@ -99,7 +99,7 @@ test("saving uses the official free catalog with an explicit Bearer credential a
     assert.equal(url, "https://ai-tokenhub.ai/api/v1/models");
     assert.equal(init.method, "GET");
     assert.equal(new Headers(init.headers).get("Authorization"), `Bearer ${KEY}`);
-    assert.equal(init.redirect, "error");
+    assert.equal(init.redirect, "manual");
     assert.equal(init.cache, "no-store");
     assert.ok(init.signal instanceof AbortSignal);
   }
@@ -113,6 +113,7 @@ test("invalid replacements never overwrite the saved key and provider failures a
     [() => new Response(KEY, { status: 401 }), 422],
     [() => new Response(KEY, { status: 403 }), 422],
     [() => new Response(KEY, { status: 429 }), 429],
+    [() => new Response(null, { status: 302, headers: { Location: "https://unexpected.example/capture" } }), 502],
     [() => new Response(KEY, { status: 503 }), 502],
     [() => Response.json({ object: "list", data: [], error: KEY }), 502],
     [() => Response.json({ object: "list", data: [], success: false }), 502],

@@ -91,7 +91,7 @@ export function createProviderSettings(env: RuntimeEnv, fetcher: typeof fetch = 
   async function upstream(path: "/v1/balance" | "/v1/models?expand=category", key: string) {
     let response: Response;
     try {
-      response = await fetcher(ORIGIN + path, { method: "GET", headers: { Authorization: `Bearer ${key}`, Accept: "application/json" }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000) });
+      response = await fetcher(ORIGIN + path, { method: "GET", headers: { Authorization: `Bearer ${key}`, Accept: "application/json" }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(10_000) });
     } catch { throw new ProviderError("暂时无法连接 APIMart，请稍后重试。", 502); }
     if (response.status === 401 || response.status === 403) throw new ProviderError("APIMart 密钥无效或没有访问权限，请检查后重试。", 422);
     if (response.status === 429) throw new ProviderError("APIMart 请求频率已达上限，请稍后重试。", 429);

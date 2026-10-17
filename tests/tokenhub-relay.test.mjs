@@ -162,7 +162,7 @@ test("a video request retries from its persisted result and rejects changed payl
   await expectStatus(f.handle, request(TASKS, { body: JSON.stringify({ ...VIDEO, duration: 5 }) }), 409);
   assert.equal(f.calls.length, 1);
   assert.equal(f.calls[0].url, "https://ai-tokenhub.ai/api/v3/contents/generations/tasks");
-  assert.equal(f.calls[0].init.redirect, "error");
+  assert.equal(f.calls[0].init.redirect, "manual");
   assert.equal(f.calls[0].init.cache, "no-store");
   assert.equal(f.sqlite.prepare("SELECT calls FROM usage_daily WHERE user_id=?").get(ADMIN.id).calls, 1);
   assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM tokenhub_tasks").get().n, 1);
@@ -231,6 +231,15 @@ test("upstream credentials are redacted recursively including JSON-escaped strin
   assert.equal(data.metadata.key, "[redacted]");
   const cached = JSON.parse(f.sqlite.prepare("SELECT response_json FROM tokenhub_requests").get().response_json);
   assert.deepEqual(cached, data);
+});
+
+test("upstream redirects are rejected without forwarding credentials or redirecting the caller", async t => {
+  const f = await fixture(t, { fetcher: async () => Response.json({ destination: "https://untrusted.example" }, { status: 302, headers: { location: "https://untrusted.example" } }) });
+  const response = await expectStatus(f.handle, request(TASKS), 502);
+  assert.equal(response.headers.get("location"), null);
+  assert.equal(f.calls.length, 1);
+  assert.equal(f.calls[0].init.redirect, "manual");
+  assert.ok(!JSON.stringify(await response.json()).includes(PROVIDER_KEY));
 });
 
 test("write throttling stops paid requests at five per minute while reads retain their separate allowance", async t => {

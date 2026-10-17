@@ -150,9 +150,10 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
       sent = true;
       response = await fetch(TOKENHUB_ORIGIN + "/api" + path, {
         method: request.method, headers: { Authorization: `Bearer ${key}`, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
-        ...(body ? { body: JSON.stringify(body) } : {}), redirect: "error", cache: "no-store", signal: AbortSignal.timeout(request.method === "GET" ? 20_000 : 110_000),
+        ...(body ? { body: JSON.stringify(body) } : {}), redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(request.method === "GET" ? 20_000 : 110_000),
       });
     } catch { throw new ProviderError(request.method === "POST" ? "TokenHub 尚未返回结果。请核对上游请求记录后再决定是否重试。" : "暂时无法连接 TokenHub，请稍后刷新。", 502); }
+    if (response.status >= 300 && response.status < 400) throw new ProviderError("TokenHub 返回了意外重定向，请联系管理员。", 502);
     let data: Json;
     try { data = response.status === 204 ? { status: "cancelled_or_deleted", id: taskId } : redacted(await readObject(response.body, 8_000_000), key); }
     catch { throw new ProviderError("TokenHub 响应不完整，请在上游请求记录中核对结果。", 502); }
