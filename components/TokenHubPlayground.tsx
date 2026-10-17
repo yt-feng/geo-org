@@ -1,0 +1,241 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Icon } from "./Icon";
+
+type Mode = "video" | "image" | "chat";
+type Json = Record<string, unknown>;
+type Model = { id: string; name?: string; provider: string; category: string[] };
+type Task = { id: string; model: string; status: string; created_at?: string; updated_at?: string };
+type Provider = { configured: boolean; verifiedAt: string | null };
+const endpoint: Record<Mode, string> = { video: "/api/tokenhub/v3/contents/generations/tasks", image: "/api/tokenhub/v3/images/generations", chat: "/api/tokenhub/v1/chat/completions" };
+const modes: Array<{ id: Mode; name: string; icon: string }> = [{ id: "video", name: "视频", icon: "video" }, { id: "image", name: "图像", icon: "image" }, { id: "chat", name: "对话", icon: "message" }];
+const defaults: Record<Mode, string> = { video: "dreamina-seedance-2-0-260128", image: "dola-seedream-5-0-pro-260628", chat: "" };
+// The provider's signed-in marketplace lists these models separately from its chat catalog endpoint.
+const marketplacePresets: Model[] = [
+  { id: "dreamina-seedance-2-0-260128", name: "Seedance 2.0", provider: "TokenHub", category: ["video"] },
+  { id: "dreamina-seedance-2-0-fast-260128", name: "Seedance 2.0 Fast", provider: "TokenHub", category: ["video"] },
+  { id: "dreamina-seedance-2-0-mini-260615", name: "Seedance 2.0 Mini", provider: "TokenHub", category: ["video"] },
+  { id: "dreamina-seedance-2-5-260628", name: "Seedance 2.5", provider: "TokenHub", category: ["video"] },
+  { id: "dola-seedream-5-0-pro-260628", name: "Seedream 5.0 Pro", provider: "TokenHub", category: ["image"] },
+];
+const examples: Record<Mode, string> = { video: "镜头缓缓掠过清晨的海岸，柔和的金色阳光照亮浪花，海风轻拂，电影摄影质感。", image: "极简产品摄影：银色耳机置于浅灰色石材上，柔和侧光，干净构图，细腻阴影。", chat: "用三句话介绍统一模型 API 如何帮助开发者快速实现创意。" };
+const statusNames: Record<string, string> = { submitted: "已提交", queued: "排队中", pending: "等待中", running: "生成中", processing: "生成中", succeeded: "已完成", completed: "已完成", success: "已完成", failed: "失败", cancelled: "已取消", canceled: "已取消", expired: "已过期", deleted: "已删除", cancelled_or_deleted: "已取消或删除" };
+const terminal = new Set(["succeeded", "completed", "success", "failed", "cancelled", "canceled", "expired", "deleted", "cancelled_or_deleted"]);
+
+function record(value: unknown): Json { return value && typeof value === "object" && !Array.isArray(value) ? value as Json : {}; }
+function payloadOf(value: unknown): Json { const root = record(value); return root.id || root.status || root.content ? root : Object.keys(record(root.data)).length ? record(root.data) : root; }
+function text(value: unknown): string { return typeof value === "string" ? value : ""; }
+function safeUrl(value: unknown): string { if (typeof value !== "string") return ""; try { const parsed = new URL(value); return parsed.protocol === "https:" ? parsed.href : ""; } catch { return ""; } }
+function shellQuote(value: string) { return `'${value.replaceAll("'", "'\\''")}'`; }
+function modelMatches(model: Model, mode: Mode) { const value = `${model.id} ${model.category.join(" ")}`.toLowerCase(); return mode === "video" ? /video|seedance|视频/.test(value) : mode === "image" ? /image|seedream|图像|图片/.test(value) : /chat|text|language|llm|对话|文本/.test(value) && !/video|image/.test(value); }
+
+async function request(path: string, init?: RequestInit): Promise<unknown> {
+  const response = await fetch(path, { ...init, credentials: "same-origin", cache: "no-store" });
+  const result = await response.json().catch(() => null);
+  if (!response.ok || !result) {
+    const root = record(result), detail = record(root.error);
+    throw new Error(text(root.message) || text(detail.message) || text(root.error) || `请求未完成（${response.status}）。请检查任务列表后再重试。`);
+  }
+  return result;
+}
+
+function TaskBadge({ status }: { status: string }) { return <span className={`tokenhub-task-status status-${status.replace(/[^a-z]/gi, "")}`}><i />{statusNames[status] || status || "状态待查询"}</span>; }
+
+export function TokenHubPlayground() {
+  const [mode, setMode] = useState<Mode>("video");
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [models, setModels] = useState<Model[]>([]);
+  const [model, setModel] = useState(defaults.video);
+  const [modelError, setModelError] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [reference, setReference] = useState("");
+  const [referenceRole, setReferenceRole] = useState("first_frame");
+  const [duration, setDuration] = useState("5");
+  const [resolution, setResolution] = useState("720p");
+  const [ratio, setRatio] = useState("16:9");
+  const [generateAudio, setGenerateAudio] = useState(true);
+  const [imageSize, setImageSize] = useState("2K");
+  const [advanced, setAdvanced] = useState(false);
+  const [jsonInput, setJsonInput] = useState("");
+  const [format, setFormat] = useState<"json" | "curl">("json");
+  const [tab, setTab] = useState<"result" | "request" | "tasks">("result");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<unknown>(null);
+  const [resultMode, setResultMode] = useState<Mode>("video");
+  const [taskId, setTaskId] = useState("");
+  const [queryId, setQueryId] = useState("");
+  const [polling, setPolling] = useState(false);
+  const [pollCount, setPollCount] = useState(0);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [tasksLoaded, setTasksLoaded] = useState(false);
+  const [tasksError, setTasksError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const inFlight = useRef(false);
+  const submission = useRef<{ body: string; key: string } | null>(null);
+  const selection = useRef(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    request("/api/admin/providers/tokenhub", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setProvider(record(value).tokenhub as Provider); }).catch(error => { if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "配置读取失败。"); });
+    request("/api/admin/providers/tokenhub/models", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setModels(Array.isArray(record(value).models) ? record(value).models as Model[] : []); }).catch(error => { if (!controller.signal.aborted) setModelError(error instanceof Error ? error.message : "模型目录读取失败。"); });
+    return () => controller.abort();
+  }, []);
+
+  const options = useMemo(() => [...models, ...marketplacePresets.filter(preset => !models.some(item => item.id === preset.id))].filter(item => modelMatches(item, mode)), [models, mode]);
+  const generated = useMemo(() => {
+    if (mode === "chat") return { model, messages: [{ role: "user", content: prompt }], stream: false };
+    if (mode === "image") return { model, prompt, size: imageSize, watermark: false, response_format: "url" };
+    return { model, content: [{ type: "text", text: prompt }, ...(reference.trim() ? [{ type: "image_url", image_url: { url: reference.trim() }, role: referenceRole }] : [])], resolution, ratio, duration: Number(duration), generate_audio: generateAudio, watermark: false, return_last_frame: true };
+  }, [mode, model, prompt, imageSize, reference, referenceRole, resolution, ratio, duration, generateAudio]);
+  const json = advanced ? jsonInput : JSON.stringify(generated, null, 2);
+  const curl = `${mode === "video" ? 'TOKENHUB_REQUEST_ID="$(uuidgen)"\n\n' : ""}curl --request POST \\\n  --url 'https://api.eco-geo.org${endpoint[mode]}' \\\n  --header 'Authorization: Bearer YOUR_ECO_GEO_API_KEY' \\\n  --header 'Content-Type: application/json'${mode === "video" ? " \\\n  --header \"Idempotency-Key: $TOKENHUB_REQUEST_ID\"" : ""} \\\n  --data ${shellQuote(json)}`;
+  const taskData = payloadOf(result);
+  const taskStatus = text(taskData.status).toLowerCase();
+  const content = record(taskData.content);
+  const videoUrl = safeUrl(content.video_url || taskData.video_url);
+  const frameUrl = safeUrl(content.last_frame_url || taskData.last_frame_url);
+  const images = resultMode === "image" && Array.isArray(record(result).data) ? (record(result).data as unknown[]).map(record).map(item => ({ url: safeUrl(item.url), base64: text(item.b64_json) })).filter(item => item.url || item.base64) : [];
+  const choices = Array.isArray(record(result).choices) ? record(result).choices as unknown[] : [];
+  const answer = choices.map(choice => text(record(record(choice).message).content)).filter(Boolean).join("\n\n");
+
+  useEffect(() => {
+    if (!taskId || !polling) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>, count = 0;
+    const version = selection.current;
+    async function poll() {
+      try {
+        const next = await request(`${endpoint.video}/${encodeURIComponent(taskId)}`, { signal: controller.signal });
+        if (controller.signal.aborted || selection.current !== version) return;
+        setResult(next); setResultMode("video"); count++; setPollCount(count);
+        if (terminal.has(text(payloadOf(next).status).toLowerCase()) || count >= 120) { setPolling(false); return; }
+        timer = setTimeout(poll, 5000);
+      } catch (error) {
+        if (!controller.signal.aborted && selection.current === version) { setPolling(false); setError(error instanceof Error ? error.message : "任务状态读取失败，可手动刷新。"); }
+      }
+    }
+    timer = setTimeout(poll, 3000);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [taskId, polling]);
+
+  function changeMode(next: Mode) {
+    setMode(next); setModel(models.find(item => modelMatches(item, next))?.id || defaults[next]); setAdvanced(false); setError(""); setCopied(false);
+  }
+
+  function toggleAdvanced() {
+    if (!advanced) setJsonInput(JSON.stringify(generated, null, 2));
+    setAdvanced(!advanced); setTab("request");
+  }
+
+  async function loadTasks() {
+    setTasksLoading(true); setTasksError("");
+    try { const value = record(await request(endpoint.video)); setTasks(Array.isArray(value.data) ? value.data as Task[] : []); setTasksLoaded(true); }
+    catch (error) { setTasksError(error instanceof Error ? error.message : "任务记录读取失败。"); }
+    finally { setTasksLoading(false); }
+  }
+
+  async function selectTask(id: string) {
+    if (!id.trim() || refreshing || pending) return;
+    setPolling(false); setRefreshing(true); setError(""); setTab("result");
+    const version = ++selection.current;
+    try {
+      const value = await request(`${endpoint.video}/${encodeURIComponent(id.trim())}`);
+      if (selection.current !== version) return;
+      setTaskId(id.trim()); setQueryId(id.trim()); setResult(value); setResultMode("video"); setPollCount(0);
+      setPolling(!terminal.has(text(payloadOf(value).status).toLowerCase()));
+    } catch (error) { if (selection.current === version) setError(error instanceof Error ? error.message : "任务查询失败。"); }
+    finally { setRefreshing(false); }
+  }
+
+  async function submit() {
+    if (inFlight.current || !provider?.configured) return;
+    setError("");
+    let body: Json;
+    try {
+      const value: unknown = JSON.parse(json); body = record(value);
+      if (!Object.keys(body).length || !text(body.model).trim()) throw new Error("请填写有效的模型 ID 与 JSON 请求对象。");
+      if (mode === "chat" && body.stream === true) throw new Error("当前工作台使用完整响应，请将 stream 设为 false。");
+      if (!advanced && !prompt.trim()) throw new Error("请输入提示词。");
+      if (mode === "video" && !advanced && reference.trim() && !safeUrl(reference.trim())) throw new Error("请填写公开可访问的 HTTPS 参考图片地址。");
+      if (new TextEncoder().encode(JSON.stringify(body)).length > 60000) throw new Error("请求内容过长，请缩短提示词或使用公开素材 URL。");
+    } catch (error) { setError(error instanceof SyntaxError ? "JSON 格式有误，请检查引号、逗号与括号。" : error instanceof Error ? error.message : "请求格式有误。"); setTab("request"); return; }
+    inFlight.current = true; setPending(true); setPolling(false); setTab("result");
+    if (mode === "video") setTasksLoaded(false);
+    const version = ++selection.current;
+    const serialized = JSON.stringify(body);
+    if (mode === "video" && submission.current?.body !== serialized) submission.current = { body: serialized, key: crypto.randomUUID() };
+    try {
+      const value = await request(endpoint[mode], { method: "POST", headers: { "content-type": "application/json", ...(mode === "video" ? { "Idempotency-Key": submission.current!.key } : {}) }, body: serialized });
+      if (selection.current !== version) return;
+      setResult(value); setResultMode(mode); setTaskId(""); setPollCount(0);
+      if (mode === "video") {
+        setTasksLoaded(false);
+        const id = text(payloadOf(value).id);
+        if (id) { setTaskId(id); setQueryId(id); setPolling(!terminal.has(text(payloadOf(value).status).toLowerCase())); submission.current = null; }
+        else setError("请求已返回，但未找到任务 ID。请查看原始响应与任务记录，勿重复提交。");
+      }
+    } catch (error) { setError(error instanceof Error ? error.message : "请求未完成。请先检查任务记录。"); }
+    finally { inFlight.current = false; setPending(false); }
+  }
+
+  async function copy() {
+    try { await navigator.clipboard.writeText(format === "json" ? json : curl); setCopied(true); setCopyError(""); setTimeout(() => setCopied(false), 1800); }
+    catch { setCopyError("复制未完成，请选中代码手动复制。"); }
+  }
+
+  return <div className="playground-layout tokenhub-workbench">
+    <section className="playground-controls" aria-label="TokenHub 请求参数">
+      <div className="playground-control-header"><span>TOKENHUB</span><Link href="/admin" aria-label="管理 TokenHub 连接"><Icon name="settings" size={17} /></Link></div>
+      <div className="playground-category-tabs" role="tablist" aria-label="TokenHub 模型类型">{modes.map(item => <button key={item.id} type="button" role="tab" aria-selected={mode === item.id} className={mode === item.id ? "selected" : ""} onClick={() => changeMode(item.id)} disabled={pending}><Icon name={item.icon} size={15} />{item.name}</button>)}</div>
+      <div className="playground-form-fields">
+        <label className="playground-field"><span>模型 <span className="field-required">*</span></span><select aria-label="选择 TokenHub 模型" value={options.some(item => item.id === model) ? model : "custom"} onChange={event => setModel(event.target.value === "custom" ? defaults[mode] : event.target.value)} disabled={advanced || pending}><option value="custom">填写模型 ID</option>{options.map(item => <option key={item.id} value={item.id}>{item.name || item.id}</option>)}</select><small>{mode === "chat" ? models.length ? `已读取 ${models.length} 个目录模型。` : modelError || "正在读取模型目录…" : "视频与图像预设来自 TokenHub 模型广场。"}</small></label>
+        <label className="playground-field playground-model-id"><span>MODEL ID</span><input aria-label="TokenHub 模型 ID" value={model} onChange={event => setModel(event.target.value)} spellCheck={false} placeholder="填写上游模型 ID" disabled={advanced || pending} /><small>{mode !== "chat" ? "模型版本与可用性以上游返回和账户权限为准。" : "可使用控制台提供的完整模型 ID。"}</small></label>
+        <label className="playground-field"><span>提示词<button type="button" disabled={advanced || pending} onClick={() => setPrompt(examples[mode])}><Icon name="sparkles" size={13} />试试示例</button></span><textarea aria-label="TokenHub 提示词" rows={5} maxLength={10000} value={prompt} onChange={event => setPrompt(event.target.value)} placeholder={mode === "video" ? "描述场景、主体动作和镜头运动…" : mode === "image" ? "描述画面、构图、光线和风格…" : "输入你的消息…"} disabled={advanced || pending} /><small>{prompt.length.toLocaleString()} / 10,000</small></label>
+        {mode === "video" ? <>
+          <div className="tokenhub-field-pair"><label className="playground-field"><span>时长</span><select aria-label="视频时长" value={duration} onChange={event => setDuration(event.target.value)} disabled={advanced || pending}><option value="-1">模型自动</option>{Array.from({ length: 12 }, (_, index) => index + 4).map(value => <option key={value} value={value}>{value} 秒</option>)}</select></label><label className="playground-field"><span>分辨率</span><select aria-label="视频分辨率" value={resolution} onChange={event => setResolution(event.target.value)} disabled={advanced || pending}>{["480p", "720p", "1080p"].map(value => <option key={value} value={value}>{value}</option>)}</select></label></div>
+          <label className="playground-field"><span>画面比例</span><select aria-label="视频比例" value={ratio} onChange={event => setRatio(event.target.value)} disabled={advanced || pending}>{["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "adaptive"].map(value => <option key={value} value={value}>{value === "adaptive" ? "自动适配" : value}</option>)}</select></label>
+          <label className="playground-field"><span>参考图片 <small>选填</small></span><input aria-label="TokenHub 参考图片 URL" type="url" value={reference} onChange={event => setReference(event.target.value)} placeholder="https://…" disabled={advanced || pending} />{reference.trim() ? <select aria-label="参考图片用途" value={referenceRole} onChange={event => setReferenceRole(event.target.value)} disabled={advanced || pending}><option value="first_frame">首帧画面</option><option value="reference_image">参考图像</option></select> : null}</label>
+          <label className="playground-check"><input type="checkbox" checked={generateAudio} onChange={event => setGenerateAudio(event.target.checked)} disabled={advanced || pending} />同时生成音频</label>
+        </> : mode === "image" ? <label className="playground-field"><span>图片尺寸</span><select aria-label="TokenHub 图片尺寸" value={imageSize} onChange={event => setImageSize(event.target.value)} disabled={advanced || pending}>{["1K", "2K", "4K"].map(value => <option key={value} value={value}>{value}</option>)}</select></label> : null}
+        <button className={`tokenhub-advanced-toggle${advanced ? " selected" : ""}`} type="button" onClick={toggleAdvanced} aria-pressed={advanced} disabled={pending}><Icon name="code" size={14} />{advanced ? "返回参数表单" : "编辑完整 JSON"}<Icon name="arrow-right" size={14} /></button>
+        <p className="tokenhub-parameter-help">各模型支持的尺寸、时长与素材类型不同。多图、参考视频及其他参数可在 JSON 中设置。</p>
+      </div>
+      <div className="playground-run-area"><button className="playground-run" type="button" disabled={pending || !provider?.configured || (!advanced && (!model.trim() || !prompt.trim()))} onClick={submit}><Icon name={pending ? "clock" : "bolt"} size={16} />{pending ? "正在提交…" : mode === "video" ? "创建视频任务" : mode === "image" ? "生成图片" : "发送对话"}<Icon name="arrow-right" size={16} /></button><span><i />实际调用 · 消耗 TokenHub 账户额度</span></div>
+    </section>
+    <section className="playground-workspace" aria-label="TokenHub 工作台">
+      <header className="playground-workspace-header"><div><h1>从想法，到作品。</h1><span>TIANSHU TOKENHUB · ECO-GEO</span></div><a href="https://docs.ai-tokenhub.ai/en/ai.TokenHub" target="_blank" rel="noopener noreferrer"><Icon name="book" size={15} />接口文档<Icon name="arrow-up-right" size={14} /></a></header>
+      <div className="playground-notice"><span className="playground-notice-dot" /><p>{provider === null ? "正在读取服务配置…" : provider.configured ? "由 ECO-GEO 统一转发，使用后台保存的 TokenHub 密钥。" : "配置 TokenHub API Key 后，即可在这里发起模型请求。"}</p><Link href="/admin">管理连接 <Icon name="arrow-right" size={13} /></Link></div>
+      <div className="tokenhub-output-tabs" role="tablist" aria-label="工作台内容"><button type="button" role="tab" aria-selected={tab === "result"} className={tab === "result" ? "selected" : ""} onClick={() => setTab("result")}><Icon name="sparkles" size={14} />生成结果</button><button type="button" role="tab" aria-selected={tab === "request"} className={tab === "request" ? "selected" : ""} onClick={() => setTab("request")}><Icon name="code" size={14} />请求代码</button><button type="button" role="tab" aria-selected={tab === "tasks"} className={tab === "tasks" ? "selected" : ""} onClick={() => { setTab("tasks"); if (!tasksLoaded) void loadTasks(); }}><Icon name="clock" size={14} />视频任务</button></div>
+      {error ? <div className="tokenhub-error" role="alert"><Icon name="info" size={15} /><span>{error}</span></div> : null}
+      {tab === "request" ? <div className="playground-preview-area">
+        <div className="playground-preview-meta"><span className="request-method">POST</span><code>{endpoint[mode]}</code></div>
+        <div className="playground-code-panel"><div className="playground-code-toolbar"><div role="tablist" aria-label="TokenHub 代码格式"><button type="button" role="tab" aria-selected={format === "json"} className={format === "json" ? "selected" : ""} onClick={() => setFormat("json")}>JSON</button><button type="button" role="tab" aria-selected={format === "curl"} className={format === "curl" ? "selected" : ""} onClick={() => setFormat("curl")}>cURL</button></div><button type="button" onClick={copy}><Icon name={copied ? "check" : "copy"} size={14} />{copied ? "已复制" : "复制代码"}</button></div>{advanced && format === "json" ? <textarea className="tokenhub-json-editor" aria-label="TokenHub JSON 请求" value={jsonInput} onChange={event => setJsonInput(event.target.value)} spellCheck={false} maxLength={60000} disabled={pending} /> : <pre tabIndex={0}><code>{format === "json" ? json : curl}</code></pre>}</div>
+        <p className="playground-code-note" role="status">{copyError || (advanced ? "JSON 编辑器中的内容将作为完整请求发送。请按模型文档填写；对话暂不支持流式输出。" : "此请求使用 ECO-GEO 的 API 密钥。点击左侧运行按钮才会调用模型。")}</p>
+        {mode === "video" ? <p className="tokenhub-parameter-help">每个视频请求使用独立的 Idempotency-Key。网络中断后重试同一请求时，应复用该值；创建新任务时再换一个值。</p> : null}
+      </div> : tab === "tasks" ? <div className="tokenhub-task-panel">
+        <div className="tokenhub-section-heading"><div><h2>视频任务记录</h2><p>通过 ECO-GEO 创建的任务</p></div><button className="button button-ghost" type="button" disabled={tasksLoading} onClick={loadTasks}><Icon name="refresh" size={14} />{tasksLoading ? "读取中…" : "刷新"}</button></div>
+        <form className="tokenhub-task-query" onSubmit={event => { event.preventDefault(); void selectTask(queryId); }}><input aria-label="查询视频任务 ID" value={queryId} onChange={event => setQueryId(event.target.value)} placeholder="输入 ECO-GEO 已记录的视频任务 ID" maxLength={200} /><button className="button button-ghost" type="submit" disabled={!queryId.trim() || refreshing || pending}>{refreshing ? "查询中…" : "查询任务"}</button></form>
+        {tasksError ? <p className="tokenhub-error" role="alert">{tasksError}</p> : null}
+        <div className="tokenhub-task-list">{tasks.map(task => <button key={task.id} type="button" disabled={refreshing || pending} onClick={() => selectTask(task.id)}><span className="tokenhub-task-icon"><Icon name="video" size={18} /></span><span className="tokenhub-task-label"><strong>{task.model || "视频生成"}</strong><code>{task.id}</code>{task.created_at ? <small>{new Date(task.created_at).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })}</small> : null}</span><TaskBadge status={task.status} /><Icon name="arrow-up-right" size={14} /></button>)}</div>
+        {tasksLoaded && !tasks.length && !tasksError ? <div className="tokenhub-list-empty"><Icon name="video" size={26} /><h3>还没有视频任务</h3><p>创建首个任务后，记录将出现在这里。</p></div> : null}
+      </div> : pending ? <div className="tokenhub-pending"><span className="tokenhub-spinner" /><h2>请求正在发送</h2><p>{mode === "video" ? "创建完成后，会自动跟进生成状态。" : "正在等待模型返回结果。"}</p></div> : result ? <div className="tokenhub-result-area">
+        {resultMode === "video" ? <>
+          <div className="tokenhub-section-heading"><div><h2>{videoUrl ? "视频已就绪" : terminal.has(taskStatus) ? "任务结果" : "视频生成任务"}</h2><p>{text(taskData.model) || "TokenHub"}</p></div><TaskBadge status={taskStatus} /></div>
+          {videoUrl ? <div className="tokenhub-video-frame"><video src={videoUrl} poster={frameUrl || undefined} controls playsInline preload="metadata" /></div> : <div className="tokenhub-video-wait"><Icon name={terminal.has(taskStatus) ? "info" : "video"} size={32} /><strong>{statusNames[taskStatus] || "等待上游返回任务状态"}</strong><p>{terminal.has(taskStatus) ? text(taskData.message) || text(record(taskData.error).message) || text(taskData.error) || "详情见下方原始响应。" : "生成时间取决于模型与排队情况，页面会自动更新。"}</p></div>}
+          {videoUrl ? <div className="tokenhub-result-actions"><a className="button button-primary" href={videoUrl} target="_blank" rel="noopener noreferrer"><Icon name="arrow-up-right" size={14} />打开视频</a>{frameUrl ? <a className="button button-ghost" href={frameUrl} target="_blank" rel="noopener noreferrer">查看末帧</a> : null}<span>上游结果链接通常有效 24 小时，请及时保存。</span></div> : null}
+          {taskId ? <div className="tokenhub-current-task"><div><span>任务 ID</span><code>{taskId}</code></div><button type="button" className="button button-ghost" disabled={refreshing} onClick={() => selectTask(taskId)}><Icon name="refresh" size={13} />{refreshing ? "查询中…" : "刷新状态"}</button></div> : null}
+          {taskId && !terminal.has(taskStatus) ? <div className="tokenhub-polling"><span><i className={polling ? "active" : ""} />{polling ? "每 5 秒查询一次 · 最长 10 分钟" : pollCount >= 120 ? "自动查询已暂停，可继续手动刷新。" : "自动查询已暂停"}</span><button type="button" onClick={() => setPolling(!polling)}>{polling ? "暂停查询" : "继续查询"}</button></div> : null}
+        </> : resultMode === "image" ? <><div className="tokenhub-section-heading"><div><h2>{images.length ? "画面已生成" : "图片请求结果"}</h2><p>TokenHub Image Generation</p></div><span className="record-count">{images.length} 张</span></div><div className="tokenhub-image-grid">{images.map((item, index) => <figure key={index}><Image unoptimized width={1024} height={1024} style={{ height: "auto" }} src={item.url || `data:image/png;base64,${item.base64}`} alt={`生成结果 ${index + 1}`} />{item.url ? <figcaption><a href={item.url} target="_blank" rel="noopener noreferrer">打开原图 <Icon name="arrow-up-right" size={13} /></a></figcaption> : null}</figure>)}</div></> : <><div className="tokenhub-section-heading"><div><h2>模型回复</h2><p>{text(record(result).model) || "TokenHub Chat"}</p></div><Icon name="message" size={18} /></div>{answer ? <div className="tokenhub-chat-answer">{answer}</div> : <p className="tokenhub-parameter-help">请展开原始响应查看模型返回内容。</p>}</>}
+        <details className="tokenhub-raw-response"><summary>原始响应 <Icon name="code" size={14} /></summary><pre tabIndex={0}><code>{JSON.stringify(result, null, 2)}</code></pre></details>
+      </div> : <div className="playground-empty-state tokenhub-empty"><div className="playground-empty-art" aria-hidden="true"><span /><span /><span /><Icon name={modes.find(item => item.id === mode)?.icon || "video"} size={32} /></div><span className="tokenhub-empty-kicker">ONE IDEA. MANY POSSIBILITIES.</span><h2>{mode === "video" ? "让每一个画面流动起来" : mode === "image" ? "把灵感，变成画面" : "让想法继续生长"}</h2><p>选择模型，描述你的想法。<br />由 ECO-GEO 连接 TokenHub，完成真实生成。</p><button className="tokenhub-prompt-example" type="button" onClick={() => setPrompt(examples[mode])}><Icon name="sparkles" size={16} /><span>{examples[mode]}</span><Icon name="arrow-up-right" size={14} /></button></div>}
+      <footer className="playground-workspace-footer"><span>ECO-GEO × TOKENHUB</span><span>管理员工作台 · 统一管理与调用</span></footer>
+    </section>
+  </div>;
+}

@@ -11,6 +11,7 @@ export type RuntimeEnv = {
   ADMIN_PASSWORD?: string;
   ADMIN_SESSION_SECRET?: string;
   APIMART_API_KEY?: string;
+  TOKENHUB_API_KEY?: string;
   UPSTREAM_BASE_URL?: string;
   UPSTREAM_OPENAPI_URL?: string;
   UPSTREAM_PRICE_ENDPOINT?: string;

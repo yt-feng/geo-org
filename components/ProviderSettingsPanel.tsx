@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { TokenHubSettingsCard } from "./TokenHubSettingsCard";
 
 type ApimartStatus = {
   configured: boolean;
@@ -171,7 +172,7 @@ export function ProviderSettingsPanel() {
           <h2 id="provider-settings-title">服务连接</h2>
           <p className="provider-intro">你的社交数据与 AI 模型服务，都在这里。</p>
         </div>
-        <span className="record-count">2 个服务</span>
+        <span className="record-count">3 个服务</span>
       </div>
 
       {loadError ? (
@@ -259,6 +260,7 @@ export function ProviderSettingsPanel() {
             ) : null}
           </div>
         </article>
+        <TokenHubSettingsCard />
       </div>
 
       {notice ? <p className={`provider-notice ${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>{notice.text}</p> : null}
@@ -289,7 +291,7 @@ export function ProviderSettingsPanel() {
         </div>
       ) : null}
 
-      <p className="provider-scope-note">APIMart 支持密钥配置、连接验证与模型目录查询。Playground 可预览请求参数，AI 模型调用尚未开放。</p>
+      <p className="provider-scope-note">TokenHub 已提供模型调用工作台。APIMart 支持密钥配置、连接验证、模型目录查询与请求预览。</p>
     </section>
   );
 }

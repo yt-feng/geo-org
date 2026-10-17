@@ -1,7 +1,7 @@
 import type { RuntimeEnv } from "./config";
 
 const ORIGIN = "https://api.apimart.ai";
-const CONTEXT = new TextEncoder().encode("eco-geo/provider/apimart/v1");
+const DEFAULT_CONTEXT = "eco-geo/provider/apimart/v1";
 type StoredProvider = {
   encrypted_key: string;
   key_hint: string;
@@ -27,21 +27,23 @@ function encode(bytes: Uint8Array): string {
 function decode(value: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(value), c => c.charCodeAt(0));
 }
-async function encryptionKey(secret: string | undefined): Promise<CryptoKey> {
+async function encryptionKey(secret: string | undefined, context: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   if (!secret || secret.length < 32) throw new ProviderError("服务端加密配置尚未完成，请联系管理员。");
   const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), "HKDF", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: CONTEXT, info: CONTEXT }, material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: context, info: context }, material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
 }
-export async function encryptProviderKey(value: string, secret: string | undefined): Promise<string> {
-  const key = await encryptionKey(secret), iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: CONTEXT }, key, new TextEncoder().encode(value));
+export async function encryptProviderKey(value: string, secret: string | undefined, purpose = DEFAULT_CONTEXT): Promise<string> {
+  const context = new TextEncoder().encode(purpose);
+  const key = await encryptionKey(secret, context), iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: context }, key, new TextEncoder().encode(value));
   return `v1.${encode(iv)}.${encode(new Uint8Array(encrypted))}`;
 }
-export async function decryptProviderKey(value: string, secret: string | undefined): Promise<string> {
+export async function decryptProviderKey(value: string, secret: string | undefined, purpose = DEFAULT_CONTEXT): Promise<string> {
   try {
     const [version, nonce, ciphertext, extra] = value.split(".");
     if (version !== "v1" || !nonce || !ciphertext || extra) throw new Error();
-    const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: decode(nonce), additionalData: CONTEXT }, await encryptionKey(secret), decode(ciphertext));
+    const context = new TextEncoder().encode(purpose);
+    const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: decode(nonce), additionalData: context }, await encryptionKey(secret, context), decode(ciphertext));
     return new TextDecoder().decode(decrypted);
   } catch { throw new ProviderError("已保存密钥暂不可读取，请重新填写并保存。"); }
 }
