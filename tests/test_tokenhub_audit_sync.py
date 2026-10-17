@@ -94,6 +94,8 @@ class AuditSyncTests(unittest.TestCase):
         connection.execute("INSERT INTO tokenhub_audit_cases VALUES (?,?,?,?,?,NULL)", (campaign["id"], 0, row["case_id"], row["request_hash"], row["response_hash"]))
         paths = []
         def execute(**kwargs):
+            if "command" in kwargs:
+                return [dict(item) for item in connection.execute(kwargs["command"]).fetchall()]
             path = kwargs["sql_file"]
             paths.append(path)
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
@@ -101,7 +103,10 @@ class AuditSyncTests(unittest.TestCase):
             self.assertIn("AND request_hash=", sql)
             self.assertIn("AND response_hash=", sql)
             self.assertIn("AND campaign_id=(SELECT id", sql)
-            return [dict(item) for item in connection.execute(sql).fetchall()]
+            self.assertNotIn("RETURNING", sql)
+            connection.execute(sql)
+            # Actual bulk import output is a summary, never UPDATE RETURNING rows.
+            return [{"Total queries executed": 1, "Rows read": 2, "Rows written": 1}]
         self.assertEqual(sync.import_analysis(report, campaign, [row], execute)["importedCases"], 1)
         self.assertTrue(all(not path.exists() for path in paths))
         stored = json.loads(connection.execute("SELECT independent_analysis_json FROM tokenhub_audit_cases").fetchone()[0])
@@ -121,6 +126,49 @@ class AuditSyncTests(unittest.TestCase):
             sync.write_private_json(path, sync.evidence(campaign, [row]))
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             self.assertEqual(len(json.loads(path.read_text())["cases"]), 116)
+
+    def test_real_bulk_stdout_progress_and_summary_shape(self):
+        summary = [{"results": [{"Total queries executed": 2, "Rows read": 4, "Rows written": 2, "Database size (MB)": 0.17}], "success": True}]
+        output = "Uploading SQL file...\nProcessing import...\nImport completed.\n" + json.dumps(summary, indent=2) + "\n"
+        with patch.object(sync.subprocess, "run") as run:
+            run.return_value.returncode = 0
+            run.return_value.stdout = output
+            self.assertEqual(sync.run_wrangler(sql_file=Path("/tmp/example.sql")), summary[0]["results"])
+        with self.assertRaises(sync.SyncError):
+            sync.parse_wrangler_output(output + "unexpected trailing text")
+        with self.assertRaises(sync.SyncError):
+            sync.parse_wrangler_output('progress: [{"results":[],"success":true}]')
+
+    def test_import_verifies_after_uncertain_mutation_without_resending(self):
+        campaign, row, report = fixture()
+        calls = []
+        def execute(**kwargs):
+            calls.append(kwargs)
+            if "sql_file" in kwargs:
+                raise sync.SyncError("Uncertain mutation CLI outcome")
+            return [dict(row, independent_analysis_json=sync.encode(report["cases"][0]))]
+        self.assertEqual(sync.import_analysis(report, campaign, [row], execute)["importedCases"], 1)
+        self.assertEqual(sum("sql_file" in call for call in calls), 1)
+        self.assertEqual(sum("command" in call for call in calls), 1)
+
+    def test_failed_readback_never_replays_mutation(self):
+        campaign, row, report = fixture()
+        calls = []
+        def execute(**kwargs):
+            calls.append(kwargs)
+            if "sql_file" in kwargs:
+                return [{"Total queries executed": 1, "Rows written": 1}]
+            raise sync.SyncError("Read unavailable")
+        with self.assertRaisesRegex(sync.SyncError, "do not resubmit, export fresh evidence"):
+            sync.import_analysis(report, campaign, [row], execute)
+        self.assertEqual(sum("sql_file" in call for call in calls), 1)
+        self.assertEqual(sum("command" in call for call in calls), 1)
+        def wrong_json(**kwargs):
+            if "sql_file" in kwargs:
+                return [{"Rows written": 1}]
+            return [dict(row, independent_analysis_json="{}")]
+        with self.assertRaisesRegex(sync.SyncError, "matched 0/1"):
+            sync.import_analysis(report, campaign, [row], wrong_json)
 
     def test_subprocess_is_argv_only_and_raw_errors_not_exposed(self):
         with patch.object(sync.subprocess, "run") as run:
