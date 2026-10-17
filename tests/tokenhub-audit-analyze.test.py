@@ -216,6 +216,37 @@ class AuditAnalysis(unittest.TestCase):
         self.assertFalse(local["templateConfirmedByUpstream"])
         self.assertIsNone(result["capability"]["score"])
 
+    def test_failed_image_and_pending_video_are_insufficient_not_count_anomalies(self):
+        model = "image-fixture"
+        image = {"slot": 0, "caseId": "seedream-image", "kind": "image", "requestedModel": model,
+                 "state": "provider_error", "httpStatus": 400, "derivedExpectedCostMicros": None,
+                 "response": {"error": "Invalid input"},
+                 "priceSnapshot": {"data": {"currencyCode": "USD", "data": [{"id": model, "deployments": [{"enabled": True, "pricing": {"fixed": {"priceUnit": "image", "amount": {"currencyCode": "USD", "unitsMicros": 90000}}}}]}]}}}
+        result = audit.analyze_case(image, self.tokenizers)
+        self.assertEqual(result["status"], "insufficient_evidence")
+        self.assertEqual(result["usageAvailability"], "insufficient_evidence_response_not_completed")
+        self.assertIsNone(result["billing"]["independentEstimateMicros"])
+        self.assertNotIn("estimateMatchesServer", result["billing"])
+        self.assertEqual(result["findings"], [])
+        video = {"slot": 0, "caseId": "seedance-video", "kind": "video", "requestedModel": "video-fixture",
+                 "state": "pending_video", "httpStatus": 200, "response": {"status": "running", "id": "fixture-task"}}
+        pending = audit.analyze_case(video, self.tokenizers)
+        self.assertEqual(pending["status"], "insufficient_evidence")
+        self.assertEqual(pending["usageAvailability"], "insufficient_evidence_response_not_completed")
+        self.assertEqual(pending["findings"], [])
+        # Actual comparable successful estimates still detect a real discrepancy.
+        image.update(state="succeeded", httpStatus=200, derivedExpectedCostMicros=100000,
+                     response={"data": [{"url": "https://example.invalid/fixture.png"}], "usage": {"images": 1}})
+        success = audit.analyze_case(image, self.tokenizers)
+        self.assertEqual(success["billing"]["independentEstimateMicros"], 90000)
+        self.assertIn("independent_and_server_cost_estimates_differ", success["findings"])
+        image["derivedExpectedCostMicros"] = None
+        unpriced = audit.analyze_case(image, self.tokenizers)
+        self.assertEqual(unpriced["billing"]["independentEstimateMicros"], 90000)
+        self.assertNotIn("independent_and_server_cost_estimates_differ", unpriced["findings"])
+        missing_success = copy.deepcopy(self.base)
+        self.assertIn("missing_usage", audit.analyze_case(missing_success, self.tokenizers)["findings"])
+
 
 if __name__ == "__main__":
     unittest.main()

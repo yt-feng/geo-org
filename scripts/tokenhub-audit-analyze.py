@@ -191,10 +191,18 @@ def capability(case, response):
             "exactAnswerLength": isinstance(actual, list) and len(actual) == len(answers)}
 
 
+def completed_success(case):
+    status = case.get("httpStatus")
+    return case.get("state") == "succeeded" and (status is None or integer(status) and 200 <= status < 300)
+
+
 def estimated_cost(case, response, usage):
     """Recompute the advertised estimate; never present it as actual payment."""
     result = {"status": "pending_actual_ledger", "derivedExpectedCostMicros": case.get("derivedExpectedCostMicros"),
               "independentEstimateMicros": None, "note": "Usage-based estimate is not an independently reconciled debit"}
+    if not completed_success(case):
+        result["estimateComparison"] = "insufficient_evidence_no_completed_success"
+        return result
     try:
         catalog = obj(obj(case.get("priceSnapshot")).get("data"))
         if catalog.get("currencyCode") != "USD":
@@ -232,6 +240,9 @@ def estimated_cost(case, response, usage):
                 if fixed.get("priceUnit") != "image":
                     return result
                 images = [i for i in response.get("data", []) if isinstance(obj(i).get("url"), str) and not obj(i).get("error")]
+                if not images:
+                    result["estimateComparison"] = "insufficient_evidence_no_successful_image"
+                    return result
                 values.append(len(images) * amount(fixed, False))
             elif kind == "video" and integer(usage.get("completion_tokens")):
                 rate = amount(obj(pricing.get("video")).get("withoutVideo480p"))
@@ -240,7 +251,12 @@ def estimated_cost(case, response, usage):
                     return result
                 values.append((usage["completion_tokens"] * rate + 999999) // 1000000)
         if values and len(set(values)) == 1:
-            result.update(independentEstimateMicros=values[0], estimateMatchesServer=values[0] == case.get("derivedExpectedCostMicros"))
+            result["independentEstimateMicros"] = values[0]
+            server = case.get("derivedExpectedCostMicros")
+            if integer(server):
+                result.update(estimateComparison="comparable_successful_estimates", estimateMatchesServer=values[0] == server)
+            else:
+                result["estimateComparison"] = "insufficient_evidence_server_estimate_unavailable"
     except (TypeError, KeyError, ValueError):
         pass
     return result
@@ -277,7 +293,11 @@ def analyze_case(case, tokenizers):
     if result["billing"].get("estimateMatchesServer") is False:
         result["findings"].append("independent_and_server_cost_estimates_differ")
     if not usage:
-        result["findings"].append("missing_usage")
+        if completed_success(case):
+            result["usageAvailability"] = "missing_from_successful_response"
+            result["findings"].append("missing_usage")
+        else:
+            result["usageAvailability"] = "insufficient_evidence_response_not_completed"
     elif kind == "chat":
         fields = [usage.get(k) for k in ("prompt_tokens", "completion_tokens", "total_tokens")]
         if not all(integer(x) for x in fields):
@@ -361,6 +381,8 @@ def analyze_case(case, tokenizers):
     result.update(localTokens=local, tokenVerification="provisional_local_counts_not_model_authentication")
     if result["findings"]:
         result["status"] = "needs_review"
+    elif not usage and not completed_success(case):
+        result.update(status="insufficient_evidence", tokenVerification="insufficient_evidence_response_not_completed")
     return result
 
 
