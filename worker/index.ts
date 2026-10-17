@@ -1,8 +1,10 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import type { RuntimeEnv } from "../lib/config";
+import { runAuditTick } from "../lib/tokenhub-audit";
 
-interface Env {
+interface Env extends RuntimeEnv {
   ASSETS: Fetcher;
   DB: D1Database;
   IMAGES: {
@@ -26,6 +28,14 @@ interface ExecutionContext {
 // const imageConfig: ImageConfig = { dangerouslyAllowSVG: true };
 
 const worker = {
+  async scheduled(_event: { scheduledTime: number }, env: Env, ctx: ExecutionContext): Promise<void> {
+    // The D1 campaign controls the seven-day window and atomically claims each
+    // paid case. Cron ticks never start a campaign or retry an uncertain charge.
+    ctx.waitUntil(runAuditTick(env, { maxCases: 2 }).catch(() => {
+      // Do not expose provider responses or credentials in infrastructure logs.
+      console.error("TokenHub audit tick failed; inspect the audit ledger.");
+    }));
+  },
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
@@ -49,7 +59,7 @@ const worker = {
     if ((headers.get("content-type") || "").includes("text/html")) {
       headers.set(
         "content-security-policy",
-        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        "default-src 'self'; img-src 'self' data: https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com; media-src 'self' https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
       );
       headers.set("cache-control", "private, no-store");
     }

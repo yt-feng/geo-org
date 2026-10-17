@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "retrieved_on": "2026-10-18",
+  "models": {
+    "deepseek-v4-flash-ga-260731": {
+      "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "commit": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "model_mapping": "matching_version_name_not_upstream_attestation",
+      "files": {
+        "tokenizer.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/tokenizer.json",
+          "sha256": "8f9f37ca37fdc4f5fd36d5cf4d3b0e8392edb4e894fd10cc0d70b4957c8633cf",
+          "bytes": 6367146
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/tokenizer_config.json",
+          "sha256": "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547",
+          "bytes": 801
+        },
+        "encoding/README.md": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/encoding/README.md",
+          "sha256": "294ed6493ebfe5a487f172154d60c494899997fed8806fdd3352dd8e3c33f9de",
+          "bytes": 9168
+        },
+        "encoding/encoding_dsv4.py": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/encoding/encoding_dsv4.py",
+          "sha256": "abc0d26120250dda0ae077dc64aa28836026e61e970854aaeb792445e6a0dde6",
+          "bytes": 29001
+        }
+      },
+      "self_test": {
+        "text": "Hello, 世界! 123\nECO-GEO 审计。",
+        "token_count": 14,
+        "token_ids_sha256": "04b4f4c5b2f292de0f6b58f96b7945c8b35868575fe72915f84f6025c34465af"
+      }
+    },
+    "deepseek-v4-pro-ga-260813": {
+      "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+      "commit": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+      "model_mapping": "matching_version_name_not_upstream_attestation",
+      "files": {
+        "tokenizer.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/resolve/72e1d3230f6c080a530b0a1d46f8eb4602340597/tokenizer.json",
+          "sha256": "8f9f37ca37fdc4f5fd36d5cf4d3b0e8392edb4e894fd10cc0d70b4957c8633cf",
+          "bytes": 6367146
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/resolve/72e1d3230f6c080a530b0a1d46f8eb4602340597/tokenizer_config.json",
+          "sha256": "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547",
+          "bytes": 801
+        },
+        "encoding/README.md": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/resolve/72e1d3230f6c080a530b0a1d46f8eb4602340597/encoding/README.md",
+          "sha256": "294ed6493ebfe5a487f172154d60c494899997fed8806fdd3352dd8e3c33f9de",
+          "bytes": 9168
+        },
+        "encoding/encoding_dsv4.py": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/resolve/72e1d3230f6c080a530b0a1d46f8eb4602340597/encoding/encoding_dsv4.py",
+          "sha256": "abc0d26120250dda0ae077dc64aa28836026e61e970854aaeb792445e6a0dde6",
+          "bytes": 29001
+        }
+      },
+      "self_test": {
+        "text": "Hello, 世界! 123\nECO-GEO 审计。",
+        "token_count": 14,
+        "token_ids_sha256": "04b4f4c5b2f292de0f6b58f96b7945c8b35868575fe72915f84f6025c34465af"
+      }
+    }
+  },
+  "tokenizers_version": "0.22.1"
+}

@@ -48,3 +48,7 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# local Python audit helpers
+__pycache__/
+*.pyc
