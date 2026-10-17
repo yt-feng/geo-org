@@ -66,8 +66,15 @@ export function createTokenHubSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     try {
       // The public catalog permits anonymous requests, but validates an explicitly supplied Bearer key.
       // Never omit Authorization: an anonymous 200 response cannot verify this credential.
-      response = await fetcher(`${TOKENHUB_ORIGIN}/api/v1/models`, { method: "GET", headers: { Authorization: `Bearer ${key}`, Accept: "application/json" }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000) });
-    } catch { throw new ProviderError("暂时无法连接 TokenHub，请稍后重试。", 502); }
+      response = await fetcher(`${TOKENHUB_ORIGIN}/api/v1/models`, { method: "GET", headers: { Authorization: `Bearer ${key}`, Accept: "application/json" }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(10_000) });
+    } catch (cause) {
+      const details = cause && typeof cause === "object" ? cause as { name?: unknown; message?: unknown } : {};
+      const sanitize = (value: unknown, fallback: string) => typeof value === "string"
+        ? value.replaceAll(key, "[redacted]").replaceAll(JSON.stringify(key).slice(1, -1), "[redacted]").replaceAll(encodeURIComponent(key), "[redacted]").slice(0, 500)
+        : fallback;
+      console.error("[tokenhub] model discovery failed", { name: sanitize(details.name, "UnknownError"), message: sanitize(details.message, "No diagnostic message") });
+      throw new ProviderError("暂时无法连接 TokenHub，请稍后重试。", 502);
+    }
     if (response.status === 401 || response.status === 403) throw new ProviderError("TokenHub 密钥无效或没有访问权限，请检查后重试。", 422);
     if (response.status === 429) throw new ProviderError("TokenHub 请求频率已达上限，请稍后重试。", 429);
     if (!response.ok) throw new ProviderError("TokenHub 服务暂不可用，请稍后重试。", 502);
