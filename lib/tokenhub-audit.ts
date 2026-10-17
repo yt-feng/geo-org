@@ -2,6 +2,7 @@ import type { RuntimeEnv } from "./config";
 import { decryptProviderKey, encryptProviderKey } from "./provider-settings";
 import { AUDIT_BUDGET_MICROS, AUDIT_CHAT_MODELS, AUDIT_CHAT_POLICIES, AUDIT_PLAN_VERSION, AUDIT_SLOT_MS, AUDIT_SLOTS, auditCases, gradeAuditAnswer, type AuditCase } from "./tokenhub-audit-cases";
 
+export const AUDIT_PAID_TIMEOUT_MS = 300_000;
 const ORIGIN = "https://ai-tokenhub.ai";
 const KEY_CONTEXT = "eco-geo/audit/tokenhub/v1";
 const DAY = 24 * 60 * 60 * 1000;
@@ -257,7 +258,7 @@ export async function runAuditTick(env: RuntimeEnv, options: { maxCases?: number
     const path = spec.kind === "chat" ? "/api/v1/chat/completions" : spec.kind === "image" ? "/api/v3/images/generations" : TASK_PATH;
     const started = Date.now();
     try {
-      const response = await fetch(ORIGIN + path, { method: "POST", headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: request, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(110_000) });
+      const response = await fetch(ORIGIN + path, { method: "POST", headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: request, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(AUDIT_PAID_TIMEOUT_MS) });
       if (response.status >= 300 && response.status < 400) throw new Error();
       await saveResult(env, campaign, spec, slot, response, await readJson(response), rates, key, started, clock());
     } catch {
