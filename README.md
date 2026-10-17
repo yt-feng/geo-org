@@ -177,8 +177,9 @@ npm run build
 npx wrangler deploy --keep-vars
 ```
 
-The migration adds only `provider_settings`; existing members, API keys,
-quotas and data-provider configuration are preserved.
+The additive migrations add `provider_settings`, `tokenhub_requests`, and
+`tokenhub_tasks`; existing members, API keys, quotas and data-provider
+configuration are preserved.
 
 ## Production configuration
 
