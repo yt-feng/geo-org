@@ -162,6 +162,34 @@ class AuditAnalysis(unittest.TestCase):
         case["priceSnapshot"]["data"]["currencyCode"] = "EUR"
         self.assertIsNone(audit.estimated_cost(case, case["response"], usage)["independentEstimateMicros"])
 
+    def test_output_limits_follow_request_and_daily_cohorts_stay_separate(self):
+        old = self.fill(copy.deepcopy(self.base))
+        old["response"]["choices"][0]["finish_reason"] = "length"
+        old["response"]["usage"] = {"prompt_tokens": 50, "completion_tokens": 4096, "total_tokens": 4146}
+        new = self.fill(copy.deepcopy(self.base))
+        new["slot"] = 1
+        new["expected"]["suite"] = "fresh"
+        new["request"]["max_tokens"] = 8192
+        new["response"]["usage"] = {"prompt_tokens": 50, "completion_tokens": 5000, "total_tokens": 5050}
+        result = audit.analyze({"cases": [old, new]}, self.tokenizers, "fixture")
+        self.assertNotIn("completion_exceeds_requested_limit_requires_semantics_check", result["cases"][1]["findings"])
+        self.assertEqual(result["cases"][0]["maxTokens"], 4096)
+        self.assertEqual(result["cases"][1]["configurationCohort"], "max_tokens:8192")
+        self.assertEqual(len(result["dailyCapability"]), 2)
+        by_limit = {row["maxTokens"]: row for row in result["dailyCapability"]}
+        self.assertIsNone(by_limit[4096]["score"])
+        self.assertEqual(by_limit[4096]["truncatedRequests"], 1)
+        self.assertEqual(by_limit[4096]["total"], 0)
+        self.assertEqual(by_limit[8192]["score"], 100)
+        self.assertEqual(by_limit[8192]["total"], 4)
+        mixed_pair = copy.deepcopy(new)
+        mixed_pair["slot"] = 0
+        mixed_pair["caseId"] = MODEL + ":long"
+        paired = audit.analyze({"cases": [old, mixed_pair]}, self.tokenizers, "fixture")
+        self.assertEqual(paired["pairs"][0]["status"], "mixed_configuration_not_compared")
+        new["response"]["usage"] = {"prompt_tokens": 50, "completion_tokens": 8193, "total_tokens": 8243}
+        self.assertIn("completion_exceeds_requested_limit_requires_semantics_check", audit.analyze_case(new, self.tokenizers)["findings"])
+
 
 if __name__ == "__main__":
     unittest.main()

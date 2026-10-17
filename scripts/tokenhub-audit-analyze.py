@@ -243,10 +243,13 @@ def analyze_case(case, tokenizers):
     response = obj(raw_response.get("data")) or raw_response
     model, kind = case.get("requestedModel"), case.get("kind")
     slot = case.get("slot")
+    max_tokens = body.get("max_tokens") if integer(body.get("max_tokens")) else None
     result = {"slot": slot, "day": slot // 2 + 1 if integer(slot) else None, "caseId": case.get("caseId"),
               "kind": kind, "requestedModel": model, "state": case.get("state"), "findings": [], "status": "provisional",
               "requestHash": case.get("requestHash"), "responseHash": case.get("responseHash"),
-              "suite": obj(case.get("expected")).get("suite"), "difficultyVersion": obj(case.get("expected")).get("difficultyVersion")}
+              "suite": obj(case.get("expected")).get("suite"), "difficultyVersion": obj(case.get("expected")).get("difficultyVersion"),
+              "maxTokens": max_tokens,
+              "configurationCohort": "max_tokens:" + str(max_tokens) if max_tokens is not None else "max_tokens:unknown"}
     if not response:
         result.update(status="insufficient_evidence", tokenVerification="insufficient_evidence_response_unavailable", evidence="not_available", capability={"status": "not_run", "score": None})
         return result
@@ -300,7 +303,6 @@ def analyze_case(case, tokenizers):
         result["findings"].append("output_truncated_excluded_from_capability_score")
     if obj(case.get("grading")).get("score") is not None and result["capability"].get("score") != obj(case.get("grading")).get("score"):
         result["findings"].append("server_and_independent_grading_differ")
-    max_tokens = body.get("max_tokens")
     if integer(max_tokens) and integer(usage.get("completion_tokens")) and usage["completion_tokens"] > max_tokens:
         result["findings"].append("completion_exceeds_requested_limit_requires_semantics_check")
     tokenizer = tokenizers.get(model)
@@ -350,6 +352,11 @@ def pair_checks(cases):
     for (slot, model), pair in sorted(pairs.items()):
         result = {"slot": slot, "requestedModel": model, "status": "insufficient_evidence"}
         a, b = pair.get("short", {}), pair.get("long", {})
+        result["maxTokens"] = {"short": a.get("maxTokens"), "long": b.get("maxTokens")}
+        if a.get("maxTokens") is not None and b.get("maxTokens") is not None and a["maxTokens"] != b["maxTokens"]:
+            result["status"] = "mixed_configuration_not_compared"
+            results.append(result)
+            continue
         au, bu = obj(a.get("usage")).get("prompt_tokens"), obj(b.get("usage")).get("prompt_tokens")
         ac = obj(obj(a.get("localTokens")).get("promptCandidates"))
         bc = obj(obj(b.get("localTokens")).get("promptCandidates"))
@@ -367,9 +374,11 @@ def daily_scores(cases):
     groups = defaultdict(list)
     for case in cases:
         if case.get("kind") == "chat":
-            groups[(case.get("day"), case.get("requestedModel"))].append(case)
+            groups[(case.get("day"), case.get("requestedModel"), case.get("maxTokens"))].append(case)
     results = []
-    for (day, model), rows in sorted(groups.items()):
+    # Unknown/planned limits remain separate; do not infer a new cap for old requests.
+    sort_key = lambda item: (item[0][0] or 0, item[0][1] or "", item[0][2] if item[0][2] is not None else -1)
+    for (day, model, max_tokens), rows in sorted(groups.items(), key=sort_key):
         scored = [obj(r.get("capability")) for r in rows if obj(r.get("capability")).get("score") is not None]
         correct, total = sum(x["correct"] for x in scored), sum(x["total"] for x in scored)
         # Short/long siblings share answers; subitems and repetitions are not independent trials.
@@ -381,7 +390,9 @@ def daily_scores(cases):
             scores = [obj(r.get("capability")) for r in rows if r.get("suite") == suite and obj(r.get("capability")).get("score") is not None]
             suite_correct, suite_total = sum(x["correct"] for x in scores), sum(x["total"] for x in scores)
             by_suite[suite] = {"correct": suite_correct, "total": suite_total, "score": suite_correct / suite_total * 100 if suite_total else None}
-        results.append({"day": day, "model": model, "correct": correct, "total": total,
+        results.append({"day": day, "model": model, "maxTokens": max_tokens,
+                        "configurationCohort": "max_tokens:" + str(max_tokens) if max_tokens is not None else "max_tokens:unknown",
+                        "correct": correct, "total": total,
                         "score": correct / total * 100 if total else None, "scoredRequests": len(scored),
                         "distinctTaskBatteries": distinct_slots, "plannedRequests": len(rows),
                         "receivedResponses": received, "truncatedRequests": truncated,
@@ -412,6 +423,7 @@ def analyze(evidence, tokenizers, evidence_hash):
             "limitations": ["No official API control group: capability scores do not establish model identity or human IQ.",
                             "Pinned tokenizers provide independent counts, but upstream model mapping, prompt framing and hidden reasoning are unverified.",
                             "Short/long pairs reuse subitems; 112 requests are not 112 independent model-identity trials.",
+                            "Daily capability rows are separated by requested max_tokens; do not combine different configuration cohorts into one trend.",
                             "Usage estimates do not prove actual debits. Price, invoice, cache, reasoning and media metadata require reconciliation.",
                             "No detected anomaly in this sample is not proof of absence."]}
 

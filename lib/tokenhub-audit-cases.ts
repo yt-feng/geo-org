@@ -1,8 +1,14 @@
-export const AUDIT_PLAN_VERSION = "tokenhub-audit-v1";
+export const AUDIT_PLAN_VERSION = "tokenhub-audit-v2";
 export const AUDIT_SLOT_MS = 12 * 60 * 60 * 1000;
 export const AUDIT_SLOTS = 14;
 export const AUDIT_BUDGET_MICROS = 5_000_000;
 export const AUDIT_CHAT_MODELS = ["glm-5-3-flash-260828", "glm-5-2-260617", "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731"] as const;
+export const AUDIT_CHAT_POLICIES: Record<string, { inputMicros: number; outputMicros: number; cacheReadMicros: number; reservedMicros: number; maxOutputTokens: number }> = {
+  "glm-5-3-flash-260828": { inputMicros: 200_000, outputMicros: 600_000, cacheReadMicros: 200_000, reservedMicros: 10_000, maxOutputTokens: 8192 },
+  "glm-5-2-260617": { inputMicros: 1_500_000, outputMicros: 4_500_000, cacheReadMicros: 1_500_000, reservedMicros: 50_000, maxOutputTokens: 8192 },
+  "deepseek-v4-pro-ga-260813": { inputMicros: 1_800_000, outputMicros: 3_600_000, cacheReadMicros: 1_800_000, reservedMicros: 40_000, maxOutputTokens: 8192 },
+  "deepseek-v4-flash-ga-260731": { inputMicros: 200_000, outputMicros: 400_000, cacheReadMicros: 200_000, reservedMicros: 10_000, maxOutputTokens: 8192 },
+};
 export type AuditKind = "chat" | "image" | "video";
 export type AuditCase = { id: string; kind: AuditKind; model: string; reservedMicros: number; body: Record<string, unknown>; expected: Record<string, unknown> };
 
@@ -36,17 +42,17 @@ export function auditCases(campaign: string, slot: number): AuditCase[] {
   if (!Number.isInteger(slot) || slot < 0 || slot >= AUDIT_SLOTS) return [];
   const fixture = task(campaign, slot), cases: AuditCase[] = [];
   for (const model of AUDIT_CHAT_MODELS) for (const variant of ["short", "long"] as const) {
-    const messages = [{ role: "user", content: fixture[variant] }];
+    const messages = [{ role: "user", content: fixture[variant] }], policy = AUDIT_CHAT_POLICIES[model];
     if (new TextEncoder().encode(JSON.stringify(messages)).length > 4096) throw new Error("Audit prompt exceeds the reserved input bound");
-    cases.push({ id: `${model}:${variant}`, kind: "chat", model, reservedMicros: 30_000,
-      body: { model, messages, max_tokens: 4096, stream: false, temperature: 0, routing_options: { fallback_enabled: false, cache_enabled: false } }, expected: fixture.expected });
+    cases.push({ id: `${model}:${variant}`, kind: "chat", model, reservedMicros: policy.reservedMicros,
+      body: { model, messages, max_tokens: policy.maxOutputTokens, stream: false, temperature: 0, routing_options: { fallback_enabled: false, cache_enabled: false } }, expected: { ...fixture.expected, protocolVersion: AUDIT_PLAN_VERSION } });
   }
   if (slot === 0 || slot === 13) {
     const image = "dola-seedream-5-0-pro-260628", video = "dreamina-seedance-2-0-260128";
     cases.push({ id: "seedream-image", kind: "image", model: image, reservedMicros: 120_000,
-      body: { model: image, prompt: "A red wooden cube to the left of a blue ceramic sphere on a white table, soft studio lighting, exactly two objects, no text.", size: "2K", response_format: "url", watermark: false, sequential_image_generation: "disabled" }, expected: { manualReview: "Two objects: red cube left, blue sphere right; verify delivered dimensions and image metadata." } });
+      body: { model: image, prompt: "A red wooden cube to the left of a blue ceramic sphere on a white table, soft studio lighting, exactly two objects, no text.", size: "2K", response_format: "url", watermark: false, sequential_image_generation: "disabled" }, expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Two objects: red cube left, blue sphere right; verify delivered dimensions and image metadata." } });
     cases.push({ id: "seedance-video", kind: "video", model: video, reservedMicros: 600_000,
-      body: { model: video, content: [{ type: "text", text: "A red wooden cube sits on the left and a blue ceramic sphere rolls slowly to the right on a white table. One continuous static camera shot, exactly two objects, no text." }], duration: 4, resolution: "480p", ratio: "16:9", generate_audio: false, watermark: false, return_last_frame: true }, expected: { manualReview: "Verify 4 seconds, 480p, 16:9, no audio and continuous motion using delivered media, not response claims." } });
+      body: { model: video, content: [{ type: "text", text: "A red wooden cube sits on the left and a blue ceramic sphere rolls slowly to the right on a white table. One continuous static camera shot, exactly two objects, no text." }], duration: 4, resolution: "480p", ratio: "16:9", generate_audio: false, watermark: false, return_last_frame: true }, expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Verify 4 seconds, 480p, 16:9, no audio and continuous motion using delivered media, not response claims." } });
   }
   return cases;
 }

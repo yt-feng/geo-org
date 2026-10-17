@@ -26,6 +26,7 @@ CHAT_MODELS = (
     "glm-5-3-flash-260828", "glm-5-2-260617",
     "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731",
 )
+CHAT_RESERVATIONS = dict(zip(CHAT_MODELS, (10_000, 50_000, 40_000, 10_000)))
 # Never SELECT * here, including in the campaign subquery.
 CAMPAIGN_COLUMNS = (
     "id,state,started_at,ends_at,budget_micros,key_hint,catalog_json,"
@@ -182,12 +183,16 @@ def evidence(campaign, rows, now=None):
     if len(saved) != len(rows):
         raise SyncError("Duplicate stored case identity")
     cases = []
+    planned_reservation = 0
     for slot in range(14):
-        plan = [(f"{model}:{variant}", "chat", model) for model in CHAT_MODELS for variant in ("short", "long")]
+        plan = [(f"{model}:{variant}", "chat", model, CHAT_RESERVATIONS[model]) for model in CHAT_MODELS for variant in ("short", "long")]
         if slot in (0, 13):
-            plan += [("seedream-image", "image", "dola-seedream-5-0-pro-260628"), ("seedance-video", "video", "dreamina-seedance-2-0-260128")]
-        for case_id, kind, model in plan:
-            cases.append(saved.pop((slot, case_id), None) or {
+            plan += [("seedream-image", "image", "dola-seedream-5-0-pro-260628", 120_000), ("seedance-video", "video", "dreamina-seedance-2-0-260128", 600_000)]
+        for case_id, kind, model, reservation in plan:
+            existing = saved.pop((slot, case_id), None)
+            # Retain reservations for historical calibration requests instead of repricing them.
+            planned_reservation += existing["reservedMicros"] if existing is not None else reservation
+            cases.append(existing or {
                 "slot": slot, "caseId": case_id, "kind": kind, "requestedModel": model,
                 "state": "missed" if now >= start + timedelta(hours=12 * (slot + 1)) else "planned",
                 "requestHash": None, "responseHash": None, "reservedMicros": 0,
@@ -206,7 +211,7 @@ def evidence(campaign, rows, now=None):
                      "remainingMicros": max(0, campaign["budget_micros"] - reserved), "keyHint": campaign["key_hint"],
                      "planVersion": campaign["plan_version"], "pauseReason": campaign.get("pause_reason"),
                      "catalog": parse_json(campaign["catalog_json"]), "catalogHash": campaign["catalog_hash"],
-                     "plannedCalls": 116, "plannedReservationMicros": 4_800_000, "identityVerification": "unverified",
+                     "plannedCalls": 116, "plannedReservationMicros": planned_reservation, "identityVerification": "unverified",
                      "billingVerification": "pending", "tokenVerification": "needs_review" if any(item.get("status") == "needs_review" for item in analyses) else "provisional" if analyses else "pending_official_tokenizer"},
         "counts": dict(Counter(case["state"] for case in cases)), "days": [], "cases": cases, "flags": flags,
         "exportedAt": now.isoformat(), "exportSource": "D1 explicit-column evidence snapshot; daily aggregates are computed by the offline analyzer",
