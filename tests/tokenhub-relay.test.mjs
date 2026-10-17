@@ -131,7 +131,9 @@ test("task list, polling and cancellation are scoped to their original ECO-GEO o
   f.sqlite.prepare("INSERT INTO tokenhub_tasks (id,user_id,model,status) VALUES (?,?,?,?)").run("owned-task", ADMIN.id, VIDEO.model, "queued");
   f.sqlite.prepare("INSERT INTO tokenhub_tasks (id,user_id,model,status) VALUES (?,?,?,?)").run("someone-elses-task", "other", VIDEO.model, "queued");
   const list = await expectStatus(f.handle, request(TASKS, { method: "GET" }), 200);
-  assert.deepEqual((await list.json()).data.map(row => row.id), ["owned-task"]);
+  const listed = (await list.json()).data;
+  assert.deepEqual(listed.map(row => row.id), ["owned-task"]);
+  assert.match(listed[0].created_at, /T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   await expectStatus(f.handle, request(`${TASKS}/someone-elses-task`, { method: "GET" }), 404);
   await expectStatus(f.handle, request(`${TASKS}/someone-elses-task`, { method: "DELETE" }), 404);
   assert.equal(f.calls.length, 0);

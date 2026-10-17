@@ -117,7 +117,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
     if (!allowed.includes(request.method)) return error("不支持此请求方法。", 405);
     await limitRequests(who.userId, request.method !== "GET");
     if (path === TASKS && request.method === "GET") {
-      const rows = await db.prepare("SELECT id,model,status,created_at,updated_at FROM tokenhub_tasks WHERE user_id=? ORDER BY created_at DESC LIMIT 50").bind(who.userId).all();
+      const rows = await db.prepare("SELECT id,model,status,strftime('%Y-%m-%dT%H:%M:%fZ',created_at) AS created_at,strftime('%Y-%m-%dT%H:%M:%fZ',updated_at) AS updated_at FROM tokenhub_tasks WHERE user_id=? ORDER BY created_at DESC LIMIT 50").bind(who.userId).all();
       return reply({ data: rows.results || [] });
     }
     if (taskId) {
