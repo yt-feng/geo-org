@@ -44,6 +44,22 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
 
 function TaskBadge({ status }: { status: string }) { return <span className={`tokenhub-task-status status-${status.replace(/[^a-z]/gi, "")}`}><i />{statusNames[status] || status || "状态待查询"}</span>; }
 
+function MediaPreviewError({ kind, hasDirectLink }: { kind: "image" | "video"; hasDirectLink: boolean }) {
+  const name = kind === "image" ? "图片" : "视频";
+  return <div className="tokenhub-media-error" role="status"><Icon name={kind} size={28} /><strong>{name}预览加载失败</strong><p>当前浏览器未能加载预览。{hasDirectLink ? "可尝试通过下方直链打开原始文件。" : "请展开原始响应查看返回内容。"}</p></div>;
+}
+
+// The source URL is used as the component key so a new result starts with a fresh preview state.
+function ImagePreview({ src, alt, hasDirectLink }: { src: string; alt: string; hasDirectLink: boolean }) {
+  const [failed, setFailed] = useState(false);
+  return failed ? <MediaPreviewError kind="image" hasDirectLink={hasDirectLink} /> : <Image unoptimized width={1024} height={1024} style={{ height: "auto" }} src={src} alt={alt} onError={() => setFailed(true)} />;
+}
+
+function VideoPreview({ src, poster }: { src: string; poster?: string }) {
+  const [failed, setFailed] = useState(false);
+  return <div className="tokenhub-video-frame">{failed ? <MediaPreviewError kind="video" hasDirectLink /> : <video src={src} poster={poster} controls playsInline preload="metadata" onError={() => setFailed(true)} />}</div>;
+}
+
 export function TokenHubPlayground() {
   const [mode, setMode] = useState<Mode>("video");
   const [provider, setProvider] = useState<Provider | null>(null);
@@ -103,7 +119,8 @@ export function TokenHubPlayground() {
   const frameUrl = safeUrl(content.last_frame_url || taskData.last_frame_url);
   const images = resultMode === "image" && Array.isArray(record(result).data) ? (record(result).data as unknown[]).map(record).map(item => ({ url: safeUrl(item.url), base64: text(item.b64_json) })).filter(item => item.url || item.base64) : [];
   const choices = Array.isArray(record(result).choices) ? record(result).choices as unknown[] : [];
-  const answer = choices.map(choice => text(record(record(choice).message).content)).filter(Boolean).join("\n\n");
+  const answer = choices.map(choice => text(record(record(choice).message).content)).filter(content => content.trim()).join("\n\n");
+  const emptyAnswerAtTokenLimit = !answer && choices.some(choice => text(record(choice).finish_reason) === "length");
 
   useEffect(() => {
     if (!taskId || !polling) return;
@@ -228,11 +245,11 @@ export function TokenHubPlayground() {
       </div> : pending ? <div className="tokenhub-pending"><span className="tokenhub-spinner" /><h2>请求正在发送</h2><p>{mode === "video" ? "创建完成后，会自动跟进生成状态。" : "正在等待模型返回结果。"}</p></div> : result ? <div className="tokenhub-result-area">
         {resultMode === "video" ? <>
           <div className="tokenhub-section-heading"><div><h2>{videoUrl ? "视频已就绪" : terminal.has(taskStatus) ? "任务结果" : "视频生成任务"}</h2><p>{text(taskData.model) || "TokenHub"}</p></div><TaskBadge status={taskStatus} /></div>
-          {videoUrl ? <div className="tokenhub-video-frame"><video src={videoUrl} poster={frameUrl || undefined} controls playsInline preload="metadata" /></div> : <div className="tokenhub-video-wait"><Icon name={terminal.has(taskStatus) ? "info" : "video"} size={32} /><strong>{statusNames[taskStatus] || "等待上游返回任务状态"}</strong><p>{terminal.has(taskStatus) ? text(taskData.message) || text(record(taskData.error).message) || text(taskData.error) || "详情见下方原始响应。" : "生成时间取决于模型与排队情况，页面会自动更新。"}</p></div>}
+          {videoUrl ? <VideoPreview key={videoUrl} src={videoUrl} poster={frameUrl || undefined} /> : <div className="tokenhub-video-wait"><Icon name={terminal.has(taskStatus) ? "info" : "video"} size={32} /><strong>{statusNames[taskStatus] || "等待上游返回任务状态"}</strong><p>{terminal.has(taskStatus) ? text(taskData.message) || text(record(taskData.error).message) || text(taskData.error) || "详情见下方原始响应。" : "生成时间取决于模型与排队情况，页面会自动更新。"}</p></div>}
           {videoUrl ? <div className="tokenhub-result-actions"><a className="button button-primary" href={videoUrl} target="_blank" rel="noopener noreferrer"><Icon name="arrow-up-right" size={14} />打开视频</a>{frameUrl ? <a className="button button-ghost" href={frameUrl} target="_blank" rel="noopener noreferrer">查看末帧</a> : null}<span>上游结果链接通常有效 24 小时，请及时保存。</span></div> : null}
           {taskId ? <div className="tokenhub-current-task"><div><span>任务 ID</span><code>{taskId}</code></div><button type="button" className="button button-ghost" disabled={refreshing} onClick={() => selectTask(taskId)}><Icon name="refresh" size={13} />{refreshing ? "查询中…" : "刷新状态"}</button></div> : null}
           {taskId && !terminal.has(taskStatus) ? <div className="tokenhub-polling"><span><i className={polling ? "active" : ""} />{polling ? "每 5 秒查询一次 · 最长 10 分钟" : pollCount >= 120 ? "自动查询已暂停，可继续手动刷新。" : "自动查询已暂停"}</span><button type="button" onClick={() => setPolling(!polling)}>{polling ? "暂停查询" : "继续查询"}</button></div> : null}
-        </> : resultMode === "image" ? <><div className="tokenhub-section-heading"><div><h2>{images.length ? "画面已生成" : "图片请求结果"}</h2><p>TokenHub Image Generation</p></div><span className="record-count">{images.length} 张</span></div><div className="tokenhub-image-grid">{images.map((item, index) => <figure key={index}><Image unoptimized width={1024} height={1024} style={{ height: "auto" }} src={item.url || `data:image/png;base64,${item.base64}`} alt={`生成结果 ${index + 1}`} />{item.url ? <figcaption><a href={item.url} target="_blank" rel="noopener noreferrer">打开原图 <Icon name="arrow-up-right" size={13} /></a></figcaption> : null}</figure>)}</div></> : <><div className="tokenhub-section-heading"><div><h2>模型回复</h2><p>{text(record(result).model) || "TokenHub Chat"}</p></div><Icon name="message" size={18} /></div>{answer ? <div className="tokenhub-chat-answer">{answer}</div> : <p className="tokenhub-parameter-help">请展开原始响应查看模型返回内容。</p>}</>}
+        </> : resultMode === "image" ? <><div className="tokenhub-section-heading"><div><h2>{images.length ? "画面已生成" : "图片请求结果"}</h2><p>TokenHub Image Generation</p></div><span className="record-count">{images.length} 张</span></div><div className="tokenhub-image-grid">{images.map((item, index) => <figure key={index}><ImagePreview key={item.url || item.base64} src={item.url || `data:image/png;base64,${item.base64}`} alt={`生成结果 ${index + 1}`} hasDirectLink={!!item.url} />{item.url ? <figcaption><a href={item.url} target="_blank" rel="noopener noreferrer">打开原图 <Icon name="arrow-up-right" size={13} /></a></figcaption> : null}</figure>)}</div></> : <><div className="tokenhub-section-heading"><div><h2>模型回复</h2><p>{text(record(result).model) || "TokenHub Chat"}</p></div><Icon name="message" size={18} /></div>{answer ? <div className="tokenhub-chat-answer">{answer}</div> : <p className="tokenhub-parameter-help" role="status">{emptyAnswerAtTokenLimit ? "本次响应已达到输出 token 上限，尚未返回回复正文。可在完整 JSON 中提高 max_tokens 后重新请求。" : "请展开原始响应查看模型返回内容。"}</p>}</>}
         <details className="tokenhub-raw-response"><summary>原始响应 <Icon name="code" size={14} /></summary><pre tabIndex={0}><code>{JSON.stringify(result, null, 2)}</code></pre></details>
       </div> : <div className="playground-empty-state tokenhub-empty"><div className="playground-empty-art" aria-hidden="true"><span /><span /><span /><Icon name={modes.find(item => item.id === mode)?.icon || "video"} size={32} /></div><span className="tokenhub-empty-kicker">ONE IDEA. MANY POSSIBILITIES.</span><h2>{mode === "video" ? "让每一个画面流动起来" : mode === "image" ? "把灵感，变成画面" : "让想法继续生长"}</h2><p>选择模型，描述你的想法。<br />由 ECO-GEO 连接 TokenHub，完成真实生成。</p><button className="tokenhub-prompt-example" type="button" onClick={() => setPrompt(examples[mode])}><Icon name="sparkles" size={16} /><span>{examples[mode]}</span><Icon name="arrow-up-right" size={14} /></button></div>}
       <footer className="playground-workspace-footer"><span>ECO-GEO × TOKENHUB</span><span>管理员工作台 · 统一管理与调用</span></footer>
