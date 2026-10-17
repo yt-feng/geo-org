@@ -4,6 +4,7 @@ Run with .artifacts/tokenhub-audit/venv/bin/python tests/tokenhub-audit-analyze.
 Pinned local JSON files are required for the tokenizer-dependent checks.
 """
 import copy
+import ast
 import importlib.util
 import json
 from pathlib import Path
@@ -189,6 +190,31 @@ class AuditAnalysis(unittest.TestCase):
         self.assertEqual(paired["pairs"][0]["status"], "mixed_configuration_not_compared")
         new["response"]["usage"] = {"prompt_tokens": 50, "completion_tokens": 8193, "total_tokens": 8243}
         self.assertIn("completion_exceeds_requested_limit_requires_semantics_check", audit.analyze_case(new, self.tokenizers)["findings"])
+
+    def test_reviewed_high_effort_prefix_matches_and_truncation_has_no_fake_terminators(self):
+        case = self.fill(copy.deepcopy(self.base))
+        case["request"]["messages"][0]["content"] = 'Return JSON {"answer":4}.'
+        candidates = audit.prompt_candidates(case["request"])
+        self.assertEqual(audit.count(self.tok, candidates["thinking"]), 11)
+        self.assertEqual(audit.count(self.tok, candidates["thinking_high"]), 90)
+        # Read a literal constant only, without importing or executing downloaded code.
+        source_path = self.tokenizers.directory / "DeepSeek-V4-Flash-0731/encoding/encoding_dsv4.py"
+        tree = ast.parse(source_path.read_text())
+        prefixes = next(ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == "REASONING_EFFORT_PROMPTS")
+        self.assertEqual(audit.HIGH_EFFORT_PREFIX, prefixes["high"])
+        reasoning = "Compute four integers."
+        generated = audit.count(self.tok, reasoning)
+        case["response"]["choices"][0] = {"finish_reason": "length", "message": {"content": "", "reasoning": reasoning}}
+        case["response"]["usage"] = {"prompt_tokens": 90, "completion_tokens": generated, "total_tokens": 90 + generated}
+        result = audit.analyze_case(case, self.tokenizers)
+        local = result["localTokens"]
+        self.assertEqual(local["matchingPromptCandidates"], ["thinking_high"])
+        self.assertEqual(local["highEffortPrefixAdditionalTokens"], 79)
+        self.assertEqual(local["matchingCompletionCandidates"], ["visible_thinking_length_without_eos"])
+        self.assertEqual(local["completionResiduals"]["visible_thinking_length_without_eos"], 0)
+        self.assertEqual(local["status"], "provisional")
+        self.assertFalse(local["templateConfirmedByUpstream"])
+        self.assertIsNone(result["capability"]["score"])
 
 
 if __name__ == "__main__":

@@ -52,7 +52,7 @@
 
 每份 `tokenizer.json`、配置、编码说明和编码源码均记录 SHA-256。官方 Python 编码源码仅静态审阅，不导入、不执行；没有模型权重，也不用 `trust_remote_code`。本地可信 `tokenizers==0.22.1` 只加载 hash 匹配的 JSON。固定自检字符串应产生 **14 个 token**，token ID 序列的 SHA-256 也必须匹配 manifest；两份版本文件当前具有相同 tokenizer hash，这证明文件一致，不证明线上模型一致。
 
-分析器只实现经过审阅的“可选 system + 单条 user”模板子集，显式加入 BOS、User、Assistant 和 thinking 分隔标记。tools、复杂多轮、特殊 response format、高 reasoning effort 等未覆盖的输入不套用该模板。
+分析器只实现经过审阅的“可选 system + 单条 user”模板子集，显式加入 BOS、User、Assistant 和 thinking 分隔标记，并分别比较 chat、低思考和官方 high 思考前缀候选；当前固定文件中 high 前缀比低思考模板多79个 token，输出明确标注匹配的候选。截断输出不补加尚未生成的结束标记。tools、复杂多轮、特殊 response format、max effort 等未覆盖的输入不套用模板，候选匹配仍不代表身份认证。
 
 **即使本地候选模板计数与平台完全一致，状态也只为 provisional（暂定一致）**：我们尚无上游实际模板、额外 system 内容、模型别名映射或隐藏 reasoning 的原厂凭据。输出同时给出裸文字数、候选完整模板数和平台计数的差值，不把模板差或隐藏 reasoning 武断认定为虚增。
 
