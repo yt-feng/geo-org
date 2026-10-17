@@ -1,0 +1,52 @@
+CREATE TABLE tokenhub_audit_campaigns (
+  id TEXT PRIMARY KEY NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('active','paused','completed')),
+  started_at TEXT NOT NULL,
+  ends_at TEXT NOT NULL,
+  budget_micros INTEGER NOT NULL CHECK (budget_micros > 0),
+  encrypted_key TEXT NOT NULL,
+  key_hint TEXT NOT NULL,
+  catalog_json TEXT NOT NULL,
+  catalog_hash TEXT NOT NULL,
+  plan_version TEXT NOT NULL,
+  pause_reason TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX tokenhub_audit_one_open ON tokenhub_audit_campaigns ((1)) WHERE state IN ('active','paused');
+
+CREATE TABLE tokenhub_audit_cases (
+  campaign_id TEXT NOT NULL REFERENCES tokenhub_audit_campaigns(id),
+  slot INTEGER NOT NULL CHECK (slot BETWEEN 0 AND 13),
+  case_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('chat','image','video')),
+  model TEXT NOT NULL,
+  state TEXT NOT NULL,
+  reserved_micros INTEGER NOT NULL CHECK (reserved_micros >= 0),
+  request_json TEXT NOT NULL,
+  request_hash TEXT NOT NULL,
+  expected_json TEXT NOT NULL,
+  price_json TEXT NOT NULL,
+  price_hash TEXT NOT NULL,
+  response_json TEXT,
+  response_hash TEXT,
+  creation_json TEXT,
+  headers_json TEXT,
+  http_status INTEGER,
+  latency_ms INTEGER,
+  usage_json TEXT,
+  returned_model TEXT,
+  derived_cost_micros INTEGER,
+  grading_json TEXT,
+  flags_json TEXT NOT NULL DEFAULT '[]',
+  independent_analysis_json TEXT,
+  billing_actual_micros INTEGER CHECK (billing_actual_micros IS NULL OR billing_actual_micros >= 0),
+  billing_evidence_json TEXT,
+  task_id TEXT,
+  poll_count INTEGER NOT NULL DEFAULT 0,
+  next_poll_at TEXT,
+  submitted_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, slot, case_id)
+);
+CREATE INDEX tokenhub_audit_pending_tasks ON tokenhub_audit_cases (campaign_id, state, next_poll_at);

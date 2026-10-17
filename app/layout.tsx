@@ -6,6 +6,7 @@ import "./public-design.css";
 import "./catalog.css";
 import "./admin-design.css";
 import "./tokenhub.css";
+import "./tokenhub-audit.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
