@@ -109,6 +109,24 @@ def wrangler_rows(payload):
     return rows
 
 
+def parse_wrangler_output(stdout):
+    """Wrangler bulk uploads can print progress lines before their JSON result.
+
+    Only attempt a complete JSON suffix beginning at a line boundary. Never
+    strip arbitrary text from inside JSON or accept trailing unparsed output.
+    """
+    lines = stdout.splitlines()
+    for index, line in enumerate(lines):
+        if not line.lstrip().startswith(("[", "{")):
+            continue
+        try:
+            payload = json.loads("\n".join(lines[index:]))
+        except ValueError:
+            continue
+        return wrangler_rows(payload)
+    raise SyncError("Wrangler did not return a complete JSON result; no raw output logged")
+
+
 def run_wrangler(*, command=None, sql_file=None):
     if (command is None) == (sql_file is None):
         raise SyncError("Exactly one SQL input is required")
@@ -124,11 +142,7 @@ def run_wrangler(*, command=None, sql_file=None):
     if completed.returncode != 0:
         # CLI output may include arbitrary SQL/data. Do not print it or command arguments.
         raise SyncError(f"Wrangler command failed (exit {completed.returncode}); no raw output logged")
-    try:
-        payload = json.loads(completed.stdout)
-    except ValueError:
-        raise SyncError("Wrangler did not return valid JSON; no raw output logged") from None
-    return wrangler_rows(payload)
+    return parse_wrangler_output(completed.stdout)
 
 
 def current_snapshot(query=run_wrangler):
@@ -277,7 +291,7 @@ def import_analysis(report, campaign, rows, execute=run_wrangler):
             "UPDATE tokenhub_audit_cases SET independent_analysis_json=" + sql_quote(serialized) +
             f" WHERE campaign_id={campaign_id} AND campaign_id=({LATEST_ID_SQL}) AND slot={slot}" +
             f" AND case_id={sql_quote(case_id)} AND request_hash={sql_quote(request_hash)} AND response_hash={sql_quote(response_hash)}" +
-            " RETURNING slot,case_id;"
+            ";"
         )
     # The analysis stays out of process arguments and logs. NamedTemporaryFile is mode 0600.
     with tempfile.TemporaryDirectory(prefix="eco-geo-audit-sync-") as directory:
@@ -285,12 +299,31 @@ def import_analysis(report, campaign, rows, execute=run_wrangler):
         with path.open("x", encoding="utf-8") as handle:
             os.chmod(path, 0o600)
             handle.write("\n".join(statements) + "\n")
-        changed = execute(sql_file=path)
-    expected = {(slot, case_id) for slot, case_id, *_ in updates}
-    actual = {(row.get("slot"), row.get("case_id")) for row in changed}
-    if actual != expected or len(changed) != len(expected):
-        raise SyncError(f"Import guarded against changed evidence: {len(actual & expected)}/{len(expected)} cases matched; export again before retrying")
-    return {"importedCases": len(updates), "skippedIncompleteCases": skipped}
+        try:
+            execute(sql_file=path)
+        except SyncError:
+            # A CLI/upload/JSON failure may follow a committed write. Never resend.
+            # Read back once to determine the actual outcome instead.
+            pass
+    try:
+        verified_rows = execute(command=(
+            "SELECT campaign_id,slot,case_id,request_hash,response_hash,independent_analysis_json "
+            f"FROM tokenhub_audit_cases WHERE campaign_id={campaign_id} AND campaign_id=({LATEST_ID_SQL}) ORDER BY slot,case_id"
+        ))
+    except SyncError:
+        raise SyncError("Import was submitted but read-back verification failed; do not resubmit, export fresh evidence to inspect the outcome") from None
+    verified = {(row.get("slot"), row.get("case_id")): row for row in verified_rows}
+    if len(verified) != len(verified_rows):
+        raise SyncError("Import read-back returned duplicate identities; do not resubmit, export fresh evidence")
+    matched = 0
+    for slot, case_id, request_hash, response_hash, serialized in updates:
+        row = verified.get((slot, case_id), {})
+        if (row.get("campaign_id") == campaign["id"] and row.get("request_hash") == request_hash
+                and row.get("response_hash") == response_hash and row.get("independent_analysis_json") == serialized):
+            matched += 1
+    if matched != len(updates):
+        raise SyncError(f"Import read-back matched {matched}/{len(updates)} cases exactly; do not resubmit, export fresh evidence to inspect changed or unapplied rows")
+    return {"importedCases": matched, "skippedIncompleteCases": skipped}
 
 
 def write_private_json(path, value):
