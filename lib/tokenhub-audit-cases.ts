@@ -50,7 +50,7 @@ export function auditCases(campaign: string, slot: number): AuditCase[] {
   if (slot === 0 || slot === 13) {
     const image = "dola-seedream-5-0-pro-260628", video = "dreamina-seedance-2-0-260128";
     cases.push({ id: "seedream-image", kind: "image", model: image, reservedMicros: 120_000,
-      body: { model: image, prompt: "A red wooden cube to the left of a blue ceramic sphere on a white table, soft studio lighting, exactly two objects, no text.", size: "2K", response_format: "url", watermark: false, sequential_image_generation: "disabled" }, expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Two objects: red cube left, blue sphere right; verify delivered dimensions and image metadata." } });
+      body: { model: image, prompt: "A red wooden cube to the left of a blue ceramic sphere on a white table, soft studio lighting, exactly two objects, no text.", size: "2K", response_format: "url", watermark: false }, expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Two objects: red cube left, blue sphere right; verify delivered dimensions and image metadata." } });
     cases.push({ id: "seedance-video", kind: "video", model: video, reservedMicros: 600_000,
       body: { model: video, content: [{ type: "text", text: "A red wooden cube sits on the left and a blue ceramic sphere rolls slowly to the right on a white table. One continuous static camera shot, exactly two objects, no text." }], duration: 4, resolution: "480p", ratio: "16:9", generate_audio: false, watermark: false, return_last_frame: true }, expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Verify 4 seconds, 480p, 16:9, no audio and continuous motion using delivered media, not response claims." } });
   }
