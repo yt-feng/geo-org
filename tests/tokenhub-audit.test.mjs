@@ -18,7 +18,10 @@ const schema = (await Promise.all((await readdir(new URL("../drizzle/", import.m
 function rate(value) { return { amount: { currencyCode: "USD", units: String(value), exactUnits: String(value), unitsMicros: Math.round(value * 1e6) }, display: `USD ${value} / 1M tokens` }; }
 function prices() {
   return { currencyCode: "USD", data: [
-    ...fixtures.AUDIT_CHAT_MODELS.map(id => ({ id, deployments: [{ enabled: true, pricing: { input: rate(1.4), output: rate(4.4), cacheRead: rate(.26), cacheWrite: rate(0) } }] })),
+    ...fixtures.AUDIT_CHAT_MODELS.map((id, index) => {
+      const [input, output, cached] = [[.15,.5,.03],[1.4,4.4,.26],[1.74,3.48,.145],[.14,.28,.028]][index];
+      return { id, deployments: [{ enabled: true, pricing: { input: rate(input), output: rate(output), cacheRead: rate(cached), cacheWrite: rate(0) } }] };
+    }),
     { id: "dola-seedream-5-0-pro-260628", deployments: [{ enabled: true, pricing: { fixed: { ...rate(.09), priceUnit: "image", display: "USD 0.09 / image" } } }] },
     { id: "dreamina-seedance-2-0-260128", deployments: [{ enabled: true, pricing: { video: { withoutVideo480p: rate(7) } } }] },
   ] };
@@ -55,13 +58,13 @@ function noSecret(value) { const text = JSON.stringify(value); for (const secret
 
 test("fixed seven-day plan has bounded prompts, 116 calls, four subitems, paired answers, changing nonce and fixed anchors", () => {
   const plan = Array.from({ length: 14 }, (_, slot) => fixtures.auditCases("campaign-fixture", slot)).flat();
-  assert.equal(plan.length, 116); assert.equal(plan.reduce((n, c) => n + c.reservedMicros, 0), 4_800_000);
+  assert.equal(plan.length, 116); assert.equal(plan.reduce((n, c) => n + c.reservedMicros, 0), 4_520_000);
   for (let slot = 0; slot < 14; slot++) {
     const cases = fixtures.auditCases("campaign-fixture", slot);
     for (let m = 0; m < 4; m++) {
       const [short, long] = cases.slice(m * 2, m * 2 + 2);
       assert.equal(JSON.stringify(short.expected), JSON.stringify(long.expected));
-      assert.equal(short.expected.answers.length, 4); assert.equal(short.body.max_tokens, 4096);
+      assert.equal(short.expected.answers.length, 4); assert.equal(short.body.max_tokens, 8192);
       assert.ok(new TextEncoder().encode(JSON.stringify(long.body.messages)).length <= 4096);
       assert.ok(long.body.messages[0].content.length > short.body.messages[0].content.length);
     }
@@ -80,7 +83,7 @@ test("grading separates empty/truncated from incorrect, and gives objective item
 });
 test("start validates dedicated credentials, stores isolated ciphertext, fixes seven days, refuses concurrent campaign restart", async t => {
   const f = await setup(t); const first = await f.start(f.now);
-  assert.equal(first.campaign.plannedReservationMicros, 4_800_000);
+  assert.equal(first.campaign.plannedReservationMicros, 4_520_000);
   assert.equal(new Date(first.campaign.endsAt) - new Date(first.campaign.startedAt), 7 * 86400000);
   const row = f.sqlite.prepare("SELECT * FROM tokenhub_audit_campaigns").get();
   assert.equal(await helpers.decryptProviderKey(row.encrypted_key, SECRET, "eco-geo/audit/tokenhub/v1"), KEY);
@@ -95,17 +98,25 @@ test("global business key is rejected before network access", async t => {
 });
 test("simultaneous ticks claim each case once and cannot exceed the atomically constrained reservation", async t => {
   const f = await setup(t); await f.start(f.now);
-  f.sqlite.prepare("UPDATE tokenhub_audit_campaigns SET budget_micros=30000").run();
+  f.sqlite.prepare("UPDATE tokenhub_audit_campaigns SET budget_micros=10000").run();
+  // Isolate one remaining planned case under a one-call budget; other cases are
+  // already blocked without charge. Concurrent callers still race the same claim.
+  const campaign = f.sqlite.prepare("SELECT id FROM tokenhub_audit_campaigns").get().id;
+  for (let slot = 0; slot < 14; slot++) for (const spec of fixtures.auditCases(campaign, slot)) {
+    if (slot === 0 && spec.id === `${fixtures.AUDIT_CHAT_MODELS[0]}:short`) continue;
+    f.sqlite.prepare("INSERT INTO tokenhub_audit_cases(campaign_id,slot,case_id,kind,model,state,reserved_micros,request_json,request_hash,expected_json,price_json,price_hash,submitted_at,updated_at) VALUES(?,?,?,?,?,'price_blocked',0,?,'fixture',?,'{}','fixture',?,?)")
+      .run(campaign, slot, spec.id, spec.kind, spec.model, JSON.stringify(spec.body), JSON.stringify(spec.expected), f.now.toISOString(), f.now.toISOString());
+  }
   await Promise.all(Array.from({ length: 8 }, () => f.runAuditTick(f.env, { now: f.now, maxCases: 2 })));
   const posts = f.calls.filter(call => call.init.method === "POST"); assert.equal(posts.length, 1);
-  assert.equal(f.sqlite.prepare("SELECT SUM(reserved_micros) AS total FROM tokenhub_audit_cases").get().total, 30000);
-  assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM tokenhub_audit_cases").get().n, 1);
+  assert.equal(f.sqlite.prepare("SELECT SUM(reserved_micros) AS total FROM tokenhub_audit_cases").get().total, 10000);
+  assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM tokenhub_audit_cases WHERE reserved_micros>0").get().n, 1);
 });
 test("unknown charged outcome retains reservation, cannot retry, and never leaks exceptions", async t => {
   const f = await setup(t, { fetcher(url, init) { if (init.method === "POST") throw new Error(KEY); } });
   await f.start(f.now); await f.runAuditTick(f.env, { now: f.now, maxCases: 1 });
   const first = f.sqlite.prepare("SELECT * FROM tokenhub_audit_cases").get();
-  assert.equal(first.state, "outcome_unknown"); assert.equal(first.reserved_micros, 30000); noSecret(first);
+  assert.equal(first.state, "outcome_unknown"); assert.equal(first.reserved_micros, 10000); noSecret(first);
   await f.runAuditTick(f.env, { now: f.now, maxCases: 1 });
   const posts = f.calls.filter(call => call.init.method === "POST"); assert.equal(posts.length, 2); assert.notEqual(posts[0].init.headers["Idempotency-Key"], posts[1].init.headers["Idempotency-Key"]);
   noSecret(await f.getAuditStatus(f.env, true));
@@ -127,8 +138,8 @@ test("successful evidence includes exact request, response, hashes, rates, gradi
   } });
   await f.start(f.now); await f.runAuditTick(f.env, { now: f.now, maxCases: 1 });
   const status = await f.getAuditStatus(f.env, true), item = status.cases.find(item => item.state === "succeeded"); noSecret(status);
-  assert.equal(item.grading.score, 100); assert.equal(item.grading.total, 4); assert.equal(item.derivedExpectedCostMicros, 1140);
-  assert.equal(item.request.max_tokens, 4096); assert.equal(item.priceSnapshot.data.currencyCode, "USD");
+  assert.equal(item.grading.score, 100); assert.equal(item.grading.total, 4); assert.equal(item.derivedExpectedCostMicros, 125);
+  assert.equal(item.request.max_tokens, 8192); assert.equal(item.priceSnapshot.data.currencyCode, "USD");
   assert.match(item.requestHash, /^[a-f0-9]{64}$/); assert.match(item.responseHash, /^[a-f0-9]{64}$/);
   assert.equal(item.headers["set-cookie"], undefined); assert.equal(item.headers["x-request-id"], "trace-[redacted]");
   assert.equal(item.billingVerification, "pending"); assert.equal(status.campaign.identityVerification, "unverified");
@@ -169,7 +180,7 @@ test("a long first response cannot dispatch a second paid request after the seve
   await f.start(new Date(clock - 7 * 86400000 + 1000));
   const status = await f.runAuditTick(f.env, { maxCases: 2 });
   assert.equal(f.calls.filter(call => call.init.method === "POST").length, 1);
-  assert.equal(status.campaign.state, "completed"); assert.equal(status.campaign.reservedMicros, 30000);
+  assert.equal(status.campaign.state, "completed"); assert.equal(status.campaign.reservedMicros, 10000);
 });
 test("a long response cannot dispatch another case from a slot that has just ended", async t => {
   let clock = Date.now();
@@ -187,8 +198,37 @@ test("deadline passing during final D1 claim prevents fetch and retains its rese
   await f.start(new Date(clock - 7 * 86400000 + 1000)); advance = true;
   const status = await f.runAuditTick(f.env, { maxCases: 2 });
   assert.equal(f.calls.filter(call => call.init.method === "POST").length, 0);
-  assert.equal(status.campaign.state, "completed"); assert.equal(status.campaign.reservedMicros, 30000);
+  assert.equal(status.campaign.state, "completed"); assert.equal(status.campaign.reservedMicros, 10000);
   const row = f.sqlite.prepare("SELECT * FROM tokenhub_audit_cases").get();
-  assert.equal(row.state, "window_expired"); assert.equal(row.reserved_micros, 30000);
+  assert.equal(row.state, "window_expired"); assert.equal(row.reserved_micros, 10000);
   assert.equal(status.cases.find(item => item.state === "window_expired").submittedAt, null);
+});
+
+test("v2 reservation uses actual locked v1 records and preserves their original evidence and output limits", async t => {
+  const f = await setup(t); await f.start(f.now); await f.runAuditTick(f.env, { now: f.now, maxCases: 2 });
+  const records = f.sqlite.prepare("SELECT * FROM tokenhub_audit_cases").all();
+  for (const row of records) {
+    const body = JSON.parse(row.request_json); body.max_tokens = 4096;
+    const expected = JSON.parse(row.expected_json); delete expected.protocolVersion;
+    f.sqlite.prepare("UPDATE tokenhub_audit_cases SET reserved_micros=30000,request_json=?,expected_json=? WHERE campaign_id=? AND slot=? AND case_id=?")
+      .run(JSON.stringify(body), JSON.stringify(expected), row.campaign_id, row.slot, row.case_id);
+  }
+  f.sqlite.prepare("UPDATE tokenhub_audit_campaigns SET plan_version='tokenhub-audit-v1'").run();
+  const before = await f.getAuditStatus(f.env, true);
+  assert.equal(before.campaign.plannedReservationMicros, 4_560_000);
+  const prior = before.cases.filter(item => item.state === "succeeded");
+  assert.equal(prior.length, 2); assert.ok(prior.every(item => item.maxOutputTokens === 4096 && item.planVersion === "tokenhub-audit-v1" && item.request.max_tokens === 4096 && item.reservedMicros === 30000));
+  const after = await f.runAuditTick(f.env, { now: f.now, maxCases: 1 });
+  assert.equal(after.campaign.planVersion, "tokenhub-audit-v2"); assert.equal(after.campaign.plannedReservationMicros, 4_560_000);
+  const fresh = after.cases.find(item => item.requestedModel === fixtures.AUDIT_CHAT_MODELS[1] && item.state === "succeeded");
+  assert.equal(fresh.maxOutputTokens, 8192); assert.equal(fresh.reservedMicros, 50000); assert.equal(fresh.planVersion, "tokenhub-audit-v2");
+  const storedOld = f.sqlite.prepare("SELECT request_json,reserved_micros FROM tokenhub_audit_cases WHERE model=?").all(fixtures.AUDIT_CHAT_MODELS[0]);
+  assert.ok(storedOld.every(row => JSON.parse(row.request_json).max_tokens === 4096 && row.reserved_micros === 30000));
+});
+test("model-specific caps cover 4608 input and 8192 output tokens under each reservation", () => {
+  for (const policy of Object.values(fixtures.AUDIT_CHAT_POLICIES)) {
+    assert.equal(policy.maxOutputTokens, 8192);
+    assert.ok(Math.ceil((4608 * policy.inputMicros + 8192 * policy.outputMicros) / 1e6) <= policy.reservedMicros);
+    assert.ok(policy.cacheReadMicros <= policy.inputMicros);
+  }
 });

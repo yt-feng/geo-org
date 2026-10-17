@@ -1,6 +1,6 @@
 import type { RuntimeEnv } from "./config";
 import { decryptProviderKey, encryptProviderKey } from "./provider-settings";
-import { AUDIT_BUDGET_MICROS, AUDIT_CHAT_MODELS, AUDIT_PLAN_VERSION, AUDIT_SLOT_MS, AUDIT_SLOTS, auditCases, gradeAuditAnswer, type AuditCase } from "./tokenhub-audit-cases";
+import { AUDIT_BUDGET_MICROS, AUDIT_CHAT_MODELS, AUDIT_CHAT_POLICIES, AUDIT_PLAN_VERSION, AUDIT_SLOT_MS, AUDIT_SLOTS, auditCases, gradeAuditAnswer, type AuditCase } from "./tokenhub-audit-cases";
 
 const ORIGIN = "https://ai-tokenhub.ai";
 const KEY_CONTEXT = "eco-geo/audit/tokenhub/v1";
@@ -61,7 +61,9 @@ export function auditPriceRates(snapshot: unknown, spec: Pick<AuditCase, "kind" 
     const p = item.pricing;
     if (spec.kind === "chat") {
       // The reservation bounds input and output; no additional cache-write fee is budgeted.
-      return { input: amount(p.input, 2_000_000, true), output: amount(p.output, 5_000_000, true), cacheRead: amount(p.cacheRead, 2_000_000, true), cacheWrite: amount(p.cacheWrite, 0, true) };
+      const policy = AUDIT_CHAT_POLICIES[spec.model];
+      if (!policy) throw new AuditError("模型未列入固定审计价格策略。", 409);
+      return { input: amount(p.input, policy.inputMicros, true), output: amount(p.output, policy.outputMicros, true), cacheRead: amount(p.cacheRead, policy.cacheReadMicros, true), cacheWrite: amount(p.cacheWrite, 0, true) };
     }
     if (spec.kind === "image") {
       if (!object(p.fixed) || p.fixed.priceUnit !== "image") throw new AuditError("图片计价单位不明确，审计已暂停。", 409);
@@ -124,7 +126,7 @@ function evaluate(spec: AuditCase, data: Json, rates: Rates) {
       if (cached <= prompt) derivedCost = Math.ceil(((prompt - cached) * rates.input! + cached * rates.cacheRead! + output * rates.output!) / 1_000_000);
       else flags.push("invalid_cached_token_count");
       if (cached > 0) flags.push("cache_usage_despite_disabled_request");
-      if (output > 4096) flags.push("reported_output_exceeds_request_limit");
+      if (output > Number(spec.body.max_tokens)) flags.push("reported_output_exceeds_request_limit");
       if (prompt > 4608) flags.push("reported_input_exceeds_conservative_bound");
       if (integer(total) && total !== prompt + output) flags.push("usage_total_mismatch");
     } else flags.push("usage_missing_or_invalid");
@@ -157,6 +159,15 @@ async function saveResult(env: RuntimeEnv, campaign: Campaign, spec: AuditCase, 
   if (result.flags.some(flag => ["derived_cost_exceeds_reservation", "reported_output_exceeds_request_limit", "reported_input_exceeds_conservative_bound", "returned_model_mismatch"].includes(flag))) await pause(env, campaign.id, "返回模型、用量或费用估算超出审计约束，等待核对证据。", now);
 }
 
+function storedSpec(row: CaseRow): AuditCase {
+  const body = parse(row.request_json), expected = parse(row.expected_json);
+  if (!object(body) || !object(expected) || !["chat", "image", "video"].includes(row.kind)) throw new AuditError("已保存案例证据不可读取，未重新生成参数。", 409);
+  return { id: row.case_id, kind: row.kind as AuditCase["kind"], model: row.model, reservedMicros: row.reserved_micros, body, expected };
+}
+function projectedReservation(campaignId: string, rows: CaseRow[]) {
+  const saved = new Map(rows.map(row => [`${row.slot}/${row.case_id}`, row]));
+  return Array.from({ length: AUDIT_SLOTS }, (_, slot) => auditCases(campaignId, slot).reduce((sum, spec) => sum + (saved.get(`${slot}/${spec.id}`)?.reserved_micros ?? spec.reservedMicros), 0)).reduce((sum, value) => sum + value, 0);
+}
 async function pollVideos(env: RuntimeEnv, campaign: Campaign, key: string, now: Date) {
   const rows = (await db(env).prepare("SELECT * FROM tokenhub_audit_cases WHERE campaign_id=? AND state='pending_video' AND next_poll_at<=? ORDER BY next_poll_at LIMIT 2").bind(campaign.id, date(now)).all<CaseRow>()).results ?? [];
   for (const row of rows) {
@@ -167,7 +178,7 @@ async function pollVideos(env: RuntimeEnv, campaign: Campaign, key: string, now:
     const claim = await db(env).prepare("UPDATE tokenhub_audit_cases SET poll_count=poll_count+1,next_poll_at=? WHERE campaign_id=? AND slot=? AND case_id=? AND state='pending_video' AND next_poll_at<=? RETURNING case_id")
       .bind(date(new Date(now.getTime() + 5 * 60_000)), campaign.id, row.slot, row.case_id, date(now)).first();
     if (!claim) continue;
-    const spec = auditCases(campaign.id, row.slot).find(item => item.id === row.case_id)!;
+    const spec = storedSpec(row);
     const storedPrice = parse(row.price_json), rates = auditPriceRates(object(storedPrice) ? storedPrice.data : null, spec), started = Date.now();
     try {
       const response = await fetch(ORIGIN + TASK_PATH + "/" + row.task_id, { headers: { Authorization: `Bearer ${key}`, Accept: "application/json" }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(20_000) });
@@ -191,6 +202,12 @@ export async function runAuditTick(env: RuntimeEnv, options: { maxCases?: number
     return getAuditStatus(env);
   }
   if (campaign.state !== "active" || env.SERVICE_ENABLED?.toLowerCase() !== "true") return getAuditStatus(env);
+  const existingRows = (await db(env).prepare("SELECT * FROM tokenhub_audit_cases WHERE campaign_id=?").bind(campaign.id).all<CaseRow>()).results ?? [];
+  if (projectedReservation(campaign.id, existingRows) > campaign.budget_micros) {
+    await pause(env, campaign.id, "已锁定预留与剩余计划超过固定预算，未追加额度或重新提交。", now);
+    return getAuditStatus(env);
+  }
+  if (campaign.plan_version !== AUDIT_PLAN_VERSION) await db(env).prepare("UPDATE tokenhub_audit_campaigns SET plan_version=?,updated_at=? WHERE id=? AND state='active'").bind(AUDIT_PLAN_VERSION, date(now), campaign.id).run();
   const slot = Math.floor((now.getTime() - new Date(campaign.started_at).getTime()) / AUDIT_SLOT_MS);
   if (slot < 0 || slot >= AUDIT_SLOTS) return getAuditStatus(env);
   const inWindow = (at: Date) => at.getTime() >= new Date(campaign.started_at).getTime() + slot * AUDIT_SLOT_MS
@@ -262,7 +279,9 @@ export async function getAuditStatus(env: RuntimeEnv, includeEvidence = false) {
   const now = Date.now(), start = new Date(campaign.started_at).getTime();
   const cases = Array.from({ length: AUDIT_SLOTS }, (_, slot) => auditCases(campaign.id, slot).map(spec => {
     const row = byId.get(`${slot}/${spec.id}`), state = row?.state ?? (now >= start + (slot + 1) * AUDIT_SLOT_MS ? "missed" : "planned");
-    return { slot, caseId: spec.id, kind: spec.kind, requestedModel: spec.model, state, reservedMicros: row?.reserved_micros ?? 0,
+    const evidenceExpected = row ? parse(row.expected_json) : spec.expected, evidenceRequest = row ? parse(row.request_json) : spec.body;
+    const planVersion = object(evidenceExpected) && typeof evidenceExpected.protocolVersion === "string" ? evidenceExpected.protocolVersion : row ? "tokenhub-audit-v1" : AUDIT_PLAN_VERSION;
+    return { slot, caseId: spec.id, planVersion, maxOutputTokens: object(evidenceRequest) && integer(evidenceRequest.max_tokens) ? evidenceRequest.max_tokens : null, kind: spec.kind, requestedModel: spec.model, state, reservedMicros: row?.reserved_micros ?? 0,
       submittedAt: row && !["price_blocked", "reserved", "window_expired"].includes(row.state) ? row.submitted_at : null, updatedAt: row?.updated_at ?? null, usage: parse(row?.usage_json), returnedModel: row?.returned_model ?? null,
       derivedExpectedCostMicros: row?.derived_cost_micros ?? null, grading: parse(row?.grading_json), flags: (parse(row?.flags_json) ?? []) as string[], taskId: row?.task_id ?? null,
       httpStatus: row?.http_status ?? null, latencyMs: row?.latency_ms ?? null, requestHash: row?.request_hash ?? null, responseHash: row?.response_hash ?? null,
@@ -286,5 +305,5 @@ export async function getAuditStatus(env: RuntimeEnv, includeEvidence = false) {
         status: (items === 0 ? recorded.length ? "no_answers" : "pending" : items === 16 ? "complete" : "partial") as "pending" | "partial" | "complete" | "no_answers" };
     }) }));
   for (const day of days) for (const model of day.models) { const first = days[0].models.find(item => item.model === model.model); if (first?.score !== null && first?.score !== undefined && model.score !== null) model.relativeToDay1 = model.score - first.score; }
-  return { configured: true, campaign: { id: campaign.id, state: campaign.state, startedAt: campaign.started_at, endsAt: campaign.ends_at, budgetMicros: campaign.budget_micros, reservedMicros, remainingMicros: Math.max(0, campaign.budget_micros - reservedMicros), keyHint: campaign.key_hint, planVersion: campaign.plan_version, pauseReason: campaign.pause_reason, catalog: parse(campaign.catalog_json), catalogHash: campaign.catalog_hash, plannedCalls: 116, plannedReservationMicros: 4_800_000, identityVerification: "unverified", billingVerification: "pending", tokenVerification: cases.some(item => object(item.independentAnalysis) && item.independentAnalysis.status === "needs_review") ? "needs_review" : cases.some(item => item.independentAnalysis) ? "provisional" : "pending_official_tokenizer" }, counts, days, cases, flags: Array.from(new Set(cases.flatMap(item => item.flags))) };
+  return { configured: true, campaign: { id: campaign.id, state: campaign.state, startedAt: campaign.started_at, endsAt: campaign.ends_at, budgetMicros: campaign.budget_micros, reservedMicros, remainingMicros: Math.max(0, campaign.budget_micros - reservedMicros), keyHint: campaign.key_hint, planVersion: campaign.plan_version, pauseReason: campaign.pause_reason, catalog: parse(campaign.catalog_json), catalogHash: campaign.catalog_hash, plannedCalls: 116, plannedReservationMicros: projectedReservation(campaign.id, rows), identityVerification: "unverified", billingVerification: "pending", tokenVerification: cases.some(item => object(item.independentAnalysis) && item.independentAnalysis.status === "needs_review") ? "needs_review" : cases.some(item => item.independentAnalysis) ? "provisional" : "pending_official_tokenizer" }, counts, days, cases, flags: Array.from(new Set(cases.flatMap(item => item.flags))) };
 }

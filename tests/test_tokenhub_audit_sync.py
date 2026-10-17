@@ -48,6 +48,7 @@ class AuditSyncTests(unittest.TestCase):
         self.assertEqual(data["counts"]["succeeded"], 1)
         self.assertEqual(data["counts"]["planned"], 115)
         self.assertEqual(data["campaign"]["reservedMicros"], 30000)
+        self.assertEqual(data["campaign"]["plannedReservationMicros"], 4_540_000)
         self.assertEqual(data["cases"][0]["responseHash"], row["response_hash"])
         self.assertEqual(data["cases"][0]["request"]["messages"][0]["content"], "test")
         self.assertNotIn("encrypted_key", json.dumps(data))
@@ -56,6 +57,17 @@ class AuditSyncTests(unittest.TestCase):
             self.assertNotIn("*", query)
             self.assertNotIn("encrypted_key", query)
         self.assertIn("campaign''quoted", queries[1])
+
+    def test_planned_budget_preserves_two_calibration_reservations(self):
+        campaign, row, _ = fixture()
+        now = sync.parse_time("2026-10-18T01:00:00Z")
+        fresh = sync.evidence(campaign, [], now)
+        self.assertEqual(fresh["campaign"]["plannedReservationMicros"], 4_520_000)
+        long_row = dict(row, case_id=sync.CHAT_MODELS[0] + ":long")
+        calibrated = sync.evidence(campaign, [row, long_row], now)
+        self.assertEqual(calibrated["campaign"]["reservedMicros"], 60_000)
+        self.assertEqual(calibrated["campaign"]["plannedReservationMicros"], 4_560_000)
+        self.assertEqual([case["reservedMicros"] for case in calibrated["cases"][:2]], [30_000, 30_000])
 
     def test_import_checks_every_identity_and_hash_before_writing(self):
         campaign, row, analysis = fixture()
