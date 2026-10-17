@@ -3,6 +3,166 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
+      "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-17T13:43:52+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11",
+      "body_chars": 26558,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/ams/NIST.AMS.600-16.pdf",
+      "title": "Annual Report on the U.S. Manufacturing Economy: 2024",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-10-17T13:43:49+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ba00b05af8122d6224fe16aeba701d0aa8c0c912edde31af1709e0546afcc586",
+      "body_chars": 127319,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/steering-us-auto-dealers-toward-profitable-future",
+      "title": "Steering US Auto Dealers Toward a Profitable Future",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-03-20",
+      "retrieved_at": "2026-10-17T12:28:16+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "automotive"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "05050d31ddf6e243cd90e7ca546f48017d1418fe5787db4be242368064a6f917",
+      "body_chars": 17834,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/programs-projects/building-evaluation-probes-agentic-ai",
+      "title": "Building Evaluation Probes into Agentic AI",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2026-04-07",
+      "retrieved_at": "2026-10-17T12:28:04+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "An ongoing NIST research project on evaluating agent responses against trusted documents. It is not a universal industry standard, guarantee against hallucinations, or demonstration of every commercial AI tool's performance.",
+      "text_sha256": "2bf204374dfbdc95aff1d4c9f8332fa62321e40d3dca1389de981a83978954a6",
+      "body_chars": 5929,
+      "excerpt_start": 0,
+      "excerpt_end": 5929,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/press/24october2024-ai-adoption-in-2024-74-of-companies-struggle-to-achieve-and-scale-value",
+      "title": "AI Adoption in 2024: 74% of Companies Struggle to Achieve and Scale Value",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-17T12:28:02+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "f087ef92099c912210f8dfc19ddafad5c6e624869e43b6de5d02e1747e7e74ae",
+      "body_chars": 7158,
+      "excerpt_start": 0,
+      "excerpt_end": 7158,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.wipo.int/web-publications/ip-facts-and-figures-2025/en/global-intellectual-property-applications-and-active-ip-rights.html",
+      "title": "IP Facts and Figures 2025 - Global intellectual property applications and active IP rights",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-10-17T12:27:52+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "intellectual_property"
+      ],
+      "scope_notes": "WIPO compilation of 2024 IP filings and active rights. Patent applications, trademark class counts and rights in force are distinct units. None measures IP-service revenue, client leads, agency market share or GEO effectiveness.",
+      "text_sha256": "248d1ba59fa285b25c54a718dd93be07dc6f70181ff5a1afd069014c52d444a8",
+      "body_chars": 2311,
+      "excerpt_start": 0,
+      "excerpt_end": 2311,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://support.google.com/business/answer/7091?hl=en",
+      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
+      "publisher": "Google",
+      "publisher_domain": "google.com",
+      "published": "",
+      "retrieved_at": "2026-10-17T12:27:40+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "platform_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
+      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
+      "body_chars": 3585,
+      "excerpt_start": 0,
+      "excerpt_end": 3585,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2026/the-new-rules-of-customer-experience-in-the-age-of-ai",
+      "title": "The New Rules of Customer Experience in the Age of Agents",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2026-05-04",
+      "retrieved_at": "2026-10-17T12:27:38+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "physical_retail"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "4548509d67995ec33d6edb969be7efd4bbfc662dc4e9a8d04b375dc1459b028f",
+      "body_chars": 9890,
+      "excerpt_start": 0,
+      "excerpt_end": 9890,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/ggjgs/art/2023/art_d1b46dbc27214abcace53a0ec539f7bb.html",
       "title": "市场监管总局关于发布《医疗美容广告执法指南》的公告",
       "publisher": "State Administration for Market Regulation",
@@ -20,26 +180,6 @@
       "body_chars": 2038,
       "excerpt_start": 0,
       "excerpt_end": 2038,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/press/24october2024-ai-adoption-in-2024-74-of-companies-struggle-to-achieve-and-scale-value",
-      "title": "AI Adoption in 2024: 74% of Companies Struggle to Achieve and Scale Value",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "",
-      "retrieved_at": "2026-10-16T13:34:24+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "ai_tools"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "f087ef92099c912210f8dfc19ddafad5c6e624869e43b6de5d02e1747e7e74ae",
-      "body_chars": 7158,
-      "excerpt_start": 0,
-      "excerpt_end": 7158,
       "excerpt_truncated": false
     },
     {
@@ -81,86 +221,6 @@
       "excerpt_start": 0,
       "excerpt_end": 6764,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://support.google.com/business/answer/7091?hl=en",
-      "title": "Tips to improve your local ranking on Google - Google Business Profile Help",
-      "publisher": "Google",
-      "publisher_domain": "google.com",
-      "published": "",
-      "retrieved_at": "2026-10-16T13:34:01+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "platform_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Google documentation for local businesses and eligible retail stores. Supports Google local-search mechanisms and profile information practices only; it cannot establish ChatGPT citation behaviour, a China-wide local-services trend, or store revenue lift.",
-      "text_sha256": "fb153d47a3695eb26d0af98899c382643f11e39c6cdcfcc2fcaaef1c1c0a6040",
-      "body_chars": 3585,
-      "excerpt_start": 0,
-      "excerpt_end": 3585,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/publications/2026/the-new-rules-of-customer-experience-in-the-age-of-ai",
-      "title": "The New Rules of Customer Experience in the Age of Agents",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2026-05-04",
-      "retrieved_at": "2026-10-16T13:33:59+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "physical_retail"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "4548509d67995ec33d6edb969be7efd4bbfc662dc4e9a8d04b375dc1459b028f",
-      "body_chars": 9890,
-      "excerpt_start": 0,
-      "excerpt_end": 9890,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
-      "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "",
-      "retrieved_at": "2026-10-16T13:33:47+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "manufacturing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
-      "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11",
-      "body_chars": 26558,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://nvlpubs.nist.gov/nistpubs/ams/NIST.AMS.600-16.pdf",
-      "title": "Annual Report on the U.S. Manufacturing Economy: 2024",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-10-16T13:33:44+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "manufacturing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "ba00b05af8122d6224fe16aeba701d0aa8c0c912edde31af1709e0546afcc586",
-      "body_chars": 127319,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2026/07/generative-ai-experimentation-in-government_706b6f2b/42815683-en.pdf",

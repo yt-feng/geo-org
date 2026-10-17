@@ -1,5 +1,194 @@
 [
   {
+    "order": "724",
+    "row": "715",
+    "slug": "00715-ai-geo-ai-b982d0b8",
+    "title": "Eco-GEO：制造业做品牌化GEO，不是抢排名：用一套稳定叙事降低用户与AI的理解成本",
+    "excerpt": "品牌升级期的制造业企业常被问：要不要做GEO？本文把问题改写成两层——先让品牌事实统一到可被检索、可被吸收，再谈被引用。文中区分被选中与被吸收、事实与推论，给出白帽做法、行动清单和衡量口径，不承诺引用量或询盘。",
+    "category": "制造业",
+    "tags": "品牌化GEO, 白帽GEO, 制造业, AI搜索, 品牌心智建设, 品牌升级期, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-17",
+    "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00715-ai-geo-ai-b982d0b8/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-17T13:43:46+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-17T13:43:47+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S3",
+        "title": "Annual Report on the U.S. Manufacturing Economy: 2024",
+        "url": "https://nvlpubs.nist.gov/nistpubs/ams/NIST.AMS.600-16.pdf",
+        "publisher": "National Institute of Standards and Technology",
+        "published": "",
+        "retrieved_at": "2026-10-17T13:43:49+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 127319,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "nist.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "manufacturing"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "ba00b05af8122d6224fe16aeba701d0aa8c0c912edde31af1709e0546afcc586"
+      },
+      {
+        "id": "S4",
+        "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
+        "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-17T13:43:52+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 26558,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "manufacturing"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
+        "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-17T13:43:53+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "quality_profile": "seo-practical",
+        "h2_count": 7,
+        "table_count": 1,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 3,
+            "cells": 9
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 5,
+          "S2": 9,
+          "S3": 1,
+          "S4": 1,
+          "S5": 2
+        },
+        "visible_character_count": 2324,
+        "zh_character_count": 1951,
+        "word_count": 264,
+        "minimum_zh_characters": 900,
+        "executive_summary_takeaways": 4,
+        "tables_meeting_structure": 1,
+        "valid_citation_count": 18,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com",
+          "nvlpubs.nist.gov"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 1,
+      "warnings": [
+        "一、第二段（S4引用处）：“制造业本身的语言正在趋同……不同厂商的介绍容易写得相似”一句把出处标为S4，但S4只描述大数据分析、自主机器人、工业物联网等九项技术在制造业的采用情况及其潜在收益，并未比较不同厂商对外文案的相似度，也未做文本分析；建议把S4严格限定在“这些技术概念已成为行业通用语汇”这一层，将“因此文案容易同质化”明确标为本文推论或改写为不带引用的行业观察。",
+        "三、第二段末句（S2引用处）：“比堆砌营销形容词更可能被引用并影响表述”把S2分开度量的两件事合并了：摘录中关于证据密度的结论属于吸收侧（influence_score）的描述性关联，并不涉及被选为来源的概率；建议改为“更可能对答案表述产生较高影响（吸收侧），是否被选为来源仍由平台决定”，与紧随其后的免责句保持一致。",
+        "表1第一行：“各平台平均每提示引用数与页面平均影响分并不一致”表述过于笼统；摘录中已给出可直接核对的数值（ChatGPT 6.88 次引用/0.2713 影响分、Google 12.06/0.0584、Perplexity 16.35/0.0646），笼统化反而降低可核验性，建议至少列出两三个平台的数值或注明“详见论文摘录对应位置”。",
+        "一、第一段（S5引用处）：“清晰标注来源、可点击追溯到原文”被放在中文引号中呈现，但S5原文为英文表述（cites its sources prominently；a list of every link used to generate the curated answer），该句属中文转述而非原话；建议去掉引号或改为明确的转述句式，避免读者误认为直接引用。",
+        "五、行动清单第2条：“20–30个真实用户问题”属于操作建议中的经验取值，已读来源均无对应依据；建议标注“示例区间，可按自身品类与问题复杂度调整”，以免被读作研究结论或行业基准。",
+        "适用范围与局限段（S5）：公告脚注的“不含俄罗斯与中国”限定针对的是 Copilot Search in Bing 这一产品的可用范围，正文表述本身准确，但读者易外推为所有生成式平台或 Bing 全部功能的区域行为；建议补一句该限制仅指公告所述产品。",
+        "四、品牌事实台账段：“统一叙事能降低理解成本”已正确标注为分析推论与待验证假设，处理得当；但全文未给出任何可自测的最小判定口径，建议补一句判定方式（如同类问题复测时答案是否仍出现互相矛盾的型号、认证或工况口径），仍不涉效果或转化承诺。"
+      ],
+      "review_type": "automated editorial review",
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 3,
+        "actionability": 4,
+        "originality": 3
+      }
+    }
+  },
+  {
     "order": "723",
     "row": "714",
     "slug": "00714-cmo-ai-geo-63119177",
