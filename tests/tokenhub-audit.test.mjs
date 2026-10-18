@@ -13,6 +13,7 @@ async function load(path, mocks = {}, globals = {}) {
   return compiled.exports;
 }
 const helpers = await load("../lib/provider-settings.ts"), fixtures = await load("../lib/tokenhub-audit-cases.ts");
+const media = await load("../lib/tokenhub-audit-media.ts");
 const catalog = await load("../lib/tokenhub-audit-catalog.ts", { "./tokenhub-audit-cases": fixtures });
 const SECRET = "test-audit-encryption-secret-over-32-characters", KEY = "sk-audit-fake-credential-never-send";
 const schema = (await Promise.all((await readdir(new URL("../drizzle/", import.meta.url))).filter(f => f.endsWith(".sql")).sort().map(f => readFile(new URL(`../drizzle/${f}`, import.meta.url), "utf8")))).join("\n");
@@ -52,7 +53,7 @@ async function setup(t, options = {}) {
     constructor(...args) { if (args.length) super(...args); else super(options.clock()); }
     static now() { return options.clock(); }
   } : Date;
-  const api = await load("../lib/tokenhub-audit.ts", { "./provider-settings": helpers, "./tokenhub-audit-cases": fixtures, "./tokenhub-audit-catalog": catalog }, { fetch: fetcher, Date: ClockDate, AbortSignal: { timeout(ms) { timeouts.push(ms); return AbortSignal.timeout(ms); } } });
+  const api = await load("../lib/tokenhub-audit.ts", { "./provider-settings": helpers, "./tokenhub-audit-cases": fixtures, "./tokenhub-audit-catalog": catalog, "./tokenhub-audit-media": options.media ?? media }, { fetch: fetcher, Date: ClockDate, AbortSignal: { timeout(ms) { timeouts.push(ms); return AbortSignal.timeout(ms); } } });
   return { ...api, sqlite, calls, timeouts, env, now: new Date(), async start(now = new Date()) { return api.startAudit(env, { apiKey: KEY, budgetMicros: 5_000_000 }, now); } };
 }
 function noSecret(value) { const text = JSON.stringify(value); for (const secret of [KEY, SECRET]) assert.ok(!text.includes(secret), "Credential exposed"); }
@@ -335,4 +336,18 @@ test("every known video has one paid adapter while unknown media prices remain b
   assert.throws(() => f.auditPriceRates(p, spec), error => error.status === 409);
   p.data.push({ id: "future-video", deployments: [{ enabled: true, pricing: { video: { withoutVideo480p: rate(1) } } }] });
   assert.throws(() => f.auditPriceRates(p, { kind: "video", model: "future-video" }), error => error.status === 409);
+});
+
+
+test("artifact archive errors preserve successful model evidence and never trigger repeated generation", async t => {
+  const f = await setup(t, { env: { AUDIT_MEDIA: {} }, media: { async archiveAuditCaseMedia() { throw new Error("storage unavailable"); }, async archiveAuditMediaBackfill() { throw new Error("storage unavailable"); } } });
+  await f.start(f.now);
+  await f.runAuditTick(f.env, { maxCases: 10, now: f.now });
+  const image = f.sqlite.prepare("SELECT state,response_hash FROM tokenhub_audit_cases WHERE kind='image'").get();
+  assert.equal(image.state, "succeeded"); assert.ok(image.response_hash);
+  const postCount = f.calls.filter(call => call.init.method === "POST").length;
+  await f.runAuditTick(f.env, { maxCases: 10, now: new Date(f.now.getTime() + 6 * 60_000) });
+  const video = f.sqlite.prepare("SELECT state,response_hash FROM tokenhub_audit_cases WHERE kind='video'").get();
+  assert.equal(video.state, "succeeded"); assert.ok(video.response_hash);
+  assert.equal(f.calls.filter(call => call.init.method === "POST").length, postCount);
 });

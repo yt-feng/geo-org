@@ -1,4 +1,5 @@
 import type { RuntimeEnv } from "./config";
+import { archiveAuditCaseMedia, archiveAuditMediaBackfill } from "./tokenhub-audit-media";
 import { decryptProviderKey, encryptProviderKey } from "./provider-settings";
 import { AUDIT_BUDGET_MICROS, AUDIT_CHAT_MODELS, AUDIT_CHAT_POLICIES, AUDIT_VIDEO_POLICIES, AUDIT_PLAN_VERSION, AUDIT_SLOT_MS, AUDIT_SLOTS, auditCases, gradeAuditAnswer, type AuditCase } from "./tokenhub-audit-cases";
 
@@ -162,6 +163,10 @@ async function saveResult(env: RuntimeEnv, campaign: Campaign, spec: AuditCase, 
   await db(env).prepare(`UPDATE tokenhub_audit_cases SET state=?,response_json=?,response_hash=?,creation_json=CASE WHEN ?=0 THEN ? ELSE creation_json END,headers_json=?,http_status=?,latency_ms=?,usage_json=?,returned_model=?,derived_cost_micros=?,grading_json=?,flags_json=?,task_id=COALESCE(?,task_id),next_poll_at=?,updated_at=? WHERE campaign_id=? AND slot=? AND case_id=?`)
     .bind(state, json, await hash(json), poll ? 1 : 0, spec.kind === "video" ? json : null, JSON.stringify(collectHeaders(response.headers, key)), response.status, Date.now() - started, JSON.stringify(result.usage), result.returnedModel, result.derivedCost, JSON.stringify(result.grading), JSON.stringify(result.flags), taskId, state === "pending_video" ? date(new Date(now.getTime() + 5 * 60_000)) : null, date(now), campaign.id, slot, spec.id).run();
   if (result.flags.some(flag => ["derived_cost_exceeds_reservation", "reported_output_exceeds_request_limit", "reported_input_exceeds_conservative_bound", "returned_model_mismatch"].includes(flag))) await pause(env, campaign.id, "返回模型、用量或费用估算超出审计约束，等待核对证据。", now);
+  if (state === "succeeded" && spec.kind !== "chat" && env.AUDIT_MEDIA) {
+    // A failed artifact copy must never turn a known model result into an unknown charge.
+    try { await archiveAuditCaseMedia(env, { campaign: campaign.id, slot, caseId: spec.id }); } catch { /* Retried independently by the bounded read-only archive queue. */ }
+  }
 }
 
 function storedSpec(row: CaseRow): AuditCase {
@@ -244,6 +249,7 @@ export async function runAuditTick(env: RuntimeEnv, options: { maxCases?: number
   try { key = await decryptProviderKey(campaign.encrypted_key, env.ADMIN_SESSION_SECRET, KEY_CONTEXT); } catch { await pause(env, campaign.id, "审计专用密钥不可读取；未改用业务密钥。", now); return getAuditStatus(env); }
   await observeCatalog(env, campaign, key, now);
   await pollVideos(env, campaign, key, now);
+  if (env.AUDIT_MEDIA) { try { await archiveAuditMediaBackfill(env); } catch { /* Archive failures never trigger new inference. */ } }
   if (now.getTime() >= new Date(campaign.ends_at).getTime()) {
     await db(env).prepare("UPDATE tokenhub_audit_campaigns SET state='completed',updated_at=? WHERE id=? AND state='active'").bind(date(now), campaign.id).run();
     return getAuditStatus(env);
