@@ -40,6 +40,9 @@ local Geist fonts, light/dark themes, responsive navigation and model artwork.
   previews; it does not submit generation requests.
 - `/tokenhub` — administrator workbench for TokenHub chat, images, and video
   tasks. Submitting a model request can consume TokenHub credit.
+- `/tokenhub/audit` — seven-day audit matrix and administrator-only daily
+  workpapers, including actual prompts, returned text/media, grading and billing.
+  Reading saved workpapers never submits a generation request.
 
 Model artwork source references are in `public/model-art/SOURCES.md` and the
 font license is in `public/fonts/OFL.txt`. Existing account data, credentials,
@@ -167,6 +170,14 @@ exists. Saved keys use AES-256-GCM with a purpose-specific key derived from
 requires re-entering the saved APIMart credential. Credentials, prompts and
 model outputs are not stored in request logs by this feature.
 
+The separate seven-day audit intentionally saves its synthetic test requests,
+responses and grading evidence. Administrators can browse or download each
+record, including failed and truncated calls. Successful audit media is copied
+to the private `eco-geo-audit-media` R2 bucket via the `AUDIT_MEDIA` binding and
+served through an authenticated route so provider URL expiry does not erase a
+saved workpaper. This does not archive ordinary workbench requests. See the
+[audit evidence and operations guide](docs/tokenhub-seven-day-audit.md).
+
 Deploy this gateway from the `api-gateway-cloudflare` branch, independently of
 the main marketing website. Apply the additive migration before publishing:
 
@@ -177,8 +188,8 @@ npm run build
 npx wrangler deploy --keep-vars
 ```
 
-The additive migrations add `provider_settings`, `tokenhub_requests`, and
-`tokenhub_tasks`; existing members, API keys, quotas and data-provider
+The additive migrations add provider settings, TokenHub task and audit tables,
+and audit media metadata; existing members, API keys, quotas and data-provider
 configuration are preserved.
 
 ## Production configuration
