@@ -27,6 +27,14 @@ CHAT_MODELS = (
     "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731",
 )
 CHAT_RESERVATIONS = dict(zip(CHAT_MODELS, (10_000, 50_000, 40_000, 10_000)))
+PLAN_VERSION = "tokenhub-audit-v3"
+# One short/long pair per model and campaign day, alternating anchor/fresh.
+CHAT_SLOTS = frozenset((0, 3, 4, 7, 8, 11, 12))
+VIDEO_ROTATION = {
+    2: ("seedance-fast-video", "dreamina-seedance-2-0-fast-260128"),
+    6: ("seedance-mini-video", "dreamina-seedance-2-0-mini-260615"),
+    10: ("seedance-2-5-video", "dreamina-seedance-2-5-260628"),
+}
 # Never SELECT * here, including in the campaign subquery.
 CAMPAIGN_COLUMNS = (
     "id,state,started_at,ends_at,budget_micros,key_hint,catalog_json,"
@@ -39,6 +47,10 @@ CASE_COLUMNS = (
     "derived_cost_micros,grading_json,flags_json,independent_analysis_json,"
     "billing_actual_micros,billing_evidence_json,task_id,poll_count,next_poll_at,"
     "submitted_at,updated_at"
+)
+CATALOG_COLUMNS = (
+    "campaign_id,day,state,attempt_count,next_attempt_at,models_json,models_hash,"
+    "pricing_json,pricing_hash,catalog_json,error_json,fetched_at,updated_at"
 )
 LATEST_ID_SQL = "SELECT id FROM tokenhub_audit_campaigns ORDER BY created_at DESC,id DESC LIMIT 1"
 FORBIDDEN_FIELDS = {"encrypted_key", "encryptedkey", "apikey", "api_key", "authorization", "access_token", "admin_session_secret"}
@@ -158,11 +170,29 @@ def current_snapshot(query=run_wrangler):
     return campaign, rows
 
 
+def catalog_snapshot(campaign, query=run_wrangler):
+    if campaign is None:
+        return []
+    rows = query(command=f"SELECT {CATALOG_COLUMNS} FROM tokenhub_audit_catalog_snapshots WHERE campaign_id={sql_quote(campaign['id'])} ORDER BY day")
+    if any(row.get("campaign_id") != campaign["id"] for row in rows):
+        raise SyncError("Catalog snapshot belongs to a different campaign")
+    days = [row.get("day") for row in rows]
+    if any(isinstance(day, bool) or not isinstance(day, int) or not 0 <= day < 7 for day in days) or len(set(days)) != len(days):
+        raise SyncError("Catalog snapshot has an invalid or duplicate day")
+    return rows
+
+
 def stored_case(row):
     analysis = parse_json(row.get("independent_analysis_json"))
     billing = parse_json(row.get("billing_evidence_json"))
+    request = parse_json(row.get("request_json"))
+    expected = parse_json(row.get("expected_json"))
+    plan_version = expected.get("protocolVersion") if isinstance(expected, dict) else None
+    max_output_tokens = request.get("max_tokens") if isinstance(request, dict) else None
     return {
         "slot": row["slot"], "caseId": row["case_id"], "kind": row["kind"], "requestedModel": row["model"],
+        "planVersion": plan_version if isinstance(plan_version, str) else "tokenhub-audit-v1",
+        "maxOutputTokens": max_output_tokens if isinstance(max_output_tokens, int) and not isinstance(max_output_tokens, bool) else None,
         "state": row["state"], "reservedMicros": row["reserved_micros"],
         "submittedAt": None if row["state"] in ("price_blocked", "reserved", "window_expired") else row.get("submitted_at"),
         "updatedAt": row.get("updated_at"), "usage": parse_json(row.get("usage_json")),
@@ -173,8 +203,8 @@ def stored_case(row):
         "independentAnalysis": analysis, "billingActualMicros": row.get("billing_actual_micros"), "billingEvidence": billing,
         "tokenVerification": analysis.get("tokenVerification", "provisional") if isinstance(analysis, dict) else "pending_official_tokenizer",
         "billingVerification": "recorded" if row.get("billing_actual_micros") is not None and billing else "pending",
-        "request": parse_json(row.get("request_json")), "response": parse_json(row.get("response_json")),
-        "expected": parse_json(row.get("expected_json")), "priceSnapshot": parse_json(row.get("price_json")),
+        "request": request, "response": parse_json(row.get("response_json")),
+        "expected": expected, "priceSnapshot": parse_json(row.get("price_json")),
         "priceHash": row.get("price_hash"), "creationResponse": parse_json(row.get("creation_json")),
         "headers": parse_json(row.get("headers_json")), "pollCount": row.get("poll_count", 0),
     }
@@ -188,10 +218,104 @@ def parse_time(value):
         raise SyncError("Campaign timestamp is invalid") from None
 
 
-def evidence(campaign, rows, now=None):
+def planned_cases(slot):
+    plan = []
+    if slot in CHAT_SLOTS:
+        plan += [(f"{model}:{variant}", "chat", model, CHAT_RESERVATIONS[model]) for model in CHAT_MODELS for variant in ("short", "long")]
+    if slot in (0, 13):
+        plan += [("seedream-image", "image", "dola-seedream-5-0-pro-260628", 120_000), ("seedance-video", "video", "dreamina-seedance-2-0-260128", 600_000)]
+    if slot in VIDEO_ROTATION:
+        case_id, model = VIDEO_ROTATION[slot]
+        plan.append((case_id, "video", model, 600_000))
+    return plan
+
+
+def catalog_observations(rows):
+    observations = []
+    for row in rows:
+        models = parse_json(row.get("catalog_json"), [])
+        if not isinstance(models, list) or not all(isinstance(model, dict) and isinstance(model.get("model"), str) for model in models):
+            raise SyncError("Stored normalized catalog is invalid")
+        observations.append({
+            "day": row["day"] + 1, "observedAt": row.get("fetched_at"), "status": row["state"],
+            "attemptCount": row.get("attempt_count"), "nextAttemptAt": row.get("next_attempt_at"), "updatedAt": row.get("updated_at"),
+            "modelsHash": row.get("models_hash"), "pricingHash": row.get("pricing_hash"),
+            "modelCount": len(models), "models": models, "errors": parse_json(row.get("error_json"), []),
+            "modelsResponse": parse_json(row.get("models_json")), "pricingResponse": parse_json(row.get("pricing_json")),
+        })
+    return observations
+
+
+def known_models():
+    models = [(model, "chat") for model in CHAT_MODELS]
+    models += [("dola-seedream-5-0-pro-260628", "image"), ("dreamina-seedance-2-0-260128", "video")]
+    models += [(model, "video") for _, model in VIDEO_ROTATION.values()]
+    return [{"model": model, "kind": kind, "label": model, "sources": [], "enabled": None} for model, kind in models]
+
+
+def normalize_initial_catalog(value):
+    """Match the server's model-source normalizer for the campaign baseline."""
+    known = {model["model"]: model for model in known_models()}
+    models = {}
+    for raw in value.get("data", []) if isinstance(value, dict) and isinstance(value.get("data"), list) else []:
+        if not isinstance(raw, dict) or not isinstance(raw.get("id"), str) or not 0 < len(raw["id"]) <= 200:
+            continue
+        model_id = raw["id"]
+        type_names = []
+        for field in ("modelType", "capabilities", "type"):
+            field_value = raw.get(field)
+            type_names += [item for item in (field_value if isinstance(field_value, list) else [field_value]) if isinstance(item, str)]
+        types = " ".join(type_names).lower()
+        deployments = [item for item in raw.get("deployments", []) if isinstance(item, dict)] if isinstance(raw.get("deployments"), list) else []
+        prices = [item["pricing"] for item in deployments if isinstance(item.get("pricing"), dict)]
+        prior = models.get(model_id, {})
+        if model_id in known:
+            kind = known[model_id]["kind"]
+        elif any(isinstance(price.get("video"), dict) for price in prices) or "video" in types:
+            kind = "video"
+        elif any(isinstance(price.get("fixed"), dict) and price["fixed"].get("priceUnit") == "image" for price in prices) or "image" in types:
+            kind = "image"
+        elif any(name in types for name in ("chat", "text", "completion")):
+            kind = "chat"
+        else:
+            kind = prior.get("kind", "unknown")
+        label = raw.get("label") if isinstance(raw.get("label"), str) else raw.get("name") if isinstance(raw.get("name"), str) else prior.get("label", model_id)
+        models[model_id] = {"model": model_id, "kind": kind, "label": label[:200], "sources": prior.get("sources", []) + ["models"],
+                            "enabled": any(item.get("enabled") is True for item in deployments) if deployments else prior.get("enabled")}
+    return list(models.values())
+
+
+def all_catalog_models(campaign, cases, observations):
+    known = known_models()
+    union = {model["model"]: dict(model, lastSeenAt=None) for model in known}
+    for model in normalize_initial_catalog(parse_json(campaign["catalog_json"])):
+        union[model["model"]] = dict(model, lastSeenAt=campaign["started_at"])
+    for observation in observations:
+        for model in observation["models"]:
+            union[model["model"]] = dict(model, lastSeenAt=observation["observedAt"])
+    for case in cases:
+        if case["requestedModel"] not in union:
+            model_id = case["requestedModel"]
+            union[model_id] = {"model": model_id, "kind": case["kind"], "label": model_id, "sources": [], "enabled": None, "lastSeenAt": None}
+    latest_complete = next((observation for observation in reversed(observations) if observation["status"] == "succeeded"), None)
+    supported = {model["model"] for model in known}
+    result = []
+    for model in union.values():
+        state = "unobserved" if not model["lastSeenAt"] else "present"
+        if (model["lastSeenAt"] and latest_complete and latest_complete["observedAt"]
+                and latest_complete["observedAt"] >= model["lastSeenAt"]
+                and not any(item["model"] == model["model"] for item in latest_complete["models"])):
+            state = "disappeared"
+        result.append(dict(model, catalogState=state, paidAdapterSupported=model["model"] in supported,
+                           plannedCalls=sum(case["requestedModel"] == model["model"] for case in cases),
+                           observedDays=sum(observation["status"] == "succeeded" and any(item["model"] == model["model"] for item in observation["models"]) for observation in observations)))
+    return result
+
+
+def evidence(campaign, rows, now=None, catalog_rows=None):
     now = now or datetime.now(timezone.utc)
     if campaign is None:
-        return {"configured": False, "campaign": None, "counts": {}, "days": [], "cases": [], "flags": [], "exportedAt": now.isoformat()}
+        return {"configured": False, "campaign": None, "counts": {}, "days": [], "cases": [], "flags": [], "catalogObservations": [], "catalogModels": [], "exportedAt": now.isoformat()}
     start = parse_time(campaign["started_at"])
     saved = {(row["slot"], row["case_id"]): stored_case(row) for row in rows}
     if len(saved) != len(rows):
@@ -199,25 +323,29 @@ def evidence(campaign, rows, now=None):
     cases = []
     planned_reservation = 0
     for slot in range(14):
-        plan = [(f"{model}:{variant}", "chat", model, CHAT_RESERVATIONS[model]) for model in CHAT_MODELS for variant in ("short", "long")]
-        if slot in (0, 13):
-            plan += [("seedream-image", "image", "dola-seedream-5-0-pro-260628", 120_000), ("seedance-video", "video", "dreamina-seedance-2-0-260128", 600_000)]
+        plan = planned_cases(slot)
         for case_id, kind, model, reservation in plan:
             existing = saved.pop((slot, case_id), None)
             # Retain reservations for historical calibration requests instead of repricing them.
             planned_reservation += existing["reservedMicros"] if existing is not None else reservation
-            cases.append(existing or {
+            cases.append(dict(existing, retainedFromEarlierPlan=False) if existing is not None else {
                 "slot": slot, "caseId": case_id, "kind": kind, "requestedModel": model,
+                "retainedFromEarlierPlan": False,
+                "planVersion": PLAN_VERSION, "maxOutputTokens": 8192 if kind == "chat" else None,
                 "state": "missed" if now >= start + timedelta(hours=12 * (slot + 1)) else "planned",
                 "requestHash": None, "responseHash": None, "reservedMicros": 0,
                 "request": None, "response": None, "expected": None, "flags": [],
                 "tokenVerification": "pending_official_tokenizer", "billingVerification": "pending",
             })
-    if saved:
-        raise SyncError("Stored cases do not match this script's audit plan; update the script before exporting")
+    # Plan upgrades may remove an unexecuted slot. An already saved request in
+    # that slot remains evidence and continues consuming its original reserve.
+    cases.extend(dict(case, retainedFromEarlierPlan=True) for case in saved.values())
+    planned_reservation += sum(case["reservedMicros"] for case in saved.values())
+    cases.sort(key=lambda case: (case["slot"], case["caseId"]))
     reserved = sum(row.get("reserved_micros", 0) for row in rows)
     flags = sorted({flag for case in cases for flag in case.get("flags", []) if isinstance(flag, str)})
     analyses = [case.get("independentAnalysis") for case in cases if isinstance(case.get("independentAnalysis"), dict)]
+    observations = catalog_observations(catalog_rows or [])
     result = {
         "configured": True,
         "campaign": {"id": campaign["id"], "state": campaign["state"], "startedAt": campaign["started_at"],
@@ -225,9 +353,10 @@ def evidence(campaign, rows, now=None):
                      "remainingMicros": max(0, campaign["budget_micros"] - reserved), "keyHint": campaign["key_hint"],
                      "planVersion": campaign["plan_version"], "pauseReason": campaign.get("pause_reason"),
                      "catalog": parse_json(campaign["catalog_json"]), "catalogHash": campaign["catalog_hash"],
-                     "plannedCalls": 116, "plannedReservationMicros": planned_reservation, "identityVerification": "unverified",
+                     "plannedCalls": len(cases), "plannedReservationMicros": planned_reservation, "identityVerification": "unverified",
                      "billingVerification": "pending", "tokenVerification": "needs_review" if any(item.get("status") == "needs_review" for item in analyses) else "provisional" if analyses else "pending_official_tokenizer"},
         "counts": dict(Counter(case["state"] for case in cases)), "days": [], "cases": cases, "flags": flags,
+        "catalogObservations": observations, "catalogModels": all_catalog_models(campaign, cases, observations),
         "exportedAt": now.isoformat(), "exportSource": "D1 explicit-column evidence snapshot; daily aggregates are computed by the offline analyzer",
     }
     return sanitize(result)
@@ -357,7 +486,7 @@ def main(argv=None):
         if args.output:
             campaign, rows = current_snapshot()
     if args.output:
-        result = evidence(campaign, rows)
+        result = evidence(campaign, rows, catalog_rows=catalog_snapshot(campaign))
         write_private_json(args.output, result)
         summary.update(exportedCases=len(result["cases"]), savedCases=len(rows), counts=result["counts"])
     print(json.dumps(summary, ensure_ascii=False, separators=(",", ":")))
