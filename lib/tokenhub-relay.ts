@@ -130,7 +130,12 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
       body = await readObject(request.body, 1_000_000);
       validateBody(body, path);
     }
-    const service = createTokenHubSettings(env), key = await service.credential();
+    const service = createTokenHubSettings(env);
+    if (path === "/v1/models") {
+      const discovered = await service.models();
+      return reply({ object: "list", data: discovered.models.map(model => ({ object: "model", owned_by: model.provider || "tokenhub", ...model })), catalog: discovered.catalog });
+    }
+    const key = await service.credential();
     if (path === TASKS && request.method === "POST") {
       const id = request.headers.get("Idempotency-Key") || "";
       if (!/^[A-Za-z0-9_-]{8,128}$/.test(id)) return error("提交视频时需要 8–128 位 Idempotency-Key；重试请使用相同编号。", 400);

@@ -2,6 +2,8 @@ import type { RuntimeEnv } from "./config";
 
 const ORIGIN = "https://api.apimart.ai";
 const DEFAULT_CONTEXT = "eco-geo/provider/apimart/v1";
+const BALANCE_REQUIRED = "APIMart 返回余额不足（HTTP 402）；请补充余额后重新验证。";
+const SAVED_UNVERIFIED_WARNING = "密钥已加密保存，APIMart 返回余额不足（HTTP 402）；请补充余额后重新验证。";
 type StoredProvider = {
   encrypted_key: string;
   key_hint: string;
@@ -78,7 +80,7 @@ export function createProviderSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     return db().prepare("SELECT encrypted_key, key_hint, updated_at, verified_at FROM provider_settings WHERE provider = 'apimart'").first<StoredProvider>();
   }
   function fromRow(row: StoredProvider | null): ProviderStatus {
-    if (row) return { configured: true, source: "saved", keyHint: row.key_hint, updatedAt: row.updated_at, verifiedAt: row.verified_at };
+    if (row) return { configured: true, source: "saved", keyHint: row.key_hint, updatedAt: row.updated_at, verifiedAt: row.verified_at || null };
     const key = env.APIMART_API_KEY?.trim();
     return { configured: !!key, source: key ? "environment" : "none", keyHint: key ? keyHint(key) : null, updatedAt: null, verifiedAt: null };
   }
@@ -94,6 +96,7 @@ export function createProviderSettings(env: RuntimeEnv, fetcher: typeof fetch = 
       response = await fetcher(ORIGIN + path, { method: "GET", headers: { Authorization: `Bearer ${key}`, Accept: "application/json" }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(10_000) });
     } catch { throw new ProviderError("暂时无法连接 APIMart，请稍后重试。", 502); }
     if (response.status === 401 || response.status === 403) throw new ProviderError("APIMart 密钥无效或没有访问权限，请检查后重试。", 422);
+    if (response.status === 402) throw new ProviderError(BALANCE_REQUIRED, 402);
     if (response.status === 429) throw new ProviderError("APIMart 请求频率已达上限，请稍后重试。", 429);
     if (!response.ok) throw new ProviderError("APIMart 服务暂不可用，请稍后重试。", 502);
     const data = await readJson(response);
@@ -110,18 +113,25 @@ export function createProviderSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     async save(value: unknown) {
       if (typeof value !== "string" || !/^[\x21-\x7e]{12,512}$/.test(value.trim())) throw new ProviderError("请输入完整的 APIMart API Key（12–512 位，不含空白）。", 400);
       const key = value.trim();
-      // Check encryption availability before any upstream call. Invalid replacements never overwrite a working key.
+      // Check encryption availability before any upstream call. Only the explicit
+      // insufficient-balance response permits saving without verification.
       const encrypted = await encryptProviderKey(key, env.ADMIN_SESSION_SECRET);
-      const quota = await balance(key), now = new Date().toISOString();
+      let quota: ProviderQuota | null = null, warning: string | null = null;
+      try { quota = await balance(key); }
+      catch (cause) {
+        if (!(cause instanceof ProviderError) || cause.status !== 402) throw cause;
+        warning = SAVED_UNVERIFIED_WARNING;
+      }
+      const now = new Date().toISOString(), verifiedAt = warning ? "" : now;
       await db().prepare(`INSERT INTO provider_settings (provider, encrypted_key, key_hint, updated_at, verified_at)
         VALUES ('apimart', ?, ?, ?, ?)
-        ON CONFLICT(provider) DO UPDATE SET encrypted_key=excluded.encrypted_key, key_hint=excluded.key_hint, updated_at=excluded.updated_at, verified_at=excluded.verified_at`).bind(encrypted, keyHint(key), now, now).run();
-      return { ok: true, apimart: fromRow({ encrypted_key: encrypted, key_hint: keyHint(key), updated_at: now, verified_at: now }), quota };
+        ON CONFLICT(provider) DO UPDATE SET encrypted_key=excluded.encrypted_key, key_hint=excluded.key_hint, updated_at=excluded.updated_at, verified_at=excluded.verified_at`).bind(encrypted, keyHint(key), now, verifiedAt).run();
+      return { ok: true, apimart: fromRow({ encrypted_key: encrypted, key_hint: keyHint(key), updated_at: now, verified_at: verifiedAt }), quota, warning };
     },
     async test() {
-      const { key, row } = await credential(), quota = await balance(key);
-      if (row) await db().prepare("UPDATE provider_settings SET verified_at = ? WHERE provider = 'apimart' AND encrypted_key = ?").bind(new Date().toISOString(), row.encrypted_key).run();
-      return { ok: true, quota };
+      const { key, row } = await credential(), quota = await balance(key), verifiedAt = new Date().toISOString();
+      if (row) await db().prepare("UPDATE provider_settings SET verified_at = ? WHERE provider = 'apimart' AND encrypted_key = ?").bind(verifiedAt, row.encrypted_key).run();
+      return { ok: true, quota, verifiedAt };
     },
     async models() {
       const { key } = await credential(), data = await upstream("/v1/models?expand=category", key);

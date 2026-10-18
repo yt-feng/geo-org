@@ -174,6 +174,7 @@ test("saving verifies a key with a read-only official request and persists only 
   });
   const result = await service.save(` ${KEY} `);
   assert.equal(result.ok, true);
+  assert.equal(result.warning, null);
   assert.equal(result.apimart.source, "saved");
   assert.equal(result.quota.remaining, 0, "zero balance is still a valid credential");
   const row = sqlite.prepare("SELECT * FROM provider_settings WHERE provider = ?").get("apimart");
@@ -190,6 +191,69 @@ test("saving verifies a key with a read-only official request and persists only 
     assert.equal(init.redirect, "manual");
     assert.equal(init.cache, "no-store");
     assert.ok(init.signal instanceof AbortSignal);
+  }
+});
+
+test("HTTP 402 saves an encrypted key as unverified without reporting an invented quota", async t => {
+  const { env, sqlite } = fixture(t);
+  const service = providers.createProviderSettings(env, async () => new Response(`Insufficient balance ${KEY}`, { status: 402 }));
+  const saved = await service.save(KEY);
+  assert.equal(saved.ok, true); assert.equal(saved.apimart.configured, true); assert.equal(saved.apimart.source, "saved");
+  assert.equal(saved.apimart.verifiedAt, null); assert.equal(saved.quota, null);
+  assert.equal(saved.warning, "密钥已加密保存，APIMart 返回余额不足（HTTP 402）；请补充余额后重新验证。");
+  const row = sqlite.prepare("SELECT * FROM provider_settings WHERE provider='apimart'").get();
+  assert.equal(row.verified_at, ""); assert.ok(row.updated_at); assert.equal(await providers.decryptProviderKey(row.encrypted_key, SECRET), KEY);
+  assertRedacted(row, KEY); assertRedacted(saved, KEY, row.encrypted_key);
+  const reloaded = await providers.createProviderSettings(env).status();
+  assert.equal(reloaded.apimart.verifiedAt, null); assert.equal(reloaded.apimart.configured, true);
+  for (const operation of [() => service.test(), () => service.models()]) {
+    await assert.rejects(operation(), error => {
+      assert.equal(error.status, 402); assert.equal(error.message, "APIMart 返回余额不足（HTTP 402）；请补充余额后重新验证。"); assertRedacted(error.message, KEY); return true;
+    });
+    assert.deepEqual(sqlite.prepare("SELECT * FROM provider_settings WHERE provider='apimart'").get(), row);
+  }
+});
+
+test("a 402 replacement clears the old verification and a later successful test verifies the new key", async t => {
+  const { env, sqlite } = fixture(t);
+  await providers.createProviderSettings(env, async () => balanceResponse()).save(KEY);
+  const replacement = "sk-apimart-replacement-awaiting-balance";
+  const saved = await providers.createProviderSettings(env, async () => Response.json({ message: replacement }, { status: 402 })).save(replacement);
+  assert.equal(saved.apimart.verifiedAt, null); assert.equal(saved.quota, null);
+  assert.equal(await providers.decryptProviderKey(sqlite.prepare("SELECT encrypted_key FROM provider_settings").get().encrypted_key, SECRET), replacement);
+  const service = providers.createProviderSettings(env, async (_url, init) => {
+    assert.equal(new Headers(init.headers).get("Authorization"), `Bearer ${replacement}`); return balanceResponse(3);
+  });
+  const verified = await service.test(); assert.equal(verified.quota.remaining, 3); assert.ok(verified.verifiedAt);
+  assert.equal((await service.status()).apimart.verifiedAt, verified.verifiedAt);
+});
+
+test("non-402 failures still preserve a previously verified credential exactly", async t => {
+  const { env, sqlite } = fixture(t);
+  await providers.createProviderSettings(env, async () => balanceResponse()).save(KEY);
+  const before = sqlite.prepare("SELECT * FROM provider_settings").get(), replacement = "sk-invalid-or-unreachable-replacement";
+  const failures = [
+    () => new Response(replacement, { status: 401 }), () => new Response(replacement, { status: 403 }),
+    () => new Response(replacement, { status: 429 }), () => new Response(replacement, { status: 500 }),
+    () => new Response(replacement, { status: 503 }), () => new Response(replacement, { status: 200 }),
+    () => { throw new Error(replacement); },
+  ];
+  for (const failure of failures) {
+    await assert.rejects(providers.createProviderSettings(env, async () => failure()).save(replacement));
+    assert.deepEqual(sqlite.prepare("SELECT * FROM provider_settings").get(), before);
+  }
+});
+
+test("admin save exposes saved-unverified status on 402 while test and models retain the accurate HTTP status", async t => {
+  const { env } = fixture(t);
+  const handle = await handler(env, { fetcher: async () => Response.json({ error: `Not enough balance ${KEY}` }, { status: 402 }) });
+  const response = await handle(request("save"), "save"), saved = await response.json();
+  assert.equal(response.status, 200); assert.equal(saved.apimart.verifiedAt, null); assert.equal(saved.quota, null); assert.ok(saved.warning.includes("HTTP 402")); assertRedacted(saved, KEY);
+  const reloaded = await (await handle(request("status"), "status")).json();
+  assert.equal(reloaded.apimart.source, "saved"); assert.equal(reloaded.apimart.verifiedAt, null);
+  for (const action of ["test", "models"]) {
+    const rejected = await handle(request(action), action); assert.equal(rejected.status, 402);
+    const body = await rejected.text(); assertRedacted(body, KEY); assert.ok(body.includes("HTTP 402"));
   }
 });
 

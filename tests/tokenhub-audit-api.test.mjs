@@ -22,6 +22,7 @@ async function fixture(options = {}) {
     async startAudit(current, input) { calls.push({ name: "start", current, input }); if (options.startError) throw options.startError; return safeStatus; },
     async runAuditTick(current, input) { calls.push({ name: "tick", current, input }); return safeStatus; },
     async pauseAudit(current) { calls.push({ name: "pause", current }); return safeStatus; },
+    async refreshAuditCatalog(current) { calls.push({ name: "observe", current }); },
   };
   const mocks = {
     "@/lib/auth": { getPortalUser: async () => options.user === undefined ? { id: "admin", isAdmin: true } : options.user },
@@ -88,6 +89,17 @@ test("audit evidence download is private, authenticated and enables evidence onl
   assert.match(response.headers.get("cache-control"), /private, no-store/);
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
   assert.deepEqual(handler.calls.filter(call => call.name === "status").map(call => call.includeEvidence), [false, true]);
+});
+
+test("catalog observation refresh stays authenticated and never dispatches paid inference", async () => {
+  const handler = await fixture();
+  assert.equal((await handler.POST(req({ action: "observe" }))).status, 200);
+  assert.deepEqual(handler.calls.filter(call => ["observe", "status", "tick", "start"].includes(call.name)).map(call => call.name), ["observe", "status"]);
+  for (const user of [null, { id: "member", isAdmin: false }]) {
+    const denied = await fixture({ user });
+    assert.equal((await denied.POST(req({ action: "observe" }))).status, user ? 403 : 401);
+    assert.equal(denied.calls.length, 0);
+  }
 });
 
 test("audit rejects rate-limited mutations before accessing upstream and hides unexpected failures", async () => {

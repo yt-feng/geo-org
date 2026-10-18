@@ -44,13 +44,14 @@ class AuditSyncTests(unittest.TestCase):
             return [campaign] if len(queries) == 1 else [row]
         saved_campaign, rows = sync.current_snapshot(query)
         data = sync.evidence(saved_campaign, rows, sync.parse_time("2026-10-18T01:00:00Z"))
-        self.assertEqual(len(data["cases"]), 116)
+        self.assertEqual(len(data["cases"]), 63)
         self.assertEqual(data["counts"]["succeeded"], 1)
-        self.assertEqual(data["counts"]["planned"], 115)
+        self.assertEqual(data["counts"]["planned"], 62)
         self.assertEqual(data["campaign"]["reservedMicros"], 30000)
-        self.assertEqual(data["campaign"]["plannedReservationMicros"], 4_540_000)
-        self.assertEqual(data["cases"][0]["responseHash"], row["response_hash"])
-        self.assertEqual(data["cases"][0]["request"]["messages"][0]["content"], "test")
+        self.assertEqual(data["campaign"]["plannedReservationMicros"], 4_800_000)
+        saved = next(case for case in data["cases"] if case["slot"] == row["slot"] and case["caseId"] == row["case_id"])
+        self.assertEqual(saved["responseHash"], row["response_hash"])
+        self.assertEqual(saved["request"]["messages"][0]["content"], "test")
         self.assertNotIn("encrypted_key", json.dumps(data))
         self.assertNotIn("FORBIDDEN_CIPHERTEXT", json.dumps(data))
         for query in queries:
@@ -62,12 +63,91 @@ class AuditSyncTests(unittest.TestCase):
         campaign, row, _ = fixture()
         now = sync.parse_time("2026-10-18T01:00:00Z")
         fresh = sync.evidence(campaign, [], now)
-        self.assertEqual(fresh["campaign"]["plannedReservationMicros"], 4_520_000)
+        self.assertEqual(fresh["campaign"]["plannedReservationMicros"], 4_780_000)
         long_row = dict(row, case_id=sync.CHAT_MODELS[0] + ":long")
         calibrated = sync.evidence(campaign, [row, long_row], now)
         self.assertEqual(calibrated["campaign"]["reservedMicros"], 60_000)
-        self.assertEqual(calibrated["campaign"]["plannedReservationMicros"], 4_560_000)
-        self.assertEqual([case["reservedMicros"] for case in calibrated["cases"][:2]], [30_000, 30_000])
+        self.assertEqual(calibrated["campaign"]["plannedReservationMicros"], 4_820_000)
+        self.assertEqual([case["reservedMicros"] for case in calibrated["cases"] if case["slot"] == 0 and case["requestedModel"] == row["model"]], [30_000, 30_000])
+
+    def test_all_nine_models_have_samples_and_each_day_has_one_chat_pair(self):
+        campaign, _, _ = fixture()
+        data = sync.evidence(campaign, [], sync.parse_time("2026-10-18T01:00:00Z"))
+        cases = data["cases"]
+        self.assertEqual(len({case["requestedModel"] for case in cases}), 9)
+        self.assertEqual(sum(case["kind"] == "chat" for case in cases), 56)
+        self.assertEqual(sum(case["kind"] == "video" for case in cases), 5)
+        self.assertEqual(sum(case["kind"] == "image" for case in cases), 2)
+        for day in range(7):
+            for model in sync.CHAT_MODELS:
+                daily = [case for case in cases if case["slot"] // 2 == day and case["requestedModel"] == model]
+                self.assertEqual(len(daily), 2)
+                self.assertEqual({case["caseId"].split(":")[-1] for case in daily}, {"short", "long"})
+
+    def test_old_removed_slot_is_preserved_with_evidence_and_reservation(self):
+        campaign, row, _ = fixture()
+        old = dict(row, slot=1, case_id="legacy-provider-case", model="historical-model",
+                   request_json='{"max_tokens":4096,"messages":[{"role":"user","content":"old"}]}',
+                   expected_json='{"protocolVersion":"tokenhub-audit-v2","answers":[1,2,3,4]}', reserved_micros=50_000)
+        data = sync.evidence(campaign, [old], sync.parse_time("2026-10-18T01:00:00Z"))
+        self.assertEqual(data["campaign"]["plannedCalls"], 64)
+        self.assertEqual(data["campaign"]["plannedReservationMicros"], 4_830_000)
+        historical = next(case for case in data["cases"] if case["caseId"] == old["case_id"])
+        self.assertEqual(historical["request"], json.loads(old["request_json"]))
+        self.assertEqual(historical["requestHash"], old["request_hash"])
+        self.assertEqual(historical["responseHash"], old["response_hash"])
+        self.assertEqual(historical["expected"], json.loads(old["expected_json"]))
+        self.assertEqual((historical["planVersion"], historical["maxOutputTokens"], historical["reservedMicros"]), ("tokenhub-audit-v2", 4096, 50_000))
+        self.assertTrue(historical["retainedFromEarlierPlan"])
+
+    def test_daily_catalog_export_preserves_partial_failure_sources_and_hashes(self):
+        campaign, _, _ = fixture()
+        catalog_model = {"model": "new-video", "kind": "video", "label": "New Video", "sources": ["pricing"], "enabled": True}
+        snapshot = {"campaign_id": campaign["id"], "day": 1, "state": "partial", "attempt_count": 2,
+                    "next_attempt_at": "2026-10-19T02:00:00Z", "fetched_at": "2026-10-19T01:00:00Z", "updated_at": "2026-10-19T01:00:00Z",
+                    "models_json": None, "models_hash": None, "pricing_json": '{"data":[{"id":"new-video","authorization":"redact-me"}]}', "pricing_hash": "e" * 64,
+                    "catalog_json": json.dumps([catalog_model]), "error_json": '[{"source":"models","error":"unavailable"}]'}
+        queries = []
+        def query(**kwargs):
+            queries.append(kwargs["command"])
+            return [snapshot]
+        rows = sync.catalog_snapshot(campaign, query)
+        result = sync.evidence(campaign, [], catalog_rows=rows)
+        observed = result["catalogObservations"][0]
+        self.assertEqual(observed["day"], 2)
+        self.assertEqual(observed["status"], "partial")
+        self.assertEqual(observed["models"], [catalog_model])
+        self.assertEqual(observed["pricingHash"], snapshot["pricing_hash"])
+        self.assertIsNone(observed["modelsResponse"])
+        self.assertEqual(observed["pricingResponse"]["data"][0]["authorization"], "[REDACTED]")
+        self.assertEqual(observed["errors"], [{"source": "models", "error": "unavailable"}])
+        discovered = next(model for model in result["catalogModels"] if model["model"] == "new-video")
+        self.assertEqual((discovered["catalogState"], discovered["plannedCalls"], discovered["observedDays"]), ("present", 0, 0))
+        self.assertFalse(discovered["paidAdapterSupported"])
+        self.assertNotIn("redact-me", json.dumps(result))
+        self.assertNotIn("*", queries[0])
+        self.assertNotIn("encrypted_key", queries[0])
+        self.assertIn("campaign''quoted", queries[0])
+        for invalid in [dict(snapshot, campaign_id="another"), dict(snapshot, day=7), dict(snapshot, day=True)]:
+            with self.assertRaises(sync.SyncError):
+                sync.catalog_snapshot(campaign, lambda **_: [invalid])
+        with self.assertRaises(sync.SyncError):
+            sync.catalog_snapshot(campaign, lambda **_: [snapshot, snapshot])
+
+    def test_catalog_partial_failure_does_not_claim_missing_models_disappeared(self):
+        campaign, _, _ = fixture()
+        baseline = {"id": "previous-model", "modelType": "text", "label": "Previous Model"}
+        campaign["catalog_json"] = json.dumps({"object": "list", "data": [baseline]})
+        snapshot = {"campaign_id": campaign["id"], "day": 1, "state": "partial", "catalog_json": "[]",
+                    "fetched_at": "2026-10-19T01:00:00Z", "error_json": '["models unavailable"]'}
+        partial = sync.evidence(campaign, [], catalog_rows=[snapshot])
+        previous = next(model for model in partial["catalogModels"] if model["model"] == baseline["id"])
+        self.assertEqual(previous["kind"], "chat")
+        self.assertEqual(previous["catalogState"], "present")
+        complete = sync.evidence(campaign, [], catalog_rows=[dict(snapshot, state="succeeded")])
+        previous = next(model for model in complete["catalogModels"] if model["model"] == baseline["id"])
+        self.assertEqual(previous["catalogState"], "disappeared")
+        self.assertEqual(len(complete["catalogModels"]), 10)
 
     def test_import_checks_every_identity_and_hash_before_writing(self):
         campaign, row, analysis = fixture()
@@ -125,7 +205,7 @@ class AuditSyncTests(unittest.TestCase):
             path = Path(directory) / "evidence.json"
             sync.write_private_json(path, sync.evidence(campaign, [row]))
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
-            self.assertEqual(len(json.loads(path.read_text())["cases"]), 116)
+            self.assertEqual(len(json.loads(path.read_text())["cases"]), 63)
 
     def test_real_bulk_stdout_progress_and_summary_shape(self):
         summary = [{"results": [{"Total queries executed": 2, "Rows read": 4, "Rows written": 2, "Database size (MB)": 0.17}], "success": True}]

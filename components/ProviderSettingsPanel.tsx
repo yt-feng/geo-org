@@ -18,7 +18,7 @@ type ProviderStatus = {
 
 type Quota = { remaining: number | null; unlimited: boolean };
 type Model = { id: string; provider: string; category: string[] };
-type Notice = { kind: "success" | "error"; text: string } | null;
+type Notice = { kind: "success" | "warning" | "error"; text: string } | null;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -48,11 +48,11 @@ function displayTime(value: string | null) {
   });
 }
 
-function StatusBadge({ configured }: { configured?: boolean }) {
+function StatusBadge({ configured, verifiedAt, verificationRequired = false, saved = false }: { configured?: boolean; verifiedAt?: string | null; verificationRequired?: boolean; saved?: boolean }) {
   return (
-    <span className={`provider-status ${configured ? "is-configured" : ""}`}>
+    <span className={`provider-status ${configured && (!verificationRequired || verifiedAt) ? "is-configured" : ""}`}>
       <span aria-hidden="true" />
-      {configured === undefined ? "读取中…" : configured ? "已配置" : "未配置"}
+      {configured === undefined ? "读取中…" : !configured ? "未配置" : !verificationRequired ? "已配置" : verifiedAt ? "已验证" : saved ? "已保存·待验证" : "已配置·待验证"}
     </span>
   );
 }
@@ -102,7 +102,7 @@ export function ProviderSettingsPanel() {
     setPending("save");
     setNotice(null);
     try {
-      const result = await request<{ ok: true; apimart: ApimartStatus; quota: Quota }>(
+      const result = await request<{ ok: true; apimart: ApimartStatus; quota: Quota | null; warning?: string | null }>(
         "/api/admin/providers/apimart",
         {
           method: "POST",
@@ -116,7 +116,9 @@ export function ProviderSettingsPanel() {
       setModels(null);
       setQuery("");
       setCategory("all");
-      setNotice({ kind: "success", text: "APIMart API Key 已验证并保存。你可以继续测试连接或读取模型目录。" });
+      setNotice(result.apimart.verifiedAt
+        ? { kind: "success", text: "APIMart API Key 已验证并保存。你可以继续测试连接或读取模型目录。" }
+        : { kind: "warning", text: result.warning || "密钥已加密保存，尚未完成验证。请稍后测试已保存连接。" });
     } catch (error) {
       setNotice({ kind: "error", text: error instanceof Error ? error.message : "API Key 保存失败。" });
     } finally {
@@ -129,14 +131,14 @@ export function ProviderSettingsPanel() {
     setPending("test");
     setNotice(null);
     try {
-      const result = await request<{ ok: true; quota: Quota }>(
+      const result = await request<{ ok: true; quota: Quota; verifiedAt: string }>(
         "/api/admin/providers/apimart/test",
         { method: "POST" },
       );
       setQuota(result.quota);
       setProviders((current) => current ? {
         ...current,
-        apimart: { ...current.apimart, verifiedAt: new Date().toISOString() },
+        apimart: { ...current.apimart, verifiedAt: result.verifiedAt },
       } : current);
       setNotice({ kind: "success", text: "连接正常，已使用保存的 API Key 读取剩余额度。" });
     } catch (error) {
@@ -205,7 +207,7 @@ export function ProviderSettingsPanel() {
           <div className="provider-card-heading">
             <span className="provider-monogram apimart" aria-hidden="true">A</span>
             <div><h3>APIMart</h3><p>AI 模型服务</p></div>
-            <StatusBadge configured={apimart?.configured} />
+            <StatusBadge configured={apimart?.configured} verifiedAt={apimart?.verifiedAt} verificationRequired saved={apimart?.source === "saved"} />
           </div>
           <p className="provider-description">填写 API Key，验证连接并浏览可用模型目录。</p>
 
@@ -232,10 +234,10 @@ export function ProviderSettingsPanel() {
               type="password"
               value={apiKey}
             />
-            <p id="apimart-key-help" className="provider-field-help">验证通过后保存，已保存的密钥仅显示掩码。留空不会修改当前配置。</p>
+            <p id="apimart-key-help" className="provider-field-help">保存时尝试验证；余额不足时加密保存并标记待验证。已保存的密钥仅显示掩码，留空不会修改当前配置。</p>
             <div className="provider-actions">
               <button className="button button-primary" disabled={disabled || !apiKey.trim()} type="submit">
-                {pending === "save" ? "验证并保存中…" : "验证并保存"}
+                {pending === "save" ? "保存并尝试验证中…" : "保存并尝试验证"}
               </button>
               <a className="provider-key-link" href="https://apimart.ai/keys" rel="noopener noreferrer" target="_blank">
                 获取 API Key <span aria-hidden="true">↗</span>
@@ -253,7 +255,7 @@ export function ProviderSettingsPanel() {
               </button>
             </div>
             {apimart?.configured ? (
-              <p className="provider-field-help">最近验证：{displayTime(apimart.verifiedAt)}（北京时间）</p>
+              <p className="provider-field-help">{apimart.verifiedAt ? `最近验证：${displayTime(apimart.verifiedAt)}（北京时间）` : "当前密钥尚未通过验证。若 APIMart 返回余额不足，请补充余额后测试已保存连接。"}</p>
             ) : null}
             {quota ? (
               <div className="provider-quota"><span>当前 API Key 剩余额度</span><strong>{quota.unlimited ? "未设置额度上限" : quota.remaining === null ? "暂无额度信息" : quota.remaining.toLocaleString("zh-CN", { maximumFractionDigits: 6 })}</strong></div>

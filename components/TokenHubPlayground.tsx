@@ -7,20 +7,13 @@ import { Icon } from "./Icon";
 
 type Mode = "video" | "image" | "chat";
 type Json = Record<string, unknown>;
-type Model = { id: string; name?: string; provider: string; category: string[] };
+type Model = { id: string; name?: string; provider: string; category: string[]; sources?: string[]; modelType?: string; accountAccess?: string; integrationStatus?: string; limitations?: string[] };
+type Catalog = { complete: boolean; observedAt: string; sources: Array<{ source: string; status: string; modelCount: number }>; warnings: string[] };
 type Task = { id: string; model: string; status: string; created_at?: string; updated_at?: string };
 type Provider = { configured: boolean; verifiedAt: string | null };
 const endpoint: Record<Mode, string> = { video: "/api/tokenhub/v3/contents/generations/tasks", image: "/api/tokenhub/v3/images/generations", chat: "/api/tokenhub/v1/chat/completions" };
 const modes: Array<{ id: Mode; name: string; icon: string }> = [{ id: "video", name: "视频", icon: "video" }, { id: "image", name: "图像", icon: "image" }, { id: "chat", name: "对话", icon: "message" }];
 const defaults: Record<Mode, string> = { video: "dreamina-seedance-2-0-260128", image: "dola-seedream-5-0-pro-260628", chat: "" };
-// The provider's signed-in marketplace lists these models separately from its chat catalog endpoint.
-const marketplacePresets: Model[] = [
-  { id: "dreamina-seedance-2-0-260128", name: "Seedance 2.0", provider: "TokenHub", category: ["video"] },
-  { id: "dreamina-seedance-2-0-fast-260128", name: "Seedance 2.0 Fast", provider: "TokenHub", category: ["video"] },
-  { id: "dreamina-seedance-2-0-mini-260615", name: "Seedance 2.0 Mini", provider: "TokenHub", category: ["video"] },
-  { id: "dreamina-seedance-2-5-260628", name: "Seedance 2.5", provider: "TokenHub", category: ["video"] },
-  { id: "dola-seedream-5-0-pro-260628", name: "Seedream 5.0 Pro", provider: "TokenHub", category: ["image"] },
-];
 const examples: Record<Mode, string> = { video: "镜头缓缓掠过清晨的海岸，柔和的金色阳光照亮浪花，海风轻拂，电影摄影质感。", image: "极简产品摄影：银色耳机置于浅灰色石材上，柔和侧光，干净构图，细腻阴影。", chat: "用三句话介绍统一模型 API 如何帮助开发者快速实现创意。" };
 const statusNames: Record<string, string> = { submitted: "已提交", queued: "排队中", pending: "等待中", running: "生成中", processing: "生成中", succeeded: "已完成", completed: "已完成", success: "已完成", failed: "失败", cancelled: "已取消", canceled: "已取消", expired: "已过期", deleted: "已删除", cancelled_or_deleted: "已取消或删除" };
 const terminal = new Set(["succeeded", "completed", "success", "failed", "cancelled", "canceled", "expired", "deleted", "cancelled_or_deleted"]);
@@ -30,7 +23,16 @@ function payloadOf(value: unknown): Json { const root = record(value); return ro
 function text(value: unknown): string { return typeof value === "string" ? value : ""; }
 function safeUrl(value: unknown): string { if (typeof value !== "string") return ""; try { const parsed = new URL(value); return parsed.protocol === "https:" ? parsed.href : ""; } catch { return ""; } }
 function shellQuote(value: string) { return `'${value.replaceAll("'", "'\\''")}'`; }
-function modelMatches(model: Model, mode: Mode) { const value = `${model.id} ${model.category.join(" ")}`.toLowerCase(); return mode === "video" ? /video|seedance|视频/.test(value) : mode === "image" ? /image|seedream|图像|图片/.test(value) : /chat|text|language|llm|对话|文本/.test(value) && !/video|image/.test(value); }
+function modelMatches(model: Model, mode: Mode) { if (model.modelType && ["chat", "image", "video", "unknown"].includes(model.modelType)) return model.modelType === mode; const value = `${model.id} ${model.category.join(" ")}`.toLowerCase(); return mode === "video" ? /video|seedance|视频/.test(value) : mode === "image" ? /image|seedream|图像|图片/.test(value) : /chat|text|language|llm|对话|文本/.test(value) && !/video|image/.test(value); }
+function modelLabel(model: Model) { return model.name && model.name !== model.id ? model.name : model.id.replace(/^(dola|dreamina)-/, "").replace(/-(?:ga-)?\d{6}$/, "").replace(/(\d)-(?=\d)/g, "$1.").replaceAll("-", " ").replace(/\bglm\b/gi, "GLM").replace(/\bdeepseek\b/gi, "DeepSeek").replace(/\b(seedance|seedream|flash|pro|mini|fast|v\d+)\b/gi, word => word[0].toUpperCase() + word.slice(1)); }
+function parseModels(value: unknown): Model[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(record).filter(item => text(item.id)).map(item => ({ id: text(item.id), name: text(item.name), provider: text(item.provider), category: Array.isArray(item.category) ? item.category.filter((category): category is string => typeof category === "string") : [], sources: Array.isArray(item.sources) ? item.sources.filter((source): source is string => typeof source === "string") : [], modelType: text(item.modelType), accountAccess: text(item.accountAccess), integrationStatus: text(item.integrationStatus), limitations: Array.isArray(item.limitations) ? item.limitations.filter((limit): limit is string => typeof limit === "string") : [] }));
+}
+function selectionFromSearch(search: string): { model: string; mode?: Mode } {
+  const params = new URLSearchParams(search), id = params.get("model")?.trim() || "", category = params.get("category") || params.get("mode");
+  return { model: id.length <= 200 ? id : "", mode: modes.find(item => item.id === (category === "text" ? "chat" : category))?.id };
+}
 
 async function request(path: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(path, { ...init, credentials: "same-origin", cache: "no-store" });
@@ -64,6 +66,8 @@ export function TokenHubPlayground() {
   const [mode, setMode] = useState<Mode>("video");
   const [provider, setProvider] = useState<Provider | null>(null);
   const [models, setModels] = useState<Model[]>([]);
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [model, setModel] = useState(defaults.video);
   const [modelError, setModelError] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -99,16 +103,26 @@ export function TokenHubPlayground() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const requested = selectionFromSearch(window.location.search), requestedModel = requested.model, requestedMode = requested.mode;
+    const hasRequestedModel = !!requestedModel;
     request("/api/admin/providers/tokenhub", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setProvider(record(value).tokenhub as Provider); }).catch(error => { if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "配置读取失败。"); });
-    request("/api/admin/providers/tokenhub/models", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setModels(Array.isArray(record(value).models) ? record(value).models as Model[] : []); }).catch(error => { if (!controller.signal.aborted) setModelError(error instanceof Error ? error.message : "模型目录读取失败。"); });
+    request("/api/admin/providers/tokenhub/models", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) {
+      const body = record(value), info = record(body.catalog);
+      const discovered = parseModels(body.models); setModels(discovered);
+      if (hasRequestedModel) { setModel(requestedModel); const selected = discovered.find(item => item.id === requestedModel); const selectedMode = requestedMode || (selected ? modes.find(item => modelMatches(selected, item.id))?.id : undefined); if (selectedMode) setMode(selectedMode); }
+      else if (requestedMode) { setMode(requestedMode); setModel(discovered.find(item => modelMatches(item, requestedMode))?.id || defaults[requestedMode]); }
+      setCatalog({ complete: info.complete === true, observedAt: text(info.observedAt), sources: Array.isArray(info.sources) ? info.sources.map(record).map(item => ({ source: text(item.source), status: text(item.status), modelCount: typeof item.modelCount === "number" ? item.modelCount : 0 })) : [], warnings: Array.isArray(info.warnings) ? info.warnings.filter((warning): warning is string => typeof warning === "string") : [] });
+    } }).catch(error => { if (!controller.signal.aborted) { setModelError(error instanceof Error ? error.message : "模型目录读取失败。"); if (hasRequestedModel) setModel(requestedModel); if (requestedMode) setMode(requestedMode); } }).finally(() => { if (!controller.signal.aborted) setModelsLoading(false); });
     return () => controller.abort();
   }, []);
 
-  const options = useMemo(() => [...models, ...marketplacePresets.filter(preset => !models.some(item => item.id === preset.id))].filter(item => modelMatches(item, mode)), [models, mode]);
+  const options = useMemo(() => models.filter(item => modelMatches(item, mode)), [models, mode]);
+  const unknownModels = models.filter(item => !modes.some(mode => modelMatches(item, mode.id)));
+  const selectedModel = models.find(item => item.id === model);
   const generated = useMemo(() => {
     if (mode === "chat") return { model, messages: [{ role: "user", content: prompt }], stream: false };
     if (mode === "image") return { model, prompt, size: imageSize, watermark: false, response_format: "url" };
-    return { model, content: [{ type: "text", text: prompt }, ...(reference.trim() ? [{ type: "image_url", image_url: { url: reference.trim() }, role: referenceRole }] : [])], resolution, ratio, duration: Number(duration), generate_audio: generateAudio, watermark: false, return_last_frame: true };
+    return { model, content: [{ type: "text", text: prompt }, ...(reference.trim() ? [{ type: "image_url", image_url: { url: reference.trim() }, role: referenceRole }] : [])], resolution, ratio, duration: Number(duration), generate_audio: generateAudio, watermark: false };
   }, [mode, model, prompt, imageSize, reference, referenceRole, resolution, ratio, duration, generateAudio]);
   const json = advanced ? jsonInput : JSON.stringify(generated, null, 2);
   const curl = `${mode === "video" ? 'TOKENHUB_REQUEST_ID="$(uuidgen)"\n\n' : ""}curl --request POST \\\n  --url 'https://api.eco-geo.org${endpoint[mode]}' \\\n  --header 'Authorization: Bearer YOUR_ECO_GEO_API_KEY' \\\n  --header 'Content-Type: application/json'${mode === "video" ? " \\\n  --header \"Idempotency-Key: $TOKENHUB_REQUEST_ID\"" : ""} \\\n  --data ${shellQuote(json)}`;
@@ -143,7 +157,12 @@ export function TokenHubPlayground() {
   }, [taskId, polling]);
 
   function changeMode(next: Mode) {
-    setMode(next); setModel(models.find(item => modelMatches(item, next))?.id || defaults[next]); setAdvanced(false); setError(""); setCopied(false);
+    setMode(next); chooseModel(models.find(item => modelMatches(item, next))?.id || defaults[next]); setAdvanced(false); setError(""); setCopied(false);
+  }
+
+  function chooseModel(id: string) {
+    setModel(id);
+    if (/seedance.*fast/i.test(id) && resolution === "1080p") setResolution("720p");
   }
 
   function toggleAdvanced() {
@@ -210,25 +229,27 @@ export function TokenHubPlayground() {
   return <div className="playground-layout tokenhub-workbench">
     <section className="playground-controls" aria-label="TokenHub 请求参数">
       <div className="playground-control-header"><span>TOKENHUB</span><Link href="/admin" aria-label="管理 TokenHub 连接"><Icon name="settings" size={17} /></Link></div>
-      <div className="playground-category-tabs" role="tablist" aria-label="TokenHub 模型类型">{modes.map(item => <button key={item.id} type="button" role="tab" aria-selected={mode === item.id} className={mode === item.id ? "selected" : ""} onClick={() => changeMode(item.id)} disabled={pending}><Icon name={item.icon} size={15} />{item.name}</button>)}</div>
+      <div className="playground-category-tabs" role="tablist" aria-label="TokenHub 模型类型">{modes.map(item => <button key={item.id} type="button" role="tab" aria-selected={mode === item.id} className={mode === item.id ? "selected" : ""} onClick={() => changeMode(item.id)} disabled={pending}><Icon name={item.icon} size={15} />{item.name}{modelsLoading ? "" : ` ${models.filter(model => modelMatches(model, item.id)).length}`}</button>)}</div>
       <div className="playground-form-fields">
-        <label className="playground-field"><span>模型 <span className="field-required">*</span></span><select aria-label="选择 TokenHub 模型" value={options.some(item => item.id === model) ? model : "custom"} onChange={event => setModel(event.target.value === "custom" ? defaults[mode] : event.target.value)} disabled={advanced || pending}><option value="custom">填写模型 ID</option>{options.map(item => <option key={item.id} value={item.id}>{item.name || item.id}</option>)}</select><small>{mode === "chat" ? models.length ? `已读取 ${models.length} 个目录模型。` : modelError || "正在读取模型目录…" : "视频与图像预设来自 TokenHub 模型广场。"}</small></label>
-        <label className="playground-field playground-model-id"><span>MODEL ID</span><input aria-label="TokenHub 模型 ID" value={model} onChange={event => setModel(event.target.value)} spellCheck={false} placeholder="填写上游模型 ID" disabled={advanced || pending} /><small>{mode !== "chat" ? "模型版本与可用性以上游返回和账户权限为准。" : "可使用控制台提供的完整模型 ID。"}</small></label>
+        <p className="tokenhub-parameter-help" role="status">{modelsLoading ? "正在合并模型与价格目录…" : modelError ? "目录读取未完成，仍可填写完整模型 ID。" : `${catalog?.complete ? "当前完整目录" : "当前部分目录"} ${models.length} 个模型 · ${models.filter(item => modelMatches(item, "chat")).length} 个对话 / ${models.filter(item => modelMatches(item, "image")).length} 个图像 / ${models.filter(item => modelMatches(item, "video")).length} 个视频${unknownModels.length ? ` / ${unknownModels.length} 个待分类` : ""}`}</p>
+        <label className="playground-field"><span>模型 <span className="field-required">*</span></span><select aria-label="选择 TokenHub 模型" value={options.some(item => item.id === model) ? model : "custom"} onChange={event => chooseModel(event.target.value === "custom" ? "" : event.target.value)} disabled={advanced || pending}><option value="custom">填写完整模型 ID</option>{options.map(item => <option key={item.id} value={item.id}>{modelLabel(item)} · {item.id}</option>)}</select><small>{modelsLoading ? "正在读取当前类型的全部模型…" : `当前类型 ${options.length} 个模型 · 请求通过 ECO-GEO API 发送`}</small></label>
+        <label className="playground-field playground-model-id"><span>MODEL ID</span><input aria-label="TokenHub 模型 ID" value={model} onChange={event => chooseModel(event.target.value)} spellCheck={false} placeholder="填写上游模型 ID" disabled={advanced || pending} /><small>{selectedModel?.accountAccess === "unverified_public_catalog" ? "已接入转发；该模型来自公开价格目录，账户调用权限待实际请求确认。" : selectedModel ? "使用目录中的完整版本 ID，不替换为其他模型。" : "自定义模型 ID；请选择对应接口类型，也可编辑完整 JSON。"}</small></label>
         <label className="playground-field"><span>提示词<button type="button" disabled={advanced || pending} onClick={() => setPrompt(examples[mode])}><Icon name="sparkles" size={13} />试试示例</button></span><textarea aria-label="TokenHub 提示词" rows={5} maxLength={10000} value={prompt} onChange={event => setPrompt(event.target.value)} placeholder={mode === "video" ? "描述场景、主体动作和镜头运动…" : mode === "image" ? "描述画面、构图、光线和风格…" : "输入你的消息…"} disabled={advanced || pending} /><small>{prompt.length.toLocaleString()} / 10,000</small></label>
         {mode === "video" ? <>
-          <div className="tokenhub-field-pair"><label className="playground-field"><span>时长</span><select aria-label="视频时长" value={duration} onChange={event => setDuration(event.target.value)} disabled={advanced || pending}><option value="-1">模型自动</option>{Array.from({ length: 12 }, (_, index) => index + 4).map(value => <option key={value} value={value}>{value} 秒</option>)}</select></label><label className="playground-field"><span>分辨率</span><select aria-label="视频分辨率" value={resolution} onChange={event => setResolution(event.target.value)} disabled={advanced || pending}>{["480p", "720p", "1080p"].map(value => <option key={value} value={value}>{value}</option>)}</select></label></div>
+          <div className="tokenhub-field-pair"><label className="playground-field"><span>时长</span><select aria-label="视频时长" value={duration} onChange={event => setDuration(event.target.value)} disabled={advanced || pending}><option value="-1">模型自动</option>{Array.from({ length: 12 }, (_, index) => index + 4).map(value => <option key={value} value={value}>{value} 秒</option>)}</select></label><label className="playground-field"><span>分辨率</span><select aria-label="视频分辨率" value={resolution} onChange={event => setResolution(event.target.value)} disabled={advanced || pending}>{["480p", "720p", "1080p"].filter(value => value !== "1080p" || !/seedance.*fast/i.test(model)).map(value => <option key={value} value={value}>{value}</option>)}</select></label></div>
           <label className="playground-field"><span>画面比例</span><select aria-label="视频比例" value={ratio} onChange={event => setRatio(event.target.value)} disabled={advanced || pending}>{["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "adaptive"].map(value => <option key={value} value={value}>{value === "adaptive" ? "自动适配" : value}</option>)}</select></label>
           <label className="playground-field"><span>参考图片 <small>选填</small></span><input aria-label="TokenHub 参考图片 URL" type="url" value={reference} onChange={event => setReference(event.target.value)} placeholder="https://…" disabled={advanced || pending} />{reference.trim() ? <select aria-label="参考图片用途" value={referenceRole} onChange={event => setReferenceRole(event.target.value)} disabled={advanced || pending}><option value="first_frame">首帧画面</option><option value="reference_image">参考图像</option></select> : null}</label>
           <label className="playground-check"><input type="checkbox" checked={generateAudio} onChange={event => setGenerateAudio(event.target.checked)} disabled={advanced || pending} />同时生成音频</label>
         </> : mode === "image" ? <label className="playground-field"><span>图片尺寸</span><select aria-label="TokenHub 图片尺寸" value={imageSize} onChange={event => setImageSize(event.target.value)} disabled={advanced || pending}>{["1K", "2K", "4K"].map(value => <option key={value} value={value}>{value}</option>)}</select></label> : null}
         <button className={`tokenhub-advanced-toggle${advanced ? " selected" : ""}`} type="button" onClick={toggleAdvanced} aria-pressed={advanced} disabled={pending}><Icon name="code" size={14} />{advanced ? "返回参数表单" : "编辑完整 JSON"}<Icon name="arrow-right" size={14} /></button>
-        <p className="tokenhub-parameter-help">各模型支持的尺寸、时长与素材类型不同。多图、参考视频及其他参数可在 JSON 中设置。</p>
+        <p className="tokenhub-parameter-help">各模型支持的尺寸、时长与素材类型不同。多图、参考视频及其他参数可在 JSON 中设置。{selectedModel?.limitations?.length ? ` ${selectedModel.limitations.join("；")}` : ""}</p>{unknownModels.length ? <details className="tokenhub-parameter-help"><summary>{unknownModels.length} 个模型尚未识别接口类型</summary><p>{unknownModels.map(item => item.id).join("、")}。目录记录已保留，可根据模型文档选择接口并填写完整 ID。</p></details> : null}
       </div>
       <div className="playground-run-area"><button className="playground-run" type="button" disabled={pending || !provider?.configured || (!advanced && (!model.trim() || !prompt.trim()))} onClick={submit}><Icon name={pending ? "clock" : "bolt"} size={16} />{pending ? "正在提交…" : mode === "video" ? "创建视频任务" : mode === "image" ? "生成图片" : "发送对话"}<Icon name="arrow-right" size={16} /></button><span><i />实际调用 · 消耗 TokenHub 账户额度</span></div>
     </section>
     <section className="playground-workspace" aria-label="TokenHub 工作台">
-      <header className="playground-workspace-header"><div><h1>从想法，到作品。</h1><span>TIANSHU TOKENHUB · ECO-GEO</span></div><a href="https://docs.ai-tokenhub.ai/en/ai.TokenHub" target="_blank" rel="noopener noreferrer"><Icon name="book" size={15} />接口文档<Icon name="arrow-up-right" size={14} /></a></header>
+      <header className="playground-workspace-header"><div><h1>全部模型，一个入口。</h1><span>TIANSHU TOKENHUB · ECO-GEO API</span></div><a href="https://docs.ai-tokenhub.ai/en/ai.TokenHub" target="_blank" rel="noopener noreferrer"><Icon name="book" size={15} />接口文档<Icon name="arrow-up-right" size={14} /></a></header>
       <div className="playground-notice"><span className="playground-notice-dot" /><p>{provider === null ? "正在读取服务配置…" : provider.configured ? "由 ECO-GEO 统一转发，使用后台保存的 TokenHub 密钥。" : "配置 TokenHub API Key 后，即可在这里发起模型请求。"}</p><Link href="/admin">管理连接 <Icon name="arrow-right" size={13} /></Link></div>
+      {modelError || catalog?.warnings.length ? <div className="tokenhub-error" role="status"><Icon name="info" size={15} /><span>{modelError || catalog?.warnings.join("；")} 当前展示已成功读取的模型，未用预设补充为已验证目录。</span></div> : null}
       <div className="tokenhub-output-tabs" role="tablist" aria-label="工作台内容"><button type="button" role="tab" aria-selected={tab === "result"} className={tab === "result" ? "selected" : ""} onClick={() => setTab("result")}><Icon name="sparkles" size={14} />生成结果</button><button type="button" role="tab" aria-selected={tab === "request"} className={tab === "request" ? "selected" : ""} onClick={() => setTab("request")}><Icon name="code" size={14} />请求代码</button><button type="button" role="tab" aria-selected={tab === "tasks"} className={tab === "tasks" ? "selected" : ""} onClick={() => { setTab("tasks"); if (!tasksLoaded) void loadTasks(); }}><Icon name="clock" size={14} />视频任务</button></div>
       {error ? <div className="tokenhub-error" role="alert"><Icon name="info" size={15} /><span>{error}</span></div> : null}
       {tab === "request" ? <div className="playground-preview-area">

@@ -4,6 +4,46 @@ Checked on 2026-10-18 against TokenHub's official documentation, public
 marketplace examples, and the signed-in API-key setup dialog. No account
 credentials, redemption codes, or API keys belong in this document.
 
+## ECO-GEO client integration
+
+Client applications use an administrator-owned **ECO-GEO API key** with
+`Authorization: Bearer YOUR_ECO_GEO_API_KEY` at `https://api.eco-geo.org`.
+The TokenHub key stays encrypted in the gateway's provider configuration.
+The following gateway operations are available:
+
+| Operation | ECO-GEO method and path |
+| --- | --- |
+| Combined model and pricing catalog | `GET /api/tokenhub/v1/models` |
+| Chat completions | `POST /api/tokenhub/v1/chat/completions` |
+| Generate an image | `POST /api/tokenhub/v3/images/generations` |
+| Create a video task | `POST /api/tokenhub/v3/contents/generations/tasks` |
+| List this ECO-GEO user's video tasks | `GET /api/tokenhub/v3/contents/generations/tasks` |
+| Query or cancel this user's task | `GET` / `DELETE /api/tokenhub/v3/contents/generations/tasks/{id}` |
+
+The nine-model reference on 2026-10-18 contains four chat versions
+(`glm-5-3-flash-260828`, `glm-5-2-260617`,
+`deepseek-v4-pro-ga-260813`, `deepseek-v4-flash-ga-260731`), one image version
+(`dola-seedream-5-0-pro-260628`), and four video versions
+(`dreamina-seedance-2-0-260128`, `dreamina-seedance-2-0-fast-260128`,
+`dreamina-seedance-2-0-mini-260615`, `dreamina-seedance-2-5-260628`).
+Use the full version ID in the `model` field of the matching operation.
+
+The authenticated `/tokenhub` workbench reads the combined live catalog from
+the server, groups every recognized model by its endpoint type, and builds
+cURL examples against the ECO-GEO routes above. A link such as
+`/tokenhub?model=dreamina-seedance-2-5-260628&category=video` only selects the
+model; it does not submit a request. Full JSON and custom IDs remain available.
+The public `/models` page distinguishes TokenHub from APIMart and sends each
+model to the corresponding workbench. Its TokenHub cards are a dated reference;
+the authenticated live catalog remains authoritative for new model discoveries.
+
+Catalog coverage, credential validation, relay implementation, and successful
+model inference are separate states. If pricing discovery fails, the workbench
+shows the authenticated model API's partial list and the source failure; it
+does not invent media entries. Public-pricing-only entries explicitly retain
+unverified account access. Unknown endpoint types stay visible in the catalog
+without being labeled as a supported adapter.
+
 ## Endpoints and authentication
 
 The upstream origin is `https://ai-tokenhub.ai`. Requests use
@@ -120,6 +160,11 @@ The query reference lists `queued`, `running`, `cancelled`, `succeeded`,
 for 24 hours, and task records as retained for seven days. Do not describe a
 temporary URL as permanent storage.
 
+The workbench omits `return_last_frame` from its default video request because
+support is not confirmed for every listed version. A caller may opt in through
+the full JSON editor after checking the selected model's documentation; the
+preview still displays a last-frame URL if the upstream returns one.
+
 DELETE cancels a queued task. It deletes the record of succeeded, failed, or
 expired tasks. Running and already-cancelled tasks cannot be deleted according
 to the reference. Query and deletion must remain scoped to the ECO-GEO user who
@@ -135,6 +180,10 @@ The image reference describes optional `image` URL(s), group generation with
 `stream`, and model-dependent output formats. Results contain `data[].url` or
 `data[].b64_json`, optional `data[].size` / `data[].error`, and usage counts.
 Supported sizes and group-generation limits depend on the chosen model.
+The 2026-10-18 Seedream 5.0 Pro audit returned `InvalidParameter10508` for
+`sequential_image_generation`; omit that field from the default request,
+including an explicit `disabled` value. The workbench's default image request
+uses only the model, prompt, size, watermark, and URL response format.
 
 Chat uses `model`, `messages`, optional `temperature`, `max_tokens`, `stream`,
 and `stop`; non-streaming output is OpenAI-compatible `choices` and `usage`.

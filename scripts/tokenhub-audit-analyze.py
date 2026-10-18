@@ -467,7 +467,7 @@ def analyze(evidence, tokenizers, evidence_hash):
             "dailyCapability": daily_scores(cases), "pairs": pairs, "cases": cases,
             "limitations": ["No official API control group: capability scores do not establish model identity or human IQ.",
                             "Pinned tokenizers provide independent counts, but upstream model mapping, prompt framing and hidden reasoning are unverified.",
-                            "Short/long pairs reuse subitems; 112 requests are not 112 independent model-identity trials.",
+                            "Short/long pairs and cross-model prompts reuse subitems; request counts are not counts of independent model-identity trials.",
                             "Daily capability rows are separated by requested max_tokens; do not combine different configuration cohorts into one trend.",
                             "Usage estimates do not prove actual debits. Price, invoice, cache, reasoning and media metadata require reconciliation.",
                             "No detected anomaly in this sample is not proof of absence."]}

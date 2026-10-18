@@ -26,7 +26,8 @@ const ENV_KEY = "sk-tokenhub-environment-fallback";
 const CONTEXT = "eco-geo/provider/tokenhub/v1";
 const BASE = "https://api.eco-geo.org";
 const cryptoHelpers = await loadModule("../lib/provider-settings.ts");
-const tokenhub = await loadModule("../lib/tokenhub-settings.ts", { "./provider-settings": cryptoHelpers });
+const catalog = await loadModule("../lib/tokenhub-catalog.ts");
+const tokenhub = await loadModule("../lib/tokenhub-settings.ts", { "./provider-settings": cryptoHelpers, "./tokenhub-catalog": catalog });
 const schema = (await Promise.all((await readdir(new URL("../drizzle/", import.meta.url))).filter(name => name.endsWith(".sql")).sort().map(name => readFile(new URL(`../drizzle/${name}`, import.meta.url), "utf8")))).join("\n");
 
 function fixture(t, overrides = {}) {
@@ -96,9 +97,9 @@ test("saving uses the official free catalog with an explicit Bearer credential a
   assert.equal(await service.credential(), KEY);
   assert.equal((await service.test()).modelCount, 1);
   for (const { url, init } of calls) {
-    assert.equal(url, "https://ai-tokenhub.ai/api/v1/models");
+    assert.ok(["https://ai-tokenhub.ai/api/v1/models", "https://ai-tokenhub.ai/api/pricing"].includes(url));
     assert.equal(init.method, "GET");
-    assert.equal(new Headers(init.headers).get("Authorization"), `Bearer ${KEY}`);
+    assert.equal(new Headers(init.headers).get("Authorization"), url.endsWith("/models") ? `Bearer ${KEY}` : null);
     assert.equal(init.redirect, "manual");
     assert.equal(init.cache, "no-store");
     assert.ok(init.signal instanceof AbortSignal);
@@ -202,5 +203,61 @@ test("TokenHub admin routes bound JSON input, preserve no-store headers and rate
   assert.equal((await statusResponse.json()).tokenhub.source, "saved");
   sqlite.prepare("UPDATE login_rate_limits SET expires_at = '2000-01-01T00:00:00.000Z'").run();
   assert.equal((await handle(request("models"), "models")).status, 200);
-  assert.equal(calls, 6);
+  assert.equal(calls, 12);
+});
+
+const CHAT_MODELS = ["glm-5-3-flash-260828", "glm-5-2-260617", "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731"];
+const VIDEO_MODELS = ["dreamina-seedance-2-0-260128", "dreamina-seedance-2-0-fast-260128", "dreamina-seedance-2-0-mini-260615", "dreamina-seedance-2-5-260628"];
+function fullPricing() {
+  return { currencyCode: "USD", data: [
+    ...CHAT_MODELS.map(id => ({ id, providerName: "chat-provider", baseProviderTypes: ["openai"], deployments: [{ enabled: true, pricing: { input: {}, output: {} } }] })),
+    { id: "dola-seedream-5-0-pro-260628", providerName: "doubao", deployments: [{ enabled: true, pricing: { fixed: { priceUnit: "image" } } }] },
+    ...VIDEO_MODELS.map(id => ({ id, providerName: "doubao", deployments: [{ enabled: true, pricing: { video: { withoutVideo480p: {} } } }] })),
+  ] };
+}
+test("authenticated discovery merges all nine models with exact ECO endpoints and distinguishes public catalog from account access", async t => {
+  const { env } = fixture(t, { TOKENHUB_API_KEY: ENV_KEY }), calls = [];
+  const service = tokenhub.createTokenHubSettings(env, async (url, init) => {
+    calls.push({ url, init });
+    return url.endsWith("/models") ? modelsResponse(CHAT_MODELS.map(id => ({ id, modelType: "chat", owned_by: "official-chat" }))) : Response.json(fullPricing());
+  });
+  const result = await service.models();
+  assert.equal(result.models.length, 9); assert.equal(result.catalog.complete, true);
+  assert.equal(result.catalog.sources[0].modelCount, 4); assert.equal(result.catalog.sources[1].modelCount, 9);
+  for (const model of result.models) {
+    assert.equal(model.integrationStatus, "ready");
+    assert.equal(model.accountAccess, CHAT_MODELS.includes(model.id) ? "listed_by_authenticated_model_api" : "unverified_public_catalog");
+    const path = CHAT_MODELS.includes(model.id) ? "/v1/chat/completions" : VIDEO_MODELS.includes(model.id) ? "/v3/contents/generations/tasks" : "/v3/images/generations";
+    assert.equal(model.endpoint, `/api/tokenhub${path}`);
+    assert.ok(model.limitations.includes("non_streaming_json_only"));
+  }
+  assert.equal(result.models.find(model => model.id === VIDEO_MODELS[3]).taskEndpoint, "/api/tokenhub/v3/contents/generations/tasks/{task_id}");
+  assert.equal(calls[0].init.headers.Authorization, `Bearer ${ENV_KEY}`); assert.equal(calls[1].init.headers.Authorization, undefined);
+  assertRedacted(result, ENV_KEY, SECRET);
+});
+
+test("catalog discovers future model IDs without pretending unsupported media protocols are integrated", async t => {
+  const { env } = fixture(t, { TOKENHUB_API_KEY: ENV_KEY });
+  const service = tokenhub.createTokenHubSettings(env, async url => {
+    if (url.endsWith("/models")) return modelsResponse(CHAT_MODELS.map(id => ({ id, modelType: "chat" })));
+    const pricing = fullPricing();
+    pricing.data.push({ id: "vendor-future-video", name: `Future ${ENV_KEY}`, deployments: [{ pricing: { video: {} } }] }, { id: "future-audio", modelType: "audio", deployments: [] });
+    return Response.json(pricing);
+  });
+  const result = await service.models(); assert.equal(result.models.length, 11);
+  const extra = result.models.find(model => model.id === "vendor-future-video");
+  assert.equal(extra.modelType, "video"); assert.equal(extra.integrationStatus, "catalog_only"); assert.equal(extra.endpoint, null);
+  assert.ok(extra.limitations.includes("adapter_not_verified")); assertRedacted(result, ENV_KEY);
+  assert.equal(result.models.find(model => model.id === "future-audio").modelType, "unknown");
+});
+
+test("invalid credentials never fall through to public prices and unavailable pricing returns an explicitly incomplete catalog", async t => {
+  const { env } = fixture(t, { TOKENHUB_API_KEY: ENV_KEY }), calls = [];
+  const rejected = tokenhub.createTokenHubSettings(env, async url => { calls.push(url); return new Response(null, { status: 401 }); });
+  await assert.rejects(rejected.models(), error => error.status === 422);
+  assert.equal(calls.length, 1); assert.ok(calls[0].endsWith("/models"));
+  for (const pricing of [new Response(null, { status: 503 }), Response.json({ currencyCode: "USD", data: [{ id: null }] }), Response.json({ currencyCode: "USD", data: [] })]) {
+    const service = tokenhub.createTokenHubSettings(env, async url => url.endsWith("/models") ? modelsResponse(CHAT_MODELS.map(id => ({ id, modelType: "chat" }))) : pricing);
+    const result = await service.models(); assert.equal(result.models.length, 4); assert.equal(result.catalog.complete, false); assert.equal(result.catalog.sources[1].status, "unavailable"); assert.equal(result.catalog.warnings.length, 1);
+  }
 });

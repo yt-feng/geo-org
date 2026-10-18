@@ -1,3 +1,5 @@
+import { TOKENHUB_REFERENCE_MODELS } from "./tokenhub-model-reference";
+
 export type ModelCategory = "image" | "video" | "text" | "audio";
 export type CatalogModel = {
   id: string;
@@ -7,6 +9,7 @@ export type CatalogModel = {
   description: string;
   capabilities: string[];
   docs: string;
+  upstream?: "apimart" | "tokenhub";
 };
 
 export const modelCategories: Array<{ id: ModelCategory; label: string; icon: string }> = [
@@ -39,6 +42,23 @@ export const modelCatalog: CatalogModel[] = [
   { id: "suno", name: "Suno", provider: "SUNO", category: "audio", description: "从灵感描述开始生成音乐，也可以围绕歌词设计一首歌。", capabilities: ["音乐生成", "歌词生成"], docs: docs + "audios/suno/generation" },
 ];
 
+// This dated public reference supplements, rather than replaces, the authenticated live catalog.
+// Keep APIMart's preview catalog separate so TokenHub models cannot use its request builder.
+export const tokenhubModelCatalog: CatalogModel[] = TOKENHUB_REFERENCE_MODELS.map(model => ({
+  id: model.id,
+  name: model.name,
+  upstream: "tokenhub",
+  provider: model.id.startsWith("glm-") ? "ZHIPU" : model.id.startsWith("deepseek-") ? "DEEPSEEK" : "BYTEDANCE",
+  category: model.kind === "chat" ? "text" : model.kind,
+  description: model.kind === "chat" ? "通过 ECO-GEO 统一接口调用此完整版本，使用对话与文本生成能力。" : model.kind === "image" ? "在 ECO-GEO 发起图像生成请求，统一记录上游响应和用量。" : "通过 ECO-GEO 创建视频任务，使用同一接口查询生成状态和结果。",
+  capabilities: model.kind === "chat" ? ["文本生成", "对话"] : model.kind === "image" ? ["文生图"] : ["文生视频", "任务查询"],
+  docs: "/dashboard/docs?provider=tokenhub",
+}));
+export const allModelCatalog: CatalogModel[] = [...tokenhubModelCatalog, ...modelCatalog];
+export function modelWorkbenchUrl(model: CatalogModel) {
+  return `${model.upstream === "tokenhub" ? "/tokenhub" : "/playground"}?model=${encodeURIComponent(model.id)}&category=${model.category}`;
+}
+
 export function providerInitials(provider: string) {
-  return ({ OPENAI: "◎", GOOGLE: "G", BYTEDANCE: "|||", "BLACK FOREST LABS": "F.", KUAISHOU: "K", ALIBABA: "Q", ANTHROPIC: "A", SUNO: "S" } as Record<string, string>)[provider] || provider.slice(0, 1);
+  return ({ OPENAI: "◎", GOOGLE: "G", BYTEDANCE: "|||", "BLACK FOREST LABS": "F.", KUAISHOU: "K", ALIBABA: "Q", ANTHROPIC: "A", SUNO: "S", ZHIPU: "Z", DEEPSEEK: "D" } as Record<string, string>)[provider] || provider.slice(0, 1);
 }
