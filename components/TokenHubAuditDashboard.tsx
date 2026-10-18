@@ -20,6 +20,7 @@ const strings = (value: unknown) => Array.isArray(value) ? value.filter((item): 
 const kindOf = (value: unknown): ModelKind => ["chat", "image", "video"].includes(string(value)) ? value as ModelKind : "unknown";
 const kindName: Record<ModelKind, string> = { chat: "文本", image: "图片", video: "视频", unknown: "待分类" };
 const accentFor = (kind: ModelKind, id: string) => kind === "image" ? "#d49bb9" : kind === "video" ? "#89bdb1" : /deepseek/.test(id) ? "#9eaef0" : kind === "chat" ? "#eac170" : "#a8b2c2";
+const modelLabel = (label: unknown, id: string) => typeof label === "string" && label && label !== id ? label : id.replace(/^(dola|dreamina)-/, "").replace(/-(?:ga-)?\d{6}$/, "").replace(/(\d)-(?=\d)/g, "$1.").replaceAll("-", " ").replace(/\bglm\b/gi, "GLM").replace(/\bdeepseek\b/gi, "DeepSeek").replace(/\b(seedance|seedream|flash|pro|mini|fast|v\d+)\b/gi, word => word[0].toUpperCase() + word.slice(1));
 const money = (micros: number, digits = 2) => `$${(micros / 1_000_000).toFixed(digits)}`;
 const time = (value: string) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }); };
 const dayDate = (start: string | undefined, day: number) => { if (!start) return "启动后排期"; const date = new Date(new Date(start).getTime() + day * 86400000); return Number.isNaN(date.getTime()) ? "待排期" : date.toLocaleDateString("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit" }); };
@@ -43,7 +44,7 @@ function parseStatus(value: unknown): AuditStatus {
   for (const item of catalogModels) { const id = string(item.model); if (id) discovered.set(id, item); }
   const models: AuditModel[] = Array.from(discovered, ([id, item]) => {
     const kind = kindOf(item.kind);
-    return { id, name: string(item.label, id), kind, accent: accentFor(kind, id), sources: strings(item.sources), catalogState: string(item.catalogState, "unobserved"), lastSeenAt: string(item.lastSeenAt), adapterSupported: item.paidAdapterSupported === true, plannedCalls: number(item.plannedCalls, cases.filter(record => record.requestedModel === id).length), observedDays: number(item.observedDays) };
+    return { id, name: modelLabel(item.label, id), kind, accent: accentFor(kind, id), sources: strings(item.sources), catalogState: string(item.catalogState, "unobserved"), lastSeenAt: string(item.lastSeenAt), adapterSupported: item.paidAdapterSupported === true, plannedCalls: number(item.plannedCalls, cases.filter(record => record.requestedModel === id).length), observedDays: number(item.observedDays) };
   });
   const days: DayResult[] = [];
   for (const day of Array.isArray(source.days) ? source.days.map(object) : []) {
@@ -102,7 +103,7 @@ function ScoreCard({ result, baseline, model, future, day, stopped }: { result?:
   const delta = hasScore && baseline && baseline.scored > 0 && baseline.score !== null && day > 0 ? result.score! - baseline.score : null;
   const score = hasScore ? Math.max(0, Math.min(100, result.score!)) : null;
   const planned = result?.planned || 0;
-  const label = result?.requests ? (hasScore ? `${result.scored} 题项 · ${result.requests}/${planned} 请求` : `${result.requests}/${planned} 请求 · 无可评分答案`) : result?.missed ? `错过时段 · ${result.missed} 请求` : !planned ? "当日无付费抽样" : stopped ? "后续付费测试已停止" : future ? "未来待测" : "等待测试";
+  const label = result?.requests ? (hasScore ? `${result.scored} 题项 · ${result.requests}/${planned} 请求` : `${result.requests}/${planned} 请求 · 无可评分答案`) : result?.missed ? `错过时段 · ${result.missed} 请求` : result?.states.includes("price_blocked") ? "价格校验未通过 · 未调用" : !planned ? "当日无付费抽样" : stopped ? "后续付费测试已停止" : future ? "未来待测" : "等待测试";
   const note = !model.adapterSupported ? "调用适配待补齐 · 保留目录观测" : !model.plannedCalls ? "$5 内未安排付费测试" : planned ? `当日计划 ${planned} 请求 · 长短输入配对` : "目录继续观测 · 付费按计划抽样";
   return <div className={`audit-score-card${hasScore ? " has-score" : " is-empty"}${future && !result?.requests ? " is-future" : ""}`}>
     <div className="audit-card-top"><span>{hasScore ? "标准答案正确率" : planned ? "付费能力检测" : "目录与价格观测"}</span><small>{result?.requests || 0}/{planned}</small></div>
