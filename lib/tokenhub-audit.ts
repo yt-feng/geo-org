@@ -1,6 +1,8 @@
 import type { RuntimeEnv } from "./config";
 import { decryptProviderKey, encryptProviderKey } from "./provider-settings";
-import { AUDIT_BUDGET_MICROS, AUDIT_CHAT_MODELS, AUDIT_CHAT_POLICIES, AUDIT_PLAN_VERSION, AUDIT_SLOT_MS, AUDIT_SLOTS, auditCases, gradeAuditAnswer, type AuditCase } from "./tokenhub-audit-cases";
+import { AUDIT_BUDGET_MICROS, AUDIT_CHAT_MODELS, AUDIT_CHAT_POLICIES, AUDIT_VIDEO_POLICIES, AUDIT_PLAN_VERSION, AUDIT_SLOT_MS, AUDIT_SLOTS, auditCases, gradeAuditAnswer, type AuditCase } from "./tokenhub-audit-cases";
+
+import { knownAuditModels, normalizeAuditCatalog, validCatalogSource, type CatalogModel, type CatalogSnapshotRow } from "./tokenhub-audit-catalog";
 
 export const AUDIT_PAID_TIMEOUT_MS = 300_000;
 const ORIGIN = "https://ai-tokenhub.ai";
@@ -71,7 +73,9 @@ export function auditPriceRates(snapshot: unknown, spec: Pick<AuditCase, "kind" 
       return { image: amount(p.fixed, 120_000, false) };
     }
     if (!object(p.video)) throw new AuditError("视频价格缺失，审计已暂停。", 409);
-    return { video: amount(p.video.withoutVideo480p, 9_000_000, true) };
+    const policy = AUDIT_VIDEO_POLICIES[spec.model];
+    if (!policy) throw new AuditError("视频模型尚未配置已验证的付费审计策略。", 409);
+    return { video: amount(p.video.withoutVideo480p, policy.rateMicros, true) };
   });
   if (new Set(candidates.map(value => JSON.stringify(value))).size !== 1) throw new AuditError("模型不同部署的价格不一致，审计已暂停。", 409);
   return candidates[0];
@@ -166,9 +170,50 @@ function storedSpec(row: CaseRow): AuditCase {
   return { id: row.case_id, kind: row.kind as AuditCase["kind"], model: row.model, reservedMicros: row.reserved_micros, body, expected };
 }
 function projectedReservation(campaignId: string, rows: CaseRow[]) {
-  const saved = new Map(rows.map(row => [`${row.slot}/${row.case_id}`, row]));
-  return Array.from({ length: AUDIT_SLOTS }, (_, slot) => auditCases(campaignId, slot).reduce((sum, spec) => sum + (saved.get(`${slot}/${spec.id}`)?.reserved_micros ?? spec.reservedMicros), 0)).reduce((sum, value) => sum + value, 0);
+  const saved = new Set(rows.map(row => `${row.slot}/${row.case_id}`));
+  // Include every historical reservation even when a newer schedule omits its slot.
+  return rows.reduce((sum, row) => sum + row.reserved_micros, 0) +
+    Array.from({ length: AUDIT_SLOTS }, (_, slot) => auditCases(campaignId, slot).reduce((sum, spec) => sum + (saved.has(`${slot}/${spec.id}`) ? 0 : spec.reservedMicros), 0)).reduce((sum, value) => sum + value, 0);
 }
+async function observeCatalog(env: RuntimeEnv, campaign: Campaign, key: string, now: Date) {
+  const day = Math.floor((now.getTime() - new Date(campaign.started_at).getTime()) / DAY);
+  if (day < 0 || day > 6 || now.getTime() >= new Date(campaign.ends_at).getTime()) return;
+  // A leased daily claim prevents concurrent ticks from duplicating free reads.
+  // Successful snapshots are immutable; failed attempts have a bounded backoff.
+  const lease = date(new Date(now.getTime() + 15 * 60_000));
+  const claim = await db(env).prepare(`INSERT INTO tokenhub_audit_catalog_snapshots (campaign_id,day,state,attempt_count,next_attempt_at,updated_at)
+    VALUES (?,?,'fetching',1,?,?) ON CONFLICT(campaign_id,day) DO UPDATE SET state='fetching',attempt_count=attempt_count+1,next_attempt_at=excluded.next_attempt_at,updated_at=excluded.updated_at
+    WHERE tokenhub_audit_catalog_snapshots.state!='succeeded' AND tokenhub_audit_catalog_snapshots.attempt_count<8 AND tokenhub_audit_catalog_snapshots.next_attempt_at<=?
+    RETURNING *`).bind(campaign.id, day, lease, date(now), date(now)).first<CatalogSnapshotRow>();
+  if (!claim) return;
+  const sources = await Promise.all((['models', 'pricing'] as const).map(async source => {
+    const existing = parse(source === 'models' ? claim.models_json : claim.pricing_json);
+    if (validCatalogSource(existing, source)) return { source, value: existing, error: null };
+    try {
+      const response = await fetch(ORIGIN + (source === 'models' ? '/api/v1/models' : '/api/pricing'), { headers: source === 'models' ? { Authorization: `Bearer ${key}`, Accept: 'application/json' } : { Accept: 'application/json' }, redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(10_000) });
+      if (!response.ok) return { source, value: null, error: `${source}:http_${response.status}` };
+      const value = sanitize(await readJson(response), key);
+      return validCatalogSource(value, source) ? { source, value, error: null } : { source, value, error: `${source}:invalid_or_empty_catalog` };
+    } catch { return { source, value: null, error: `${source}:unavailable` }; }
+  }));
+  const models = sources[0].value, pricing = sources[1].value, errors = sources.flatMap(item => item.error ? [item.error] : []);
+  const modelValid = validCatalogSource(models, "models"), priceValid = validCatalogSource(pricing, "pricing");
+  const modelJson = models ? JSON.stringify(models) : null, priceJson = pricing ? JSON.stringify(pricing) : null;
+  await db(env).prepare(`UPDATE tokenhub_audit_catalog_snapshots SET state=?,next_attempt_at=?,models_json=?,models_hash=?,pricing_json=?,pricing_hash=?,catalog_json=?,error_json=?,fetched_at=?,updated_at=? WHERE campaign_id=? AND day=? AND attempt_count=?`)
+    .bind(errors.length === 0 ? 'succeeded' : modelValid || priceValid ? 'partial' : 'failed', date(new Date(now.getTime() + Math.min(180, 15 * 2 ** (claim.attempt_count - 1)) * 60_000)), modelJson, modelJson ? await hash(modelJson) : null, priceJson, priceJson ? await hash(priceJson) : null, JSON.stringify(normalizeAuditCatalog(modelValid ? models : null, priceValid ? pricing : null)), JSON.stringify(errors), date(now), date(now), campaign.id, day, claim.attempt_count).run();
+}
+
+// Explicit dashboard refresh observes public metadata only; it never runs inference.
+export async function refreshAuditCatalog(env: RuntimeEnv, now = new Date()) {
+  date(now);
+  const campaign = await latest(env); if (!campaign) throw new AuditError("尚未创建审计。", 404);
+  let key: string;
+  try { key = await decryptProviderKey(campaign.encrypted_key, env.ADMIN_SESSION_SECRET, KEY_CONTEXT); }
+  catch { throw new AuditError("审计专用密钥不可读取；未改用业务密钥。", 409); }
+  await observeCatalog(env, campaign, key, now);
+  return getAuditStatus(env);
+}
+
 async function pollVideos(env: RuntimeEnv, campaign: Campaign, key: string, now: Date) {
   const rows = (await db(env).prepare("SELECT * FROM tokenhub_audit_cases WHERE campaign_id=? AND state='pending_video' AND next_poll_at<=? ORDER BY next_poll_at LIMIT 2").bind(campaign.id, date(now)).all<CaseRow>()).results ?? [];
   for (const row of rows) {
@@ -197,6 +242,7 @@ export async function runAuditTick(env: RuntimeEnv, options: { maxCases?: number
   const campaign = await latest(env); if (!campaign) return getAuditStatus(env);
   let key: string;
   try { key = await decryptProviderKey(campaign.encrypted_key, env.ADMIN_SESSION_SECRET, KEY_CONTEXT); } catch { await pause(env, campaign.id, "审计专用密钥不可读取；未改用业务密钥。", now); return getAuditStatus(env); }
+  await observeCatalog(env, campaign, key, now);
   await pollVideos(env, campaign, key, now);
   if (now.getTime() >= new Date(campaign.ends_at).getTime()) {
     await db(env).prepare("UPDATE tokenhub_audit_campaigns SET state='completed',updated_at=? WHERE id=? AND state='active'").bind(date(now), campaign.id).run();
@@ -274,37 +320,64 @@ export async function runAuditTick(env: RuntimeEnv, options: { maxCases?: number
 
 export async function getAuditStatus(env: RuntimeEnv, includeEvidence = false) {
   const campaign = await latest(env);
-  if (!campaign) return { configured: false, campaign: null, counts: {}, days: [], cases: [], flags: [] };
+  if (!campaign) return { configured: false, campaign: null, counts: {}, days: [], cases: [], flags: [], catalogModels: [], catalogObservations: [] };
   const rows = (await db(env).prepare("SELECT * FROM tokenhub_audit_cases WHERE campaign_id=? ORDER BY slot,case_id").bind(campaign.id).all<CaseRow>()).results ?? [];
   const byId = new Map(rows.map(row => [`${row.slot}/${row.case_id}`, row]));
+  const snapshots = (await db(env).prepare("SELECT * FROM tokenhub_audit_catalog_snapshots WHERE campaign_id=? ORDER BY day").bind(campaign.id).all<CatalogSnapshotRow>()).results ?? [];
+  const catalogObservations = snapshots.map(row => {
+    const models = (parse(row.catalog_json) ?? []) as CatalogModel[];
+    return { day: row.day + 1, observedAt: row.fetched_at, updatedAt: row.updated_at, status: row.state, attemptCount: row.attempt_count, nextAttemptAt: row.next_attempt_at,
+      modelsHash: row.models_hash, pricingHash: row.pricing_hash, modelCount: models.length, models, errors: (parse(row.error_json) ?? []) as string[],
+      ...(includeEvidence ? { modelsResponse: parse(row.models_json), pricingResponse: parse(row.pricing_json) } : {}) };
+  });
   const now = Date.now(), start = new Date(campaign.started_at).getTime();
-  const cases = Array.from({ length: AUDIT_SLOTS }, (_, slot) => auditCases(campaign.id, slot).map(spec => {
-    const row = byId.get(`${slot}/${spec.id}`), state = row?.state ?? (now >= start + (slot + 1) * AUDIT_SLOT_MS ? "missed" : "planned");
+  const plans = Array.from({ length: AUDIT_SLOTS }, (_, slot) => auditCases(campaign.id, slot).map(spec => ({ slot, spec, retainedFromEarlierPlan: false }))).flat();
+  const plannedKeys = new Set(plans.map(({ slot, spec }) => `${slot}/${spec.id}`));
+  for (const row of rows) if (!plannedKeys.has(`${row.slot}/${row.case_id}`)) plans.push({ slot: row.slot, spec: storedSpec(row), retainedFromEarlierPlan: true });
+  plans.sort((a, b) => a.slot - b.slot || a.spec.id.localeCompare(b.spec.id));
+  const cases = plans.map(({ slot, spec: plannedSpec, retainedFromEarlierPlan }) => {
+    const row = byId.get(`${slot}/${plannedSpec.id}`), spec = row ? storedSpec(row) : plannedSpec, state = row?.state ?? (now >= start + (slot + 1) * AUDIT_SLOT_MS ? "missed" : "planned");
     const evidenceExpected = row ? parse(row.expected_json) : spec.expected, evidenceRequest = row ? parse(row.request_json) : spec.body;
     const planVersion = object(evidenceExpected) && typeof evidenceExpected.protocolVersion === "string" ? evidenceExpected.protocolVersion : row ? "tokenhub-audit-v1" : AUDIT_PLAN_VERSION;
-    return { slot, caseId: spec.id, planVersion, maxOutputTokens: object(evidenceRequest) && integer(evidenceRequest.max_tokens) ? evidenceRequest.max_tokens : null, kind: spec.kind, requestedModel: spec.model, state, reservedMicros: row?.reserved_micros ?? 0,
+    return { slot, caseId: spec.id, retainedFromEarlierPlan, planVersion, maxOutputTokens: object(evidenceRequest) && integer(evidenceRequest.max_tokens) ? evidenceRequest.max_tokens : null, kind: spec.kind, requestedModel: spec.model, state, reservedMicros: row?.reserved_micros ?? 0,
       submittedAt: row && !["price_blocked", "reserved", "window_expired"].includes(row.state) ? row.submitted_at : null, updatedAt: row?.updated_at ?? null, usage: parse(row?.usage_json), returnedModel: row?.returned_model ?? null,
       derivedExpectedCostMicros: row?.derived_cost_micros ?? null, grading: parse(row?.grading_json), flags: (parse(row?.flags_json) ?? []) as string[], taskId: row?.task_id ?? null,
       httpStatus: row?.http_status ?? null, latencyMs: row?.latency_ms ?? null, requestHash: row?.request_hash ?? null, responseHash: row?.response_hash ?? null,
       independentAnalysis: parse(row?.independent_analysis_json), billingActualMicros: row?.billing_actual_micros ?? null, billingEvidence: parse(row?.billing_evidence_json),
       tokenVerification: object(parse(row?.independent_analysis_json)) ? String((parse(row?.independent_analysis_json) as Json).tokenVerification ?? "provisional") : "pending_official_tokenizer", billingVerification: row?.billing_actual_micros !== null && row?.billing_actual_micros !== undefined && row?.billing_evidence_json ? "recorded" : "pending",
       ...(includeEvidence ? { request: parse(row?.request_json), response: parse(row?.response_json), expected: parse(row?.expected_json), priceSnapshot: parse(row?.price_json), priceHash: row?.price_hash ?? null, creationResponse: parse(row?.creation_json), headers: parse(row?.headers_json), pollCount: row?.poll_count ?? 0 } : {}) };
-  })).flat();
+  });
+  const catalogUnion = new Map(knownAuditModels().map(model => [model.model, { ...model, lastSeenAt: null as string | null }]));
+  for (const model of normalizeAuditCatalog(parse(campaign.catalog_json), null)) catalogUnion.set(model.model, { ...model, lastSeenAt: campaign.started_at });
+  for (const observation of catalogObservations) for (const model of observation.models) catalogUnion.set(model.model, { ...model, lastSeenAt: observation.observedAt });
+  for (const item of cases) if (!catalogUnion.has(item.requestedModel)) catalogUnion.set(item.requestedModel, { model: item.requestedModel, kind: item.kind, label: item.requestedModel, sources: [], enabled: null, lastSeenAt: null });
+  const latestComplete = [...catalogObservations].reverse().find(item => item.status === "succeeded");
+  const supported = new Set(knownAuditModels().map(item => item.model));
+  const catalogModels = Array.from(catalogUnion.values()).map(model => ({ ...model,
+    catalogState: !model.lastSeenAt ? "unobserved" : latestComplete?.observedAt && latestComplete.observedAt >= model.lastSeenAt && !latestComplete.models.some(item => item.model === model.model) ? "disappeared" : "present",
+    paidAdapterSupported: supported.has(model.model), plannedCalls: cases.filter(item => item.requestedModel === model.model).length,
+    observedDays: catalogObservations.filter(day => day.status === "succeeded" && day.models.some(item => item.model === model.model)).length,
+  }));
   const reservedMicros = rows.reduce((sum, row) => sum + row.reserved_micros, 0), counts: Record<string, number> = {};
   for (const item of cases) counts[item.state] = (counts[item.state] ?? 0) + 1;
   const days = Array.from({ length: 7 }, (_, dayIndex) => ({ day: dayIndex + 1, date: new Date(start + dayIndex * DAY + 8 * 3600_000).toISOString().slice(0, 10), startsAt: new Date(start + dayIndex * DAY).toISOString(), endsAt: new Date(start + (dayIndex + 1) * DAY).toISOString(),
-    models: AUDIT_CHAT_MODELS.map(model => {
+    models: catalogModels.map(entry => {
+      const model = entry.model, observation = catalogObservations.find(item => item.day === dayIndex + 1);
+      const inCatalog = observation?.models.some(item => item.model === model) ?? false;
       const selected = cases.filter(item => item.requestedModel === model && Math.floor(item.slot / 2) === dayIndex);
       const grades = selected.map(item => item.grading).filter((grade): grade is Json => object(grade) && integer(grade.total) && grade.total > 0);
       const correct = grades.reduce((sum, grade) => sum + Number(grade.correct || 0), 0), items = grades.reduce((sum, grade) => sum + Number(grade.total), 0);
       const recorded = selected.filter(item => item.submittedAt), costs = selected.map(item => item.derivedExpectedCostMicros).filter((value): value is number => value !== null);
       const pending = selected.filter(item => ["planned", "reserved", "submitting"].includes(item.state)).length, missed = selected.filter(item => ["missed", "window_expired"].includes(item.state)).length;
       const latencies = selected.map(item => item.latencyMs).filter((value): value is number => value !== null);
-      return { model, planned: 4, requests: recorded.length, missed, pending, correct, items, score: items ? correct / items * 100 : null,
+      return { model, kind: entry.kind, catalogObserved: observation?.status === "succeeded" && inCatalog,
+        catalogState: inCatalog ? "present" : observation?.status === "succeeded" ? "absent" : observation ? "unverified" : "pending",
+        inferenceState: recorded.length ? "tested" : !entry.paidAdapterSupported ? "adapter_pending" : selected.length === 0 ? "not_scheduled" : missed === selected.length ? "missed" : "scheduled",
+        planned: selected.length, requests: recorded.length, missed, pending, correct, items, score: entry.kind === "chat" && items ? correct / items * 100 : null,
         latencyMs: latencies.length ? latencies.reduce((sum, value) => sum + value, 0) / latencies.length : null,
         derivedExpectedCostMicros: costs.length ? costs.reduce((sum, value) => sum + value, 0) : null, relativeToDay1: null as number | null,
-        status: (items === 0 ? recorded.length ? "no_answers" : "pending" : items === 16 ? "complete" : "partial") as "pending" | "partial" | "complete" | "no_answers" };
+        status: (items === 0 ? recorded.length ? "no_answers" : "pending" : items === selected.length * 4 ? "complete" : "partial") as "pending" | "partial" | "complete" | "no_answers" };
     }) }));
   for (const day of days) for (const model of day.models) { const first = days[0].models.find(item => item.model === model.model); if (first?.score !== null && first?.score !== undefined && model.score !== null) model.relativeToDay1 = model.score - first.score; }
-  return { configured: true, campaign: { id: campaign.id, state: campaign.state, startedAt: campaign.started_at, endsAt: campaign.ends_at, budgetMicros: campaign.budget_micros, reservedMicros, remainingMicros: Math.max(0, campaign.budget_micros - reservedMicros), keyHint: campaign.key_hint, planVersion: campaign.plan_version, pauseReason: campaign.pause_reason, catalog: parse(campaign.catalog_json), catalogHash: campaign.catalog_hash, plannedCalls: 116, plannedReservationMicros: projectedReservation(campaign.id, rows), identityVerification: "unverified", billingVerification: "pending", tokenVerification: cases.some(item => object(item.independentAnalysis) && item.independentAnalysis.status === "needs_review") ? "needs_review" : cases.some(item => item.independentAnalysis) ? "provisional" : "pending_official_tokenizer" }, counts, days, cases, flags: Array.from(new Set(cases.flatMap(item => item.flags))) };
+  return { configured: true, campaign: { id: campaign.id, state: campaign.state, startedAt: campaign.started_at, endsAt: campaign.ends_at, budgetMicros: campaign.budget_micros, reservedMicros, remainingMicros: Math.max(0, campaign.budget_micros - reservedMicros), keyHint: campaign.key_hint, planVersion: campaign.plan_version, pauseReason: campaign.pause_reason, catalog: parse(campaign.catalog_json), catalogHash: campaign.catalog_hash, plannedCalls: cases.length, plannedReservationMicros: projectedReservation(campaign.id, rows), identityVerification: "unverified", billingVerification: "pending", tokenVerification: cases.some(item => object(item.independentAnalysis) && item.independentAnalysis.status === "needs_review") ? "needs_review" : cases.some(item => item.independentAnalysis) ? "provisional" : "pending_official_tokenizer" }, catalogModels, catalogObservations, counts, days, cases, flags: Array.from(new Set(cases.flatMap(item => item.flags))) };
 }

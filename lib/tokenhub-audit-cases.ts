@@ -1,7 +1,15 @@
-export const AUDIT_PLAN_VERSION = "tokenhub-audit-v2";
+export const AUDIT_PLAN_VERSION = "tokenhub-audit-v3";
 export const AUDIT_SLOT_MS = 12 * 60 * 60 * 1000;
 export const AUDIT_SLOTS = 14;
 export const AUDIT_BUDGET_MICROS = 5_000_000;
+// One paired text round per day, alternating anchor and fresh fixtures.
+export const AUDIT_CHAT_SLOTS = [0, 3, 4, 7, 8, 11, 12] as const;
+export const AUDIT_VIDEO_POLICIES: Record<string, { rateMicros: number; reservedMicros: number }> = {
+  "dreamina-seedance-2-0-260128": { rateMicros: 9_000_000, reservedMicros: 600_000 },
+  "dreamina-seedance-2-0-fast-260128": { rateMicros: 9_000_000, reservedMicros: 600_000 },
+  "dreamina-seedance-2-0-mini-260615": { rateMicros: 9_000_000, reservedMicros: 600_000 },
+  "dreamina-seedance-2-5-260628": { rateMicros: 11_000_000, reservedMicros: 600_000 },
+};
 export const AUDIT_CHAT_MODELS = ["glm-5-3-flash-260828", "glm-5-2-260617", "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731"] as const;
 export const AUDIT_CHAT_POLICIES: Record<string, { inputMicros: number; outputMicros: number; cacheReadMicros: number; reservedMicros: number; maxOutputTokens: number }> = {
   "glm-5-3-flash-260828": { inputMicros: 200_000, outputMicros: 600_000, cacheReadMicros: 200_000, reservedMicros: 10_000, maxOutputTokens: 8192 },
@@ -41,7 +49,7 @@ function task(campaign: string, slot: number) {
 export function auditCases(campaign: string, slot: number): AuditCase[] {
   if (!Number.isInteger(slot) || slot < 0 || slot >= AUDIT_SLOTS) return [];
   const fixture = task(campaign, slot), cases: AuditCase[] = [];
-  for (const model of AUDIT_CHAT_MODELS) for (const variant of ["short", "long"] as const) {
+  if ((AUDIT_CHAT_SLOTS as readonly number[]).includes(slot)) for (const model of AUDIT_CHAT_MODELS) for (const variant of ["short", "long"] as const) {
     const messages = [{ role: "user", content: fixture[variant] }], policy = AUDIT_CHAT_POLICIES[model];
     if (new TextEncoder().encode(JSON.stringify(messages)).length > 4096) throw new Error("Audit prompt exceeds the reserved input bound");
     cases.push({ id: `${model}:${variant}`, kind: "chat", model, reservedMicros: policy.reservedMicros,
@@ -53,6 +61,17 @@ export function auditCases(campaign: string, slot: number): AuditCase[] {
       body: { model: image, prompt: "A red wooden cube to the left of a blue ceramic sphere on a white table, soft studio lighting, exactly two objects, no text.", size: "2K", response_format: "url", watermark: false }, expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Two objects: red cube left, blue sphere right; verify delivered dimensions and image metadata." } });
     cases.push({ id: "seedance-video", kind: "video", model: video, reservedMicros: 600_000,
       body: { model: video, content: [{ type: "text", text: "A red wooden cube sits on the left and a blue ceramic sphere rolls slowly to the right on a white table. One continuous static camera shot, exactly two objects, no text." }], duration: 4, resolution: "480p", ratio: "16:9", generate_audio: false, watermark: false, return_last_frame: true }, expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Verify 4 seconds, 480p, 16:9, no audio and continuous motion using delivered media, not response claims." } });
+  }
+  const extraVideo = ({
+    2: ["seedance-fast-video", "dreamina-seedance-2-0-fast-260128"],
+    6: ["seedance-mini-video", "dreamina-seedance-2-0-mini-260615"],
+    10: ["seedance-2-5-video", "dreamina-seedance-2-5-260628"],
+  } as Record<number, [string, string]>)[slot];
+  if (extraVideo) {
+    const [id, model] = extraVideo;
+    cases.push({ id, kind: "video", model, reservedMicros: AUDIT_VIDEO_POLICIES[model].reservedMicros,
+      body: { model, content: [{ type: "text", text: "A red wooden cube sits on the left and a blue ceramic sphere rolls slowly to the right on a white table. One continuous static camera shot, exactly two objects, no text." }], duration: 4, resolution: "480p", ratio: "16:9", generate_audio: false, watermark: false },
+      expected: { protocolVersion: AUDIT_PLAN_VERSION, manualReview: "Verify 4 seconds, 480p, 16:9, no audio and continuous motion using delivered media, not response claims." } });
   }
   return cases;
 }
