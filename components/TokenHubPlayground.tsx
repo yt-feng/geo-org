@@ -17,6 +17,7 @@ const defaults: Record<Mode, string> = { video: "dreamina-seedance-2-0-260128", 
 const examples: Record<Mode, string> = { video: "镜头缓缓掠过清晨的海岸，柔和的金色阳光照亮浪花，海风轻拂，电影摄影质感。", image: "极简产品摄影：银色耳机置于浅灰色石材上，柔和侧光，干净构图，细腻阴影。", chat: "用三句话介绍统一模型 API 如何帮助开发者快速实现创意。" };
 const statusNames: Record<string, string> = { submitted: "已提交", queued: "排队中", pending: "等待中", running: "生成中", processing: "生成中", succeeded: "已完成", completed: "已完成", success: "已完成", failed: "失败", cancelled: "已取消", canceled: "已取消", expired: "已过期", deleted: "已删除", cancelled_or_deleted: "已取消或删除" };
 const terminal = new Set(["succeeded", "completed", "success", "failed", "cancelled", "canceled", "expired", "deleted", "cancelled_or_deleted"]);
+const limitationLabels: Record<string, string> = { non_streaming_json_only: "返回完整 JSON", eco_geo_owned_tasks_only: "仅管理本账户创建的视频任务", idempotency_key_required: "创建视频需唯一请求编号" };
 
 function record(value: unknown): Json { return value && typeof value === "object" && !Array.isArray(value) ? value as Json : {}; }
 function payloadOf(value: unknown): Json { const root = record(value); return root.id || root.status || root.content ? root : Object.keys(record(root.data)).length ? record(root.data) : root; }
@@ -119,6 +120,7 @@ export function TokenHubPlayground() {
   const options = useMemo(() => models.filter(item => modelMatches(item, mode)), [models, mode]);
   const unknownModels = models.filter(item => !modes.some(mode => modelMatches(item, mode.id)));
   const selectedModel = models.find(item => item.id === model);
+  const selectedLimitations = (selectedModel?.limitations || []).map(item => limitationLabels[item]).filter(Boolean);
   const generated = useMemo(() => {
     if (mode === "chat") return { model, messages: [{ role: "user", content: prompt }], stream: false };
     if (mode === "image") return { model, prompt, size: imageSize, watermark: false, response_format: "url" };
@@ -242,7 +244,7 @@ export function TokenHubPlayground() {
           <label className="playground-check"><input type="checkbox" checked={generateAudio} onChange={event => setGenerateAudio(event.target.checked)} disabled={advanced || pending} />同时生成音频</label>
         </> : mode === "image" ? <label className="playground-field"><span>图片尺寸</span><select aria-label="TokenHub 图片尺寸" value={imageSize} onChange={event => setImageSize(event.target.value)} disabled={advanced || pending}>{["1K", "2K", "4K"].map(value => <option key={value} value={value}>{value}</option>)}</select></label> : null}
         <button className={`tokenhub-advanced-toggle${advanced ? " selected" : ""}`} type="button" onClick={toggleAdvanced} aria-pressed={advanced} disabled={pending}><Icon name="code" size={14} />{advanced ? "返回参数表单" : "编辑完整 JSON"}<Icon name="arrow-right" size={14} /></button>
-        <p className="tokenhub-parameter-help">各模型支持的尺寸、时长与素材类型不同。多图、参考视频及其他参数可在 JSON 中设置。{selectedModel?.limitations?.length ? ` ${selectedModel.limitations.join("；")}` : ""}</p>{unknownModels.length ? <details className="tokenhub-parameter-help"><summary>{unknownModels.length} 个模型尚未识别接口类型</summary><p>{unknownModels.map(item => item.id).join("、")}。目录记录已保留，可根据模型文档选择接口并填写完整 ID。</p></details> : null}
+        <p className="tokenhub-parameter-help">各模型支持的尺寸、时长与素材类型不同。多图、参考视频及其他参数可在 JSON 中设置。{selectedLimitations.length ? ` ${selectedLimitations.join("；")}。` : ""}</p>{unknownModels.length ? <details className="tokenhub-parameter-help"><summary>{unknownModels.length} 个模型尚未识别接口类型</summary><p>{unknownModels.map(item => item.id).join("、")}。目录记录已保留，可根据模型文档选择接口并填写完整 ID。</p></details> : null}
       </div>
       <div className="playground-run-area"><button className="playground-run" type="button" disabled={pending || !provider?.configured || (!advanced && (!model.trim() || !prompt.trim()))} onClick={submit}><Icon name={pending ? "clock" : "bolt"} size={16} />{pending ? "正在提交…" : mode === "video" ? "创建视频任务" : mode === "image" ? "生成图片" : "发送对话"}<Icon name="arrow-right" size={16} /></button><span><i />实际调用 · 消耗 TokenHub 账户额度</span></div>
     </section>
