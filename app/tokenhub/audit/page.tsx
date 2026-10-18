@@ -1,3 +1,4 @@
+import "@/app/tokenhub-evidence.css";
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/DashboardShell";
 import { TokenHubAuditDashboard } from "@/components/TokenHubAuditDashboard";
