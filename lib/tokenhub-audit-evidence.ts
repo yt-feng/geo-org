@@ -1,4 +1,5 @@
 import type { RuntimeEnv } from "./config";
+import { auditMediaSource, getAuditMediaArchives } from "./tokenhub-audit-media";
 
 export class AuditEvidenceError extends Error {
   constructor(message: string, public status = 503) { super(message); }
@@ -86,6 +87,16 @@ export async function getAuditCaseEvidence(env: RuntimeEnv, query: Pick<AuditEvi
   if (!row) throw new AuditEvidenceError("这条检测尚无已保存的底稿。", 404);
   const request = parse(row.request_json), response = parse(row.response_json), expected = parse(row.expected_json), independentAnalysis = parse(row.independent_analysis_json), creationResponse = parse(row.creation_json);
   const wasSubmitted = !UNSENT_STATES.has(row.state);
+  // Archival metadata is supplementary. A storage problem must not hide the saved request or response.
+  let archives: Awaited<ReturnType<typeof getAuditMediaArchives>> = [];
+  let archiveStatus: "available" | "unavailable" = "available";
+  try { archives = await getAuditMediaArchives(env, query); } catch { archiveStatus = "unavailable"; }
+  const media = extractAuditEvidenceMedia(row.kind, response, creationResponse).map(item => {
+    const archive = archives.find(asset => asset.sourcePath === item.sourcePath && asset.sourceUrl === item.url && asset.kind === item.kind) ?? null;
+    const storage: "embedded" | "archived" | "source" = item.url.startsWith("data:image/") ? "embedded" : archive?.state === "archived" && archive.url ? "archived" : "source";
+    return { ...item, storage, sourceUrl: item.url, sourceExpiresAt: archive?.sourceExpiresAt ?? auditMediaSource(item.url)?.expiresAt ?? null,
+      archive, url: archive?.state === "archived" && archive.url ? archive.url : item.url };
+  });
   return {
     campaign: { id: campaign.id, startedAt: campaign.started_at, endsAt: campaign.ends_at, planVersion: campaign.plan_version },
     case: {
@@ -101,7 +112,7 @@ export async function getAuditCaseEvidence(env: RuntimeEnv, query: Pick<AuditEvi
       tokenVerification: object(independentAnalysis) ? String(independentAnalysis.tokenVerification ?? "provisional") : "pending_official_tokenizer",
       billingVerification: row.billing_actual_micros !== null && row.billing_evidence_json ? "recorded" : "pending",
     },
-    media: extractAuditEvidenceMedia(row.kind, response, creationResponse),
+    media, archives, archiveStatus,
   };
 }
 export type AuditCaseEvidence = Awaited<ReturnType<typeof getAuditCaseEvidence>>;
