@@ -1,18 +1,20 @@
 import type { RuntimeEnv } from "./config";
+import { mergeTokenHubCatalog, validTokenHubCatalog } from "./tokenhub-catalog";
+export type { TokenHubModel } from "./tokenhub-catalog";
 import { decryptProviderKey, encryptProviderKey, ProviderError, type ProviderStatus } from "./provider-settings";
 
 export const TOKENHUB_ORIGIN = "https://ai-tokenhub.ai";
 const CONTEXT = "eco-geo/provider/tokenhub/v1";
 type StoredProvider = { encrypted_key: string; key_hint: string; updated_at: string; verified_at: string };
-export type TokenHubModel = { id: string; name: string; provider: string; category: string[]; capabilities: string[] };
-
 function keyHint(key: string) { return `••••${key.slice(-4)}`; }
-function stringList(value: unknown): string[] {
-  const values = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
-  return values.filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= 80).slice(0, 32);
+function sanitize(value: unknown, key: string): unknown {
+  if (typeof value === "string") return value.replaceAll(key, "[redacted]").replaceAll(encodeURIComponent(key), "[redacted]");
+  if (Array.isArray(value)) return value.map(item => sanitize(item, key));
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([name, item]) => [String(sanitize(name, key)), sanitize(item, key)]));
+  return value;
 }
 
-async function readModels(response: Response): Promise<TokenHubModel[]> {
+async function readCatalog(response: Response, source: "models_api" | "pricing", key: string): Promise<Record<string, unknown>> {
   if (!response.body) throw new ProviderError("TokenHub 返回了无效响应，请稍后重试。", 502);
   const reader = response.body.getReader(), chunks: Uint8Array[] = [];
   let length = 0;
@@ -26,18 +28,9 @@ async function readModels(response: Response): Promise<TokenHubModel[]> {
     }
     const bytes = new Uint8Array(length); let offset = 0;
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-    const data = JSON.parse(new TextDecoder().decode(bytes));
-    if (!data || typeof data !== "object" || Array.isArray(data) || data.error || data.success === false || data.object !== "list" || !Array.isArray(data.data)) throw new Error();
-    return data.data.filter((model: unknown): model is Record<string, unknown> => !!model && typeof model === "object" && typeof (model as Record<string, unknown>).id === "string" && String((model as Record<string, unknown>).id).length > 0 && String((model as Record<string, unknown>).id).length <= 200).map((model: Record<string, unknown>) => {
-      const capabilities = stringList(model.capabilities);
-      return {
-        id: String(model.id),
-        name: typeof model.name === "string" ? model.name.slice(0, 200) : String(model.id),
-        provider: typeof model.provider === "string" ? model.provider.slice(0, 100) : typeof model.owned_by === "string" ? model.owned_by.slice(0, 100) : "",
-        category: stringList(model.modelType).length ? stringList(model.modelType) : capabilities,
-        capabilities,
-      };
-    });
+    const data = sanitize(JSON.parse(new TextDecoder().decode(bytes)), key);
+    if (!validTokenHubCatalog(data, source)) throw new Error();
+    return data;
   } catch { throw new ProviderError("TokenHub 模型列表格式不正确，请稍后重试。", 502); }
   finally { reader.releaseLock(); }
 }
@@ -61,7 +54,7 @@ export function createTokenHubSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     if (!key) throw new ProviderError("请先填写并保存 TokenHub API Key。", 409);
     return { key, row };
   }
-  async function upstreamModels(key: string): Promise<TokenHubModel[]> {
+  async function upstreamModels(key: string): Promise<Record<string, unknown>> {
     let response: Response;
     try {
       // The public catalog permits anonymous requests, but validates an explicitly supplied Bearer key.
@@ -78,7 +71,22 @@ export function createTokenHubSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     if (response.status === 401 || response.status === 403) throw new ProviderError("TokenHub 密钥无效或没有访问权限，请检查后重试。", 422);
     if (response.status === 429) throw new ProviderError("TokenHub 请求频率已达上限，请稍后重试。", 429);
     if (!response.ok) throw new ProviderError("TokenHub 服务暂不可用，请稍后重试。", 502);
-    return readModels(response);
+    return readCatalog(response, "models_api", key);
+  }
+  async function discoverModels(key: string) {
+    // Authenticate against the credential-aware endpoint before reading the public
+    // prices. A public catalog must never make an invalid credential look valid.
+    const listed = await upstreamModels(key);
+    let pricing: Record<string, unknown> | null = null;
+    try {
+      const response = await fetcher(`${TOKENHUB_ORIGIN}/api/pricing`, { method: "GET", headers: { Accept: "application/json" }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(10_000) });
+      if (response.ok) pricing = await readCatalog(response, "pricing", key);
+    } catch { /* Return an explicitly incomplete catalog; never invent media IDs. */ }
+    const models = mergeTokenHubCatalog(listed, pricing);
+    return { models, catalog: { complete: pricing !== null, observedAt: new Date().toISOString(),
+      sources: [{ source: "models_api", status: "ok", modelCount: models.filter(model => model.sources.includes("models_api")).length }, { source: "pricing", status: pricing ? "ok" : "unavailable", modelCount: models.filter(model => model.sources.includes("pricing")).length }],
+      warnings: pricing ? [] : ["公开价格目录暂不可用；当前仅列出认证模型接口返回的模型，图片和视频目录可能不完整。"],
+    } };
   }
   return {
     async status(): Promise<ProviderStatus> { return fromRow(await stored()); },
@@ -88,20 +96,20 @@ export function createTokenHubSettings(env: RuntimeEnv, fetcher: typeof fetch = 
       if (typeof value !== "string" || !/^[\x21-\x7e]{12,512}$/.test(value.trim())) throw new ProviderError("请输入完整的 TokenHub API Key（12–512 位，不含空白）。", 400);
       const key = value.trim();
       const encrypted = await encryptProviderKey(key, env.ADMIN_SESSION_SECRET, CONTEXT);
-      const models = await upstreamModels(key), now = new Date().toISOString();
+      const discovered = await discoverModels(key), now = new Date().toISOString();
       await db().prepare(`INSERT INTO provider_settings (provider, encrypted_key, key_hint, updated_at, verified_at)
         VALUES ('tokenhub', ?, ?, ?, ?)
         ON CONFLICT(provider) DO UPDATE SET encrypted_key=excluded.encrypted_key, key_hint=excluded.key_hint, updated_at=excluded.updated_at, verified_at=excluded.verified_at`).bind(encrypted, keyHint(key), now, now).run();
-      return { ok: true, tokenhub: fromRow({ encrypted_key: encrypted, key_hint: keyHint(key), updated_at: now, verified_at: now }), modelCount: models.length };
+      return { ok: true, tokenhub: fromRow({ encrypted_key: encrypted, key_hint: keyHint(key), updated_at: now, verified_at: now }), modelCount: discovered.models.length, catalog: discovered.catalog };
     },
     async test() {
-      const { key, row } = await credentialWithRow(), models = await upstreamModels(key), now = new Date().toISOString();
+      const { key, row } = await credentialWithRow(), discovered = await discoverModels(key), now = new Date().toISOString();
       if (row) await db().prepare("UPDATE provider_settings SET verified_at = ? WHERE provider = 'tokenhub' AND encrypted_key = ?").bind(now, row.encrypted_key).run();
-      return { ok: true, verifiedAt: now, modelCount: models.length };
+      return { ok: true, verifiedAt: now, modelCount: discovered.models.length, catalog: discovered.catalog };
     },
     async models() {
       const { key } = await credentialWithRow();
-      return { ok: true, models: await upstreamModels(key) };
+      return { ok: true, ...await discoverModels(key) };
     },
   };
 }

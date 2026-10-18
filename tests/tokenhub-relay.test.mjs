@@ -43,7 +43,7 @@ async function fixture(t, options = {}) {
     return execute();
   } };
   let currentUser = options.user === undefined ? ADMIN : options.user;
-  const calls = [];
+  const calls = [], modelCalls = [];
   const env = { DB, SERVICE_ENABLED: "true", ...options.env };
   function insertUser(user = ADMIN, status = "active") {
     sqlite.prepare("INSERT INTO users (id,email,display_name,status) VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING").run(user.id, user.email, user.displayName || "", status);
@@ -58,9 +58,9 @@ async function fixture(t, options = {}) {
     "./crypto": { sha256Hex: async value => hash(value) },
     "./store": { ensureUser: async user => insertUser(user) },
     "./provider-settings": { ProviderError },
-    "./tokenhub-settings": { TOKENHUB_ORIGIN: "https://ai-tokenhub.ai", createTokenHubSettings: () => ({ credential: async () => { options.onCredential?.(); return options.key || PROVIDER_KEY; } }) },
+    "./tokenhub-settings": { TOKENHUB_ORIGIN: "https://ai-tokenhub.ai", createTokenHubSettings: () => ({ credential: async () => { options.onCredential?.(); return options.key || PROVIDER_KEY; }, models: async () => { modelCalls.push(true); if (options.modelsError) throw options.modelsError; return options.models || { models: [{ id: "chat-example", provider: "vendor", modelType: "chat" }], catalog: { complete: true } }; } }) },
   }, { fetch: async (url, init) => { calls.push({ url, init }); return options.fetcher ? options.fetcher(url, init) : Response.json({ id: "task-default", status: "queued" }); } });
-  return { sqlite, calls, handle: handleTokenHubRelay, insertUser, insertKey, setUser: user => { currentUser = user; } };
+  return { sqlite, calls, modelCalls, handle: handleTokenHubRelay, insertUser, insertKey, setUser: user => { currentUser = user; } };
 }
 function request(path = TASKS, options = {}) {
   const method = options.method || "POST";
@@ -247,7 +247,38 @@ test("write throttling stops paid requests at five per minute while reads retain
   for (let index = 0; index < 5; index++) await expectStatus(f.handle, request("/v3/images/generations", { body: JSON.stringify({ model: "image", prompt: "test" }) }), 200);
   await expectStatus(f.handle, request("/v3/images/generations", { body: JSON.stringify({ model: "image", prompt: "test" }) }), 429);
   await expectStatus(f.handle, request("/v1/models", { method: "GET" }), 200);
-  assert.equal(f.calls.length, 6);
+  assert.equal(f.calls.length, 5); assert.equal(f.modelCalls.length, 1);
   f.sqlite.prepare("UPDATE login_rate_limits SET expires_at='2000-01-01T00:00:00.000Z'").run();
   await expectStatus(f.handle, request("/v3/images/generations", { body: JSON.stringify({ model: "image", prompt: "test" }) }), 200);
+});
+
+test("ECO-GEO model API returns the merged catalog envelope and rejects discovery errors without raw-model fallback", async t => {
+  const ids = ["glm-5-3-flash-260828", "glm-5-2-260617", "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731", "dola-seedream-5-0-pro-260628", "dreamina-seedance-2-0-260128", "dreamina-seedance-2-0-fast-260128", "dreamina-seedance-2-0-mini-260615", "dreamina-seedance-2-5-260628"];
+  const models = { models: ids.map(id => ({ id, provider: "tokenhub", sources: ["pricing"], accountAccess: "unverified_public_catalog" })), catalog: { complete: true } };
+  const f = await fixture(t, { models, onCredential: () => assert.fail("Model discovery handles its own credential verification") });
+  const response = await expectStatus(f.handle, request("/v1/models", { method: "GET" }), 200), data = await response.json();
+  assert.equal(data.object, "list"); assert.deepEqual(data.data.map(model => model.id), ids);
+  assert.ok(data.data.every(model => model.object === "model" && model.owned_by === "tokenhub")); assert.equal(data.catalog.complete, true);
+  assert.equal(f.modelCalls.length, 1); assert.equal(f.calls.length, 0);
+  const failed = await fixture(t, { modelsError: new ProviderError("Credential invalid", 422) });
+  await expectStatus(failed.handle, request("/v1/models", { method: "GET" }), 422); assert.equal(failed.calls.length, 0);
+});
+
+test("all nine current TokenHub model IDs forward their exact bodies through the matching ECO-GEO API adapters", async t => {
+  const examples = [
+    ...["glm-5-3-flash-260828", "glm-5-2-260617", "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731"].map(model => ({ path: "/v1/chat/completions", body: { model, messages: [{ role: "user", content: "Return OK" }], stream: false, max_tokens: 8 } })),
+    { path: "/v3/images/generations", body: { model: "dola-seedream-5-0-pro-260628", prompt: "A red cube", size: "2K", response_format: "url", watermark: false } },
+    ...["dreamina-seedance-2-0-260128", "dreamina-seedance-2-0-fast-260128", "dreamina-seedance-2-0-mini-260615", "dreamina-seedance-2-5-260628"].map(model => ({ path: TASKS, body: { model, content: [{ type: "text", text: "A blue ball rolls" }], duration: 4, resolution: "480p", ratio: "16:9", generate_audio: false, watermark: false } })),
+  ];
+  for (const { path, body } of examples) {
+    const f = await fixture(t, { fetcher: async () => Response.json(path === TASKS ? { id: "verified-adapter-task", status: "queued", model: body.model } : { model: body.model, data: [] }) });
+    const response = await expectStatus(f.handle, request(path, { body: JSON.stringify(body) }), 200);
+    assert.equal((await response.json()).model, body.model); assert.equal(f.calls.length, 1);
+    assert.equal(f.calls[0].url, `https://ai-tokenhub.ai/api${path}`); assert.deepEqual(JSON.parse(f.calls[0].init.body), body);
+    assert.equal(f.calls[0].init.headers.Authorization, `Bearer ${PROVIDER_KEY}`);
+    if (path === TASKS) {
+      assert.equal(f.sqlite.prepare("SELECT model FROM tokenhub_tasks").get().model, body.model);
+      await expectStatus(f.handle, request(path, { body: JSON.stringify(body) }), 200); assert.equal(f.calls.length, 1);
+    }
+  }
 });
