@@ -30,6 +30,7 @@
       "migrations_dir": "drizzle"
     }
   ],
+  "r2_buckets": [{ "binding": "AUDIT_MEDIA", "bucket_name": "eco-geo-audit-media" }],
   "observability": {
     "enabled": true
   },

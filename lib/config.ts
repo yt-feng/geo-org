@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 
 export type RuntimeEnv = {
   DB?: D1Database;
+  AUDIT_MEDIA?: AuditMediaBucket;
   PUBLIC_BASE_URL?: string;
   PUBLIC_BRAND_NAME?: string;
   AUTH_BASE_URL?: string;

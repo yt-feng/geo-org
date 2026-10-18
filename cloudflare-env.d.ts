@@ -29,3 +29,9 @@ interface Fetcher {
 declare module "cloudflare:workers" {
   export const env: Record<string, unknown>;
 }
+
+/** Narrow R2 interface used by private audit artifacts. */
+interface AuditMediaBucket {
+  put(key: string, value: Uint8Array, options?: { httpMetadata?: { contentType: string }; customMetadata?: Record<string, string> }): Promise<unknown>;
+  get(key: string, options?: { range: { offset: number; length: number } }): Promise<{ body: ReadableStream<Uint8Array> } | null>;
+}
