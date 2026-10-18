@@ -123,7 +123,7 @@ function ObservationCard({ result, model, future, stopped }: { result?: DayResul
   const planned = result?.planned || 0;
   const submitted = !!result?.requests;
   const unsupported = !model.adapterSupported;
-  const state = result?.succeeded ? "已返回" : result?.generating ? "生成中" : result?.errors ? "请求异常" : result?.missed ? "错过时段" : result?.states.includes("price_blocked") ? "价格未通过" : unsupported ? "待适配" : !planned ? "目录观测" : stopped ? "已停止" : "待抽样";
+  const state = result?.succeeded ? "已返回" : result?.generating ? "生成中" : result?.errors ? "请求异常" : result?.missed ? "错过时段" : result?.states.includes("poll_limit_reached") ? "待复核" : result?.states.includes("expired") ? "已过期" : result?.states.includes("cancelled") ? "已取消" : result?.states.includes("price_blocked") ? "价格未通过" : unsupported ? "待适配" : !planned ? "目录观测" : stopped ? "已停止" : "待抽样";
   const note = result?.succeeded ? "已保存响应 · 内容质量待核验" : submitted ? [...new Set(result?.states.filter(item => item !== "planned"))].map(item => statusName[item] || item).join(" · ") : unsupported ? "暂无调用适配 · 每日目录仍观测" : !model.plannedCalls ? "$5 内未安排付费测试" : planned ? `当日计划 ${planned} 次付费抽样` : "当日不生成 · 持续观测目录与价格";
   return <div className={`audit-score-card audit-observation-card${result?.succeeded ? " has-result" : " is-empty"}${future && !submitted ? " is-future" : ""}`}>
     <div className="audit-card-top"><span>{planned ? `${kindName[model.kind]}生成抽样` : "目录与价格观测"}</span><small>{result?.requests || 0}/{planned}</small></div>
