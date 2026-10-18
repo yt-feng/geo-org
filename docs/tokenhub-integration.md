@@ -160,6 +160,11 @@ The query reference lists `queued`, `running`, `cancelled`, `succeeded`,
 for 24 hours, and task records as retained for seven days. Do not describe a
 temporary URL as permanent storage.
 
+The workbench omits `return_last_frame` from its default video request because
+support is not confirmed for every listed version. A caller may opt in through
+the full JSON editor after checking the selected model's documentation; the
+preview still displays a last-frame URL if the upstream returns one.
+
 DELETE cancels a queued task. It deletes the record of succeeded, failed, or
 expired tasks. Running and already-cancelled tasks cannot be deleted according
 to the reference. Query and deletion must remain scoped to the ECO-GEO user who

@@ -122,7 +122,7 @@ export function TokenHubPlayground() {
   const generated = useMemo(() => {
     if (mode === "chat") return { model, messages: [{ role: "user", content: prompt }], stream: false };
     if (mode === "image") return { model, prompt, size: imageSize, watermark: false, response_format: "url" };
-    return { model, content: [{ type: "text", text: prompt }, ...(reference.trim() ? [{ type: "image_url", image_url: { url: reference.trim() }, role: referenceRole }] : [])], resolution, ratio, duration: Number(duration), generate_audio: generateAudio, watermark: false, return_last_frame: true };
+    return { model, content: [{ type: "text", text: prompt }, ...(reference.trim() ? [{ type: "image_url", image_url: { url: reference.trim() }, role: referenceRole }] : [])], resolution, ratio, duration: Number(duration), generate_audio: generateAudio, watermark: false };
   }, [mode, model, prompt, imageSize, reference, referenceRole, resolution, ratio, duration, generateAudio]);
   const json = advanced ? jsonInput : JSON.stringify(generated, null, 2);
   const curl = `${mode === "video" ? 'TOKENHUB_REQUEST_ID="$(uuidgen)"\n\n' : ""}curl --request POST \\\n  --url 'https://api.eco-geo.org${endpoint[mode]}' \\\n  --header 'Authorization: Bearer YOUR_ECO_GEO_API_KEY' \\\n  --header 'Content-Type: application/json'${mode === "video" ? " \\\n  --header \"Idempotency-Key: $TOKENHUB_REQUEST_ID\"" : ""} \\\n  --data ${shellQuote(json)}`;
