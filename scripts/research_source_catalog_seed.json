@@ -3,6 +3,186 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.wipo.int/en/web/ip-statistics",
+      "title": "Intellectual Property Statistics",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-10-19T16:59:53+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "intellectual_property"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
+      "body_chars": 6764,
+      "excerpt_start": 0,
+      "excerpt_end": 6764,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
+      "title": "Emphasize Resilience in Supply Chains",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2022-10-04",
+      "retrieved_at": "2026-10-19T15:55:10+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b",
+      "body_chars": 4963,
+      "excerpt_start": 0,
+      "excerpt_end": 4963,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+      "title": "Promoting resilience and preparedness in supply chains (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-10-19T15:55:07+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24",
+      "body_chars": 172554,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.gov.cn/gongbao/content/2021/content_5647366.htm",
+      "title": "人力资源社会保障部  司法部关于深化公共法律服务专业人员职称制度改革的指导意见__2021年第30号国务院公报_中国政府网",
+      "publisher": "State Council of the People's Republic of China",
+      "publisher_domain": "gov.cn",
+      "published": "",
+      "retrieved_at": "2026-10-19T15:54:49+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "7b1dd98cd5f8198a0cdcc64757418661acc5fe18d601493fe5eb0d506702b45d",
+      "body_chars": 7346,
+      "excerpt_start": 0,
+      "excerpt_end": 7346,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+      "title": "CMA publishes review of progress in legal services sector",
+      "publisher": "UK Government",
+      "publisher_domain": "gov.uk",
+      "published": "2020-12-17",
+      "retrieved_at": "2026-10-19T15:54:46+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0",
+      "body_chars": 5527,
+      "excerpt_start": 0,
+      "excerpt_end": 5527,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/steering-us-auto-dealers-toward-profitable-future",
+      "title": "Steering US Auto Dealers Toward a Profitable Future",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-03-20",
+      "retrieved_at": "2026-10-19T15:54:20+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "automotive"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "05050d31ddf6e243cd90e7ca546f48017d1418fe5787db4be242368064a6f917",
+      "body_chars": 17834,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/programs-projects/building-evaluation-probes-agentic-ai",
+      "title": "Building Evaluation Probes into Agentic AI",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2026-04-07",
+      "retrieved_at": "2026-10-19T15:54:07+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "An ongoing NIST research project on evaluating agent responses against trusted documents. It is not a universal industry standard, guarantee against hallucinations, or demonstration of every commercial AI tool's performance.",
+      "text_sha256": "2bf204374dfbdc95aff1d4c9f8332fa62321e40d3dca1389de981a83978954a6",
+      "body_chars": 5929,
+      "excerpt_start": 0,
+      "excerpt_end": 5929,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/press/24october2024-ai-adoption-in-2024-74-of-companies-struggle-to-achieve-and-scale-value",
+      "title": "AI Adoption in 2024: 74% of Companies Struggle to Achieve and Scale Value",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-10-19T15:54:03+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "ai_tools"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "f087ef92099c912210f8dfc19ddafad5c6e624869e43b6de5d02e1747e7e74ae",
+      "body_chars": 7158,
+      "excerpt_start": 0,
+      "excerpt_end": 7158,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.wipo.int/en/web/ip-statistics/index",
+      "title": "Intellectual Property Statistics",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-10-19T15:53:43+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "intellectual_property"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
+      "body_chars": 6764,
+      "excerpt_start": 0,
+      "excerpt_end": 6764,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://www.bcg.com/publications/2025/how-retailers-de-risk-2025-holiday-shopping-season",
       "title": "How Retailers Can De-Risk the 2025 Holiday Shopping Season",
       "publisher": "BCG",
@@ -63,26 +243,6 @@
       "excerpt_truncated": false
     },
     {
-      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
-      "title": "CMA publishes review of progress in legal services sector",
-      "publisher": "UK Government",
-      "publisher_domain": "gov.uk",
-      "published": "2020-12-17",
-      "retrieved_at": "2026-10-18T12:49:36+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "legal_services"
-      ],
-      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
-      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0",
-      "body_chars": 5527,
-      "excerpt_start": 0,
-      "excerpt_end": 5527,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/03/protecting-and-promoting-competition-in-response-to-disruptive-innovations-in-legal-services_6ee10319/ca47c852-en.pdf",
       "title": "Protecting and Promoting Competition in Response to Disruptive Innovations in Legal Services (EN)",
       "publisher": "OECD",
@@ -103,66 +263,6 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://www.gov.cn/gongbao/content/2021/content_5647366.htm",
-      "title": "人力资源社会保障部  司法部关于深化公共法律服务专业人员职称制度改革的指导意见__2021年第30号国务院公报_中国政府网",
-      "publisher": "State Council of the People's Republic of China",
-      "publisher_domain": "gov.cn",
-      "published": "",
-      "retrieved_at": "2026-10-18T12:49:32+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "legal_services"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "7b1dd98cd5f8198a0cdcc64757418661acc5fe18d601493fe5eb0d506702b45d",
-      "body_chars": 7346,
-      "excerpt_start": 0,
-      "excerpt_end": 7346,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/publications/2025/steering-us-auto-dealers-toward-profitable-future",
-      "title": "Steering US Auto Dealers Toward a Profitable Future",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2025-03-20",
-      "retrieved_at": "2026-10-18T12:49:13+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "automotive"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "05050d31ddf6e243cd90e7ca546f48017d1418fe5787db4be242368064a6f917",
-      "body_chars": 17834,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/press/24october2024-ai-adoption-in-2024-74-of-companies-struggle-to-achieve-and-scale-value",
-      "title": "AI Adoption in 2024: 74% of Companies Struggle to Achieve and Scale Value",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "",
-      "retrieved_at": "2026-10-18T12:49:01+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "ai_tools"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "f087ef92099c912210f8dfc19ddafad5c6e624869e43b6de5d02e1747e7e74ae",
-      "body_chars": 7158,
-      "excerpt_start": 0,
-      "excerpt_end": 7158,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://www.nist.gov/programs-projects/ai-measurement-and-evaluation/nist-ai-measurement-and-evaluation-projects",
       "title": "NIST AI Measurement and Evaluation Projects",
       "publisher": "National Institute of Standards and Technology",
@@ -181,26 +281,6 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.wipo.int/en/web/ip-statistics/index",
-      "title": "Intellectual Property Statistics",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-10-18T12:48:47+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "intellectual_property"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
-      "body_chars": 6764,
-      "excerpt_start": 0,
-      "excerpt_end": 6764,
-      "excerpt_truncated": false
     },
     {
       "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
@@ -243,26 +323,6 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://www.nist.gov/programs-projects/building-evaluation-probes-agentic-ai",
-      "title": "Building Evaluation Probes into Agentic AI",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "2026-04-07",
-      "retrieved_at": "2026-10-17T12:28:04+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "ai_tools"
-      ],
-      "scope_notes": "An ongoing NIST research project on evaluating agent responses against trusted documents. It is not a universal industry standard, guarantee against hallucinations, or demonstration of every commercial AI tool's performance.",
-      "text_sha256": "2bf204374dfbdc95aff1d4c9f8332fa62321e40d3dca1389de981a83978954a6",
-      "body_chars": 5929,
-      "excerpt_start": 0,
-      "excerpt_end": 5929,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://www.wipo.int/web-publications/ip-facts-and-figures-2025/en/global-intellectual-property-applications-and-active-ip-rights.html",
       "title": "IP Facts and Figures 2025 - Global intellectual property applications and active IP rights",
       "publisher": "World Intellectual Property Organization",
@@ -300,26 +360,6 @@
       "body_chars": 2038,
       "excerpt_start": 0,
       "excerpt_end": 2038,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.wipo.int/en/web/ip-statistics",
-      "title": "Intellectual Property Statistics",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-10-16T13:34:14+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "intellectual_property"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "3f1e876461d9ee299383650fc92029394efe58be14cd2ef0c197cb2edf760a0c",
-      "body_chars": 6764,
-      "excerpt_start": 0,
-      "excerpt_end": 6764,
       "excerpt_truncated": false
     },
     {
@@ -898,46 +938,6 @@
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
       "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
       "body_chars": 31831,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
-      "title": "Emphasize Resilience in Supply Chains",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2022-10-04",
-      "retrieved_at": "2026-09-29T11:45:24+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "supply_chain"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b",
-      "body_chars": 4963,
-      "excerpt_start": 0,
-      "excerpt_end": 4963,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
-      "title": "Promoting resilience and preparedness in supply chains (EN)",
-      "publisher": "OECD",
-      "publisher_domain": "oecd.org",
-      "published": "",
-      "retrieved_at": "2026-09-29T11:45:22+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "supply_chain"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24",
-      "body_chars": 172554,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
