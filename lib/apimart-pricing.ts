@@ -1,4 +1,4 @@
-import { markupMicrousd, PricingError } from "./pricing";
+import { markupMicrousd, PricingError, publicServiceText } from "./pricing";
 
 export const APIMART_PRICE_SOURCE = "https://apimart.ai/api/pricing/models/all";
 type Json = Record<string, unknown>;
@@ -7,7 +7,7 @@ export type ApimartPrice = { provider: "apimart"; model: string; name: string; k
 export type ApimartQuote = { kind: "chat" | "image"; model: string; amountMicrousd: number; upstreamRates: Record<string, number>; observedAt: string; inputTokenLimit?: number; outputTokenLimit?: number };
 function object(value: unknown): value is Json { return !!value && typeof value === "object" && !Array.isArray(value); }
 function micro(value: unknown) {
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100_000) throw new PricingError("APIMart 定价金额无效。", 502);
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100_000) throw new PricingError("tokvilo 文本与图像 定价金额无效。", 502);
   return Math.ceil(value * 1_000_000 - 1e-8);
 }
 function rate(dimension: string, unit: ApimartRate["unit"], value: unknown): ApimartRate {
@@ -21,7 +21,7 @@ function markedTokenTotal(terms: Array<[number, number]>) {
 
 /** Read the same public structured catalog used by APIMart's official pricing page. */
 export function parseApimartPricing(payload: unknown) {
-  if (!object(payload) || payload.success !== true || !object(payload.data) || !object(payload.data.models)) throw new PricingError("APIMart 定价目录暂不可用。", 502);
+  if (!object(payload) || payload.success !== true || !object(payload.data) || !object(payload.data.models)) throw new PricingError("tokvilo 文本与图像 定价目录暂不可用。", 502);
   const models: ApimartPrice[] = [], unavailable: { provider: "apimart"; model: string; reason: string }[] = [];
   for (const [category, items] of Object.entries(payload.data.models)) {
     if (!Array.isArray(items)) continue;
@@ -41,32 +41,32 @@ export function parseApimartPricing(payload: unknown) {
         rates = fixed.items.filter(object).filter(entry => typeof entry.key === "string").map(entry => rate(String(entry.key).toLowerCase(), "image", entry.after_discount));
         if (rates.length && new Set(rates.map(entry => entry.dimension)).size === rates.length) kind = "image";
       }
-      if (kind && rates.length) models.push({ provider: "apimart", model: item.id, name: typeof item.name === "string" ? item.name : item.id, kind, rates, available: true });
+      if (kind && rates.length) models.push({ provider: "apimart", model: item.id, name: publicServiceText(typeof item.name === "string" ? item.name : item.id), kind, rates, available: true });
       else unavailable.push({ provider: "apimart", model: item.id, reason: "此模型的计费参数尚未开通，请选择已标价模型。" });
     }
   }
-  if (!models.length) throw new PricingError("APIMart 暂未返回可用定价。", 502);
+  if (!models.length) throw new PricingError("tokvilo 文本与图像 暂未返回可用定价。", 502);
   return { observedAt: new Date().toISOString(), source: APIMART_PRICE_SOURCE, models, unavailable };
 }
 
 export async function getApimartPricing(fetcher: typeof fetch = fetch) {
   let response: Response;
   try { response = await fetcher(APIMART_PRICE_SOURCE, { headers: { Accept: "application/json" }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(15_000) }); }
-  catch { throw new PricingError("暂时无法读取 APIMart 定价，请稍后重试。", 503); }
-  if (!response.ok || !response.body) throw new PricingError("APIMart 定价服务暂不可用。", 503);
+  catch { throw new PricingError("暂时无法读取 tokvilo 文本与图像 定价，请稍后重试。", 503); }
+  if (!response.ok || !response.body) throw new PricingError("tokvilo 文本与图像 定价服务暂不可用。", 503);
   const reader = response.body.getReader(), chunks: Uint8Array[] = []; let length = 0;
   try {
     for (;;) {
       const { value, done } = await reader.read(); if (done) break;
       length += value.byteLength;
-      if (length > 4_000_000) { await reader.cancel(); throw new PricingError("APIMart 定价目录过大。", 502); }
+      if (length > 4_000_000) { await reader.cancel(); throw new PricingError("tokvilo 文本与图像 定价目录过大。", 502); }
       chunks.push(value);
     }
   } finally { reader.releaseLock(); }
   const bytes = new Uint8Array(length); let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   let data;
-  try { data = JSON.parse(new TextDecoder().decode(bytes)); } catch { throw new PricingError("APIMart 定价格式无效。", 502); }
+  try { data = JSON.parse(new TextDecoder().decode(bytes)); } catch { throw new PricingError("tokvilo 文本与图像 定价格式无效。", 502); }
   return parseApimartPricing(data);
 }
 

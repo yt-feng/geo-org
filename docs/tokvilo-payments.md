@@ -63,7 +63,13 @@ identity. Reservation and ledger changes are atomic. Insufficient funds return
 Unknown upstream results retain their reservation. Repeating the same terminal
 result does not move funds again.
 
-Digital product orders bind the buyer's confirmed CNY price and USD reservation
+The public digital-goods storefront now accepts inquiries through
+`/api/product-inquiries`, with a reply by email within 24 hours. It does not
+reserve wallet funds or automatically deliver products. The following order
+behavior is retained for historical orders and is not the storefront purchase
+flow.
+
+Legacy digital product orders bind the buyer's confirmed CNY price and USD reservation
 amount. New orders reserve atomically; concurrent duplicate requests create one
 order. Administrators first claim pending orders (`processing`) before procurement
 or delivery. A buyer can cancel only before processing. The assigned administrator

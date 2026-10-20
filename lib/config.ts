@@ -3,10 +3,15 @@ import { env } from "cloudflare:workers";
 export type RuntimeEnv = {
   DB?: D1Database;
   AUDIT_MEDIA?: AuditMediaBucket;
+  PRODUCT_INQUIRY_EMAIL?: { send(message: import("cloudflare:email").EmailMessage): Promise<unknown> };
+  PRODUCT_INQUIRY_FROM?: string;
+  PRODUCT_INQUIRY_EMAIL_ENABLED?: string;
   PUBLIC_BASE_URL?: string;
   PUBLIC_BRAND_NAME?: string;
   AUTH_BASE_URL?: string;
   AUTH_ANON_KEY?: string;
+  AUTH_EMAIL_HOOK_SECRET?: string;
+  AUTH_EMAIL?: { send(message: import("cloudflare:email").EmailMessage): Promise<unknown> };
   ADMIN_EMAIL?: string;
   ADMIN_USERNAME?: string;
   ADMIN_PASSWORD?: string;

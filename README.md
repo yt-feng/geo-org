@@ -8,19 +8,20 @@ credentials and historical records are retained.
 ## Product
 
 - `/models`: model catalogue and per-model prices.
-- `/pricing`: current structured TokenHub/APIMart prices multiplied by 1.20.
+- `/pricing`: current model prices multiplied by 1.20.
 - `/products`: eight digital subscriptions from the source public catalogue,
   observed 2026-10-20, at public retail price × 1.20 in CNY. Source stock is not
-  represented as owned inventory. Orders are fulfilled manually.
+  represented as owned inventory. Public inquiry forms collect requirements
+  without login or payment; notifications go to the operator for an email reply within 24 hours.
 - `/dashboard/wallet`: Liandong purchase links, one-time TK code redemption,
   available/reserved USD balance and ledger.
-- `/dashboard/orders`: order status, delivery and cancellation before processing.
-- `/admin/orders`: claim an order, deliver and settle, or cancel and release funds.
-- `/tokenhub`: billed text, image and video generation.
-- `/playground`: billed APIMart text and supported fixed-price image generation.
+- `/dashboard/orders`: historical order status, delivery and cancellation before processing.
+- `/admin/orders`: handle historical wallet-funded orders.
+- `/studio`: billed text, image and video generation.
+- `/playground`: billed text and supported fixed-price image generation.
 - `/dashboard/docs`: authenticated OpenAPI references and request examples.
 - `/admin`: provider configuration; credentials remain server-side.
-- `/tokenhub/audit`: existing independent administrator audit and saved evidence.
+- `/admin/audit`: existing independent administrator audit and saved evidence.
 
 Public relay calls use the caller's prepaid wallet, including administrator-owned
 API keys. Separate provider diagnostics and the existing audit retain their own
@@ -35,12 +36,13 @@ new generations. The legacy data gateway only bills verified fixed-price routes.
 Recharge codes are specific to tokvilo and independent of JiaNong. The launch
 conversion is fixed at CNY 7.2 per USD of platform credit, disclosed before
 purchase and stored with each issued batch. Redemption grants credit once.
-Digital orders lock the displayed CNY price and converted wallet amount before
-reserving balance; administrator delivery settles, cancellation releases.
+Non-API products now use inquiries, with no wallet reservation or purchase.
+Existing digital orders retain their original settlement and cancellation flow.
 A successful return to the website is never treated as payment confirmation.
 
-See [payment operations](docs/tokvilo-payments.md) and
-[TokenHub billing](docs/tokvilo-tokenhub-billing.md). Source subscription prices
+See [payment operations](docs/tokvilo-payments.md),
+[model billing](docs/tokvilo-tokenhub-billing.md), and
+[product inquiry notifications](docs/tokvilo-product-inquiries.md). Source subscription prices
 are in `lib/products.ts`; they are a dated public-price snapshot, not an automatic
 wholesale integration. Provider model pricing is read dynamically.
 

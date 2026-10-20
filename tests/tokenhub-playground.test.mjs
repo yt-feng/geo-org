@@ -5,6 +5,7 @@ import test from "node:test";
 import vm from "node:vm";
 import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
+import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const filename = new URL("../components/TokenHubPlayground.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
@@ -27,6 +28,7 @@ async function fixture(options = {}) {
     module: compiled, exports: compiled.exports, crypto: webcrypto, URL, URLSearchParams, AbortController, TextEncoder,
     window: { location: { search: "" } }, setTimeout: () => 1, clearTimeout() {},
     require(name) {
+      if (name === "@/lib/brand-display") return brandDisplay;
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
@@ -36,7 +38,7 @@ async function fixture(options = {}) {
     },
     fetch: async (url, init) => {
       calls.push({ url, init });
-      if (url === "/api/tokenhub/v1/models") return Response.json({ data: [
+      if (url === "/api/studio/v1/models") return Response.json({ data: [
         { id: "dreamina-seedance-2-0-260128", modelType: "video", category: ["video"] },
         { id: "dola-seedream-5-0-pro-260628", modelType: "image", category: ["image"] },
         { id: "chat-model", modelType: "chat", category: ["chat"] },
@@ -49,9 +51,9 @@ async function fixture(options = {}) {
   function render() { cursor = 0; tree = compiled.exports.TokenHubPlayground({ isAdmin: false }); for (const effect of effects.splice(0)) effect(); return tree; }
   async function flush() { for (let i = 0; i < 15; i++) await Promise.resolve(); }
   const primary = () => find(tree, node => node.type === "button" && node.props.className === "playground-run");
-  function prompt(value) { find(tree, node => node.props["aria-label"] === "TokenHub 提示词").props.onChange({ target: { value } }); render(); }
+  function prompt(value) { find(tree, node => node.props["aria-label"] === "tokvilo 多模态 提示词").props.onChange({ target: { value } }); render(); }
   function mode(value) { const name = { video: "视频", image: "图像", chat: "对话" }[value]; find(tree, node => node.type === "button" && node.props.role === "tab" && content(node).startsWith(name)).props.onClick(); render(); }
-  function advanced(body) { const toggle = find(tree, node => String(node.props.className || "").includes("tokenhub-advanced-toggle")); if (!toggle.props["aria-pressed"]) { toggle.props.onClick(); render(); } find(tree, node => node.props["aria-label"] === "TokenHub JSON 请求").props.onChange({ target: { value: JSON.stringify(body, null, 2) } }); render(); }
+  function advanced(body) { const toggle = find(tree, node => String(node.props.className || "").includes("tokenhub-advanced-toggle")); if (!toggle.props["aria-pressed"]) { toggle.props.onClick(); render(); } find(tree, node => node.props["aria-label"] === "tokvilo 多模态 JSON 请求").props.onChange({ target: { value: JSON.stringify(body, null, 2) } }); render(); }
   render(); await flush(); render(); prompt("A peaceful forest");
   return { calls, render, flush, primary, prompt, mode, advanced, tree: () => tree, paid: () => calls.filter(call => call.init?.method === "POST" && call.url !== "/api/pricing/quote") };
 }

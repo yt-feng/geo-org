@@ -5,6 +5,7 @@ import type { RuntimeEnv } from "../lib/config";
 import { runAuditTick } from "../lib/tokenhub-audit";
 import { reconcileApimartTasks } from "../lib/apimart-relay";
 import { reconcileTokenHubTasks } from "../lib/tokenhub-relay";
+import { reconcileProductInquiries } from "../lib/product-inquiries";
 
 interface Env extends RuntimeEnv {
   ASSETS: Fetcher;
@@ -44,6 +45,9 @@ const worker = {
       reconcileTokenHubTasks(env, { maxTasks: 10 }),
     ]).then(results => {
       if (results.some(result => result.status === "rejected")) console.error("Wallet task reconciliation incomplete; inspect pending reservations.");
+    }));
+    ctx.waitUntil(reconcileProductInquiries(env, { maxInquiries: 10 }).catch(() => {
+      console.error("Product inquiry notifications remain pending; inspect the inquiry queue.");
     }));
   },
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {

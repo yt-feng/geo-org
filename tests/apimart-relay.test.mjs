@@ -94,6 +94,13 @@ test("official APIMart prices receive exactly 20% markup and unsupported billing
   assert.throws(() => apimart.apimartTaskCharge({ credits_cost: 1 }));
   assert.throws(() => apimart.apimartChatCharge(quote, { model: "different", usage: { prompt_tokens: 20, completion_tokens: 10 } }));
   assert.throws(() => apimart.apimartChatCharge(quote, { usage: { prompt_tokens: 20, completion_tokens: 10, total_tokens: 99 } }));
+  const branded = structuredClone(SOURCE);
+  branded.data.models.llm[0].name = "APIMart GPT 5";
+  const publicModel = apimart.parseApimartPricing(branded).models.find(model => model.model === "gpt-5");
+  assert.equal(publicModel.name, "tokvilo 文本与图像 GPT 5");
+  assert.equal(publicModel.provider, "apimart");
+  assert.equal(publicModel.model, "gpt-5");
+  assert.deepEqual(publicModel.rates, CATALOG.models.find(model => model.model === "gpt-5").rates);
 });
 
 test("member chat uses the documented /api path and settles once from real usage including cache", async t => {
@@ -108,6 +115,18 @@ test("member chat uses the documented /api path and settles once from real usage
   assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 999890);
   await expect(f, request(CHAT_PATH, { body: JSON.stringify({ ...CHAT, temperature: 0.1 }) }), 409);
   assert.equal(f.calls.length, 1);
+});
+test("gateway and legacy URLs replay a shared receipt without a second paid request", async t => {
+  const f = await fixture(t);
+  const legacy = request();
+  const gateway = new Request(legacy.url.replace("/api/apimart/", "/api/gateway/"), {
+    method: legacy.method, headers: legacy.headers, body: JSON.stringify(CHAT),
+  });
+  const first = await expect(f, gateway, 200);
+  const repeated = await expect(f, legacy, 200);
+  assert.deepEqual(repeated, first);
+  assert.equal(f.calls.length, 1);
+  assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM wallet_reservations").get().n, 1);
 });
 
 test("anonymous, disabled accounts, cross-origin mutations, revoked keys and insufficient balances never generate", async t => {

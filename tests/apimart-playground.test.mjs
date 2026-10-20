@@ -5,6 +5,7 @@ import test from "node:test";
 import vm from "node:vm";
 import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
+import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const filename = new URL("../components/Playground.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
@@ -38,6 +39,7 @@ async function fixture(options = {}) {
   vm.runInNewContext(code, {
     module: compiled, exports: compiled.exports, crypto: webcrypto, URL, setTimeout: () => 1, clearTimeout() {},
     require(name) {
+      if (name === "@/lib/brand-display") return brandDisplay;
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
@@ -48,7 +50,7 @@ async function fixture(options = {}) {
     fetch: async (url, init) => {
       calls.push({ url, init });
       if (url === "/api/pricing") return Response.json({ models: [{ provider: "apimart", model: "gpt-image-2", rates: [{ dimension: "2k", unit: "image", retailMicrousd: 18000 }] }] });
-      if (url === "/api/apimart/v1/tasks") return Response.json({ data: [] });
+      if (url === "/api/gateway/v1/tasks") return Response.json({ data: [] });
       if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ provider: "apimart", model: "gpt-image-2", mode: "image", currency: "USD", reservedMicrousd: 18000, observedAt: "2026-10-20T00:00:00Z" });
       return options.generate ? options.generate(url, init) : Response.json({ data: [{ task_id: "new_task", status: "submitted" }] });
     },

@@ -1,5 +1,7 @@
 "use client";
 
+import { displayServiceText } from "@/lib/brand-display";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Icon } from "./Icon";
@@ -42,7 +44,7 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
       const found = Array.isArray(data.models) ? data.models.filter((item: { provider: string }) => item.provider === "apimart") : [];
       setPrices(found); if (!found.length) setPriceError("实时价格暂不可用，请稍后刷新。");
     }).catch(() => { if (active) setPriceError("实时价格暂不可用，请稍后刷新。"); });
-    fetch("/api/apimart/v1/tasks", { cache: "no-store" }).then(response => response.json()).then(data => { if (active && Array.isArray(data.data)) setTasks(data.data); }).catch(() => undefined);
+    fetch("/api/gateway/v1/tasks", { cache: "no-store" }).then(response => response.json()).then(data => { if (active && Array.isArray(data.data)) setTasks(data.data); }).catch(() => undefined);
     return () => { active = false; };
   }, []);
   useEffect(() => {
@@ -52,7 +54,7 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
     const timer = setTimeout(async () => {
       polls.current[task.id] = (polls.current[task.id] || 0) + 1;
       try {
-        const response = await fetch(`/api/apimart/v1/tasks/${encodeURIComponent(task.id)}`, { cache: "no-store" });
+        const response = await fetch(`/api/gateway/v1/tasks/${encodeURIComponent(task.id)}`, { cache: "no-store" });
         const data = await response.json();
         if (!active) return;
         if (response.ok && typeof data.data?.status === "string") {
@@ -71,14 +73,14 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
   const json = JSON.stringify(payload, null, 2);
   const signature = endpoints[category] + "\n" + json;
   const currentQuote = quote?.signature === signature ? quote : null;
-  const curl = `curl --request POST \\\n  --url 'https://tokvilo.com/api/apimart${endpoints[category]}' \\\n  --header 'Authorization: Bearer YOUR_TOKVILO_API_KEY' \\\n  --header 'Idempotency-Key: YOUR_UNIQUE_REQUEST_ID' \\\n  --header 'Content-Type: application/json' \\\n  --data ${shellQuote(json)}`;
+  const curl = `curl --request POST \\\n  --url 'https://tokvilo.com/api/gateway${endpoints[category]}' \\\n  --header 'Authorization: Bearer YOUR_TOKVILO_API_KEY' \\\n  --header 'Idempotency-Key: YOUR_UNIQUE_REQUEST_ID' \\\n  --header 'Content-Type: application/json' \\\n  --data ${shellQuote(json)}`;
   function changeCategory(value: ModelCategory) { setCategory(value); setModel(modelCatalog.find(item => item.category === value)?.id || ""); setShowPreview(false); setCopied(false); setPromptExample(0); }
   async function copy() { try { await navigator.clipboard.writeText(format === "json" ? json : curl); setCopied(true); setCopyError(false); setTimeout(() => setCopied(false), 1800); } catch { setCopyError(true); } }
 
   async function refreshTask(id: string) {
     setBusy(true); setRequestError("");
     try {
-      const response = await fetch(`/api/apimart/v1/tasks/${encodeURIComponent(id)}`, { cache: "no-store" });
+      const response = await fetch(`/api/gateway/v1/tasks/${encodeURIComponent(id)}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || "任务查询失败，请稍后刷新。");
       setResult(data); setShowPreview(true);
@@ -106,7 +108,7 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
     setBusy(true); setRequestError(""); setResult(null); setShowPreview(true);
     if (pendingRequest.current?.signature !== signature) pendingRequest.current = { signature, id: crypto.randomUUID() };
     try {
-      const response = await fetch(`/api/apimart${endpoints[category]}`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pendingRequest.current.id, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd) }, body: json });
+      const response = await fetch(`/api/gateway${endpoints[category]}`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pendingRequest.current.id, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd) }, body: json });
       const data = await response.json();
       if (!response.ok) {
         if (data.error?.code === "reservation_limit_exceeded") setQuote(null);
@@ -145,10 +147,10 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
       <div className="playground-run-area">{currentQuote ? <div role="status"><strong>本次预留 ${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)}</strong><p>完成后按实际用量结算，退回预留差额。修改参数后需重新报价。</p></div> : null}<button className="playground-run" type="button" disabled={busy || !executable || !model.trim() || !prompt.trim()} onClick={currentQuote ? run : prepareQuote}><Icon name="sparkles" size={17} />{busy ? "处理中…" : currentQuote ? `确认预留 $${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)} 并生成` : "获取准确报价"}<Icon name="arrow-right" size={17} /></button>{currentQuote ? <button type="button" disabled={busy} onClick={prepareQuote}>刷新报价</button> : null}<button type="button" onClick={() => { setShowPreview(true); setCopied(false); }}>预览请求</button><span><i />上游价格 × 1.20 · 从钱包余额扣费</span></div>
     </section>
     <section className="playground-workspace" aria-label="请求工作台">
-      <header className="playground-workspace-header"><div><h1>请求工作台</h1><span>从一个想法开始</span></div><a href={selected?.docs || "https://docs.apimart.ai"} target="_blank" rel="noreferrer"><Icon name="book" size={15} />模型文档<Icon name="arrow-up-right" size={14} /></a></header>
+      <header className="playground-workspace-header"><div><h1>请求工作台</h1><span>从一个想法开始</span></div><a href="/dashboard/docs?provider=gateway" target="_blank" rel="noreferrer"><Icon name="book" size={15} />模型文档<Icon name="arrow-up-right" size={14} /></a></header>
       <div className="playground-notice"><span className="playground-notice-dot" /><p>{priceError || (executable ? "已开通会员生成。提交时预留余额，完成后按实际用量结算。" : "此模型的计费尚未开通，可以预览参数或选择其他模型。")}</p>{isAdmin ? <Link href="/admin">管理上游 <Icon name="arrow-right" size={13} /></Link> : <Link href="/dashboard/docs">查看已开通 API <Icon name="arrow-right" size={13} /></Link>}</div>
       {selectedPrice ? <div className="playground-notice"><p>{selectedPrice.rates.map(rate => `${rate.dimension}: $${(rate.retailMicrousd / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 6 })}/${rate.unit === "image" ? "张" : "百万 tokens"}`).join(" · ")}</p><Link href="/dashboard/wallet">钱包与充值</Link></div> : null}
-      {requestError ? <div className="playground-notice" role="alert"><p>{requestError}</p></div> : null}
+      {requestError ? <div className="playground-notice" role="alert"><p>{displayServiceText(requestError)}</p></div> : null}
       {result ? <div className="playground-preview-area"><h2>生成结果</h2>{imageUrls.map((url, index) => <figure key={url}>
         {/* Official task results use upload.apimart.ai; preserve their signed URL without optimizing. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -157,7 +159,7 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
       </figure>)}{choices[0]?.message?.content ? <pre style={{ whiteSpace: "pre-wrap" }}>{choices[0].message.content}</pre> : null}<pre style={{ overflowX: "auto", maxHeight: 360 }}><code>{JSON.stringify(result, null, 2)}</code></pre></div> : null}
       {tasks.length ? <div className="playground-preview-area"><h2>最近图片任务</h2>{tasks.map(task => <div className="playground-request-summary" key={task.id}><div><span>{task.model}</span><code>{task.id}</code></div><div><span>状态</span><strong>{task.status}</strong></div><button type="button" disabled={busy} onClick={() => refreshTask(task.id)}>查询结果</button></div>)}</div> : null}
       {showPreview ? <div className="playground-preview-area">
-        <div className="playground-preview-meta"><span className="request-method">POST</span><code>/api/apimart{endpoints[category]}</code><span>tokvilo 请求示例</span></div>
+        <div className="playground-preview-meta"><span className="request-method">POST</span><code>/api/gateway{endpoints[category]}</code><span>tokvilo 请求示例</span></div>
         <div className="playground-code-panel"><div className="playground-code-toolbar"><div role="tablist" aria-label="代码格式"><button role="tab" aria-selected={format === "json"} type="button" className={format === "json" ? "selected" : ""} onClick={() => setFormat("json")}>JSON</button><button role="tab" aria-selected={format === "curl"} type="button" className={format === "curl" ? "selected" : ""} onClick={() => setFormat("curl")}>cURL</button></div><button type="button" onClick={copy}><Icon name={copied ? "check" : "copy"} size={14} />{copied ? "已复制" : "复制代码"}</button></div><pre tabIndex={0}><code>{format === "json" ? json : curl}</code></pre></div>
         <div className="playground-code-note" role="status">{copyError ? "复制未完成，请选择上方代码后手动复制。" : "使用你的 tokvilo API Key；每次新请求使用唯一编号，重试保留同一 Idempotency-Key。"}</div>
         <div className="playground-request-summary"><div><span>模型</span><strong>{selected?.name || model}</strong></div><div><span>能力</span><strong>{modelCategories.find(item => item.id === category)?.label}</strong></div><div><span>执行状态</span><strong>{busy ? "处理中" : result ? "已收到响应" : "尚未发送"}</strong></div></div>

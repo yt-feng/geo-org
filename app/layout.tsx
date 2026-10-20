@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { SessionKeepAlive } from "@/components/SessionKeepAlive";
 import "./globals.css";
 import "./console.css";
 import "./public-design.css";
@@ -48,7 +49,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.theme=localStorage.getItem('tokvilo-theme')==='light'?'light':'dark'}catch(e){}" }} />
       </head>
-      <body>{children}</body>
+      <body><SessionKeepAlive />{children}</body>
     </html>
   );
 }

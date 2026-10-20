@@ -1,5 +1,7 @@
 "use client";
 
+import { displayServiceText } from "@/lib/brand-display";
+
 import { useEffect, useMemo, useState } from "react";
 import { apiCurlExample, loadApiDocumentation, requestBodyExample, requestBodySchema, type ApiOperation, type DocumentationResult, type DocumentationSource } from "@/lib/api-documentation";
 
@@ -18,7 +20,7 @@ export function DocsExplorer({ baseUrl }: { baseUrl: string }) {
       .then(result => {
         if (controller.signal.aborted) return;
         const requestedProvider = new URLSearchParams(window.location.search).get("provider");
-        setProvider(requestedProvider === "tokenhub" || requestedProvider === "tikhub" || requestedProvider === "apimart" ? requestedProvider : "all");
+        setProvider(requestedProvider === "studio" ? "tokenhub" : requestedProvider === "gateway" ? "apimart" : requestedProvider === "data" ? "tikhub" : requestedProvider === "tokenhub" || requestedProvider === "tikhub" || requestedProvider === "apimart" ? requestedProvider : "all");
         setData(result);
         if (!result.sources.some(source => source.loaded)) setError("接口文档暂时无法读取，请根据下方提示检查登录或稍后刷新。");
       })
@@ -37,18 +39,18 @@ export function DocsExplorer({ baseUrl }: { baseUrl: string }) {
   const example = active ? requestBodyExample(active) : undefined;
   const schema = active ? requestBodySchema(active) : undefined;
 
-  if (loading) return <div className="docs-status">正在独立加载数据接口与 TokenHub 文档…</div>;
+  if (loading) return <div className="docs-status">正在加载 tokvilo 接口文档…</div>;
 
   return <>
-    <div className="docs-source-status" aria-label="文档来源状态">{data.sources.map(source => <span className={source.loaded ? "is-loaded" : ""} key={source.id}>{source.label}<strong>{source.loaded ? `${source.count} 个操作` : "未加载"}</strong></span>)}</div>
-    {data.warnings.length ? <div className="docs-source-notices" role="status">{data.warnings.map(message => <p key={message}>{message}</p>)}</div> : null}
-    {error ? <div className="docs-status error" role="alert">{error}</div> : null}
+    <div className="docs-source-status" aria-label="文档来源状态">{data.sources.map(source => <span className={source.loaded ? "is-loaded" : ""} key={source.id}>{displayServiceText(source.label)}<strong>{source.loaded ? `${source.count} 个操作` : "未加载"}</strong></span>)}</div>
+    {data.warnings.length ? <div className="docs-source-notices" role="status">{data.warnings.map(message => <p key={message}>{displayServiceText(message)}</p>)}</div> : null}
+    {error ? <div className="docs-status error" role="alert">{displayServiceText(error)}</div> : null}
     <div className="docs-explorer">
       <aside className="docs-index">
         <div className="docs-controls">
           <input aria-label="搜索接口或模型 ID" onChange={event => setQuery(event.target.value)} placeholder="搜索路径、名称或模型 ID" type="search" value={query} />
           <select aria-label="按接口来源筛选" onChange={event => { setProvider(event.target.value as DocumentationSource | "all"); setTag("全部"); }} value={provider}>
-            <option value="all">全部来源</option><option value="tikhub">数据接口</option><option value="tokenhub">TokenHub</option><option value="apimart">APIMart</option>
+            <option value="all">全部服务</option><option value="tikhub">数据接口</option><option value="tokenhub">tokvilo 多模态</option><option value="apimart">tokvilo 文本与图像</option>
           </select>
           <select aria-label="按分类筛选" onChange={event => setTag(event.target.value)} value={tag}>{tags.map(item => <option key={item}>{item}</option>)}</select>
         </div>
@@ -62,7 +64,7 @@ export function DocsExplorer({ baseUrl }: { baseUrl: string }) {
       <article className="endpoint-detail">
         {active ? <>
           <div className="endpoint-heading"><span className={`method method-${active.method.toLowerCase()}`}>{active.method}</span><div><h2>{active.summary}</h2><code>{active.path}</code></div></div>
-          <p className="docs-count">{active.source === "tokenhub" ? "TokenHub · 模型 API" : active.source === "apimart" ? "APIMart · 模型 API" : "tokvilo 数据接口"} · <a href={active.source === "tokenhub" ? "/api/private/tokenhub-openapi" : active.source === "apimart" ? "/api/private/apimart-openapi" : "/api/private/openapi"} download>下载此来源 OpenAPI JSON</a></p>
+          <p className="docs-count">{active.source === "tokenhub" ? "tokvilo 多模态 · 模型 API" : active.source === "apimart" ? "tokvilo 文本与图像 · 模型 API" : "tokvilo 数据接口"} · <a href={active.source === "tokenhub" ? "/api/private/studio-openapi" : active.source === "apimart" ? "/api/private/gateway-openapi" : "/api/private/openapi"} download>下载此来源 OpenAPI JSON</a></p>
           {active.description ? <p className="endpoint-description">{active.description}</p> : null}
           <section><h3>请求地址</h3><pre><code>{`${baseUrl.replace(/\/+$/, "")}${active.path}`}</code></pre></section>
           <section><h3>认证</h3><pre><code>Authorization: Bearer tk_live_your_api_key</code></pre>{active.source !== "tikhub" ? <p>使用当前账户创建的 tokvilo API Key，会员从余额按量扣费。上游密钥由后台保存；不要放入客户端请求。</p> : null}</section>

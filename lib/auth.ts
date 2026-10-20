@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { runtimeEnv } from "./config";
 import { safeEqual } from "./crypto";
+import { verifyLocalSession } from "./local-auth";
 
 export const ACCESS_COOKIE = "eco_geo_access";
 export const REFRESH_COOKIE = "eco_geo_refresh";
@@ -133,6 +134,7 @@ export function isAdminEmail(email: string): boolean {
 export async function verifyAccessToken(
   token: string,
 ): Promise<PortalUser | null> {
+  if (token.startsWith("tk_session_")) return verifyLocalSession(token);
   const admin = await verifyAdminSession(token);
   if (admin) return admin;
   const config = authConfig();
@@ -146,24 +148,28 @@ export async function verifyAccessToken(
         authorization: `Bearer ${token}`,
       },
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+      redirect: "manual",
     });
   } catch {
     return null;
   }
   if (!response.ok) return null;
 
-  const payload = (await response.json()) as AuthUserPayload;
-  const id = payload.id?.trim();
-  const email = payload.email?.trim().toLowerCase();
+  let payload: AuthUserPayload;
+  try { payload = await response.json() as AuthUserPayload; } catch { return null; }
+  if (!payload || typeof payload !== "object") return null;
+  const id = typeof payload.id === "string" ? payload.id.trim() : "";
+  const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
   if (!id || !email) return null;
   const metadata = payload.user_metadata || {};
-  const displayName =
-    metadata.display_name?.trim() ||
-    metadata.full_name?.trim() ||
-    metadata.name?.trim() ||
+  const displayName = [metadata.display_name, metadata.full_name, metadata.name]
+    .find((value): value is string => typeof value === "string" && Boolean(value.trim()))?.trim() ||
     email.split("@")[0];
 
-  return { id, email, displayName, isAdmin: isAdminEmail(email) };
+  // New provider accounts never inherit administrator privileges from an email.
+  // The existing dedicated administrator login remains a separate signed session.
+  return { id, email, displayName, isAdmin: false };
 }
 
 export async function getPortalUser(): Promise<PortalUser | null> {
@@ -186,11 +192,13 @@ export async function requireAdminUser(): Promise<PortalUser> {
 export function authRequestHeaders(): Headers {
   const config = authConfig();
   if (!config) throw new Error("Authentication is not configured");
-  return new Headers({
+  const headers = new Headers({
     apikey: config.anonKey,
-    authorization: `Bearer ${config.anonKey}`,
     "content-type": "application/json",
   });
+  // Publishable keys are not JWTs and must only be sent in the apikey header.
+  if (!config.anonKey.startsWith("sb_publishable_")) headers.set("authorization", `Bearer ${config.anonKey}`);
+  return headers;
 }
 
 export function authBaseUrl(): string {

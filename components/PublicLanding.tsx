@@ -14,7 +14,7 @@ const models = [
   { name: "Claude", vendor: "ANTHROPIC", mark: "✳", category: "文本", description: "语言、推理与代码，构建你的智能工作流。", color: "orange" },
   { name: "Kling 2.6", vendor: "KLING AI", mark: "◉", category: "视频", description: "将创意转化为动态影像，探索视频生成。", color: "white" },
   { name: "Veo 3.1", vendor: "GOOGLE", mark: "▷", category: "视频", description: "面向场景与叙事的生成式视频能力。", color: "blue" },
-  { name: "TikHub", vendor: "DATA API", mark: "↗", category: "数据", description: "统一访问已配置的数据接口与平台能力。", color: "pink" },
+  { name: "数据接口", vendor: "TOKVILO", mark: "↗", category: "数据", description: "统一访问已配置的数据接口与平台能力。", color: "pink" },
 ];
 
 function DashboardPreview() {
@@ -31,7 +31,7 @@ function DashboardPreview() {
         <div className="landing-preview-period"><span className="active">今天</span><span>昨天</span><span>近 7 天</span><span>近 30 天</span><small>界面预览</small></div>
         <div className="landing-preview-metrics">{["今日调用", "调用成功率", "剩余额度", "累计请求", "请求延迟", "已创建密钥"].map((label, i) => <div key={label}><span>{label}</span><strong>—</strong><svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d={i % 2 ? "M0 35 L12 32 L24 32 L36 25 L48 28 L60 20 L72 11 L84 15 L100 2" : "M0 35 L14 24 L28 28 L42 15 L56 20 L70 7 L84 12 L100 1"} /></svg></div>)}</div>
         <div className="landing-preview-charts"><div className="landing-preview-chart"><h3>调用趋势</h3><p>统一查看你的 API 用量</p><div className="landing-preview-bars">{[18, 38, 26, 74, 53, 86, 64, 33].map((height, i) => <i style={{ height: `${height}%` }} key={i} />)}</div></div><div className="landing-preview-chart"><h3>服务分布</h3><p>多种能力，一个入口</p><div className="landing-preview-donut-row"><div className="landing-preview-donut"><span>API</span></div><div className="landing-preview-legend"><span>图像生成</span><span>语言模型</span><span>数据接口</span></div></div></div></div>
-        <div className="landing-preview-table"><h3>服务目录</h3><div><span>服务</span><span>协议</span><span>管理</span></div><div><span>APIMart</span><span>REST API</span><span>统一配置</span></div><div><span>TikHub</span><span>REST API</span><span>统一配置</span></div></div>
+        <div className="landing-preview-table"><h3>服务目录</h3><div><span>服务</span><span>协议</span><span>管理</span></div><div><span>tokvilo 文本与图像</span><span>REST API</span><span>统一配置</span></div><div><span>tokvilo 数据接口</span><span>REST API</span><span>统一配置</span></div></div>
       </div>
     </div>
   );
@@ -61,7 +61,7 @@ export function PublicLanding() {
         <section className="landing-hero">
           <div className="landing-hero-copy">
             <h1>让 AI 更近一步。<br />模型、工具与订阅，<br />一个 tokvilo。</h1>
-            <p>从模型 API 到数字订阅，在一个工作空间发现、购买和使用。按上游公开价格加价 20%，每次消费都有记录。</p>
+            <p>从模型 API 到数字订阅，在一个工作空间发现和使用。API 按量计费；数字商品提交需求，24 小时内邮件回复。</p>
             <div className="landing-hero-actions"><Link href="/dashboard" className="button button-primary">开始使用 <Icon name="arrow-right" size={16} /></Link><Link href="/dashboard/docs" className="button button-secondary">查看文档</Link><Link href="/playground" className="button button-secondary landing-tools-link">PLAYGROUND <span>NEW</span></Link></div>
             <span className="landing-private-note"><Icon name="lock" size={12} />文档与调用凭证不对外公开</span>
           </div>
@@ -69,19 +69,19 @@ export function PublicLanding() {
         </section>
       </div>
 
-      <section className="landing-providers" aria-label="模型与数据生态"><span className="landing-provider-openai">◎ OpenAI</span><span className="landing-provider-anthropic">ANTHROPIC</span><span className="landing-provider-google">Google <b>✦</b></span><span className="landing-provider-deepseek">deepseek</span><span className="landing-provider-xai">𝕏 AI</span><span className="landing-provider-tikhub">TikHub <sup>↗</sup></span></section>
+      <section className="landing-providers" aria-label="模型与数据生态"><span className="landing-provider-openai">◎ OpenAI</span><span className="landing-provider-anthropic">ANTHROPIC</span><span className="landing-provider-google">Google <b>✦</b></span><span className="landing-provider-deepseek">deepseek</span><span className="landing-provider-xai">𝕏 AI</span><span className="landing-provider-tikhub">tokvilo <sup>↗</sup></span></section>
 
       <section className="landing-section landing-platform">
         <div className="landing-section-title"><span className="landing-eyebrow">ONE API. MORE POSSIBILITIES.</span><h2>定义你的 AI API 聚合层</h2><p>从模型探索到服务配置，在同一个工作空间里完成。</p></div>
         <div className="landing-feature-grid">
-          <article className="landing-feature-card"><div className="landing-feature-visual landing-network"><div className="landing-network-center"><Brand compact /></div>{["GPT", "Claude", "Gemini", "Veo", "Sora", "TikHub"].map((name, i) => <span className={`landing-network-node node-${i}`} key={name}>{name}</span>)}</div><div className="landing-feature-copy"><span>01 / CONNECT</span><h3>一个入口，连接多种能力</h3><p>将 APIMart 与已有数据服务集中管理。模型探索、数据访问与文档，从这里开始。</p></div></article>
+          <article className="landing-feature-card"><div className="landing-feature-visual landing-network"><div className="landing-network-center"><Brand compact /></div>{["GPT", "Claude", "Gemini", "Veo", "Sora", "Data"].map((name, i) => <span className={`landing-network-node node-${i}`} key={name}>{name}</span>)}</div><div className="landing-feature-copy"><span>01 / CONNECT</span><h3>一个入口，连接多种能力</h3><p>在 tokvilo 集中使用文本、图像、视频与数据服务。模型探索、数据访问与文档，从这里开始。</p></div></article>
           <article className="landing-feature-card"><div className="landing-feature-visual landing-key-visual"><span><Icon name="key" size={15} /> Production key <i /></span><div>tk_••••••••••••••••••••</div><small><Icon name="lock" size={12} /> 服务端加密存储上游凭证</small></div><div className="landing-feature-copy"><span>02 / CONTROL</span><h3>让每一次接入清晰可控</h3><p>在控制台管理 API 密钥与上游配置。权限与凭证各司其职，协作更简单。</p></div></article>
           <article className="landing-feature-card"><div className="landing-feature-visual landing-observe-visual"><div><span>API USAGE</span><b>↗</b></div><svg viewBox="0 0 300 100" aria-hidden="true"><defs><linearGradient id="landingChartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".14" /><stop offset="100%" stopColor="currentColor" stopOpacity="0" /></linearGradient></defs><path d="M0 90 L30 75 L60 80 L90 52 L120 60 L150 32 L180 43 L210 17 L240 28 L270 5 L300 14 L300 100 L0 100Z" fill="url(#landingChartFill)" /><path d="M0 90 L30 75 L60 80 L90 52 L120 60 L150 32 L180 43 L210 17 L240 28 L270 5 L300 14" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg><small>请求 · 成功率 · 额度</small></div><div className="landing-feature-copy"><span>03 / OBSERVE</span><h3>调用发生什么，一目了然</h3><p>查看真实请求记录和用量趋势，掌握调用状态，让日常管理更直接。</p></div></article>
         </div>
       </section>
 
       <section className="landing-section landing-models" id="models">
-        <div className="landing-section-title"><span className="landing-eyebrow">EXPLORE THE POSSIBILITIES</span><h2>为下一个想法，找到合适的模型</h2><p>探索 APIMart 模型生态与已有数据服务。</p></div>
+        <div className="landing-section-title"><span className="landing-eyebrow">EXPLORE THE POSSIBILITIES</span><h2>为下一个想法，找到合适的模型</h2><p>探索 tokvilo 的模型与数据能力。</p></div>
         <div className="landing-model-toolbar"><div className="landing-tabs" aria-label="模型类型">{categories.map((item) => <button type="button" className={category === item ? "active" : ""} onClick={() => setCategory(item)} aria-pressed={category === item} key={item}>{item}</button>)}</div><Link href="/models">查看全部模型 <Icon name="arrow-up-right" size={15} /></Link></div>
         <div className="landing-model-grid">{visibleModels.map((model) => <Link href="/models" className="landing-model-card" key={model.name}><div className="landing-model-art"><Image src={`/model-art/model-${String(models.indexOf(model) + 1).padStart(2, "0")}.webp`} alt="" width={828} height={828} unoptimized /><span>{model.category}</span></div><div className="landing-model-card-content"><div className="landing-model-top"><span className={`landing-model-mark ${model.color}`}>{model.mark}</span><span className="landing-model-vendor">{model.vendor}</span></div><h3>{model.name}</h3><p>{model.description}</p><span className="landing-model-directory">模型能力目录</span></div><div className="landing-model-bottom"><Icon name="arrow-right" size={14} /> 查看详情</div></Link>)}</div>
         <p className="landing-catalog-note">以上为能力目录，具体可用模型以已配置上游为准。</p>
@@ -96,17 +96,17 @@ export function PublicLanding() {
         ["layers", "统一工作空间", "AI 模型与数据服务，在同一套 tokvilo 品牌与导航下管理。"],
         ["key", "独立密钥管理", "为不同应用创建调用密钥，按需停用，清晰管理访问。"],
         ["activity", "可追溯的调用", "查看请求路径、状态与响应耗时，快速了解调用情况。"],
-        ["sliders", "可配置的上游", "在后台填写 APIMart API Key，验证连接并读取模型目录。"],
+        ["sliders", "丰富的模型选择", "通过统一工作台使用文本、图像与视频模型，按需求选择能力。"],
         ["chart", "透明的用量", "实际调用数据与每日额度集中展示，使用情况始终可见。"],
         ["book", "专属接口文档", "登录后查看已开通的接口目录和参数，按文档直接接入。"],
       ].map(([icon, title, body]) => <article key={title}><Icon name={icon} size={22} /><h3>{title}</h3><p>{body}</p></article>)}</div></section>
 
       <section className="landing-section landing-faq" id="faq"><div className="landing-section-title"><span className="landing-eyebrow">QUESTIONS, ANSWERED</span><h2>常见问题</h2></div><div className="landing-faq-list">{[
-        ["tokvilo 是什么？", "tokvilo 提供模型 API、数字商品与订阅服务。你可以浏览模型与商品、购买充值码、管理余额与订单。"],
-        ["如何定价？", "模型 API 与数字商品均按对应上游价格加价 20%。API 按实际用量结算，数字商品按页面标注的规格和人民币售价购买。"],
+        ["tokvilo 是什么？", "tokvilo 提供模型 API、数字商品与订阅咨询。API 充值与用量在账户内管理；数字商品可直接提交需求，24 小时内邮件回复。"],
+        ["如何定价？", "模型 API 与数字商品均按对应上游价格加价 20%。API 按实际用量结算，数字商品展示人民币参考售价，提交需求后通过邮件确认。"],
         ["如何充值？", "在余额与充值页面通过链动小铺购买 tokvilo 充值码，支付后回到本站兑换。兑换额度和汇率在购买前展示。"],
-        ["如何接入 APIMart？", "管理员登录后，在服务设置中填写 APIMart API Key。保存时会验证凭证，随后可测试连接和获取模型目录。实际模型执行以控制台展示的接入状态为准。"],
-        ["原来的 TikHub 数据接口还可以使用吗？", "可以。已有数据接口继续通过 tokvilo 的统一入口访问，具体路径、参数与可用权限请查看登录后的 API 文档。"],
+        ["如何使用模型？", "登录后进入文本与图像或多模态工作台，选择模型并填写请求。确认预留金额后即可生成，完成后按实际用量结算。"],
+        ["可以使用数据接口吗？", "可以。已有数据接口继续通过 tokvilo 的统一入口访问，具体路径、参数与可用权限请查看登录后的 API 文档。"],
         ["如何开始使用 API？", "注册并登录账户，在 API 密钥页创建调用凭证，再按照接口文档提交请求。管理员可在后台查看上游配置和成员使用情况。"],
         ["上游 API Key 会展示给其他成员吗？", "不会。上游凭证由管理员配置，在服务端加密保存；控制台只显示配置状态及部分掩码。成员使用各自的 tokvilo 调用密钥。"],
       ].map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span><Icon name="plus" size={18} /></span></summary><p>{answer}</p></details>)}</div></section>

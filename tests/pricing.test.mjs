@@ -17,6 +17,22 @@ function source() { return { currencyCode: "USD", data: [
 ] }; }
 const chat = { model: "chat", messages: [{ role: "user", content: "Hello" }], max_tokens: 100 };
 
+test("public labels and diagnostics use tokvilo while model IDs, vendors and generated content remain exact", () => {
+  const snapshot = source(); snapshot.data[0].label = "TokenHub DeepSeek";
+  const model = normalizeTokenHubPricing(snapshot).models.find(model => model.model === "chat");
+  assert.equal(model.name, "tokvilo 多模态 DeepSeek");
+  assert.equal(model.provider, "tokenhub");
+  assert.equal(model.model, "chat");
+  const input = { error: { code: "apimart_error", message: "API Mart service unavailable" },
+    model: "tokenhub-exact-model", choices: [{ message: { content: "Compare TokenHub and APIMart" } }] };
+  const output = compiled.exports.publicServiceErrors(input);
+  assert.equal(output.error.message, "tokvilo 文本与图像 service unavailable");
+  assert.equal(output.error.code, input.error.code);
+  assert.equal(output.model, input.model);
+  assert.equal(output.choices, input.choices);
+  assert.equal(compiled.exports.publicServiceText("OpenAI · DeepSeek · ByteDance"), "OpenAI · DeepSeek · ByteDance");
+});
+
 test("retail rate is upstream plus exactly 20 percent and request totals use integer arithmetic", () => {
   assert.equal(markupMicrousd(90000), 108000);
   assert.equal(markupMicrousd(150000), 180000);

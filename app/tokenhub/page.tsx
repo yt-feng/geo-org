@@ -4,7 +4,7 @@ import { TokenHubPlayground } from "@/components/TokenHubPlayground";
 import { requirePortalUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "TokenHub 工作台" };
+export const metadata: Metadata = { title: "tokvilo 多模态 工作台" };
 
 export default async function TokenHubPage() {
   const user = await requirePortalUser();

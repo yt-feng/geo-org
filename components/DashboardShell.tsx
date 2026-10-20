@@ -37,8 +37,8 @@ export function DashboardShell({ user, active, children }: {
         </div>
         <nav className="console-navigation" aria-label="控制台导航">
           {navigation.map((item) => <Link key={item.key} className={`console-nav-link${active === item.key ? " active" : ""}`} href={item.href} aria-current={active === item.key ? "page" : undefined} title={item.label}><Icon name={item.icon} size={17} /><span>{item.label}</span></Link>)}
-          {<Link className={`console-nav-link${active === "tokenhub" ? " active" : ""}`} href="/tokenhub" aria-current={active === "tokenhub" ? "page" : undefined} title="TokenHub 工作台"><Icon name="video" size={17} /><span>TokenHub 工作台</span></Link>}
-          {user.isAdmin ? <Link className={`console-nav-link${active === "tokenhub-audit" ? " active" : ""}`} href="/tokenhub/audit" aria-current={active === "tokenhub-audit" ? "page" : undefined} title="每日模型核验"><Icon name="chart" size={17} /><span>每日模型核验</span></Link> : null}
+          {<Link className={`console-nav-link${active === "tokenhub" ? " active" : ""}`} href="/studio" aria-current={active === "tokenhub" ? "page" : undefined} title="tokvilo 多模态 工作台"><Icon name="video" size={17} /><span>tokvilo 多模态 工作台</span></Link>}
+          {user.isAdmin ? <Link className={`console-nav-link${active === "tokenhub-audit" ? " active" : ""}`} href="/admin/audit" aria-current={active === "tokenhub-audit" ? "page" : undefined} title="每日模型核验"><Icon name="chart" size={17} /><span>每日模型核验</span></Link> : null}
           {user.isAdmin ? <Link className={`console-nav-link${active === "admin" ? " active" : ""}`} href="/admin" aria-current={active === "admin" ? "page" : undefined} title="上游管理"><Icon name="settings" size={17} /><span>上游管理</span></Link> : null}
         </nav>
         <div className="console-sidebar-bottom">

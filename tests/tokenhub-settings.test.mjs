@@ -158,13 +158,17 @@ test("catalog normalization supports documented and observed schemas without exp
   const service = tokenhub.createTokenHubSettings(env, async () => modelsResponse([
     { id: "documented", name: "Documented model", provider: "Vendor", capabilities: ["video", 42], secret: KEY },
     { id: "observed", owned_by: "Vendor 2", modelType: "chat", iconSlug: "hidden" },
+    { id: "tokenhub-exact-id", name: "TokenHub Seedance", owned_by: "TOKENHUB", modelType: "video" },
     { id: 123 }, null,
   ]));
   const result = await service.models();
-  assert.equal(result.models.length, 2);
+  assert.equal(result.models.length, 3);
   assert.equal(result.models[0].category.join(","), "video");
   assert.equal(result.models[1].provider, "Vendor 2");
   assert.equal(result.models[1].category.join(","), "chat");
+  assert.equal(result.models[2].id, "tokenhub-exact-id");
+  assert.equal(result.models[2].name, "tokvilo 多模态 Seedance");
+  assert.equal(result.models[2].provider, "tokvilo 多模态");
   assertRedacted(result, KEY, ENV_KEY, "hidden");
 });
 
@@ -228,10 +232,10 @@ test("authenticated discovery merges all nine models with exact ECO endpoints an
     assert.equal(model.integrationStatus, "ready");
     assert.equal(model.accountAccess, CHAT_MODELS.includes(model.id) ? "listed_by_authenticated_model_api" : "unverified_public_catalog");
     const path = CHAT_MODELS.includes(model.id) ? "/v1/chat/completions" : VIDEO_MODELS.includes(model.id) ? "/v3/contents/generations/tasks" : "/v3/images/generations";
-    assert.equal(model.endpoint, `/api/tokenhub${path}`);
+    assert.equal(model.endpoint, `/api/studio${path}`);
     assert.ok(model.limitations.includes("non_streaming_json_only"));
   }
-  assert.equal(result.models.find(model => model.id === VIDEO_MODELS[3]).taskEndpoint, "/api/tokenhub/v3/contents/generations/tasks/{task_id}");
+  assert.equal(result.models.find(model => model.id === VIDEO_MODELS[3]).taskEndpoint, "/api/studio/v3/contents/generations/tasks/{task_id}");
   assert.equal(calls[0].init.headers.Authorization, `Bearer ${ENV_KEY}`); assert.equal(calls[1].init.headers.Authorization, undefined);
   assertRedacted(result, ENV_KEY, SECRET);
 });

@@ -23,7 +23,7 @@ export default function RegisterPage() {
           <h1>开始使用 tokvilo</h1>
           <p className="auth-intro">创建成员账户，开启你的 API 工作空间。</p>
           <AuthForm mode="register" />
-          <p className="auth-privacy"><Icon name="shield" size={12} />注册完成后，按页面提示登录控制台</p>
+          <p className="auth-privacy"><Icon name="shield" size={12} />按注册结果完成邮箱验证，再登录控制台</p>
         </section></div>
       </div>
     </main>

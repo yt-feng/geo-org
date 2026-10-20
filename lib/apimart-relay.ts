@@ -3,11 +3,12 @@ import { getD1, runtimeEnv, type RuntimeEnv } from "./config";
 import { sha256Hex } from "./crypto";
 import { ensureUser } from "./store";
 import { createProviderSettings, ProviderError } from "./provider-settings";
-import { PricingError } from "./pricing";
+import { PricingError, publicServiceText, publicServiceErrors } from "./pricing";
 import { apimartChatCharge, apimartTaskCharge, getApimartPricing, quoteApimartRequest } from "./apimart-pricing";
 import { reserveWallet, settleWallet, refundWallet, WalletError } from "./wallet";
 
-const BASE = "/api/apimart";
+const BASE = "/api/gateway";
+const COMPAT_BASE = "/api/apimart";
 const ORIGIN = "https://api.apimart.ai";
 const TASK_ID = /^[A-Za-z0-9_-]{1,160}$/;
 const HEADERS = { "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
@@ -16,8 +17,8 @@ type Actor = { userId: string; keyId: string | null };
 type StoredRequest = { request_hash: string; wallet_request_id: string; response_json: string | null; status_code: number | null };
 type Task = { id: string; user_id: string; model: string; status: string; wallet_request_id: string; response_json: string | null };
 function object(value: unknown): value is Json { return !!value && typeof value === "object" && !Array.isArray(value); }
-function reply(data: unknown, status = 200) { return Response.json(data, { status, headers: HEADERS }); }
-function error(message: string, status: number) { return reply({ error: { message } }, status); }
+function reply(data: unknown, status = 200) { return Response.json(publicServiceErrors(data), { status, headers: HEADERS }); }
+function error(message: string, status: number) { return reply({ error: { message: publicServiceText(message) } }, status); }
 
 async function actor(request: Request): Promise<Actor> {
   const authorization = request.headers.get("authorization");
@@ -193,11 +194,13 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
   try {
     const who = await actor(request), db = getD1(), env = runtimeEnv(), url = new URL(request.url);
     if (env.SERVICE_ENABLED?.toLowerCase() !== "true") return error("生成服务当前未启用。", 503);
-    const path = url.pathname.slice(BASE.length);
+    const prefix = [BASE, COMPAT_BASE].find(base => url.pathname.startsWith(base + "/"));
+    if (!prefix) return error("tokvilo 文本与图像接口不存在。", 404);
+    const path = url.pathname.slice(prefix.length);
     if (url.search) return error("此接口不接受查询参数。", 400);
     const taskId = path.startsWith("/v1/tasks/") ? path.slice("/v1/tasks/".length) : null;
     const methods = ["/v1/models", "/v1/tasks"].includes(path) || (taskId && TASK_ID.test(taskId)) ? ["GET"] : ["/v1/chat/completions", "/v1/images/generations"].includes(path) ? ["POST"] : [];
-    if (!methods.length) return error("APIMart 接口不存在。", 404);
+    if (!methods.length) return error("tokvilo 文本与图像 接口不存在。", 404);
     if (!methods.includes(request.method)) return error("不支持此请求方法。", 405);
     await limitRequests(who.userId, request.method !== "GET");
     if (path === "/v1/tasks") {
@@ -207,7 +210,7 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
     const service = createProviderSettings(env);
     if (path === "/v1/models") {
       const [discovered, pricing] = await Promise.all([service.models(), getApimartPricing()]);
-      return reply({ object: "list", data: discovered.models.map(model => ({ ...model, object: "model", owned_by: model.provider || "apimart", pricing: pricing.models.find(item => item.model === model.id) || null })), pricing_observed_at: pricing.observedAt });
+      return reply({ object: "list", data: discovered.models.map(model => ({ ...model, object: "model", owned_by: model.provider || "tokvilo 文本与图像", pricing: pricing.models.find(item => item.model === model.id) || null })), pricing_observed_at: pricing.observedAt });
     }
     if (taskId) {
       const task = await db.prepare("SELECT * FROM apimart_tasks WHERE id=? AND user_id=?").bind(taskId, who.userId).first<Task>();
@@ -273,6 +276,6 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
       else await getD1().prepare("DELETE FROM apimart_requests WHERE user_id=? AND idempotency_key=?").bind(claimed.userId, claimed.id).run().catch(() => undefined);
     }
     const known = cause instanceof ProviderError || cause instanceof PricingError || cause instanceof WalletError;
-    return error(known ? cause.message : "APIMart 服务暂不可用，请稍后重试。", known ? cause.status : 503);
+    return error(known ? cause.message : "tokvilo 文本与图像 服务暂不可用，请稍后重试。", known ? cause.status : 503);
   }
 }

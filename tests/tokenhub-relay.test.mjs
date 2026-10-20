@@ -131,6 +131,23 @@ test("a funded member pays returned chat usage at upstream plus 20%, once across
   await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify({ ...CHAT, max_tokens: 200 }) }), 409);
   assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM wallet_reservations").get().n, 1);
 });
+test("studio and legacy URLs share the same paid request receipt and never generate twice", async t => {
+  const f = await fixture(t, { user: MEMBER, fetcher: async () => Response.json({ model: "chat",
+    choices: [{ message: { content: "Hello" } }], usage: { prompt_tokens: 20, completion_tokens: 10 } }) });
+  f.credit(MEMBER);
+  const legacy = request("/v1/chat/completions", { body: JSON.stringify(CHAT) });
+  const studio = new Request(legacy.url.replace("/api/tokenhub/", "/api/studio/"), {
+    method: legacy.method, headers: legacy.headers, body: JSON.stringify(CHAT),
+  });
+  const first = await (await expectStatus(f.handle, studio, 200)).json();
+  const repeated = await (await expectStatus(f.handle, legacy, 200)).json();
+  assert.deepEqual(repeated.choices, first.choices);
+  assert.deepEqual(repeated.usage, first.usage);
+  assert.equal(repeated.tokvilo_billing.status, "settled");
+  assert.equal(repeated.tokvilo_billing.chargedMicrousd, first.tokvilo_billing.chargedMicrousd);
+  assert.equal(f.calls.length, 1);
+  assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM wallet_reservations").get().n, 1);
+});
 test("member requests require live prices and available funds before a generation call", async t => {
   const f = await fixture(t, { user: MEMBER, pricingError: true }); f.credit(MEMBER);
   await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 503);

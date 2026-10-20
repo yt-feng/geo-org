@@ -5,6 +5,6 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   const user = await getPortalUser();
   return user
-    ? Response.json({ user })
-    : Response.json({ error: "Unauthorized" }, { status: 401 });
+    ? Response.json({ user }, { headers: { "cache-control": "private, no-store" } })
+    : Response.json({ error: "Unauthorized" }, { status: 401, headers: { "cache-control": "private, no-store" } });
 }

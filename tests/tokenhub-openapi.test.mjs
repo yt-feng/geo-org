@@ -17,7 +17,7 @@ const reference = await load("../lib/tokenhub-model-reference.ts");
 const docs = await load("../lib/tokenhub-openapi.ts", { "./tokenhub-model-reference": reference });
 const viewer = await load("../lib/api-documentation.ts");
 const apimart = (await load("../lib/apimart-openapi.ts")).apimartOpenApi("https://tokvilo.com");
-const BASE = "https://api.eco-geo.org";
+const BASE = "https://tokvilo.com";
 const spec = docs.tokenHubOpenApi(BASE);
 const plain = value => JSON.parse(JSON.stringify(value));
 
@@ -27,7 +27,7 @@ test("TokenHub OpenAPI covers all relay operations and exact nine model referenc
   const operations = viewer.parseApiOperations(spec, "tokenhub");
   assert.equal(operations.length, 7);
   assert.equal(Object.keys(spec.paths).length, 5);
-  assert.ok(operations.every(operation => operation.path.startsWith("/api/tokenhub/")));
+  assert.ok(operations.every(operation => operation.path.startsWith("/api/studio/")));
   const expected = reference.TOKENHUB_REFERENCE_MODELS.map(model => model.id);
   const documented = operations.flatMap(operation => viewer.requestBodySchema(operation)?.properties?.model?.enum || []);
   assert.equal(new Set(documented).size, 9);
@@ -36,13 +36,20 @@ test("TokenHub OpenAPI covers all relay operations and exact nine model referenc
     const example = viewer.requestBodyExample(operation), schema = viewer.requestBodySchema(operation);
     assert.ok(schema.properties.model.enum.includes(example.model));
     assert.ok(operation.description.includes("会员"));
-    assert.ok(operation.description.includes("/api/tokenhub/v1/models"));
+    assert.ok(operation.description.includes("/api/studio/v1/models"));
   }
   const serialized = JSON.stringify(spec);
   assert.doesNotMatch(serialized, /ai-tokenhub\.ai|sk-[a-zA-Z0-9]/);
   assert.match(serialized, /integrationStatus/);
   assert.match(serialized, /accountAccess/);
   assert.match(serialized, /catalog\.complete/);
+  for (const document of [spec, apimart]) {
+    assert.doesNotMatch(document.info.title, /tokenhub|api[\s-]*mart/i);
+    for (const operation of viewer.parseApiOperations(document, document === spec ? "tokenhub" : "apimart")) {
+      assert.doesNotMatch([operation.summary, ...operation.tags].join(" "), /tokenhub|api[\s-]*mart/i);
+    }
+    assert.equal(document.components.securitySchemes.TokviloBearer.bearerFormat, "tokvilo API Key");
+  }
 });
 
 test("local TokenHub OpenAPI requires a signed-in user and never depends on provider access", async () => {
@@ -56,7 +63,7 @@ test("local TokenHub OpenAPI requires a signed-in user and never depends on prov
     const response = await route.GET();
     assert.equal(response.status, expected);
     assert.equal(response.headers.get("cache-control"), "private, no-store, max-age=0");
-    if (expected === 200) assert.equal((await response.json()).info.title, "tokvilo TokenHub API");
+    if (expected === 200) assert.equal((await response.json()).info.title, "tokvilo 多模态 API");
     else assert.equal(configurationReads, 0);
   }
   assert.equal(configurationReads, 2);
@@ -67,7 +74,7 @@ test("a failed data specification does not hide TokenHub docs, and the reverse r
     const calls = [];
     const result = await viewer.loadApiDocumentation(async (url, init) => {
       calls.push(url); assert.equal(init.cache, "no-store"); assert.ok(init.signal);
-      const source = url.includes("tokenhub-openapi") ? "tokenhub" : url.includes("apimart-openapi") ? "apimart" : "tikhub";
+      const source = url.includes("studio-openapi") ? "tokenhub" : url.includes("gateway-openapi") ? "apimart" : "tikhub";
       return source === unavailable ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json(source === "tokenhub" ? spec : source === "apimart" ? apimart : dataSpec());
     });
     assert.equal(calls.length, 3);
@@ -75,14 +82,15 @@ test("a failed data specification does not hide TokenHub docs, and the reverse r
     assert.equal(result.sources.filter(source => source.loaded).length, 2);
     assert.equal(result.operations.length, unavailable === "tikhub" ? 12 : unavailable === "tokenhub" ? 6 : 8);
     assert.ok(result.operations.every(operation => operation.source !== unavailable));
+    assert.doesNotMatch([...result.sources.map(source => source.label), ...result.warnings].join(" "), /tokenhub|api[\s-]*mart/i);
   }
 });
 
 test("a source access denial does not hide other docs; malformed or failed sources never look loaded", async () => {
-  const member = await viewer.loadApiDocumentation(async url => url.includes("tokenhub-openapi") ? Response.json({}, { status: 403 }) : Response.json(dataSpec()));
+  const member = await viewer.loadApiDocumentation(async url => url.includes("studio-openapi") ? Response.json({}, { status: 403 }) : Response.json(dataSpec()));
   assert.equal(member.operations.length, 2);
   assert.match(member.warnings[0], /当前账户无法访问/);
-  const broken = await viewer.loadApiDocumentation(async url => { if (url.includes("tokenhub")) throw Error("transport details must not be displayed"); return Response.json({ notAnApi: true }); });
+  const broken = await viewer.loadApiDocumentation(async url => { if (url.includes("studio")) throw Error("transport details must not be displayed"); return Response.json({ notAnApi: true }); });
   assert.equal(broken.operations.length, 0);
   assert.equal(broken.warnings.length, 3);
   assert.ok(broken.sources.every(source => !source.loaded));
@@ -91,16 +99,16 @@ test("a source access denial does not hide other docs; malformed or failed sourc
 
 test("curl examples contain usable JSON bodies, content type, unique-video placeholder, and owned task path", () => {
   const operations = viewer.parseApiOperations(spec, "tokenhub");
-  const create = operations.find(operation => operation.summary === "创建 TokenHub 视频任务");
+  const create = operations.find(operation => operation.summary === "创建 tokvilo 多模态 视频任务");
   const command = viewer.apiCurlExample(BASE, create);
   assert.match(command, /Content-Type: application\/json/);
   assert.match(command, /Idempotency-Key: replace_with_unique_request_id/);
   assert.match(command, /--data-raw/);
   assert.match(command, /dreamina-seedance-2-0-fast-260128/);
-  const chat = operations.find(operation => operation.summary === "TokenHub 文本对话");
+  const chat = operations.find(operation => operation.summary === "tokvilo 多模态 文本对话");
   assert.equal(viewer.requestBodyExample(chat).stream, false);
   assert.match(viewer.apiCurlExample(BASE, chat), /Idempotency-Key/);
-  const query = operations.find(operation => operation.summary === "查询 TokenHub 视频任务");
+  const query = operations.find(operation => operation.summary === "查询 tokvilo 多模态 视频任务");
   assert.match(viewer.apiCurlExample(BASE, query), /\/tasks\/task_id_from_create_response/);
   assert.doesNotMatch(viewer.apiCurlExample(BASE, query), /\{task_id\}|--data-raw/);
 });

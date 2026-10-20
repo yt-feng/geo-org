@@ -15,7 +15,7 @@ function sanitize(value: unknown, key: string): unknown {
 }
 
 async function readCatalog(response: Response, source: "models_api" | "pricing", key: string): Promise<Record<string, unknown>> {
-  if (!response.body) throw new ProviderError("TokenHub 返回了无效响应，请稍后重试。", 502);
+  if (!response.body) throw new ProviderError("tokvilo 多模态 返回了无效响应，请稍后重试。", 502);
   const reader = response.body.getReader(), chunks: Uint8Array[] = [];
   let length = 0;
   try {
@@ -31,7 +31,7 @@ async function readCatalog(response: Response, source: "models_api" | "pricing",
     const data = sanitize(JSON.parse(new TextDecoder().decode(bytes)), key);
     if (!validTokenHubCatalog(data, source)) throw new Error();
     return data;
-  } catch { throw new ProviderError("TokenHub 模型列表格式不正确，请稍后重试。", 502); }
+  } catch { throw new ProviderError("tokvilo 多模态 模型列表格式不正确，请稍后重试。", 502); }
   finally { reader.releaseLock(); }
 }
 
@@ -51,7 +51,7 @@ export function createTokenHubSettings(env: RuntimeEnv, fetcher: typeof fetch = 
   async function credentialWithRow() {
     const row = await stored();
     const key = row ? await decryptProviderKey(row.encrypted_key, env.ADMIN_SESSION_SECRET, CONTEXT) : env.TOKENHUB_API_KEY?.trim();
-    if (!key) throw new ProviderError("请先填写并保存 TokenHub API Key。", 409);
+    if (!key) throw new ProviderError("请先填写并保存 tokvilo 多模态 API Key。", 409);
     return { key, row };
   }
   async function upstreamModels(key: string): Promise<Record<string, unknown>> {
@@ -66,11 +66,11 @@ export function createTokenHubSettings(env: RuntimeEnv, fetcher: typeof fetch = 
         ? value.replaceAll(key, "[redacted]").replaceAll(JSON.stringify(key).slice(1, -1), "[redacted]").replaceAll(encodeURIComponent(key), "[redacted]").slice(0, 500)
         : fallback;
       console.error("[tokenhub] model discovery failed", { name: sanitize(details.name, "UnknownError"), message: sanitize(details.message, "No diagnostic message") });
-      throw new ProviderError("暂时无法连接 TokenHub，请稍后重试。", 502);
+      throw new ProviderError("暂时无法连接 tokvilo 多模态，请稍后重试。", 502);
     }
-    if (response.status === 401 || response.status === 403) throw new ProviderError("TokenHub 密钥无效或没有访问权限，请检查后重试。", 422);
-    if (response.status === 429) throw new ProviderError("TokenHub 请求频率已达上限，请稍后重试。", 429);
-    if (!response.ok) throw new ProviderError("TokenHub 服务暂不可用，请稍后重试。", 502);
+    if (response.status === 401 || response.status === 403) throw new ProviderError("tokvilo 多模态 密钥无效或没有访问权限，请检查后重试。", 422);
+    if (response.status === 429) throw new ProviderError("tokvilo 多模态 请求频率已达上限，请稍后重试。", 429);
+    if (!response.ok) throw new ProviderError("tokvilo 多模态 服务暂不可用，请稍后重试。", 502);
     return readCatalog(response, "models_api", key);
   }
   async function discoverModels(key: string) {
@@ -93,7 +93,7 @@ export function createTokenHubSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     // Used only by server-side relay code. This value must never be returned from a route.
     async credential(): Promise<string> { return (await credentialWithRow()).key; },
     async save(value: unknown) {
-      if (typeof value !== "string" || !/^[\x21-\x7e]{12,512}$/.test(value.trim())) throw new ProviderError("请输入完整的 TokenHub API Key（12–512 位，不含空白）。", 400);
+      if (typeof value !== "string" || !/^[\x21-\x7e]{12,512}$/.test(value.trim())) throw new ProviderError("请输入完整的 tokvilo 多模态 API Key（12–512 位，不含空白）。", 400);
       const key = value.trim();
       const encrypted = await encryptProviderKey(key, env.ADMIN_SESSION_SECRET, CONTEXT);
       const discovered = await discoverModels(key), now = new Date().toISOString();

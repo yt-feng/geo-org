@@ -1,5 +1,5 @@
 // Documentation snapshot, not an availability allowlist. Runtime discovery is
-// authoritative and also exposes newly added models through /api/tokenhub/v1/models.
+// authoritative and also exposes newly added models through /api/studio/v1/models.
 export const TOKENHUB_MODEL_REFERENCE_DATE = "2026-10-18";
 export const TOKENHUB_REFERENCE_MODELS = [
   { id: "glm-5-3-flash-260828", name: "GLM 5.3 Flash", kind: "chat" },

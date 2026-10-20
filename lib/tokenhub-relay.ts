@@ -4,10 +4,11 @@ import { sha256Hex } from "./crypto";
 import { ensureUser } from "./store";
 import { ProviderError } from "./provider-settings";
 import { createTokenHubSettings, TOKENHUB_ORIGIN } from "./tokenhub-settings";
-import { getTokenHubPricing, quoteTokenHubRequest, tokenHubActualCost, PricingError, type TokenHubQuote } from "./pricing";
+import { getTokenHubPricing, quoteTokenHubRequest, tokenHubActualCost, PricingError, publicServiceText, publicServiceErrors, type TokenHubQuote } from "./pricing";
 import { reserveWallet, settleWallet, refundWallet, WalletError } from "./wallet";
 
-const BASE = "/api/tokenhub";
+const BASE = "/api/studio";
+const COMPAT_BASE = "/api/tokenhub";
 const TASKS = "/v3/contents/generations/tasks";
 const JSON_HEADERS = { "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
 const TASK_ID = /^[A-Za-z0-9_-]{1,160}$/;
@@ -19,8 +20,8 @@ class RepricingRequired extends ProviderError {
   constructor(public requiredReserveMicrousd: number) { super("当前价格所需预留金额超过您确认的上限，请重新获取报价后提交。", 409); }
 }
 
-function reply(data: unknown, status = 200) { return Response.json(data, { status, headers: JSON_HEADERS }); }
-function error(message: string, status: number) { return reply({ error: { message } }, status); }
+function reply(data: unknown, status = 200) { return Response.json(publicServiceErrors(data), { status, headers: JSON_HEADERS }); }
+function error(message: string, status: number) { return reply({ error: { message: publicServiceText(message) } }, status); }
 function object(value: unknown): value is Json { return !!value && typeof value === "object" && !Array.isArray(value); }
 
 async function actor(request: Request): Promise<Actor> {
@@ -114,11 +115,14 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
   try {
     const who = await actor(request), env = runtimeEnv(), db = getD1();
     if (env.SERVICE_ENABLED?.toLowerCase() !== "true") return error("生成服务当前未启用。", 503);
-    const url = new URL(request.url), path = url.pathname.slice(BASE.length);
+    const url = new URL(request.url);
+    const prefix = [BASE, COMPAT_BASE].find(base => url.pathname.startsWith(base + "/"));
+    if (!prefix) return error("tokvilo 多模态接口不存在。", 404);
+    const path = url.pathname.slice(prefix.length);
     if (url.search) return error("此接口不接受查询参数。", 400);
     const taskId = path.startsWith(TASKS + "/") ? path.slice(TASKS.length + 1) : null;
     const allowed = path === "/v1/models" ? ["GET"] : path === TASKS ? ["GET", "POST"] : taskId && TASK_ID.test(taskId) ? ["GET", "DELETE"] : ["/v1/chat/completions", "/v3/images/generations"].includes(path) ? ["POST"] : [];
-    if (!allowed.length) return error("TokenHub 接口不存在。", 404);
+    if (!allowed.length) return error("tokvilo 多模态 接口不存在。", 404);
     if (!allowed.includes(request.method)) return error("不支持此请求方法。", 405);
     await limitRequests(who.userId, request.method !== "GET");
     if (path === TASKS && request.method === "GET") {
@@ -145,7 +149,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
     const service = createTokenHubSettings(env);
     if (path === "/v1/models") {
       const discovered = await service.models();
-      return reply({ object: "list", data: discovered.models.map(model => ({ object: "model", owned_by: model.provider || "tokenhub", ...model })), catalog: discovered.catalog });
+      return reply({ object: "list", data: discovered.models.map(model => ({ object: "model", owned_by: model.provider || "tokvilo 多模态", ...model })), catalog: discovered.catalog });
     }
     const key = await service.credential();
     if (request.method === "POST") {
@@ -163,7 +167,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
             .bind(who.userId, `tokenhub:${id}`).first<{ status: string; reservedMicrousd: number; chargedMicrousd: number | null }>();
           return reply(receipt ? { ...cached, tokvilo_billing: { currency: "USD", markupPercent: 20, ...receipt } } : cached, existing.status_code);
         }
-        return error("此请求已提交，结果尚未确认。请查看任务记录或 TokenHub 请求日志，不要更换编号重复生成。", 409);
+        return error("此请求已提交，结果尚未确认。请查看任务记录或 tokvilo 多模态 请求日志，不要更换编号重复生成。", 409);
       }
       reservation = { userId: who.userId, id };
       {
@@ -171,7 +175,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
         const quote = quoteTokenHubRequest(await getTokenHubPricing(), kind, body!);
         if (maxReserveMicrousd !== null && quote.reservedMicrousd > maxReserveMicrousd) throw new RepricingRequired(quote.reservedMicrousd);
         const requestId = `tokenhub:${id}`;
-        const held = await reserveWallet({ userId: who.userId, requestId, amountMicrousd: quote.reservedMicrousd, description: `TokenHub ${quote.model}`, metadata: { model: quote.model, kind, requestHash: hash } });
+        const held = await reserveWallet({ userId: who.userId, requestId, amountMicrousd: quote.reservedMicrousd, description: `tokvilo 多模态 ${quote.model}`, metadata: { model: quote.model, kind, requestHash: hash } });
         if (held.status !== "reserved") throw new WalletError("此请求编号已经结算或退回，请为新请求使用新的 Idempotency-Key。", 409, "request_already_completed");
         billing = { userId: who.userId, requestId, quote };
         await db.prepare("INSERT INTO tokenhub_billing (user_id,idempotency_key,wallet_request_id,quote_json) VALUES (?,?,?,?)")
@@ -191,16 +195,16 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
         method: request.method, headers: { Authorization: `Bearer ${key}`, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}), redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(request.method === "GET" ? 20_000 : 110_000),
       });
-    } catch { throw new ProviderError(request.method === "POST" ? "TokenHub 尚未返回结果。请核对上游请求记录后再决定是否重试。" : "暂时无法连接 TokenHub，请稍后刷新。", 502); }
-    if (response.status >= 300 && response.status < 400) throw new ProviderError("TokenHub 返回了意外重定向，请联系管理员。", 502);
+    } catch { throw new ProviderError(request.method === "POST" ? "tokvilo 多模态 尚未返回结果。请核对上游请求记录后再决定是否重试。" : "暂时无法连接 tokvilo 多模态，请稍后刷新。", 502); }
+    if (response.status >= 300 && response.status < 400) throw new ProviderError("tokvilo 多模态 返回了意外重定向，请联系管理员。", 502);
     let data: Json;
     try { data = response.status === 204 ? { status: "cancelled_or_deleted", id: taskId } : redacted(await readObject(response.body, 8_000_000), key); }
-    catch { throw new ProviderError("TokenHub 响应不完整，请在上游请求记录中核对结果。", 502); }
+    catch { throw new ProviderError("tokvilo 多模态 响应不完整，请在上游请求记录中核对结果。", 502); }
     const status = response.status;
     if (response.ok && taskId && taskData(data).id !== undefined && taskData(data).id !== taskId) throw new ProviderError("上游返回的任务编号不一致，预留金额等待核对。", 502);
     if (response.ok && path === TASKS && request.method === "POST") {
       const result = taskData(data), id = result.id;
-      if (typeof id !== "string" || !TASK_ID.test(id)) throw new ProviderError("TokenHub 未返回可查询的任务编号，请核对上游记录。", 502);
+      if (typeof id !== "string" || !TASK_ID.test(id)) throw new ProviderError("tokvilo 多模态 未返回可查询的任务编号，请核对上游记录。", 502);
       await db.prepare("INSERT INTO tokenhub_tasks (id,user_id,model,status) VALUES (?,?,?,?) ON CONFLICT(id,user_id) DO UPDATE SET status=excluded.status,updated_at=CURRENT_TIMESTAMP")
         .bind(id, who.userId, String(body!.model), taskStatus(data)).run();
       if (billing && reservation) await db.prepare("UPDATE tokenhub_billing SET task_id=? WHERE user_id=? AND idempotency_key=?")
@@ -217,7 +221,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
       const rejected = request.method === "POST" && [400, 401, 402, 403, 404, 405, 413, 415, 422, 429].includes(status);
       const failedVideo = billing.quote.kind === "video" && response.ok && ["failed", "cancelled", "expired"].includes(taskStatus(data));
       try {
-        if (actual !== null) billingResult = { ...await settleWallet({ userId: billing.userId, requestId: billing.requestId, amountMicrousd: actual, description: `TokenHub ${billing.quote.model}` }) };
+        if (actual !== null) billingResult = { ...await settleWallet({ userId: billing.userId, requestId: billing.requestId, amountMicrousd: actual, description: `tokvilo 多模态 ${billing.quote.model}` }) };
         else if (rejected || failedVideo) billingResult = { ...await refundWallet({ userId: billing.userId, requestId: billing.requestId, description: "上游未生成成功，退还预留金额。" }) };
       } catch {
         // Preserve successful output even if its settlement needs reconciliation.
@@ -241,7 +245,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
     }
     if (cause instanceof RepricingRequired) return reply({ error: { code: "reservation_limit_exceeded", message: cause.message, requiredReserveMicrousd: cause.requiredReserveMicrousd } }, 409);
     const known = cause instanceof ProviderError || cause instanceof PricingError || cause instanceof WalletError;
-    return error(known ? cause.message : "TokenHub 服务暂不可用，请稍后重试。", known ? cause.status : 503);
+    return error(known ? cause.message : "tokvilo 多模态 服务暂不可用，请稍后重试。", known ? cause.status : 503);
   }
 }
 
@@ -281,7 +285,7 @@ export async function reconcileTokenHubTasks(env: RuntimeEnv, options: { maxTask
         .bind(taskStatus(data), row.user_id, row.task_id).run();
       const actual = tokenHubActualCost(quote, data);
       if (actual !== null) {
-        await settleWallet({ userId: row.user_id, requestId: row.wallet_request_id, amountMicrousd: actual, description: `TokenHub ${quote.model}` });
+        await settleWallet({ userId: row.user_id, requestId: row.wallet_request_id, amountMicrousd: actual, description: `tokvilo 多模态 ${quote.model}` });
         settled++;
       } else if (["failed", "cancelled", "expired"].includes(taskStatus(data))) {
         await refundWallet({ userId: row.user_id, requestId: row.wallet_request_id, description: "视频未生成成功，退还预留金额。" });

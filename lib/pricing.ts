@@ -12,6 +12,20 @@ export type ModelPrice = {
   provider: "tokenhub" | "apimart"; model: string; name: string;
   kind: "chat" | "image" | "video"; rates: PriceRate[]; available: true;
 };
+/** Presentation only: never apply to model IDs, routes, credentials or price-source URLs. */
+export function publicServiceText(value: string): string {
+  return value.replace(/\btoken\s*hub\b/gi, "tokvilo 多模态").replace(/\bapi[\s-]*mart\b/gi, "tokvilo 文本与图像");
+}
+/** Normalize service diagnostics only; generated content and machine identifiers stay intact. */
+export function publicServiceErrors(value: unknown): unknown {
+  if (!object(value)) return value;
+  const result = { ...value };
+  if (typeof result.message === "string") result.message = publicServiceText(result.message);
+  if (typeof result.error === "string") result.error = publicServiceText(result.error);
+  else if (object(result.error)) result.error = publicServiceErrors(result.error);
+  if (object(result.data) && result.data.error) result.data = publicServiceErrors(result.data);
+  return result;
+}
 export type PriceCatalog = {
   currency: "USD"; markupPercent: 20; observedAt: string;
   models: ModelPrice[]; unavailable: Array<{ model: string; reason: string }>;
@@ -51,12 +65,12 @@ function parseRate(value: unknown, dimension: string, unit: PriceRate["unit"]): 
   return { dimension, unit, upstreamMicrousd: value.amount.unitsMicros, retailMicrousd: markupMicrousd(value.amount.unitsMicros) };
 }
 export function normalizeTokenHubPricing(snapshot: unknown, observedAt = new Date().toISOString()): PriceCatalog {
-  if (!object(snapshot) || snapshot.currencyCode !== "USD" || !Array.isArray(snapshot.data) || !snapshot.data.length) throw new PricingError("TokenHub 实时价格目录不可用，请稍后重试。");
+  if (!object(snapshot) || snapshot.currencyCode !== "USD" || !Array.isArray(snapshot.data) || !snapshot.data.length) throw new PricingError("tokvilo 多模态 实时价格目录不可用，请稍后重试。");
   const models: ModelPrice[] = [], unavailable: PriceCatalog["unavailable"] = [];
   const seen = new Set<string>();
   for (const item of snapshot.data) {
-    if (!object(item) || typeof item.id !== "string" || !item.id || item.id.length > 200) throw new PricingError("TokenHub 价格目录格式无效。");
-    if (seen.has(item.id)) throw new PricingError("TokenHub 价格目录包含重复模型。");
+    if (!object(item) || typeof item.id !== "string" || !item.id || item.id.length > 200) throw new PricingError("tokvilo 多模态 价格目录格式无效。");
+    if (seen.has(item.id)) throw new PricingError("tokvilo 多模态 价格目录包含重复模型。");
     seen.add(item.id);
     try {
       if (!Array.isArray(item.deployments)) throw new PricingError("模型价格缺失。");
@@ -80,7 +94,7 @@ export function normalizeTokenHubPricing(snapshot: unknown, observedAt = new Dat
         return { kind: "chat" as const, rates: ["input", "output", "cacheRead", "cacheWrite"].map(name => parseRate(p[name], name, "1M_tokens")) };
       });
       if (new Set(variants.map(value => JSON.stringify(value))).size !== 1) throw new PricingError("模型的多个上游部署价格不同，等待确认。");
-      models.push({ provider: "tokenhub", model: item.id, name: typeof item.label === "string" ? item.label.slice(0, 200) : item.id, ...variants[0], available: true });
+      models.push({ provider: "tokenhub", model: item.id, name: publicServiceText(typeof item.label === "string" ? item.label.slice(0, 200) : item.id), ...variants[0], available: true });
     } catch (cause) { unavailable.push({ model: item.id, reason: cause instanceof PricingError ? cause.message : "价格暂不可用。" }); }
   }
   return { currency: "USD", markupPercent: 20, observedAt, models, unavailable };
@@ -104,7 +118,7 @@ export async function getTokenHubPricing(fetcher: typeof fetch = fetch): Promise
     return normalizeTokenHubPricing(JSON.parse(new TextDecoder().decode(bytes)));
   } catch (cause) {
     if (cause instanceof PricingError) throw cause;
-    throw new PricingError("TokenHub 实时价格读取失败，尚未发起付费请求。");
+    throw new PricingError("tokvilo 多模态 实时价格读取失败，尚未发起付费请求。");
   }
 }
 function rate(quote: Pick<TokenHubQuote, "rates">, dimension: string) {

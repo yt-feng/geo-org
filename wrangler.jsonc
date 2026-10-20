@@ -6,6 +6,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "vars": {
+    "PRODUCT_INQUIRY_FROM": "orders@tokvilo.com",
+    "PRODUCT_INQUIRY_EMAIL_ENABLED": "true",
     "USD_CNY": "7.2",
     "REDEMPTION_ENABLED": "true",
     "REDEMPTION_ISSUANCE_ENABLED": "true",
@@ -43,6 +45,10 @@
     }
   ],
   "r2_buckets": [{ "binding": "AUDIT_MEDIA", "bucket_name": "eco-geo-audit-media" }],
+  "send_email": [
+    { "name": "PRODUCT_INQUIRY_EMAIL", "destination_address": "yt.feng@foxmail.com" },
+    { "name": "AUTH_EMAIL", "allowed_sender_addresses": ["auth@tokvilo.com"] }
+  ],
   "observability": {
     "enabled": true
   },

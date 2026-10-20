@@ -29,19 +29,23 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const result = (await response.json()) as {
+      let result: {
         error?: string;
         requiresEmailVerification?: boolean;
+        authenticated?: boolean;
       };
+      try { result = await response.json(); }
+      catch { throw new Error("认证服务暂不可用，请稍后重试。"); }
+      if (!result || typeof result !== "object") throw new Error("认证服务返回异常，请稍后重试。");
       if (!response.ok) throw new Error(result.error || "请求失败，请稍后再试。");
 
-      if (mode === "login") {
+      if (mode === "login" || result.authenticated) {
         window.location.assign("/dashboard");
         return;
       }
       setMessage(
         result.requiresEmailVerification
-          ? "账户已创建。请打开验证邮件，然后返回登录。"
+          ? "注册请求已提交。请打开验证邮件完成邮箱确认，然后返回登录；如果该邮箱已注册，可直接登录。"
           : "账户已创建，现在可以登录。",
       );
       formElement.reset();

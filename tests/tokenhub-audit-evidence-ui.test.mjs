@@ -6,11 +6,13 @@ import * as React from "react";
 import * as jsx from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
+import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const filename = new URL("../components/TokenHubAuditEvidence.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const compiled = { exports: {} };
 vm.runInNewContext(code, { module: compiled, exports: compiled.exports, Date, URLSearchParams, require(name) {
+  if (name === "@/lib/brand-display") return brandDisplay;
   if (name === "react") return React;
   if (name === "react/jsx-runtime") return jsx;
   if (name === "./Icon") return { Icon: props => React.createElement("svg", { "data-icon": props.name }) };
