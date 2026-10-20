@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export function SessionKeepAlive() {
+  const pathname = usePathname();
   useEffect(() => {
+    // A normal session refresh must not race the recovery flow's cookie clearing.
+    if (pathname === "/reset-password") return;
     const controller = new AbortController();
     let stopped = false, timer: ReturnType<typeof setTimeout> | undefined;
     async function refresh() {
@@ -28,6 +32,6 @@ export function SessionKeepAlive() {
     window.addEventListener("tokvilo:logout", stop);
     void refresh();
     return () => { stop(); window.removeEventListener("tokvilo:logout", stop); };
-  }, []);
+  }, [pathname]);
   return null;
 }

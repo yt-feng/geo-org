@@ -228,10 +228,9 @@ async function handleLocalGatewayEndpoint(
   ) {
     return localEnvelope(requestId, path, {
       plan: "prepaid",
-      markup_percent: 20,
       currency: "USD",
       daily_limit: key.dailyLimit,
-      note: "Supported requests use the current upstream per-request price plus 20%. Available wallet balance is required; daily request limits are separate.",
+      note: "Supported requests use the published tokvilo price. Available wallet balance is required; daily request limits are separate.",
     });
   }
 

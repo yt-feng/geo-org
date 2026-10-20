@@ -119,7 +119,7 @@ export function ProviderSettingsPanel() {
       setQuery("");
       setCategory("all");
       setNotice(result.apimart.verifiedAt
-        ? { kind: "success", text: "tokvilo 文本与图像 API Key 已验证并保存。你可以继续测试连接或读取模型目录。" }
+        ? { kind: "success", text: "tokvilo 模型服务 API Key 已验证并保存。你可以继续测试连接或读取模型目录。" }
         : { kind: "warning", text: result.warning || "密钥已加密保存，尚未完成验证。请稍后测试已保存连接。" });
     } catch (error) {
       setNotice({ kind: "error", text: error instanceof Error ? error.message : "API Key 保存失败。" });
@@ -208,7 +208,7 @@ export function ProviderSettingsPanel() {
         <article className="provider-card provider-apimart">
           <div className="provider-card-heading">
             <span className="provider-monogram apimart" aria-hidden="true">t</span>
-            <div><h3>tokvilo 文本与图像</h3><p>AI 模型服务</p></div>
+            <div><h3>tokvilo 模型服务</h3><p>AI 模型服务</p></div>
             <StatusBadge configured={apimart?.configured} verifiedAt={apimart?.verifiedAt} verificationRequired saved={apimart?.source === "saved"} />
           </div>
           <p className="provider-description">填写 API Key，验证连接并浏览可用模型目录。</p>
@@ -221,7 +221,7 @@ export function ProviderSettingsPanel() {
           ) : null}
 
           <form className="provider-key-form" onSubmit={saveKey}>
-            <label htmlFor="apimart-api-key">{apimart?.configured ? "更换 API Key" : "tokvilo 文本与图像 API Key"}</label>
+            <label htmlFor="apimart-api-key">{apimart?.configured ? "更换 API Key" : "tokvilo 模型服务 API Key"}</label>
             <input
               aria-describedby="apimart-key-help"
               autoCapitalize="none"
@@ -231,7 +231,7 @@ export function ProviderSettingsPanel() {
               maxLength={512}
               name="apimart-api-key"
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder={apimart?.configured ? "填写新的 API Key" : "粘贴你的 tokvilo 文本与图像 API Key"}
+              placeholder={apimart?.configured ? "填写新的 API Key" : "粘贴你的 tokvilo 模型服务 API Key"}
               spellCheck={false}
               type="password"
               value={apiKey}
@@ -257,7 +257,7 @@ export function ProviderSettingsPanel() {
               </button>
             </div>
             {apimart?.configured ? (
-              <p className="provider-field-help">{apimart.verifiedAt ? `最近验证：${displayTime(apimart.verifiedAt)}（北京时间）` : "当前密钥尚未通过验证。若 tokvilo 文本与图像 返回余额不足，请补充余额后测试已保存连接。"}</p>
+              <p className="provider-field-help">{apimart.verifiedAt ? `最近验证：${displayTime(apimart.verifiedAt)}（北京时间）` : "当前密钥尚未通过验证。若 tokvilo 模型服务 返回余额不足，请补充余额后测试已保存连接。"}</p>
             ) : null}
             {quota ? (
               <div className="provider-quota"><span>当前 API Key 剩余额度</span><strong>{quota.unlimited ? "未设置额度上限" : quota.remaining === null ? "暂无额度信息" : quota.remaining.toLocaleString("zh-CN", { maximumFractionDigits: 6 })}</strong></div>
@@ -291,7 +291,7 @@ export function ProviderSettingsPanel() {
                 </li>
               ))}
             </ul>
-          ) : <p className="empty-state">{models.length ? "没有符合筛选条件的模型。" : "tokvilo 文本与图像 暂未返回可用模型。"}</p>}
+          ) : <p className="empty-state">{models.length ? "没有符合筛选条件的模型。" : "tokvilo 模型服务 暂未返回可用模型。"}</p>}
         </div>
       ) : null}
 

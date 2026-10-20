@@ -80,7 +80,7 @@ test("a failed data specification does not hide TokenHub docs, and the reverse r
     assert.equal(calls.length, 3);
     assert.equal(result.warnings.length, 1);
     assert.equal(result.sources.filter(source => source.loaded).length, 2);
-    assert.equal(result.operations.length, unavailable === "tikhub" ? 12 : unavailable === "tokenhub" ? 6 : 8);
+    assert.equal(result.operations.length, unavailable === "tikhub" ? 15 : unavailable === "tokenhub" ? 9 : 8);
     assert.ok(result.operations.every(operation => operation.source !== unavailable));
     assert.doesNotMatch([...result.sources.map(source => source.label), ...result.warnings].join(" "), /tokenhub|api[\s-]*mart/i);
   }

@@ -53,7 +53,8 @@ async function fixture(t, options = {}) {
   const mod = { exports: {} };
   vm.runInNewContext(outputText, {
     module: mod, exports: mod.exports, crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array,
-    Request, Response, URL, atob, btoa, clearTimeout,
+    Request, Response, URL, URLSearchParams, atob, btoa, clearTimeout,
+    Date: options.now === undefined ? Date : class extends Date { static now() { return options.now; } },
     setTimeout(callback, delay) { timers.push(delay); return setTimeout(callback, options.fastTimeout && delay === 3000 ? 5 : delay); },
     require(name) {
       if (name === "./config") return { runtimeEnv: () => env };
@@ -104,20 +105,22 @@ test("signed signup delivers one fixed-origin confirmation and stores only hashe
 });
 
 test("forged signatures and changed raw bytes, identifiers or timestamps cannot write or send", async t => {
-  const f = await fixture(t);
+  const timestamp = Math.floor(Date.now() / 1000);
+  const f = await fixture(t, { now: timestamp * 1000 });
+  const sign = (input, options = {}) => signedRequest(input, { timestamp, ...options });
   const bad = Buffer.alloc(32).toString("base64");
   for (const request of [
-    signedRequest(payload, { secret: Buffer.alloc(32, 0x72) }),
-    signedRequest(payload, { headers: { "webhook-signature": "" } }),
-    signedRequest(payload, { headers: { "webhook-signature": `v2,${bad}` } }),
-    signedRequest(payload, { headers: { "webhook-signature": `v1,${bad}` } }),
-    signedRequest(payload, { headers: { "webhook-id": "msg_changed" } }),
-    signedRequest(payload, { headers: { "webhook-timestamp": String(Math.floor(Date.now() / 1000) - 1) } }),
-    signedRequest(payload, { actualBody: JSON.stringify(payload, null, 2) }),
-    signedRequest(payload, { timestamp: Math.floor(Date.now() / 1000) - 301 }),
-    signedRequest(payload, { timestamp: Math.floor(Date.now() / 1000) + 301 }),
-    signedRequest(payload, { headers: { "webhook-timestamp": "1e9" } }),
-    signedRequest(payload, { headers: { "webhook-signature": "v1,invalid ".repeat(300) } }),
+    sign(payload, { secret: Buffer.alloc(32, 0x72) }),
+    sign(payload, { headers: { "webhook-signature": "" } }),
+    sign(payload, { headers: { "webhook-signature": `v2,${bad}` } }),
+    sign(payload, { headers: { "webhook-signature": `v1,${bad}` } }),
+    sign(payload, { headers: { "webhook-id": "msg_changed" } }),
+    sign(payload, { headers: { "webhook-timestamp": String(timestamp - 1) } }),
+    sign(payload, { actualBody: JSON.stringify(payload, null, 2) }),
+    sign(payload, { timestamp: timestamp - 301 }),
+    sign(payload, { timestamp: timestamp + 301 }),
+    sign(payload, { headers: { "webhook-timestamp": "1e9" } }),
+    sign(payload, { headers: { "webhook-signature": "v1,invalid ".repeat(300) } }),
   ]) await expect(f, request, 401);
   assertNoSideEffects(f);
 });
@@ -131,9 +134,30 @@ test("standard-webhooks accepts a valid v1 rotation candidate and supported secr
   }
 });
 
+test("signed recovery uses only the tokvilo reset page and cannot be confused with signup", async t => {
+  const f = await fixture(t);
+  const recovery = { ...payload, email_data: { ...payload.email_data, email_action_type: "recovery" } };
+  await expect(f, signedRequest(recovery), 200);
+  await expect(f, signedRequest(recovery, { id: "msg_recovery_retry" }), 200);
+  assert.equal(f.sent.length, 1);
+  const [headers, encoded] = f.sent[0].raw.split("\r\n\r\n");
+  assert.match(headers, /Subject: Reset your tokvilo password/);
+  const text = Buffer.from(encoded.replaceAll("\r\n", ""), "base64").toString("utf8");
+  const url = new URL(text.match(/https:\/\/\S+/)[0]);
+  assert.equal(url.origin, "https://tokvilo.com");
+  assert.equal(url.pathname, "/reset-password");
+  const fragment = new URLSearchParams(url.hash.slice(1));
+  assert.equal(fragment.get("type"), "recovery");
+  assert.equal(fragment.get("token_hash"), payload.email_data.token_hash);
+  assert.equal(url.search, "");
+  assert.doesNotMatch(text, /attacker\.invalid|305805|access_token|refresh_token/);
+  await expect(f, signedRequest(payload, { id: "msg_separate_signup" }), 200);
+  assert.equal(f.sent.length, 2);
+});
+
 test("unsupported actions, unsafe recipient and malformed or oversized bodies never send", async t => {
   const f = await fixture(t);
-  for (const action of ["recovery", "email_change", "magiclink", "invite"]) {
+  for (const action of ["email_change", "magiclink", "invite"]) {
     const result = await expect(f, signedRequest({ ...payload, email_data: { ...payload.email_data, email_action_type: action } }), 422);
     assert.equal(result.error.code, "unsupported_email_action");
   }

@@ -1,10 +1,10 @@
-# tokvilo signup confirmation email
+# tokvilo authentication email
 
 `POST https://tokvilo.com/api/auth/email-hook` implements the
 [Supabase Send Email Hook](https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook)
 using the [Standard Webhooks signature contract](https://github.com/standard-webhooks/standard-webhooks/blob/main/spec/standard-webhooks.md).
-It sends signup confirmation only. Recovery, invitation, magic-link and email-change
-events return HTTP 422 explicitly; do not enable those product flows yet.
+It sends signup confirmation and password recovery. Invitation, magic-link and
+email-change events return HTTP 422 explicitly; those product flows are not enabled.
 
 Before enabling the Supabase hook:
 
@@ -27,6 +27,14 @@ Recipient addresses come only from signed `user.email`; sender and subject are
 fixed. Confirmation links use the configured project `/auth/v1/verify`, signed
 `token_hash`, `type=signup`, and the fixed tokvilo login redirect. Payload
 `site_url`, `redirect_to`, raw OTP and user metadata are ignored.
+
+Recovery messages instead link to the fixed `https://tokvilo.com/reset-password`
+page with the signed `token_hash` and `type=recovery` in its URL fragment, which is
+not transmitted in the HTTP request. A page GET does not consume
+the credential. The user explicitly continues to exchange the hash for a short-lived,
+single-use HttpOnly recovery grant, then submits a new password. Ordinary login
+cookies cannot authorize password recovery. Recovery and signup have separate
+delivery identifiers even when their token hashes match.
 
 The email send has a maximum three-second wait and a deadline 4.5 seconds after
 request handling begins. Supabase's HTTP hook limit is five seconds; unusually

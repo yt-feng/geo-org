@@ -1,3 +1,5 @@
+import { publicModelId } from "./model-id";
+
 // Monetary values are integer micro-USD. Display and settlement use the same
 // marked-up rates; the final request total is rounded up only once.
 export const MARKUP_PERCENT = 20;
@@ -12,9 +14,32 @@ export type ModelPrice = {
   provider: "tokenhub" | "apimart"; model: string; name: string;
   kind: "chat" | "image" | "video"; rates: PriceRate[]; available: true;
 };
+export type PublicPriceRate = { dimension: string; unit: PriceRate["unit"] | "second" | "call"; retailMicrousd: number };
+export type PublicModelPrice = Omit<ModelPrice, "kind" | "rates"> & { kind: ModelPrice["kind"] | "audio"; rates: PublicPriceRate[] };
+/** Explicit allowlists keep internal rates and any future supplier metadata off public APIs. */
+export function publicPriceRates(rates: readonly PublicPriceRate[]): PublicPriceRate[] {
+  return rates.map(({ dimension, unit, retailMicrousd }) => ({ dimension, unit, retailMicrousd }));
+}
+export function publicModelPrice(model: PublicModelPrice): PublicModelPrice {
+  return { provider: model.provider, model: publicModelId(model.model), name: publicServiceText(publicModelId(model.name)), kind: model.kind,
+    available: model.available, rates: publicPriceRates(model.rates) };
+}
+const INTERNAL_PRICE_KEYS = /^(?:markup(?:_?percent)?|upstream(?:_?(?:microusd|rates|price|cost))|source_?(?:price|cost|url)|cost|credits_cost|(?:input|output|total|cache|prompt|completion)_cost)$/i;
+/** Scrub service metadata, including saved receipts, while preserving generated content. */
+export function publicRelayResponse(value: unknown): unknown {
+  if (!object(value)) return value;
+  const result: Json = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (INTERNAL_PRICE_KEYS.test(key)) continue;
+    if (["data", "usage", "billing", "tokvilo_billing", "pricing", "rates"].includes(key)) {
+      result[key] = Array.isArray(entry) ? entry.map(publicRelayResponse) : publicRelayResponse(entry);
+    } else result[key] = entry;
+  }
+  return publicServiceErrors(result);
+}
 /** Presentation only: never apply to model IDs, routes, credentials or price-source URLs. */
 export function publicServiceText(value: string): string {
-  return value.replace(/\btoken\s*hub\b/gi, "tokvilo 多模态").replace(/\bapi[\s-]*mart\b/gi, "tokvilo 文本与图像");
+  return value.replace(/\btoken\s*hub\b/gi, "tokvilo 多模态").replace(/\bapi[\s-]*mart\b/gi, "tokvilo 模型服务");
 }
 /** Normalize service diagnostics only; generated content and machine identifiers stay intact. */
 export function publicServiceErrors(value: unknown): unknown {
@@ -23,7 +48,7 @@ export function publicServiceErrors(value: unknown): unknown {
   if (typeof result.message === "string") result.message = publicServiceText(result.message);
   if (typeof result.error === "string") result.error = publicServiceText(result.error);
   else if (object(result.error)) result.error = publicServiceErrors(result.error);
-  if (object(result.data) && result.data.error) result.data = publicServiceErrors(result.data);
+  if (object(result.data) && (result.data.error || ["failed", "error"].includes(String(result.data.status)))) result.data = publicServiceErrors(result.data);
   return result;
 }
 export type PriceCatalog = {
@@ -45,6 +70,20 @@ function safe(value: bigint) {
 export function markupMicrousd(costMicrousd: number): number {
   if (!integer(costMicrousd)) throw new PricingError("上游金额无效。");
   return safe((BigInt(costMicrousd) * BigInt(6) + BigInt(4)) / BigInt(5));
+}
+/** Convert a decimal USD price to retail micro-USD with one final rounding step. */
+export function retailUsdMicrousd(value: number, priceFactor = 1): number {
+  if (![value, priceFactor].every(part => Number.isFinite(part) && part >= 0 && part <= 100_000)) throw new PricingError("定价金额无效。");
+  const fraction = (part: number): [bigint, bigint] => {
+    const [mantissa, exponent = "0"] = String(part).toLowerCase().split("e");
+    const decimals = mantissa.split(".")[1]?.length || 0;
+    const scale = Number(exponent) - decimals;
+    const digits = BigInt(mantissa.replace(".", ""));
+    return scale >= 0 ? [digits * BigInt(10) ** BigInt(scale), BigInt(1)] : [digits, BigInt(10) ** BigInt(-scale)];
+  };
+  const [a, b] = fraction(value), [c, d] = fraction(priceFactor);
+  const numerator = a * c * BigInt(6_000_000), denominator = b * d * BigInt(5);
+  return safe((numerator + denominator - BigInt(1)) / denominator);
 }
 export function tokenCostMicrousd(count: number, retailRatePerMillion: number): number {
   if (!integer(count) || !integer(retailRatePerMillion)) throw new PricingError("用量或费率无效。");

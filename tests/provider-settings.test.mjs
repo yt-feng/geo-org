@@ -200,7 +200,7 @@ test("HTTP 402 saves an encrypted key as unverified without reporting an invente
   const saved = await service.save(KEY);
   assert.equal(saved.ok, true); assert.equal(saved.apimart.configured, true); assert.equal(saved.apimart.source, "saved");
   assert.equal(saved.apimart.verifiedAt, null); assert.equal(saved.quota, null);
-  assert.equal(saved.warning, "密钥已加密保存，tokvilo 文本与图像 返回余额不足（HTTP 402）；请补充余额后重新验证。");
+  assert.equal(saved.warning, "密钥已加密保存，tokvilo 模型服务 返回余额不足（HTTP 402）；请补充余额后重新验证。");
   const row = sqlite.prepare("SELECT * FROM provider_settings WHERE provider='apimart'").get();
   assert.equal(row.verified_at, ""); assert.ok(row.updated_at); assert.equal(await providers.decryptProviderKey(row.encrypted_key, SECRET), KEY);
   assertRedacted(row, KEY); assertRedacted(saved, KEY, row.encrypted_key);
@@ -208,7 +208,7 @@ test("HTTP 402 saves an encrypted key as unverified without reporting an invente
   assert.equal(reloaded.apimart.verifiedAt, null); assert.equal(reloaded.apimart.configured, true);
   for (const operation of [() => service.test(), () => service.models()]) {
     await assert.rejects(operation(), error => {
-      assert.equal(error.status, 402); assert.equal(error.message, "tokvilo 文本与图像 返回余额不足（HTTP 402）；请补充余额后重新验证。"); assertRedacted(error.message, KEY); return true;
+      assert.equal(error.status, 402); assert.equal(error.message, "tokvilo 模型服务 返回余额不足（HTTP 402）；请补充余额后重新验证。"); assertRedacted(error.message, KEY); return true;
     });
     assert.deepEqual(sqlite.prepare("SELECT * FROM provider_settings WHERE provider='apimart'").get(), row);
   }

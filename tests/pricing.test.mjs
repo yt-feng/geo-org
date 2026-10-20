@@ -5,9 +5,14 @@ import vm from "node:vm";
 import ts from "typescript";
 
 const filename = new URL("../lib/pricing.ts", import.meta.url).pathname;
+const idsCode = ts.transpileModule(await readFile(new URL("../lib/model-id.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const ids = { exports: {} };
+vm.runInNewContext(idsCode, { module: ids, exports: ids.exports });
 const { outputText } = ts.transpileModule(await readFile(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
 const compiled = { exports: {} };
-vm.runInNewContext(outputText, { module: compiled, exports: compiled.exports, TextEncoder, TextDecoder, Uint8Array, AbortSignal, Response });
+vm.runInNewContext(outputText, { module: compiled, exports: compiled.exports, require(name) {
+  if (name === "./model-id") return ids.exports; throw Error(name);
+}, TextEncoder, TextDecoder, Uint8Array, AbortSignal, Response });
 const { markupMicrousd, tokenCostMicrousd, normalizeTokenHubPricing, quoteTokenHubRequest, tokenHubActualCost, getTokenHubPricing } = compiled.exports;
 const amount = (micros, unit = "1M tokens") => ({ amount: { currencyCode: "USD", unitsMicros: micros, exactUnits: String(micros / 1e6) }, display: `USD ${micros / 1e6} / ${unit}` });
 function source() { return { currencyCode: "USD", data: [
@@ -26,7 +31,7 @@ test("public labels and diagnostics use tokvilo while model IDs, vendors and gen
   const input = { error: { code: "apimart_error", message: "API Mart service unavailable" },
     model: "tokenhub-exact-model", choices: [{ message: { content: "Compare TokenHub and APIMart" } }] };
   const output = compiled.exports.publicServiceErrors(input);
-  assert.equal(output.error.message, "tokvilo 文本与图像 service unavailable");
+  assert.equal(output.error.message, "tokvilo 模型服务 service unavailable");
   assert.equal(output.error.code, input.error.code);
   assert.equal(output.model, input.model);
   assert.equal(output.choices, input.choices);

@@ -31,7 +31,7 @@ function DashboardPreview() {
         <div className="landing-preview-period"><span className="active">今天</span><span>昨天</span><span>近 7 天</span><span>近 30 天</span><small>界面预览</small></div>
         <div className="landing-preview-metrics">{["今日调用", "调用成功率", "剩余额度", "累计请求", "请求延迟", "已创建密钥"].map((label, i) => <div key={label}><span>{label}</span><strong>—</strong><svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d={i % 2 ? "M0 35 L12 32 L24 32 L36 25 L48 28 L60 20 L72 11 L84 15 L100 2" : "M0 35 L14 24 L28 28 L42 15 L56 20 L70 7 L84 12 L100 1"} /></svg></div>)}</div>
         <div className="landing-preview-charts"><div className="landing-preview-chart"><h3>调用趋势</h3><p>统一查看你的 API 用量</p><div className="landing-preview-bars">{[18, 38, 26, 74, 53, 86, 64, 33].map((height, i) => <i style={{ height: `${height}%` }} key={i} />)}</div></div><div className="landing-preview-chart"><h3>服务分布</h3><p>多种能力，一个入口</p><div className="landing-preview-donut-row"><div className="landing-preview-donut"><span>API</span></div><div className="landing-preview-legend"><span>图像生成</span><span>语言模型</span><span>数据接口</span></div></div></div></div>
-        <div className="landing-preview-table"><h3>服务目录</h3><div><span>服务</span><span>协议</span><span>管理</span></div><div><span>tokvilo 文本与图像</span><span>REST API</span><span>统一配置</span></div><div><span>tokvilo 数据接口</span><span>REST API</span><span>统一配置</span></div></div>
+        <div className="landing-preview-table"><h3>服务目录</h3><div><span>服务</span><span>协议</span><span>管理</span></div><div><span>tokvilo 模型服务</span><span>REST API</span><span>统一配置</span></div><div><span>tokvilo 数据接口</span><span>REST API</span><span>统一配置</span></div></div>
       </div>
     </div>
   );
@@ -103,7 +103,7 @@ export function PublicLanding() {
 
       <section className="landing-section landing-faq" id="faq"><div className="landing-section-title"><span className="landing-eyebrow">QUESTIONS, ANSWERED</span><h2>常见问题</h2></div><div className="landing-faq-list">{[
         ["tokvilo 是什么？", "tokvilo 提供模型 API、数字商品与订阅咨询。API 充值与用量在账户内管理；数字商品可直接提交需求，24 小时内邮件回复。"],
-        ["如何定价？", "模型 API 与数字商品均按对应上游价格加价 20%。API 按实际用量结算，数字商品展示人民币参考售价，提交需求后通过邮件确认。"],
+        ["如何定价？", "模型 API 的价格可在价格页查看，按实际用量结算。数字商品展示人民币参考售价，提交需求后通过邮件确认。"],
         ["如何充值？", "在余额与充值页面通过链动小铺购买 tokvilo 充值码，支付后回到本站兑换。兑换额度和汇率在购买前展示。"],
         ["如何使用模型？", "登录后进入文本与图像或多模态工作台，选择模型并填写请求。确认预留金额后即可生成，完成后按实际用量结算。"],
         ["可以使用数据接口吗？", "可以。已有数据接口继续通过 tokvilo 的统一入口访问，具体路径、参数与可用权限请查看登录后的 API 文档。"],

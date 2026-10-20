@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
@@ -9,6 +9,23 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
+  useEffect(() => {
+    if (mode !== "login") return;
+    const url = new URL(window.location.href), fragment = new URLSearchParams(url.hash.slice(1));
+    const sensitive = ["access_token", "refresh_token", "token_hash", "error", "error_code", "error_description"];
+    if (url.searchParams.get("verified") !== "1" &&
+      !sensitive.some(key => fragment.has(key) || url.searchParams.has(key))) return;
+    const failed = ["error", "error_code", "error_description"]
+      .some(key => fragment.has(key) || url.searchParams.has(key));
+    // Email confirmation does not put provider bearer tokens into a visible URL
+    // after arrival, or turn an untrusted browser fragment into an app session.
+    window.history.replaceState(null, "", "/login");
+    queueMicrotask(() => {
+      setIsError(failed);
+      setMessage(failed ? "邮箱验证链接已失效或未完成验证，请重新请求验证邮件。"
+        : "邮箱验证链接已处理，请使用邮箱和密码登录。");
+    });
+  }, [mode]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,6 +105,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <input
           autoComplete={isLogin ? "current-password" : "new-password"}
           minLength={isLogin ? undefined : 10}
+          maxLength={512}
           name="password"
           placeholder={isLogin ? "输入密码" : "至少 10 位"}
           required
@@ -96,6 +114,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <button type="button" className="auth-password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"}><Icon name={showPassword ? "shield" : "key"} size={15} /></button>
         </div>
       </label>
+      {isLogin ? <p className="auth-switch"><Link href="/forgot-password">忘记密码？</Link></p> : null}
       <button className="button button-primary auth-submit" disabled={pending} type="submit">
         {pending ? "请稍候…" : isLogin ? "登录" : "创建账户"}<Icon name="arrow-right" size={15} />
       </button>

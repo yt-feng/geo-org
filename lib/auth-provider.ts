@@ -1,7 +1,7 @@
 import { authBaseUrl, authRequestHeaders } from "./auth";
 
 export class AuthProviderError extends Error {
-  constructor(message: string, public status: number, public code: string) {
+  constructor(message: string, public status: number, public code: string, public outcomeUnknown = false) {
     super(message);
     this.name = "AuthProviderError";
   }
@@ -25,6 +25,9 @@ const knownErrors: Record<string, [string, number]> = {
   refresh_token_not_found: ["登录已过期，请重新登录。", 401],
   refresh_token_already_used: ["登录已过期，请重新登录。", 401],
   session_not_found: ["登录已过期，请重新登录。", 401],
+  otp_expired: ["恢复链接已失效或已使用，请重新申请找回密码。", 401],
+  same_password: ["新密码不能与原密码相同，请换一个密码。", 400],
+  reauthentication_needed: ["恢复授权已过期，请重新申请找回密码。", 401],
 };
 
 export function record(value: unknown): Record<string, unknown> | null {
@@ -32,22 +35,27 @@ export function record(value: unknown): Record<string, unknown> | null {
     ? value as Record<string, unknown> : null;
 }
 
-export async function authProviderRequest(path: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+export async function authProviderRequest(
+  path: string,
+  payload: Record<string, unknown>,
+  options: { method?: "POST" | "PUT"; accessToken?: string; emptyResponse?: boolean } = {},
+): Promise<Record<string, unknown>> {
   let base: string, headers: Headers;
   try { base = authBaseUrl(); headers = authRequestHeaders(); }
   catch { throw new AuthProviderError("认证服务尚未完成配置，请联系管理员。", 503, "auth_not_configured"); }
+  if (options.accessToken) headers.set("authorization", `Bearer ${options.accessToken}`);
   const signal = AbortSignal.timeout(10_000);
   let response: Response, result: unknown;
   try {
     response = await fetch(`${base}/auth/v1/${path}`, {
-      method: "POST", headers, body: JSON.stringify(payload),
+      method: options.method || "POST", headers, body: JSON.stringify(payload),
       signal, redirect: "manual", cache: "no-store",
     });
-    result = await response.json();
+    result = response.ok && options.emptyResponse ? {} : await response.json();
   } catch {
     throw new AuthProviderError(
       signal.aborted ? "认证服务响应超时，请稍后重试。" : "认证服务暂时无法连接或返回异常，请稍后重试。",
-      503, signal.aborted ? "auth_timeout" : "auth_upstream_unavailable",
+      503, signal.aborted ? "auth_timeout" : "auth_upstream_unavailable", true,
     );
   }
   const data = record(result);
@@ -58,7 +66,7 @@ export async function authProviderRequest(path: string, payload: Record<string, 
       throw new AuthProviderError(message, status, code);
     }
     if (response.status === 429) throw new AuthProviderError("请求过于频繁，请稍后再试。", 429, "auth_rate_limited");
-    if (response.status >= 500) throw new AuthProviderError("认证服务暂时无法完成请求或发送验证邮件，请稍后再试。", 503, "auth_upstream_unavailable");
+    if (response.status >= 500) throw new AuthProviderError("认证服务暂时无法完成请求或发送验证邮件，请稍后再试。", 503, "auth_upstream_unavailable", true);
     if (response.status === 401 || response.status === 403) throw new AuthProviderError("认证服务配置暂不可用，请联系管理员。", 503, "auth_credentials_rejected");
     throw new AuthProviderError("操作未成功，请检查填写的信息后重试。", 400, "auth_request_rejected");
   }

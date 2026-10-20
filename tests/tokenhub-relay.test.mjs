@@ -26,7 +26,7 @@ const ADMIN = { id: "admin", email: "admin@example.com", displayName: "Admin", i
 const VIDEO = { model: "doubao-seedance-2-0", content: [{ type: "text", text: "A still life" }], duration: 4 };
 const hash = value => createHash("sha256").update(value).digest("hex");
 const { ProviderError } = await loadModule("../lib/provider-settings.ts");
-const pricing = await loadModule("../lib/pricing.ts");
+const pricing = await loadModule("../lib/pricing.ts", { "./model-id": await loadModule("../lib/model-id.ts") });
 const amount = (value, unit = "1M tokens") => ({ amount: { currencyCode: "USD", unitsMicros: value, exactUnits: String(value / 1e6) }, display: `USD ${value / 1e6} / ${unit}` });
 const PRICE_CATALOG = pricing.normalizeTokenHubPricing({ currencyCode: "USD", data: [
   { id: VIDEO.model, deployments: [{ enabled: true, pricing: { video: { withoutVideo480p: amount(7e6), withoutVideo720p: amount(7e6) } } }] },

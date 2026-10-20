@@ -7,11 +7,13 @@ import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
 import { brandDisplay } from "./helpers/brand-display.mjs";
 
+const optionsSource = ts.transpileModule(await readFile(new URL("../lib/apimart-video-options.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const optionsModule = { exports: {} }; vm.runInNewContext(optionsSource, { module: optionsModule, exports: optionsModule.exports });
 const filename = new URL("../components/Playground.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const catalog = {
   modelCatalog: [{ id: "gpt-image-2", name: "GPT Image 2", provider: "OPENAI", category: "image" }],
-  modelCategories: [{ id: "image", label: "图片", icon: "image" }], providerInitials: () => "O",
+  modelCategories: [{ id: "image", label: "图片", icon: "image" }, { id: "video", label: "视频", icon: "video" }, { id: "audio", label: "音乐", icon: "music" }], providerInitials: () => "O",
 };
 const text = value => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(text).join("") : value?.props ? text(value.props.children) : "";
 function find(node, predicate) {
@@ -39,6 +41,7 @@ async function fixture(options = {}) {
   vm.runInNewContext(code, {
     module: compiled, exports: compiled.exports, crypto: webcrypto, URL, setTimeout: () => 1, clearTimeout() {},
     require(name) {
+      if (name === "@/lib/apimart-video-options") return optionsModule.exports;
       if (name === "@/lib/brand-display") return brandDisplay;
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
@@ -49,14 +52,15 @@ async function fixture(options = {}) {
     },
     fetch: async (url, init) => {
       calls.push({ url, init });
-      if (url === "/api/pricing") return Response.json({ models: [{ provider: "apimart", model: "gpt-image-2", rates: [{ dimension: "2k", unit: "image", retailMicrousd: 18000 }] }] });
+      if (url === "/api/model-catalog") return Response.json({ models: options.models || catalog.modelCatalog.map(model => ({ ...model, upstream: "apimart" })) });
+      if (url === "/api/pricing") return Response.json({ models: options.prices || [{ provider: "apimart", model: "gpt-image-2", kind: "image", billingReady: true, rates: [{ dimension: "2k", unit: "image", retailMicrousd: 18000 }] }] });
       if (url === "/api/gateway/v1/tasks") return Response.json({ data: [] });
       if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ provider: "apimart", model: "gpt-image-2", mode: "image", currency: "USD", reservedMicrousd: 18000, observedAt: "2026-10-20T00:00:00Z" });
       return options.generate ? options.generate(url, init) : Response.json({ data: [{ task_id: "new_task", status: "submitted" }] });
     },
   }, { filename });
   function render() {
-    cursor = 0; tree = compiled.exports.Playground({ isAdmin: false });
+    cursor = 0; tree = compiled.exports.Playground({ isAdmin: false, ...options.props });
     for (const effect of effects.splice(0)) effect();
     return tree;
   }
@@ -73,6 +77,7 @@ test("APIMart requires a displayed exact quote before confirming a paid request 
   await f.primary().props.onClick(); f.render();
   assert.equal(f.calls.filter(call => call.url.includes("images/generations")).length, 0);
   assert.match(text(f.tree()), /本次预留 \$0\.018000/);
+  assert.doesNotMatch(text(f.tree()), /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
   assert.match(text(f.primary()), /确认预留 \$0\.018000 并生成/);
   await f.primary().props.onClick(); f.render();
   const quote = f.calls.find(call => call.url === "/api/pricing/quote");
@@ -114,4 +119,80 @@ test("a server price increase clears the confirmation and requires a fresh quote
   await f.primary().props.onClick(); f.render();
   assert.equal(f.calls.filter(call => call.url.includes("images/generations")).length, 1);
   assert.equal(f.calls.filter(call => call.url === "/api/pricing/quote").length, 2);
+});
+
+for (const mode of ["video", "audio"]) test(`dynamic ${mode} models preserve exact parameters through quote then confirmation`, async () => {
+  const id = mode === "video" ? "veo3.1-fast" : "flowmusic";
+  const f = await fixture({ props: { initialModel: id, initialCategory: mode },
+    models: [{ id, name: "Dynamic model", provider: "MODEL", category: mode, upstream: "apimart" }],
+    prices: [{ provider: "apimart", model: id, kind: mode, billingReady: true, rates: [{ dimension: "default", unit: mode === "video" ? "second" : "call", retailMicrousd: 12000 }] }],
+    quote: async (_url, init) => { const input = JSON.parse(init.body); assert.equal(input.mode, mode); return Response.json({ provider: "apimart", model: id, currency: "USD", reservedMicrousd: 96000 }); },
+  });
+  assert.equal(f.primary().props.disabled, false);
+  assert.ok(find(f.tree(), node => node.type === "option" && node.props.value === id));
+  await f.primary().props.onClick(); f.render();
+  await f.primary().props.onClick(); f.render();
+  const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body;
+  const paid = f.calls.find(call => call.url.includes(mode === "video" ? "/videos/generations" : "/music/generations"));
+  assert.deepEqual(JSON.parse(paid.init.body), quoted);
+  if (mode === "video") { assert.equal(quoted.duration, 8); assert.equal(quoted.resolution, "720p"); }
+  else { assert.equal(quoted.sound_prompt, "A tree in morning light"); assert.equal(quoted.prompt, undefined); }
+});
+
+test("advanced JSON is the sole quoted payload and edits invalidate the confirmation", async () => {
+  const f = await fixture();
+  find(f.tree(), node => node.type === "button" && text(node) === "编辑完整 JSON 参数").props.onClick(); f.render();
+  const edit = body => { find(f.tree(), node => node.props["aria-label"] === "完整 JSON 参数").props.onChange({ target: { value: JSON.stringify(body) } }); f.render(); };
+  edit({ model: "gpt-image-2", prompt: "From JSON", resolution: "4k", n: 1 });
+  await f.primary().props.onClick(); f.render();
+  assert.equal(JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body.prompt, "From JSON");
+  edit({ model: "gpt-image-2", prompt: "Changed JSON", resolution: "2k" });
+  assert.equal(text(f.primary()), "获取准确报价");
+  assert.doesNotMatch(text(f.tree()), /本次预留/);
+  edit({ model: "wrong", prompt: "No" });
+  assert.equal(f.primary().props.disabled, true);
+});
+
+test("priced discovery without a completed billing adapter stays disabled", async () => {
+  const f = await fixture({ prices: [{ provider: "apimart", model: "gpt-image-2", kind: "image", billingReady: false, rates: [] }] });
+  assert.equal(f.primary().props.disabled, true);
+  await f.primary().props.onClick();
+  assert.equal(f.calls.some(call => call.url === "/api/pricing/quote"), false);
+});
+
+test("video model selection uses legal defaults and requires reference images for image-only models", async () => {
+  for (const id of ["MiniMax-H3", "MiniMax-Hailuo-02", "MiniMax-Hailuo-2.3", "kling-v2-6", "wan2.6-i2v-flash"]) {
+    const defaults = optionsModule.exports.VIDEO_DEFAULTS[id];
+    const f = await fixture({ props: { initialModel: id, initialCategory: "video" },
+      models: [{ id, name: id, provider: "MODEL", category: "video", upstream: "apimart" }],
+      prices: [{ provider: "apimart", model: id, kind: "video", billingReady: true, rates: [{ dimension: "default", unit: "second", retailMicrousd: 12000 }] }],
+    });
+    if (defaults.referenceRequired) {
+      assert.equal(f.primary().props.disabled, true);
+      const reference = find(f.tree(), node => node.props["aria-label"] === "视频参考图片 URL");
+      reference.props.onChange({ target: { value: "https://example.com/first.png" } }); f.render();
+    }
+    assert.equal(f.primary().props.disabled, false);
+    await f.primary().props.onClick();
+    const body = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body;
+    assert.ok(defaults.durations.includes(body.duration), id);
+    if (defaults.mode) assert.ok(defaults.modes.includes(body.mode), id);
+    else assert.ok(defaults.resolutions.includes(body.resolution), id);
+  }
+});
+
+test("Midjourney displays one task and its default price, while image quality choices follow available prices", async () => {
+  const f = await fixture({ props: { initialModel: "midjourney", initialCategory: "image" },
+    models: [{ id: "midjourney", name: "Midjourney", provider: "MIDJOURNEY", category: "image", upstream: "apimart" }],
+    prices: [{ provider: "apimart", model: "midjourney", kind: "image", billingReady: true, rates: [
+      { dimension: "imagine-v7", unit: "call", retailMicrousd: 12000 },
+      { dimension: "imagine-v7-turbo", unit: "call", retailMicrousd: 24000 },
+    ] }],
+  });
+  assert.match(text(f.tree()), /1 个任务.*四宫格/); assert.doesNotMatch(text(f.tree()), /imagine-v7-turbo/);
+  const quality = await fixture({ prices: [{ provider: "apimart", model: "gpt-image-2", kind: "image", billingReady: true, rates: [
+    { dimension: "1k@low", unit: "image", retailMicrousd: 12000 }, { dimension: "1k@medium", unit: "image", retailMicrousd: 24000 },
+  ] }] });
+  const selector = find(quality.tree(), node => node.props["aria-label"] === "图片质量");
+  assert.match(text(selector), /lowmedium/); assert.doesNotMatch(text(selector), /high/);
 });

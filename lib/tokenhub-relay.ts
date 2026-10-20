@@ -4,7 +4,7 @@ import { sha256Hex } from "./crypto";
 import { ensureUser } from "./store";
 import { ProviderError } from "./provider-settings";
 import { createTokenHubSettings, TOKENHUB_ORIGIN } from "./tokenhub-settings";
-import { getTokenHubPricing, quoteTokenHubRequest, tokenHubActualCost, PricingError, publicServiceText, publicServiceErrors, type TokenHubQuote } from "./pricing";
+import { getTokenHubPricing, quoteTokenHubRequest, tokenHubActualCost, PricingError, publicServiceText, publicRelayResponse, type TokenHubQuote } from "./pricing";
 import { reserveWallet, settleWallet, refundWallet, WalletError } from "./wallet";
 
 const BASE = "/api/studio";
@@ -20,7 +20,7 @@ class RepricingRequired extends ProviderError {
   constructor(public requiredReserveMicrousd: number) { super("当前价格所需预留金额超过您确认的上限，请重新获取报价后提交。", 409); }
 }
 
-function reply(data: unknown, status = 200) { return Response.json(publicServiceErrors(data), { status, headers: JSON_HEADERS }); }
+function reply(data: unknown, status = 200) { return Response.json(publicRelayResponse(data), { status, headers: JSON_HEADERS }); }
 function error(message: string, status: number) { return reply({ error: { message: publicServiceText(message) } }, status); }
 function object(value: unknown): value is Json { return !!value && typeof value === "object" && !Array.isArray(value); }
 
@@ -165,7 +165,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
           const cached = JSON.parse(existing.response_json) as Json;
           const receipt = await db.prepare("SELECT status,reserved_microusd AS reservedMicrousd,charged_microusd AS chargedMicrousd FROM wallet_reservations WHERE user_id=? AND request_id=?")
             .bind(who.userId, `tokenhub:${id}`).first<{ status: string; reservedMicrousd: number; chargedMicrousd: number | null }>();
-          return reply(receipt ? { ...cached, tokvilo_billing: { currency: "USD", markupPercent: 20, ...receipt } } : cached, existing.status_code);
+          return reply(receipt ? { ...cached, tokvilo_billing: { currency: "USD", ...receipt } } : cached, existing.status_code);
         }
         return error("此请求已提交，结果尚未确认。请查看任务记录或 tokvilo 多模态 请求日志，不要更换编号重复生成。", 409);
       }
@@ -230,7 +230,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
           .bind(billing.userId, billing.requestId).first<{ status: string; reservedMicrousd: number; chargedMicrousd: number | null }>().catch(() => null);
         if (recorded && recorded.status !== "reserved") billingResult = recorded;
       }
-      data = { ...data, tokvilo_billing: { currency: "USD", markupPercent: 20, ...billingResult } };
+      data = { ...data, tokvilo_billing: { currency: "USD", ...billingResult } };
     }
     if (reservation) await db.prepare("UPDATE tokenhub_requests SET status_code=?,response_json=? WHERE user_id=? AND idempotency_key=?")
       .bind(status, JSON.stringify(data), reservation.userId, reservation.id).run();

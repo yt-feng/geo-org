@@ -96,38 +96,47 @@ function payload(body: Uint8Array) {
   catch { fail(400, "invalid_body", "Webhook body is invalid."); }
   const user = record(parsed?.user), data = record(parsed?.email_data);
   if (!user || !data) fail(400, "invalid_body", "Webhook user and email data are required.");
-  if (data.email_action_type !== "signup") {
-    fail(422, "unsupported_email_action", "This email hook currently supports signup confirmation only.");
+  if (data.email_action_type !== "signup" && data.email_action_type !== "recovery") {
+    fail(422, "unsupported_email_action", "This email hook supports signup confirmation and password recovery only.");
   }
   const email = user.email, userId = user.id, tokenHash = data.token_hash;
   if (typeof email !== "string" || email.length > 254 || email.split("@")[0].length > 64 ||
     !/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}$/.test(email) ||
     email.includes("..") || typeof userId !== "string" || !/^[a-zA-Z0-9_-]{1,128}$/.test(userId) ||
     typeof tokenHash !== "string" || !/^[A-Za-z0-9_-]{16,256}$/.test(tokenHash)) {
-    fail(400, "invalid_signup_email", "Signup email data is invalid.");
+    fail(400, "invalid_auth_email", "Authentication email data is invalid.");
   }
-  return { email, userId, tokenHash };
+  return { email, userId, tokenHash, action: data.email_action_type as "signup" | "recovery" };
 }
 function confirmationEmail(origin: string, input: ReturnType<typeof payload>, deliveryId: string) {
-  const link = new URL("/auth/v1/verify", origin);
-  link.searchParams.set("token", input.tokenHash);
-  link.searchParams.set("type", "signup");
-  link.searchParams.set("redirect_to", REDIRECT);
+  const recovery = input.action === "recovery";
+  const link = recovery ? new URL("https://tokvilo.com/reset-password") : new URL("/auth/v1/verify", origin);
+  if (recovery) {
+    link.hash = new URLSearchParams({ token_hash: input.tokenHash, type: input.action }).toString();
+  } else {
+    link.searchParams.set("token", input.tokenHash);
+    link.searchParams.set("type", input.action);
+    link.searchParams.set("redirect_to", REDIRECT);
+  }
   // Deliberately ignore payload site_url, redirect_to, token and user metadata.
-  const text = [
+  const text = (recovery ? [
+    "你申请了重置 tokvilo 账户密码。", "", "请打开以下链接，点击继续后设置新密码：",
+    link.href, "", "链接仅供本次重置使用。如果链接已失效，请重新申请。",
+    "如果你没有申请重置密码，请忽略此邮件，你的密码不会因此改变。",
+  ] : [
     "欢迎注册 tokvilo。", "", "请打开以下链接确认邮箱，然后返回 tokvilo 使用邮箱和密码登录：",
     link.href, "", "如果你没有注册 tokvilo，请忽略此邮件。",
-  ].join("\n");
+  ]).join("\n");
   const encoded = btoa(Array.from(new TextEncoder().encode(text), byte => String.fromCharCode(byte)).join(""));
   return new EmailMessage(FROM, input.email, [
-    `From: tokvilo <${FROM}>`, `To: ${input.email}`, "Subject: Confirm your tokvilo account",
+    `From: tokvilo <${FROM}>`, `To: ${input.email}`, `Subject: ${recovery ? "Reset your tokvilo password" : "Confirm your tokvilo account"}`,
     `Message-ID: <auth.${deliveryId}@tokvilo.com>`, `Date: ${new Date().toUTCString()}`,
     "MIME-Version: 1.0", 'Content-Type: text/plain; charset="UTF-8"', "Content-Transfer-Encoding: base64", "",
     encoded.match(/.{1,76}/g)!.join("\r\n"), "",
   ].join("\r\n"));
 }
 
-/** Only a valid, recent Supabase-signed signup event can reach the email binding. */
+/** Only a valid, recent Supabase-signed authentication event can reach the email binding. */
 export async function handleAuthEmailHook(request: Request): Promise<Response> {
   const deadline = Date.now() + 4_500;
   try {
@@ -139,7 +148,7 @@ export async function handleAuthEmailHook(request: Request): Promise<Response> {
     const [messageId, bodyHash, deliveryId] = await Promise.all([
       sha256Hex(JSON.stringify([origin, webhookId])),
       sha256Hex(new TextDecoder("utf-8", { fatal: true }).decode(body)),
-      sha256Hex(JSON.stringify([origin, "signup", input.userId, input.email.toLowerCase(), input.tokenHash])),
+      sha256Hex(JSON.stringify([origin, input.action, input.userId, input.email.toLowerCase(), input.tokenHash])),
     ]);
     // Neither raw payload nor recipients, OTPs or confirmation links are stored.
     await db.prepare(`INSERT INTO auth_email_hook_messages(id,body_hash,delivery_id) VALUES(?,?,?)

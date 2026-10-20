@@ -7,7 +7,7 @@ const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete", "head", "
 const SOURCES: Array<{ id: DocumentationSource; label: string; url: string }> = [
   { id: "tikhub", label: "数据接口", url: "/api/private/openapi" },
   { id: "tokenhub", label: "tokvilo 多模态", url: "/api/private/studio-openapi" },
-  { id: "apimart", label: "tokvilo 文本与图像", url: "/api/private/gateway-openapi" },
+  { id: "apimart", label: "tokvilo 模型服务", url: "/api/private/gateway-openapi" },
 ];
 function object(value: unknown): Json { return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Json : {}; }
 function parameters(value: unknown): ApiParameter[] { return Array.isArray(value) ? value.filter(item => item !== null && typeof item === "object" && !Array.isArray(item)) as ApiParameter[] : []; }

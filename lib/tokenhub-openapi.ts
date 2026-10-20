@@ -3,7 +3,7 @@ import { TOKENHUB_MODEL_REFERENCE_DATE, TOKENHUB_REFERENCE_MODELS } from "./toke
 const BASE = "/api/studio";
 const TASKS = BASE + "/v3/contents/generations/tasks";
 const models = (kind: "chat" | "image" | "video") => TOKENHUB_REFERENCE_MODELS.filter(model => model.kind === kind).map(model => model.id);
-const auth = "使用当前账户的 tokvilo API Key（tk_live_ 前缀，兼容旧 eco_live_），不要提交上游密钥。会员按上游价格加价 20% 从余额结算；浏览器写操作要求同源 Origin。";
+const auth = "使用当前账户的 tokvilo API Key（tk_live_ 前缀，兼容旧 eco_live_）。会员按公布的 tokvilo 售价从余额结算；浏览器写操作要求同源 Origin。";
 const modelDescription = `以下枚举是 ${TOKENHUB_MODEL_REFERENCE_DATE} 的模型参考。完整实时目录通过 GET ${BASE}/v1/models 获取；新增模型以目录返回的 endpoint 和 integrationStatus 为准。目录在列不等于账户已获该模型调用权限。`;
 const jsonResponse = (description: string, schema: unknown = { type: "object", additionalProperties: true }) => ({ description, content: { "application/json": { schema } } });
 const errors = {

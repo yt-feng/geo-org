@@ -73,7 +73,7 @@ const worker = {
     if ((headers.get("content-type") || "").includes("text/html")) {
       headers.set(
         "content-security-policy",
-        "default-src 'self'; img-src 'self' data: https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai; media-src 'self' https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        "default-src 'self'; img-src 'self' data: https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai https://cdn.apimart.ai; media-src 'self' https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai https://cdn.apimart.ai; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
       );
       headers.set("cache-control", "private, no-store");
     }

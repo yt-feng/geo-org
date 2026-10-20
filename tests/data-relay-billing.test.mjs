@@ -15,7 +15,7 @@ async function load(path, mocks = {}, globals = {}) {
   return m.exports;
 }
 const schema = (await Promise.all((await readdir(new URL("../drizzle/", import.meta.url))).filter(n => n.endsWith(".sql")).sort().map(n => readFile(new URL(`../drizzle/${n}`, import.meta.url), "utf8")))).join("\n");
-const pricing = await load("../lib/pricing.ts");
+const pricing = await load("../lib/pricing.ts", { "./model-id": await load("../lib/model-id.ts") });
 const KEY = "tk_live_012345678901234567890123456789";
 const FIXED = "/api/v1/twitter/web/fetch_tweet_detail";
 async function fixture(t, opts = {}) {
@@ -95,7 +95,8 @@ test("local gateway describes prepaid pricing and known zero-cost endpoints stay
   const f = await fixture(t, { balance: 0 });
   const response = await f.handle(request("/api/v1/gateway/user/calculate_price"));
   const data = (await response.json()).data;
-  assert.equal(data.plan, "prepaid"); assert.equal(data.markup_percent, 20); assert.equal(data.unit_price, undefined);
+  assert.equal(data.plan, "prepaid"); assert.equal(data.markup_percent, undefined); assert.equal(data.unit_price, undefined);
+  assert.doesNotMatch(JSON.stringify(data), /upstream|markup|20%/i);
   assert.equal((await f.handle(request("/api/v1/health/check", { "Idempotency-Key": "" }))).status, 200);
   assert.equal((await f.wallet.getWallet(f.userId)).balanceMicrousd, 0);
 });

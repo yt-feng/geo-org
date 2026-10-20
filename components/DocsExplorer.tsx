@@ -50,7 +50,7 @@ export function DocsExplorer({ baseUrl }: { baseUrl: string }) {
         <div className="docs-controls">
           <input aria-label="搜索接口或模型 ID" onChange={event => setQuery(event.target.value)} placeholder="搜索路径、名称或模型 ID" type="search" value={query} />
           <select aria-label="按接口来源筛选" onChange={event => { setProvider(event.target.value as DocumentationSource | "all"); setTag("全部"); }} value={provider}>
-            <option value="all">全部服务</option><option value="tikhub">数据接口</option><option value="tokenhub">tokvilo 多模态</option><option value="apimart">tokvilo 文本与图像</option>
+            <option value="all">全部服务</option><option value="tikhub">数据接口</option><option value="tokenhub">tokvilo 多模态</option><option value="apimart">tokvilo 模型服务</option>
           </select>
           <select aria-label="按分类筛选" onChange={event => setTag(event.target.value)} value={tag}>{tags.map(item => <option key={item}>{item}</option>)}</select>
         </div>
@@ -64,7 +64,7 @@ export function DocsExplorer({ baseUrl }: { baseUrl: string }) {
       <article className="endpoint-detail">
         {active ? <>
           <div className="endpoint-heading"><span className={`method method-${active.method.toLowerCase()}`}>{active.method}</span><div><h2>{active.summary}</h2><code>{active.path}</code></div></div>
-          <p className="docs-count">{active.source === "tokenhub" ? "tokvilo 多模态 · 模型 API" : active.source === "apimart" ? "tokvilo 文本与图像 · 模型 API" : "tokvilo 数据接口"} · <a href={active.source === "tokenhub" ? "/api/private/studio-openapi" : active.source === "apimart" ? "/api/private/gateway-openapi" : "/api/private/openapi"} download>下载此来源 OpenAPI JSON</a></p>
+          <p className="docs-count">{active.source === "tokenhub" ? "tokvilo 多模态 · 模型 API" : active.source === "apimart" ? "tokvilo 模型服务 · 模型 API" : "tokvilo 数据接口"} · <a href={active.source === "tokenhub" ? "/api/private/studio-openapi" : active.source === "apimart" ? "/api/private/gateway-openapi" : "/api/private/openapi"} download>下载此来源 OpenAPI JSON</a></p>
           {active.description ? <p className="endpoint-description">{active.description}</p> : null}
           <section><h3>请求地址</h3><pre><code>{`${baseUrl.replace(/\/+$/, "")}${active.path}`}</code></pre></section>
           <section><h3>认证</h3><pre><code>Authorization: Bearer tk_live_your_api_key</code></pre>{active.source !== "tikhub" ? <p>使用当前账户创建的 tokvilo API Key，会员从余额按量扣费。上游密钥由后台保存；不要放入客户端请求。</p> : null}</section>

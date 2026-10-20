@@ -4,7 +4,7 @@ import { Brand } from "@/components/Brand";
 import { Icon } from "@/components/Icon";
 import { PublicNav } from "@/components/PublicNav";
 
-export const metadata: Metadata = { title: "登录" };
+export const metadata: Metadata = { title: "登录", referrer: "no-referrer" };
 
 export default function LoginPage() {
   return (

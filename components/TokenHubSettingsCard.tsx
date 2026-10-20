@@ -59,7 +59,7 @@ export function TokenHubSettingsCard() {
       if (result.models) setModels(result.models);
       setCatalog(result.catalog || null);
       if (result.verifiedAt) setStatus(current => current ? { ...current, verifiedAt: result.verifiedAt! } : current);
-      setNotice({ text: `${action === "test" ? "已验证保存的凭证。" : "已汇总模型接口与公开价格目录。"}${result.catalog?.complete ? "完整目录" : "当前部分目录"} ${result.models?.length ?? result.modelCount ?? 0} 个模型；目录可见与实际调用成功分别核验。${result.catalog?.warnings?.length ? ` ${result.catalog.warnings.join("；")}` : ""}` });
+      setNotice({ text: `${action === "test" ? "已验证保存的凭证。" : "已同步模型目录。"}${result.catalog?.complete ? "完整目录" : "当前部分目录"} ${result.models?.length ?? result.modelCount ?? 0} 个模型；目录可见与实际调用成功分别核验。${result.catalog?.warnings?.length ? ` ${result.catalog.warnings.join("；")}` : ""}` });
     } catch (error) { setNotice({ error: true, text: error instanceof Error ? error.message : "连接请求失败。" }); }
     finally { setPending(null); }
   }

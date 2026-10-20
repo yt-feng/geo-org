@@ -16,7 +16,10 @@ async function load(path, mocks = {}, expose = "") {
   return compiled.exports;
 }
 const references = await load("../lib/tokenhub-model-reference.ts");
-const catalog = await load("../lib/model-catalog.ts", { "./tokenhub-model-reference": references });
+const snapshot = JSON.parse(await readFile(new URL("../lib/model-directory-snapshot.json", import.meta.url), "utf8"));
+const modelIds = await load("../lib/model-id.ts");
+const requestKinds = await load("../lib/model-request-kind.ts");
+const catalog = await load("../lib/model-catalog.ts", { "./tokenhub-model-reference": references, "./model-directory-snapshot.json": { default: snapshot }, "./model-id": modelIds, "./model-request-kind": requestKinds });
 const workbench = await load("../components/TokenHubPlayground.tsx", { "@/lib/brand-display": brandDisplay, "next/link": { default: () => null }, "next/image": { default: () => null }, "./Icon": { Icon: () => null } }, "\nmodule.exports.helpers = { parseModels, modelMatches, modelLabel, selectionFromSearch, endpoint };" );
 
 test("all nine TokenHub reference models select the correct gateway workbench and exact version", () => {

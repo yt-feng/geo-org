@@ -13,14 +13,22 @@ async function load(path, mocks = {}, globals = {}) {
   vm.runInNewContext(outputText, {
     module: compiled, exports: compiled.exports,
     require(specifier) { if (Object.hasOwn(mocks, specifier)) return mocks[specifier]; throw Error(`Unexpected dependency: ${specifier}`); },
-    crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array, URL, Request, Response, Headers, AbortSignal,
+    crypto: webcrypto, structuredClone, TextEncoder, TextDecoder, Uint8Array, URL, Request, Response, Headers, AbortSignal,
     fetch() { throw Error("Unexpected network request"); }, ...globals,
   }, { filename });
   return compiled.exports;
 }
 const { ProviderError } = await load("../lib/provider-settings.ts");
-const pricing = await load("../lib/pricing.ts");
-const apimart = await load("../lib/apimart-pricing.ts", { "./pricing": pricing });
+const modelIds = await load("../lib/model-id.ts");
+const kinds = await load("../lib/model-request-kind.ts");
+const pricing = await load("../lib/pricing.ts", { "./model-id": modelIds });
+const imageOptions = await load("../lib/apimart-image-options.ts");
+const midjourney = await load("../lib/apimart-midjourney.ts", { "./pricing": pricing });
+const videoOptions = await load("../lib/apimart-video-options.ts");
+const videoRequest = await load("../lib/apimart-video-request.ts", { "./pricing": pricing, "./apimart-video-options": videoOptions });
+const requestTools = await load("../lib/apimart-request.ts", { "./pricing": pricing, "./model-id": modelIds, "./model-request-kind": kinds, "./apimart-video-options": videoOptions, "./apimart-video-request": videoRequest, "./apimart-midjourney": midjourney, "./apimart-image-options": imageOptions });
+const textPricing = await load("../lib/apimart-text-pricing.ts", { "./pricing": pricing, "./model-request-kind": kinds });
+const apimart = await load("../lib/apimart-pricing.ts", { "./pricing": pricing, "./apimart-request": requestTools, "./apimart-text-pricing": textPricing, "./apimart-midjourney": midjourney });
 const SOURCE = { success: true, data: { models: {
   llm: [{ id: "gpt-5", name: "GPT 5", pricing: { unit: "usd_per_million_tokens", pricing_mode: "standard", tier_count: 1, effective_rates: { input: 1, cached_input: 0.1, output: 8 } } }],
   image: [{ id: "gpt-image-2", name: "GPT Image 2", fixed_prices: { unit: "usd_per_image", dimension: "resolution", items: [{ key: "default", after_discount: 0.0085 }, { key: "1K", after_discount: 0.0085 }, { key: "2K", after_discount: 0.015 }, { key: "4K", after_discount: 0.022 }] } }],
@@ -63,7 +71,7 @@ async function fixture(t, options = {}) {
     "./crypto": { sha256Hex: async value => hash(value) },
     "./store": { ensureUser: async value => user(value) },
     "./provider-settings": { ProviderError, createProviderSettings: () => ({ credential: async () => KEY, models: async () => ({ models: [{ id: "gpt-5", provider: "openai" }] }) }) },
-    "./pricing": pricing, "./wallet": wallet,
+    "./pricing": pricing, "./wallet": wallet, "./apimart-request": requestTools, "./model-id": modelIds,
     "./apimart-pricing": { ...apimart, getApimartPricing: async () => { if (options.priceFailure) throw new pricing.PricingError("Unavailable"); return options.pricingCatalog || CATALOG; } },
   }, { fetch: async (url, init) => { calls.push({ url, init }); return options.fetcher ? options.fetcher(url, init) : Response.json({ code: 200, data: { choices: [{ message: { content: "hello" } }], usage: { prompt_tokens: 20, completion_tokens: 10, prompt_tokens_details: { cached_tokens: 10 } } } }); } });
   return { handle: handleApimartRelay, reconcile: () => reconcileApimartTasks(env, { maxTasks: 10 }), calls, sqlite, wallet, credit, user, setUser: value => { currentUser = value; } };
@@ -97,10 +105,18 @@ test("official APIMart prices receive exactly 20% markup and unsupported billing
   const branded = structuredClone(SOURCE);
   branded.data.models.llm[0].name = "APIMart GPT 5";
   const publicModel = apimart.parseApimartPricing(branded).models.find(model => model.model === "gpt-5");
-  assert.equal(publicModel.name, "tokvilo 文本与图像 GPT 5");
+  assert.equal(publicModel.name, "tokvilo 模型服务 GPT 5");
   assert.equal(publicModel.provider, "apimart");
   assert.equal(publicModel.model, "gpt-5");
   assert.deepEqual(publicModel.rates, CATALOG.models.find(model => model.model === "gpt-5").rates);
+});
+
+test("public model catalogue exposes retail rates without internal price snapshots", async t => {
+  const f = await fixture(t);
+  const result = await expect(f, request("/v1/models", { method: "GET" }), 200);
+  assert.equal(result.data[0].pricing.rates[0].retailMicrousd, 1200000);
+  assert.doesNotMatch(JSON.stringify(result), /upstreamMicrousd|upstreamRates|markupPercent|after_discount|sourceUrl/);
+  assert.equal(f.calls.length, 0);
 });
 
 test("member chat uses the documented /api path and settles once from real usage including cache", async t => {
@@ -164,6 +180,8 @@ test("image task ownership and cost settlement survive polling and return reserv
   f.setUser(MEMBER);
   const done = await expect(f, request("/v1/tasks/image_task", { method: "GET" }), 200);
   assert.equal(done.tokvilo_billing.chargedMicrousd, 16800);
+  assert.equal(done.data.cost, undefined);
+  assert.equal(done.tokvilo_billing.markupPercent, undefined);
   await expect(f, request("/v1/tasks/image_task", { method: "GET" }), 200);
   assert.equal(f.calls.length, 2); assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 983200);
   const replay = await expect(f, request(IMAGE_PATH), 200); assert.equal(replay.tokvilo_billing.status, "settled"); assert.equal(replay.tokvilo_billing.chargedMicrousd, 16800);
@@ -217,7 +235,7 @@ test("missing usage or over-budget task cost returns output with pending settlem
 test("unknown routes, streaming, unknown price dimensions and paid extra options are blocked before upstream", async t => {
   for (const [path, options, status] of [
     ["/v1/balance", { method: "GET" }, 404],
-    ["/v1/videos/generations", {}, 404],
+    ["/v1/videos/generations", {}, 400],
     ["/v1/models?target=https://elsewhere.example", { method: "GET" }, 400],
     [CHAT_PATH, { body: JSON.stringify({ ...CHAT, stream: true }) }, 400],
     [CHAT_PATH, { body: JSON.stringify({ ...CHAT, tools: [] }) }, 400],
@@ -299,3 +317,220 @@ test("reservation caps accept exact ceilings, retain original receipts and rejec
     assert.equal(malformed.sqlite.prepare("SELECT COUNT(*) AS n FROM apimart_requests").get().n, 0);
   }
 });
+
+const REAL_SOURCE = JSON.parse(await readFile(new URL("./fixtures/apimart-pricing-20261020.json", import.meta.url), "utf8"));
+const REAL_CATALOG = apimart.parseApimartPricing(REAL_SOURCE);
+const VIDEO_PATH = "/v1/videos/generations", MUSIC_PATH = "/v1/music/generations";
+
+test("documented image variants, input material fees, video units and music versions quote from their exact dimensions", () => {
+  const quote = (path, body) => apimart.quoteApimartRequest(body, path, REAL_CATALOG).amountMicrousd;
+  assert.equal(quote(IMAGE_PATH, { model: "qwen-image-3.0", prompt: "Tree", resolution: "2k" }), 24686);
+  assert.equal(apimart.apimartTaskCharge({ cost: 0.0205712 }), 24686, "fractional micro amounts round after retail conversion");
+  const fractional = structuredClone(REAL_SOURCE);
+  fractional.data.models.video.find(model => model.id === "wan2.6").fixed_prices.items.find(rate => rate.key === "default").after_discount = 0.0205712;
+  assert.equal(apimart.quoteApimartRequest({ model: "wan2.6", prompt: "Ocean", duration: 5, resolution: "720p" }, VIDEO_PATH, apimart.parseApimartPricing(fractional)).amountMicrousd, 123428, "media totals round once after duration multiplication");
+  const material = REAL_SOURCE.data.models.image.find(model => model.id === "grok-imagine-image-2.0");
+  const imageCost = material.fixed_prices.items.find(rate => rate.key === "1K@medium").after_discount;
+  assert.equal(quote(IMAGE_PATH, { model: material.id, prompt: "Tree", resolution: "1k", quality: "medium", image_urls: ["https://example.com/image.png"] }), pricing.retailUsdMicrousd(imageCost + material.input_material_prices.image.after_discount));
+  assert.equal(quote(IMAGE_PATH, { model: "gpt-image-2.5-ext", prompt: "Tree", version: "flare", resolution: "2k" }), 36000);
+  assert.equal(quote(VIDEO_PATH, { model: "veo3.1-fast", prompt: "Ocean", duration: 8, resolution: "720p" }), 168000, "per-call video is not multiplied by duration");
+  assert.equal(quote(VIDEO_PATH, { model: "kling-v3", prompt: "Ocean", duration: 5, mode: "pro", audio: true }), 806400);
+  assert.equal(quote(VIDEO_PATH, { model: "wan2.6", prompt: "Ocean", duration: 5, resolution: "720p" }), 300000);
+  assert.equal(quote(MUSIC_PATH, { model: "flowmusic", sound_prompt: "Piano" }), 72000);
+  assert.equal(quote(MUSIC_PATH, { model: "suno", prompt: "Piano", version: "v6" }), 60000);
+  assert.equal(quote(MUSIC_PATH, { model: "suno", custom: true, instrumental: true, version: "v6-mini", max_mode: true }), 120000);
+  for (const [path, body] of [
+    [IMAGE_PATH, { model: "flux-2-pro", prompt: "Tree", resolution: "1MP", size: "1792x1792" }],
+    [IMAGE_PATH, { model: "gpt-image-2.5-ext", prompt: "Tree", version: "flare" }],
+    [VIDEO_PATH, { model: "veo3.1-fast", prompt: "Ocean", duration: 10, resolution: "720p" }],
+    [VIDEO_PATH, { model: "wan2.6", prompt: "Ocean", duration: 5, resolution: "720p", video_urls: ["https://example.com/video.mp4"] }],
+    [MUSIC_PATH, { model: "suno", prompt: "Piano", max_mode: true }],
+    [MUSIC_PATH, { model: "suno", prompt: "Piano", custom_model_id: "someone-else" }],
+    [CHAT_PATH, { model: "text-embedding-3-large", messages: CHAT.messages }],
+  ]) assert.throws(() => quote(path, body), JSON.stringify(body));
+});
+
+for (const [label, path, body, taskEndpoint, cost] of [
+  ["video", VIDEO_PATH, { model: "veo3.1-fast", prompt: "Ocean", duration: 8, resolution: "720p" }, "/v1/tasks/", 0.1],
+  ["music", MUSIC_PATH, { model: "flowmusic", sound_prompt: "Piano" }, "/v1/music/tasks/", 0.048],
+]) test(`${label} reserves once, binds task ownership, reconciles through the correct GET endpoint and replays final billing`, async t => {
+  const taskId = `${label}_task`;
+  const f = await fixture(t, { pricingCatalog: REAL_CATALOG, fetcher: async (_url, init) => init.method === "POST"
+    ? Response.json({ data: [{ task_id: taskId, status: "submitted" }] })
+    : Response.json({ data: { id: taskId, model: body.model, status: "completed", cost, credits_cost: cost * 10, result: { music: [{ audio_url: "https://cdn.apimart.ai/audio/test.m4a" }] } } }) });
+  const req = () => request(path, { body: JSON.stringify(body) });
+  const first = await expect(f, req(), 200);
+  assert.equal(first.tokvilo_billing.status, "reserved");
+  assert.equal(f.calls[0].url, "https://api.apimart.ai" + path);
+  assert.deepEqual(await expect(f, req(), 200), first);
+  assert.equal(f.calls.length, 1);
+  f.setUser({ id: "different", email: "different@example.com", displayName: "Different" });
+  await expect(f, request(`/v1/tasks/${taskId}`, { method: "GET" }), 404);
+  f.setUser(MEMBER);
+  const reconciliation = await f.reconcile();
+  assert.equal(reconciliation.completed, 1);
+  assert.equal(f.calls[1].url, "https://api.apimart.ai" + taskEndpoint + taskId);
+  const done = await expect(f, request(`/v1/tasks/${taskId}`, { method: "GET" }), 200);
+  assert.equal(done.tokvilo_billing.status, "settled");
+  assert.equal(done.tokvilo_billing.chargedMicrousd, pricing.retailUsdMicrousd(cost));
+  assert.equal(done.data.cost, undefined);
+  const replay = await expect(f, req(), 200);
+  assert.equal(replay.tokvilo_billing.status, "settled");
+  assert.equal(f.calls.filter(call => call.init.method === "POST").length, 1);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).reservedMicrousd, 0);
+});
+
+test("music failure refunds through the owner-scoped music task alias and anonymous task ids never query upstream", async t => {
+  const f = await fixture(t, { pricingCatalog: REAL_CATALOG, fetcher: async (_url, init) => init.method === "POST"
+    ? Response.json({ data: [{ task_id: "music_failed", status: "submitted" }] })
+    : Response.json({ data: { id: "music_failed", status: "failed" } }) });
+  await expect(f, request(MUSIC_PATH, { body: JSON.stringify({ model: "suno", prompt: "Rain", version: "v6" }) }), 200);
+  const done = await expect(f, request("/v1/music/tasks/music_failed", { method: "GET" }), 200);
+  assert.equal(done.tokvilo_billing.status, "refunded");
+  await expect(f, request("/v1/music/tasks/unowned", { method: "GET" }), 404);
+  assert.equal(f.calls.length, 2);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1000000);
+});
+
+test("known public model aliases normalize before hashing and only metadata is rewritten in responses", async t => {
+  const original = "grok-imagine-1.5-apimart", alias = "grok-imagine-1.5-tokvilo";
+  const f = await fixture(t, { pricingCatalog: REAL_CATALOG, fetcher: async () => Response.json({ model: original, data: [{ task_id: "aliased_task", status: "submitted", model: original }], generated_text: original }) });
+  const first = await expect(f, request(IMAGE_PATH, { body: JSON.stringify({ model: alias, prompt: "Tree" }) }), 200);
+  assert.equal(JSON.parse(f.calls[0].init.body).model, original);
+  assert.equal(first.model, alias); assert.equal(first.data[0].model, alias);
+  assert.equal(first.generated_text, original, "generated content retains its meaning");
+  assert.deepEqual(await expect(f, request(IMAGE_PATH, { body: JSON.stringify({ model: original, prompt: "Tree" }) }), 200), first);
+  assert.equal(f.calls.length, 1);
+  const tasks = await expect(f, request("/v1/tasks", { method: "GET" }), 200);
+  assert.equal(tasks.data[0].model, alias);
+  assert.equal(modelIds.upstreamModelId("unknown-tokvilo"), "unknown-tokvilo");
+});
+
+test("music task responses cannot change the stored model identity or charge an unsupported extra operation", async t => {
+  const f = await fixture(t, { pricingCatalog: REAL_CATALOG, fetcher: async (_url, init) => init.method === "POST"
+    ? Response.json({ data: [{ task_id: "music_identity", status: "submitted" }] })
+    : Response.json({ data: { id: "music_identity", model: "different", status: "completed", cost: 0.02 } }) });
+  await expect(f, request(MUSIC_PATH, { body: JSON.stringify({ model: "flowmusic", sound_prompt: "Piano" }) }), 200);
+  await expect(f, request("/v1/music/tasks/music_identity", { method: "GET" }), 502);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).reservedMicrousd, 72000);
+  const count = f.calls.length;
+  await expect(f, request(MUSIC_PATH, { headers: { "Idempotency-Key": "operation-change" }, body: JSON.stringify({ model: "flowmusic", sound_prompt: "Piano", operation: "cover" }) }), 400);
+  assert.equal(f.calls.length, count);
+});
+
+test("known alias conversion is an exact reversible lookup rather than arbitrary suffix substitution", () => {
+  for (const stem of ["grok-imagine-1.5", "grok-imagine-1.5-edit", "imagen-4.0", "grok-imagine-1.5-video"]) {
+    assert.equal(modelIds.publicModelId(`${stem}-apimart`), `${stem}-tokvilo`);
+    assert.equal(modelIds.upstreamModelId(`${stem}-tokvilo`), `${stem}-apimart`);
+  }
+  assert.equal(modelIds.publicModelId("unknown-apimart"), "unknown-apimart");
+});
+
+test("all documented video defaults are executable quotes and absent adapter contracts stay closed", t => {
+  for (const [model, defaults] of Object.entries(videoOptions.VIDEO_DEFAULTS)) {
+    const body = { model, prompt: "Ocean", duration: defaults.duration,
+      ...(defaults.mode ? { mode: defaults.mode } : { resolution: defaults.resolution }),
+      ...(defaults.referenceRequired ? { image_urls: ["https://example.com/first.png"] } : {}) };
+    assert.ok(apimart.quoteApimartRequest(body, VIDEO_PATH, REAL_CATALOG).amountMicrousd > 0, model);
+  }
+  assert.equal(Object.keys(videoOptions.VIDEO_DEFAULTS).length, 40);
+  const counts = Object.fromEntries(["chat", "image", "video", "audio"].map(kind => [kind, REAL_CATALOG.models.filter(model => model.kind === kind).length]));
+  t.diagnostic(JSON.stringify({ counts, unavailable: REAL_CATALOG.unavailable.map(model => model.model) }));
+  assert.deepEqual(counts, { chat: 174, image: 32, video: 40, audio: 2 });
+  for (const model of ["dall-e-3", "grok-imagine-1.5-edit-apimart", "gpt-image-1"]) {
+    assert.equal(REAL_CATALOG.models.some(item => item.model === model), false, model);
+    assert.throws(() => apimart.quoteApimartRequest({ model, prompt: "Tree" }, IMAGE_PATH, REAL_CATALOG));
+  }
+  assert.throws(() => apimart.quoteApimartRequest({ model: "seedream-5-0-pro", prompt: "Tree", image_urls: ["https://example.com/1.png", "https://example.com/2.png"] }, IMAGE_PATH, REAL_CATALOG));
+});
+
+test("Midjourney submits one Imagine call, preserves idempotency and settles one task rather than output image count", async t => {
+  const f = await fixture(t, { pricingCatalog: REAL_CATALOG, fetcher: async (_url, init) => init.method === "POST"
+    ? Response.json({ data: [{ task_id: "mj_task", status: "submitted" }] })
+    : Response.json({ data: { id: "mj_task", status: "completed", cost: 0.01, result: { images: Array.from({ length: 5 }, (_, index) => ({ url: `https://cdn.apimart.ai/${index}.png` })) } } }) });
+  const body = { model: "midjourney", prompt: "A tree" };
+  const expected = apimart.quoteApimartRequest(body, IMAGE_PATH, REAL_CATALOG).amountMicrousd;
+  const req = () => request(IMAGE_PATH, { body: JSON.stringify(body) });
+  const receipt = await expect(f, req(), 200);
+  assert.equal(receipt.tokvilo_billing.reservedMicrousd, expected);
+  assert.equal(f.calls[0].url, "https://api.apimart.ai/v1/midjourney/generations");
+  const sent = JSON.parse(f.calls[0].init.body);
+  assert.equal(sent.model, undefined); assert.equal(sent.version, "7"); assert.equal(sent.speed, "relax");
+  await expect(f, req(), 200); assert.equal(f.calls.length, 1);
+  const done = await expect(f, request("/v1/tasks/mj_task", { method: "GET" }), 200);
+  assert.equal(done.tokvilo_billing.chargedMicrousd, 12000);
+  assert.equal(done.data.result.images.length, 5);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).reservedMicrousd, 0);
+});
+
+const NEW_IMAGES_SOURCE = JSON.parse(await readFile(new URL("./fixtures/apimart-new-images-20261020.json", import.meta.url), "utf8"));
+const NEW_IMAGES_CATALOG = apimart.parseApimartPricing(NEW_IMAGES_SOURCE);
+
+test("new fixed image models add exactly two adapters without altering the dated 293-model fixture", () => {
+  const combined = structuredClone(REAL_SOURCE);
+  combined.data.models.image.push(...NEW_IMAGES_SOURCE.data.models.image);
+  const parsed = apimart.parseApimartPricing(combined);
+  assert.equal(Object.values(REAL_SOURCE.data.models).flat().length, 293);
+  assert.equal(Object.values(combined.data.models).flat().length, 295);
+  assert.equal(parsed.models.length, 250); assert.equal(parsed.unavailable.length, 45);
+  assert.equal(parsed.models.filter(model => model.kind === "image").length, 34);
+  for (const [model, tiers, defaultPrice, referenceCount] of [
+    ["flux-3-image-klein", { "768sq": 7680, "1k": 8640, "1.5k": 10560, "2k": 13440, "4k": 34560 }, 8640, 10],
+    ["hy-image-v3.5-preview", { "1K": 23040, "2K": 23040, "4K": 30720 }, 23040, 5],
+  ]) {
+    const quote = body => apimart.quoteApimartRequest({ model, prompt: "Tree", ...body }, IMAGE_PATH, NEW_IMAGES_CATALOG).amountMicrousd;
+    assert.equal(quote({}), defaultPrice);
+    for (const [resolution, amount] of Object.entries(tiers)) {
+      assert.equal(quote({ resolution }), amount);
+      assert.equal(quote({ resolution, image_urls: Array.from({ length: referenceCount }, (_, i) => `https://example.com/${i}.png`) }), amount, "reference count does not change the documented resolution price");
+    }
+    const normalized = requestTools.normalizeApimartRequest({ model, prompt: "Tree" }, IMAGE_PATH);
+    assert.equal(normalized.size, "auto"); assert.equal(normalized.n, 1);
+    assert.deepEqual(requestTools.normalizeApimartRequest(normalized, IMAGE_PATH), normalized);
+  }
+  const normalized = requestTools.normalizeApimartRequest({ model: "flux-3-image-klein", prompt: "Tree", aspect_ratio: "16x9", resolution: "768" }, IMAGE_PATH);
+  assert.equal(normalized.size, "16:9"); assert.equal(normalized.aspect_ratio, undefined); assert.equal(normalized.resolution, "768sq");
+});
+
+test("new image parameter violations never reserve a balance or call the provider", async t => {
+  for (const model of ["flux-3-image-klein", "hy-image-v3.5-preview"]) {
+    const maxReferences = model.startsWith("flux") ? 10 : 5;
+    const invalid = [{ width: 1024, height: 1024 }, { size: "1024x1024" }, { resolution: "3k" }, { size: "17:3" },
+      { resolution: null }, { size: null }, { n: 2 }, { n: "1" }, { quality: "high" }, { version: "flare" },
+      { image_urls: Array.from({ length: maxReferences + 1 }, (_, i) => `https://example.com/${i}.png`) },
+      { image_urls: ["http://example.com/image.png"] }, { grounding: true }, { callback_url: "https://example.com/callback" },
+      { aspect_ratio: "16:9", size: "16:9" }, { resolution: ["1k"] }];
+    if (model.startsWith("hy")) invalid.push({ aspect_ratio: "16:9" }, { resolution: "1.5k" }, { resolution: "768sq" }, { size: "2:1" });
+    for (const params of invalid) {
+      const f = await fixture(t, { pricingCatalog: NEW_IMAGES_CATALOG });
+      const body = { model, prompt: "Tree", ...params };
+      assert.throws(() => apimart.quoteApimartRequest(body, IMAGE_PATH, NEW_IMAGES_CATALOG));
+      await expect(f, request(IMAGE_PATH, { body: JSON.stringify(body) }), 400);
+      assert.equal(f.calls.length, 0);
+      assert.equal(f.sqlite.prepare("SELECT COUNT(*) AS n FROM wallet_reservations").get().n, 0);
+      assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1000000);
+    }
+  }
+});
+
+for (const [model, cost, reserved] of [["flux-3-image-klein", 0.0112, 13440], ["hy-image-v3.5-preview", 0.0192, 23040]]) {
+  test(`${model} uses the unified task route, replays normalized requests and settles exactly once`, async t => {
+    const f = await fixture(t, { pricingCatalog: NEW_IMAGES_CATALOG, fetcher: async (_url, init) => init.method === "POST"
+      ? Response.json({ data: [{ task_id: "new_image", status: "submitted" }] })
+      : Response.json({ data: { id: "new_image", model, status: "completed", cost, result: { images: [{ url: ["https://cdn.apimart.ai/result.png"] }] } } }) });
+    const firstBody = { model, prompt: "Tree", resolution: "2k", ...(model.startsWith("flux") ? { aspect_ratio: "16x9" } : { size: "16:9" }) };
+    const first = await expect(f, request(IMAGE_PATH, { body: JSON.stringify(firstBody) }), 200);
+    assert.equal(first.tokvilo_billing.reservedMicrousd, reserved);
+    const normalized = requestTools.normalizeApimartRequest(firstBody, IMAGE_PATH);
+    assert.deepEqual(JSON.parse(f.calls[0].init.body), JSON.parse(JSON.stringify(normalized)));
+    assert.equal(f.calls[0].url, "https://api.apimart.ai/v1/images/generations");
+    await expect(f, request(IMAGE_PATH, { body: JSON.stringify(normalized) }), 200);
+    assert.equal(f.calls.length, 1);
+    const done = await expect(f, request("/v1/tasks/new_image", { method: "GET" }), 200);
+    assert.equal(f.calls[1].url, "https://api.apimart.ai/v1/tasks/new_image");
+    assert.equal(done.tokvilo_billing.status, "settled"); assert.equal(done.tokvilo_billing.chargedMicrousd, reserved);
+    await expect(f, request("/v1/tasks/new_image", { method: "GET" }), 200);
+    assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1000000 - reserved);
+    assert.equal((await f.wallet.getWallet(MEMBER.id)).reservedMicrousd, 0);
+  });
+}

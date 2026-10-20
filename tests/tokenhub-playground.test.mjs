@@ -62,6 +62,7 @@ test("TokenHub separates quoting from confirmation and sends the exact confirmed
   assert.equal(content(f.primary()), "查看预留金额");
   await f.primary().props.onClick(); f.render();
   assert.equal(f.paid().length, 0); assert.match(content(f.tree()), /本次最多预留 \$2\.000000/);
+  assert.doesNotMatch(content(f.tree()), /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
   assert.equal(content(f.primary()), "确认并生成");
   await f.primary().props.onClick(); f.render();
   const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);

@@ -1,7 +1,10 @@
 import { getPortalUser } from "@/lib/auth";
 import { getD1 } from "@/lib/config";
-import { getTokenHubPricing, quoteTokenHubRequest, PricingError } from "@/lib/pricing";
+import { getTokenHubPricing, quoteTokenHubRequest, PricingError, publicPriceRates } from "@/lib/pricing";
 import { getApimartPricing, quoteApimartRequest } from "@/lib/apimart-pricing";
+
+import { APIMART_PATHS, type ApimartKind } from "@/lib/apimart-request";
+import { publicModelId } from "@/lib/model-id";
 
 const headers = { "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
 function object(value: unknown): value is Record<string, unknown> { return !!value && typeof value === "object" && !Array.isArray(value); }
@@ -27,12 +30,12 @@ export async function POST(request: Request) {
     let input;
     try { input = JSON.parse(new TextDecoder().decode(bytes)); }
     catch { return Response.json({ error: "请求格式不正确。" }, { status: 400, headers }); }
-    if (!object(input) || Object.keys(input).some(key => !["provider", "mode", "body"].includes(key)) || !["tokenhub", "apimart"].includes(String(input.provider)) || !["chat", "image", "video"].includes(String(input.mode)) || !object(input.body)) return Response.json({ error: "请选择支持的上游、模型类型和请求参数。" }, { status: 400, headers });
-    const body = input.body, mode = input.mode as "chat" | "image" | "video";
+    if (!object(input) || Object.keys(input).some(key => !["provider", "mode", "body"].includes(key)) || !["tokenhub", "apimart"].includes(String(input.provider)) || !["chat", "image", "video", "audio"].includes(String(input.mode)) || !object(input.body)) return Response.json({ error: "请选择支持的服务、模型类型和请求参数。" }, { status: 400, headers });
+    const body = input.body, mode = input.mode as ApimartKind;
     if (typeof body.model !== "string" || !body.model.trim() || body.model.length > 200 || body.stream) return Response.json({ error: "请填写有效模型并使用非流式请求。" }, { status: 400, headers });
     if (mode === "chat" && (!Array.isArray(body.messages) || body.messages.length < 1 || body.messages.length > 200) ||
         mode === "image" && (typeof body.prompt !== "string" || !body.prompt.trim()) ||
-        mode === "video" && (!Array.isArray(body.content) || body.content.length < 1 || body.content.length > 32)) return Response.json({ error: "请填写所选模型需要的内容。" }, { status: 400, headers });
+        input.provider === "tokenhub" && mode === "video" && (!Array.isArray(body.content) || body.content.length < 1 || body.content.length > 32)) return Response.json({ error: "请填写所选模型需要的内容。" }, { status: 400, headers });
     const now = new Date().toISOString(), expires = new Date(Date.now() + 60_000).toISOString();
     const allowed = await getD1().prepare(`INSERT INTO login_rate_limits(id,attempts,expires_at,updated_at) VALUES(?,1,?,CURRENT_TIMESTAMP)
       ON CONFLICT(id) DO UPDATE SET attempts=CASE WHEN expires_at<=? THEN 1 ELSE attempts+1 END,
@@ -40,13 +43,13 @@ export async function POST(request: Request) {
       WHERE expires_at<=? OR attempts<10 RETURNING attempts`).bind(`price-quote:${user.id}`, expires, now, now, now).first();
     if (!allowed) return Response.json({ error: "报价请求较频繁，请一分钟后重试。" }, { status: 429, headers });
     if (input.provider === "tokenhub") {
+      if (mode === "audio") throw new PricingError("此接口尚未开通音乐生成。", 422);
       const quote = quoteTokenHubRequest(await getTokenHubPricing(), mode, body);
-      return Response.json({ provider: "tokenhub", model: quote.model, mode, currency: "USD", markupPercent: 20, observedAt: quote.observedAt, reservedMicrousd: quote.reservedMicrousd, rates: quote.rates, dimension: quote.dimension }, { headers });
+      return Response.json({ provider: "tokenhub", model: quote.model, mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.reservedMicrousd, rates: publicPriceRates(quote.rates), dimension: quote.dimension }, { headers });
     }
-    if (mode === "video") throw new PricingError("此视频上游尚未开通计费。", 409);
     const catalog = await getApimartPricing();
-    const quote = quoteApimartRequest(body, mode === "chat" ? "/v1/chat/completions" : "/v1/images/generations", catalog);
-    return Response.json({ provider: "apimart", model: quote.model, mode, currency: "USD", markupPercent: 20, observedAt: quote.observedAt, reservedMicrousd: quote.amountMicrousd, rates: catalog.models.find(model => model.model === quote.model)?.rates }, { headers });
+    const quote = quoteApimartRequest(body, APIMART_PATHS[mode], catalog);
+    return Response.json({ provider: "apimart", model: publicModelId(quote.model), mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.amountMicrousd, rates: publicPriceRates(catalog.models.find(model => model.model === quote.model)?.rates || []) }, { headers });
   } catch (cause) {
     return Response.json({ error: cause instanceof PricingError ? cause.message : "报价暂不可用，请稍后重试。" }, { status: cause instanceof PricingError ? cause.status : 503, headers });
   }

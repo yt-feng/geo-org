@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { cny } from "@/lib/products";
+import { cny } from "@/lib/public-products";
 type Order = { id: string; product_name: string; user_id: string; retail_cents: number; charge_microusd: number; status: string; delivery: string; created_at: string };
 const states: Record<string, string> = { pending: "待人工处理 · 额度已预留", processing: "人工处理中 · 额度已预留", completed: "已交付 · 已结算", cancelled: "已取消 · 预留已释放" };
 export function OrdersPanel({ admin = false }: { admin?: boolean }) {

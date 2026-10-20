@@ -1,0 +1,43 @@
+{
+  "observedAt": "2026-10-20",
+  "source": "https://apimart.ai/api/pricing/models/all",
+  "success": true,
+  "data": {
+    "models": {
+      "image": [
+        {
+          "id": "flux-3-image-klein",
+          "name": "flux-3-image-klein",
+          "specification": "image",
+          "fixed_prices": {
+            "unit": "usd_per_image",
+            "dimension": "resolution",
+            "items": [
+              { "key": "default", "after_discount": 0.0072 },
+              { "key": "1.5K", "after_discount": 0.0088 },
+              { "key": "1K", "after_discount": 0.0072 },
+              { "key": "2K", "after_discount": 0.0112 },
+              { "key": "4K", "after_discount": 0.0288 },
+              { "key": "768SQ", "after_discount": 0.0064 }
+            ]
+          }
+        },
+        {
+          "id": "hy-image-v3.5-preview",
+          "name": "hy-image-v3.5-preview",
+          "specification": "image",
+          "fixed_prices": {
+            "unit": "usd_per_image",
+            "dimension": "resolution",
+            "items": [
+              { "key": "default", "after_discount": 0.0192 },
+              { "key": "1K", "after_discount": 0.0192 },
+              { "key": "2K", "after_discount": 0.0192 },
+              { "key": "4K", "after_discount": 0.0256 }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

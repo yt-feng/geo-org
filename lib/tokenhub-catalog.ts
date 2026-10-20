@@ -9,7 +9,7 @@ function object(value: unknown): value is Json { return !!value && typeof value 
 function strings(value: unknown): string[] { return (Array.isArray(value) ? value : [value]).filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= 80).slice(0, 32); }
 function text(value: unknown, fallback = "") {
   return (typeof value === "string" ? value.slice(0, 200) : fallback)
-    .replace(/\btoken\s*hub\b/gi, "tokvilo 多模态").replace(/\bapi[\s-]*mart\b/gi, "tokvilo 文本与图像");
+    .replace(/\btoken\s*hub\b/gi, "tokvilo 多模态").replace(/\bapi[\s-]*mart\b/gi, "tokvilo 模型服务");
 }
 
 export function validTokenHubCatalog(value: unknown, source: "models_api" | "pricing"): value is Json & { data: unknown[] } {

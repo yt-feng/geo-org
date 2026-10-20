@@ -8,7 +8,7 @@ import ts from "typescript";
 
 const filename = new URL("../components/ProductMarket.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
-const product = { id: "plus-test", name: "ChatGPT Plus", variant: "Test region", upstreamCents: 10000, retailCents: 12000, sourceDelivery: "code", soldOut: false, description: "Subscription inquiry" };
+const product = { id: "plus-test", name: "ChatGPT Plus", variant: "Test region", retailCents: 12000, delivery: "code", soldOut: false, description: "Subscription inquiry" };
 const text = value => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(text).join("") : value?.props ? text(value.props.children) : "";
 function find(node, predicate) {
   if (Array.isArray(node)) { for (const item of node) { const result = find(item, predicate); if (result) return result; } }
@@ -28,7 +28,7 @@ function fixture(fetcher = async () => Response.json({ ok: true, inquiryId: "inq
     require(name) {
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
-      if (name === "@/lib/products") return { digitalProducts: [product], cny: cents => `¥${(cents / 100).toFixed(2)}` };
+      if (name === "@/lib/public-products") return { digitalProducts: [product], cny: cents => `¥${(cents / 100).toFixed(2)}` };
       throw Error(`Unexpected dependency: ${name}`);
     },
     fetch: async (url, init) => { calls.push({ url, init }); return fetcher(url, init); },
@@ -45,6 +45,9 @@ test("a public product inquiry sends contact requirements without login or walle
   const f = fixture();
   assert.equal(f.calls.length, 0);
   assert.match(text(f.tree()), /¥120\.00/);
+  assert.doesNotMatch(text(f.tree()), /¥100\.00|源价|源头|加价|20\s*%|×\s*1\.20/);
+  assert.equal(text(find(f.tree(), node => node.props.className === "product-price")), "¥120.00参考售价");
+  assert.equal(text(find(f.tree(), node => node.props.className === "product-inquiry-price")), "参考售价¥120.00");
   assert.match(text(f.tree()), /24 小时/);
   assert.equal(find(f.tree(), node => node.type === "input" && node.props.type === "password"), null);
   f.fill("email", " Buyer@Example.com "); f.fill("name", " Buyer "); f.fill("message", " Two subscriptions, next week. ");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { cny, digitalProducts, type DigitalProduct } from "@/lib/products";
+import { cny, digitalProducts, type DigitalProduct } from "@/lib/public-products";
 
 type Receipt = { inquiryId: string; emailStatus: "sent" | "pending"; email: string };
 
@@ -46,15 +46,15 @@ export function ProductMarket() {
   return <>
     <div className="product-grid">{digitalProducts.map(product => <article className="product-card" key={product.id}>
       <div className="product-art" aria-hidden="true"><strong>{product.name.includes("Pro") ? "Pro" : "Plus"}</strong><span>TOKVILO / DIGITAL</span></div>
-      <div className="product-copy"><h2>{product.name}</h2><p>{product.variant}</p><p>{product.description.replaceAll("处理订单", "确认需求").replaceAll("订单内", "邮件内").replaceAll("暂不接受订单", "可提交需求咨询到货时间")}</p><dl><dt>需求咨询</dt><dd>提交表单，24 小时内邮件回复</dd><dt>交付形式</dt><dd>{product.sourceDelivery === "code" ? "充值码 / 兑换信息" : "人工充值"}</dd></dl>
-        <div className="product-price"><strong>{cny(product.retailCents)}</strong><span className="product-status">参考价 · 源价 {cny(product.upstreamCents)} × 1.20</span></div>
+      <div className="product-copy"><h2>{product.name}</h2><p>{product.variant}</p><p>{product.description.replaceAll("处理订单", "确认需求").replaceAll("订单内", "邮件内").replaceAll("暂不接受订单", "可提交需求咨询到货时间")}</p><dl><dt>需求咨询</dt><dd>提交表单，24 小时内邮件回复</dd><dt>交付形式</dt><dd>{product.delivery === "code" ? "充值码 / 兑换信息" : "人工充值"}</dd></dl>
+        <div className="product-price"><strong>{cny(product.retailCents)}</strong><span className="product-status">参考售价</span></div>
         <button className="button button-primary" onClick={() => choose(product)}>{product.soldOut ? "咨询到货与需求" : "提交购买需求"}</button>
       </div>
     </article>)}</div>
     {selected ? <dialog className="model-detail-dialog" ref={dialog} onCancel={event => { if (busy) event.preventDefault(); else setSelected(null); }} aria-labelledby="product-title"><div className="model-detail-inner">
       <button type="button" className="model-detail-close" disabled={busy} onClick={() => setSelected(null)} aria-label="关闭">×</button>
       <span className="landing-eyebrow">TOKVILO / INQUIRY</span><h2 id="product-title">{selected.name}</h2><p>{selected.variant}</p>
-      <div className="product-inquiry-price"><span>参考售价</span><strong>{cny(selected.retailCents)}</strong><small>源价 {cny(selected.upstreamCents)} × 1.20</small></div>
+      <div className="product-inquiry-price"><span>参考售价</span><strong>{cny(selected.retailCents)}</strong></div>
       <p>提交你的需求，我们将在 24 小时内通过邮件回复，确认适用条件、库存与交付安排。</p>
       {receipt ? <div className="commerce-message" role="status"><strong>需求已收到</strong><p>受理编号：{receipt.inquiryId}</p><p>我们将在 24 小时内通过 {receipt.email} 回复。</p>{receipt.emailStatus === "pending" ? <p>需求已保存，通知邮件正在排队发送，请勿重复提交。</p> : <p>通知邮件已发送。</p>}</div> : <form className="product-inquiry-form" onSubmit={submit}>
         <label htmlFor="inquiry-email"><span>联系邮箱 <span aria-hidden="true">*</span></span><input id="inquiry-email" name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={event => setEmail(event.target.value)} disabled={busy} placeholder="name@example.com" /></label>
