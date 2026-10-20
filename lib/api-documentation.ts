@@ -1,4 +1,4 @@
-export type DocumentationSource = "tikhub" | "tokenhub";
+export type DocumentationSource = "tikhub" | "tokenhub" | "apimart";
 type Json = Record<string, unknown>;
 export type ApiParameter = { name?: string; in?: string; required?: boolean; description?: string; example?: unknown; schema?: unknown };
 export type ApiOperation = { source: DocumentationSource; method: string; path: string; summary: string; description: string; tags: string[]; parameters: ApiParameter[]; requestBody?: unknown; responses?: unknown };
@@ -7,6 +7,7 @@ const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete", "head", "
 const SOURCES: Array<{ id: DocumentationSource; label: string; url: string }> = [
   { id: "tikhub", label: "数据接口", url: "/api/private/openapi" },
   { id: "tokenhub", label: "TokenHub", url: "/api/private/tokenhub-openapi" },
+  { id: "apimart", label: "APIMart", url: "/api/private/apimart-openapi" },
 ];
 function object(value: unknown): Json { return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Json : {}; }
 function parameters(value: unknown): ApiParameter[] { return Array.isArray(value) ? value.filter(item => item !== null && typeof item === "object" && !Array.isArray(item)) as ApiParameter[] : []; }
@@ -32,7 +33,7 @@ export async function loadApiDocumentation(fetcher: typeof fetch = fetch, signal
     const response = await fetcher(source.url, { cache: "no-store", signal: requestSignal });
     if (!response.ok) {
       if (response.status === 401) throw new Error(`${source.label}：登录已过期，请重新登录。`);
-      if (response.status === 403 && source.id === "tokenhub") throw new Error("TokenHub：需管理员权限，当前账户仅显示可访问的数据接口。");
+      if (response.status === 403) throw new Error(`${source.label}：当前账户无法访问，其他来源仍可查看。`);
       throw new Error(`${source.label}：文档暂不可用，其他来源仍可查看。`);
     }
     return parseApiOperations(await response.json(), source.id);
@@ -74,7 +75,7 @@ export function apiCurlExample(baseUrl: string, operation: ApiOperation): string
   const query = new URLSearchParams();
   for (const parameter of operation.parameters) if (parameter.in === "query" && parameter.required && parameter.name) query.append(parameter.name, parameterExample(parameter));
   const url = baseUrl.replace(/\/+$/, "") + path + (query.size ? `?${query}` : "");
-  const lines = [`curl --request ${operation.method}`, `  --url ${shellQuote(url)}`, "  --header 'Authorization: Bearer eco_live_your_api_key'"];
+  const lines = [`curl --request ${operation.method}`, `  --url ${shellQuote(url)}`, "  --header 'Authorization: Bearer tk_live_your_api_key'"];
   for (const parameter of operation.parameters) if (parameter.in === "header" && parameter.required && parameter.name && /^[A-Za-z0-9-]+$/.test(parameter.name) && !/^(authorization|content-type|x-api-key)$/i.test(parameter.name)) lines.push(`  --header ${shellQuote(parameter.name + ": " + parameterExample(parameter))}`);
   const example = requestBodyExample(operation);
   if (example !== undefined) lines.push("  --header 'Content-Type: application/json'", `  --data-raw ${shellQuote(JSON.stringify(example, null, 2))}`);

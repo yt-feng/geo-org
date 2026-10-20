@@ -49,9 +49,17 @@ export async function POST(request: Request): Promise<Response> {
       { status: response.status === 429 ? 429 : 400 },
     );
   }
-  const result = (await response.json()) as { session?: unknown };
+  const result = (await response.json()) as {
+    session?: unknown;
+    access_token?: unknown;
+  };
+  // The raw GoTrue endpoint returns tokens at the top level when email
+  // confirmation is disabled; SDK-compatible backends may wrap a session.
+  const hasSession =
+    Boolean(result.session) ||
+    (typeof result.access_token === "string" && result.access_token.length > 0);
   return Response.json({
     ok: true,
-    requiresEmailVerification: !result.session,
+    requiresEmailVerification: !hasSession,
   });
 }

@@ -16,7 +16,7 @@ test("replaces all starter metadata and keeps public copy documentation-free", a
   ]);
   assert.match(`${page}\n${landing}`, /进入控制台/);
   assert.match(landing, /文档与调用凭证不对外公开/);
-  assert.match(layout, /Eco Geo API/);
+  assert.match(layout, /tokvilo/);
   assert.match(layout, /index:\s*false/);
   assert.doesNotMatch(`${page}\n${layout}\n${packageJson}`, /codex-preview|react-loading-skeleton|SkeletonPreview/i);
   assert.doesNotMatch(page, /eco_live_your_api_key|curl --request|\/api\/v1\//i);

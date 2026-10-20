@@ -38,7 +38,7 @@ export default async function DashboardPage() {
           <Link className="console-resource" href="/playground"><span className="console-square-icon"><Icon name="terminal" size={18} /></span><div><strong>Playground</strong><small>探索模型与接入示例</small></div><span className="console-button console-button-small">前往 <Icon name="arrow-right" size={13} /></span></Link>
           {user.isAdmin ? <Link className="console-resource" href="/tokenhub"><span className="console-square-icon"><Icon name="video" size={18} /></span><div><strong>TokenHub 工作台</strong><small>创建视频、生成图像与发起对话</small></div><span className="console-button console-button-small">创作 <Icon name="arrow-right" size={13} /></span></Link> : null}
           {user.isAdmin ? <Link className="console-resource" href="/admin"><span className="console-square-icon"><Icon name="settings" size={18} /></span><div><strong>上游管理</strong><small>配置 TikHub、APIMart 与 TokenHub</small></div><span className="console-button console-button-small">管理 <Icon name="arrow-right" size={13} /></span></Link> : null}
-          <div className="console-base-url"><span>API BASE URL</span><code>{publicBaseUrl()}/api/v1</code><small>使用您的 ECO-GEO API 密钥进行身份验证。</small></div>
+          <div className="console-base-url"><span>API BASE URL</span><code>{publicBaseUrl()}/api/v1</code><small>使用您的 tokvilo API 密钥进行身份验证。</small></div>
         </article>
       </section>
       <section className="console-metrics" aria-label="账户使用情况">

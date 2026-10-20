@@ -16,14 +16,14 @@ export default function RegisterPage() {
           <h2>让你的想法，<br />拥有更多<br />可能性。</h2>
           <p>从一个账户开始，<br />集中管理模型、数据与 API 工作流。</p>
           <div className="auth-story-orbit" aria-hidden="true"><div><Brand compact /></div></div>
-          <div className="auth-story-footer"><span>ECO-GEO API WORKSPACE</span><span>↗</span></div>
+          <div className="auth-story-footer"><span>tokvilo API WORKSPACE</span><span>↗</span></div>
         </aside>
         <div className="auth-form-column"><section className="auth-card">
           <span className="auth-eyebrow">CREATE YOUR WORKSPACE</span>
-          <h1>开始使用 ECO-GEO</h1>
+          <h1>开始使用 tokvilo</h1>
           <p className="auth-intro">创建成员账户，开启你的 API 工作空间。</p>
           <AuthForm mode="register" />
-          <p className="auth-privacy"><Icon name="shield" size={12} />注册并验证邮箱后，即可进入控制台</p>
+          <p className="auth-privacy"><Icon name="shield" size={12} />注册完成后，按页面提示登录控制台</p>
         </section></div>
       </div>
     </main>

@@ -26,6 +26,14 @@ export type RuntimeEnv = {
   DEFAULT_USER_DAILY_LIMIT?: string;
   MAX_ACTIVE_KEYS_PER_USER?: string;
   SERVICE_ENABLED?: string;
+  USD_CNY?: string;
+  LIANDONG_SALES_ENABLED?: string;
+  REDEMPTION_ENABLED?: string;
+  REDEMPTION_ISSUANCE_ENABLED?: string;
+  LIANDONG_STORE_URL?: string;
+  LIANDONG_PRODUCT_30_URL?: string;
+  LIANDONG_PRODUCT_90_URL?: string;
+  LIANDONG_PRODUCT_300_URL?: string;
 };
 
 export function runtimeEnv(): RuntimeEnv {
@@ -63,14 +71,14 @@ export function decimalEnv(
 }
 
 export function publicBaseUrl(): string {
-  return (runtimeEnv().PUBLIC_BASE_URL || "https://api.eco-geo.org").replace(
+  return (runtimeEnv().PUBLIC_BASE_URL || "https://tokvilo.com").replace(
     /\/+$/,
     "",
   );
 }
 
 export function publicBrandName(): string {
-  return runtimeEnv().PUBLIC_BRAND_NAME?.trim() || "Eco Geo API";
+  return runtimeEnv().PUBLIC_BRAND_NAME?.trim() || "tokvilo";
 }
 
 export function isServiceEnabled(): boolean {

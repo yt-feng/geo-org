@@ -109,6 +109,7 @@ export function createProviderSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     return { remaining: data.unlimited_quota ? null : data.remain_balance, unlimited: data.unlimited_quota };
   }
   return {
+    async credential() { return (await credential()).key; },
     async status() { return { upstream: { configured: !!(env.UPSTREAM_BASE_URL?.trim() && env.UPSTREAM_API_TOKEN?.trim()) }, apimart: fromRow(await stored()) }; },
     async save(value: unknown) {
       if (typeof value !== "string" || !/^[\x21-\x7e]{12,512}$/.test(value.trim())) throw new ProviderError("请输入完整的 APIMart API Key（12–512 位，不含空白）。", 400);

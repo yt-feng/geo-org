@@ -8,6 +8,5 @@ const headers = { "cache-control": "private, no-store, max-age=0", "x-content-ty
 export async function GET(): Promise<Response> {
   const user = await getPortalUser();
   if (!user) return Response.json({ error: "请先登录。" }, { status: 401, headers });
-  if (!user.isAdmin) return Response.json({ error: "TokenHub API 文档仅向管理员开放。" }, { status: 403, headers });
   return Response.json(tokenHubOpenApi(publicBaseUrl()), { headers });
 }

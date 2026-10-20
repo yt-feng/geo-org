@@ -50,7 +50,7 @@ export const tokenhubModelCatalog: CatalogModel[] = TOKENHUB_REFERENCE_MODELS.ma
   upstream: "tokenhub",
   provider: model.id.startsWith("glm-") ? "ZHIPU" : model.id.startsWith("deepseek-") ? "DEEPSEEK" : "BYTEDANCE",
   category: model.kind === "chat" ? "text" : model.kind,
-  description: model.kind === "chat" ? "通过 ECO-GEO 统一接口调用此完整版本，使用对话与文本生成能力。" : model.kind === "image" ? "在 ECO-GEO 发起图像生成请求，统一记录上游响应和用量。" : "通过 ECO-GEO 创建视频任务，使用同一接口查询生成状态和结果。",
+  description: model.kind === "chat" ? "通过 tokvilo 统一接口调用此完整版本，使用对话与文本生成能力。" : model.kind === "image" ? "在 tokvilo 发起图像生成请求，统一记录上游响应和用量。" : "通过 tokvilo 创建视频任务，使用同一接口查询生成状态和结果。",
   capabilities: model.kind === "chat" ? ["文本生成", "对话"] : model.kind === "image" ? ["文生图"] : ["文生视频", "任务查询"],
   docs: "/dashboard/docs?provider=tokenhub",
 }));

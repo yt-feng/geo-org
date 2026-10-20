@@ -26,6 +26,17 @@ const ADMIN = { id: "admin", email: "admin@example.com", displayName: "Admin", i
 const VIDEO = { model: "doubao-seedance-2-0", content: [{ type: "text", text: "A still life" }], duration: 4 };
 const hash = value => createHash("sha256").update(value).digest("hex");
 const { ProviderError } = await loadModule("../lib/provider-settings.ts");
+const pricing = await loadModule("../lib/pricing.ts");
+const amount = (value, unit = "1M tokens") => ({ amount: { currencyCode: "USD", unitsMicros: value, exactUnits: String(value / 1e6) }, display: `USD ${value / 1e6} / ${unit}` });
+const PRICE_CATALOG = pricing.normalizeTokenHubPricing({ currencyCode: "USD", data: [
+  { id: VIDEO.model, deployments: [{ enabled: true, pricing: { video: { withoutVideo480p: amount(7e6), withoutVideo720p: amount(7e6) } } }] },
+  { id: "chat", deployments: [{ enabled: true, pricing: { input: amount(1e6), output: amount(2e6), cacheRead: amount(100000), cacheWrite: amount(0) } }] },
+  { id: "image", deployments: [{ enabled: true, pricing: { fixed: { ...amount(90000, "image"), priceUnit: "image" } } }] },
+] });
+for (const id of ["glm-5-3-flash-260828", "glm-5-2-260617", "deepseek-v4-pro-ga-260813", "deepseek-v4-flash-ga-260731", "dola-seedream-5-0-pro-260628", "dreamina-seedance-2-0-260128", "dreamina-seedance-2-0-fast-260128", "dreamina-seedance-2-0-mini-260615", "dreamina-seedance-2-5-260628"]) {
+  const source = PRICE_CATALOG.models.find(model => model.kind === (id.includes("seedance") ? "video" : id.includes("seedream") ? "image" : "chat"));
+  PRICE_CATALOG.models.push({ ...source, model: id, name: id });
+}
 const schema = (await Promise.all((await readdir(new URL("../drizzle/", import.meta.url))).filter(name => name.endsWith(".sql")).sort().map(name => readFile(new URL(`../drizzle/${name}`, import.meta.url), "utf8")))).join("\n");
 
 async function fixture(t, options = {}) {
@@ -45,22 +56,30 @@ async function fixture(t, options = {}) {
   let currentUser = options.user === undefined ? ADMIN : options.user;
   const calls = [], modelCalls = [];
   const env = { DB, SERVICE_ENABLED: "true", ...options.env };
+  const wallet = await loadModule("../lib/wallet.ts", { "./config": { getD1: () => DB } });
   function insertUser(user = ADMIN, status = "active") {
     sqlite.prepare("INSERT INTO users (id,email,display_name,status) VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING").run(user.id, user.email, user.displayName || "", status);
+    if (user.isAdmin && options.fundAdmin !== false) sqlite.prepare("INSERT INTO wallet_accounts(user_id,balance_microusd) VALUES(?,100000000) ON CONFLICT DO NOTHING").run(user.id);
   }
   function insertKey(user, key, revoked = false, status = "active") {
     insertUser(user, status);
     sqlite.prepare("INSERT INTO api_keys (id,user_id,key_prefix,key_hash,revoked_at) VALUES (?,?,?,?,?)").run(`key-${user.id}`, user.id, key.slice(0, 12), hash(key), revoked ? new Date().toISOString() : null);
   }
-  const { handleTokenHubRelay } = await loadModule("../lib/tokenhub-relay.ts", {
+  const { handleTokenHubRelay, reconcileTokenHubTasks } = await loadModule("../lib/tokenhub-relay.ts", {
     "./auth": { getPortalUser: async () => { options.onSession?.(); return currentUser; }, isAdminEmail: email => email === "delegated-admin@example.com" },
     "./config": { runtimeEnv: () => env, getD1: () => DB },
     "./crypto": { sha256Hex: async value => hash(value) },
     "./store": { ensureUser: async user => insertUser(user) },
     "./provider-settings": { ProviderError },
+    "./pricing": { ...pricing, getTokenHubPricing: async () => { if (options.pricingError) throw new pricing.PricingError("Live pricing unavailable"); return options.pricing || PRICE_CATALOG; } },
+    "./wallet": wallet,
     "./tokenhub-settings": { TOKENHUB_ORIGIN: "https://ai-tokenhub.ai", createTokenHubSettings: () => ({ credential: async () => { options.onCredential?.(); return options.key || PROVIDER_KEY; }, models: async () => { modelCalls.push(true); if (options.modelsError) throw options.modelsError; return options.models || { models: [{ id: "chat-example", provider: "vendor", modelType: "chat" }], catalog: { complete: true } }; } }) },
   }, { fetch: async (url, init) => { calls.push({ url, init }); return options.fetcher ? options.fetcher(url, init) : Response.json({ id: "task-default", status: "queued" }); } });
-  return { sqlite, calls, modelCalls, handle: handleTokenHubRelay, insertUser, insertKey, setUser: user => { currentUser = user; } };
+  function credit(user, amount = 100_000_000) {
+    insertUser(user);
+    sqlite.prepare("INSERT INTO wallet_accounts(user_id,balance_microusd) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET balance_microusd=excluded.balance_microusd").run(user.id, amount);
+  }
+  return { sqlite, calls, modelCalls, wallet, credit, reconcile: options => reconcileTokenHubTasks(env, options), handle: handleTokenHubRelay, insertUser, insertKey, setUser: user => { currentUser = user; } };
 }
 function request(path = TASKS, options = {}) {
   const method = options.method || "POST";
@@ -78,8 +97,8 @@ async function expectStatus(handle, requestValue, status) {
   return response;
 }
 
-test("relay requires an active administrator and same-origin browser mutations", async t => {
-  for (const [user, status] of [[null, 401], [{ ...ADMIN, id: "member", isAdmin: false }, 403]]) {
+test("relay requires an active account, funded wallet, and same-origin browser mutations", async t => {
+  for (const [user, status] of [[null, 401], [{ ...ADMIN, id: "member", isAdmin: false }, 402]]) {
     const f = await fixture(t, { user });
     await expectStatus(f.handle, request(), status);
     assert.equal(f.calls.length, 0);
@@ -93,12 +112,119 @@ test("relay requires an active administrator and same-origin browser mutations",
   const disabled = await fixture(t, { env: { SERVICE_ENABLED: "false" } });
   await expectStatus(disabled.handle, request(), 503);
   assert.equal(disabled.calls.length, 0);
+  const unfundedAdmin = await fixture(t, { fundAdmin: false });
+  await expectStatus(unfundedAdmin.handle, request(), 402);
+  assert.equal(unfundedAdmin.calls.length, 0);
 });
 
-test("ECO-GEO keys permit administrators only, reject revoked or inactive users, and never forward the client credential", async t => {
+const MEMBER = { id: "member-paid", email: "member@example.com", displayName: "Member", isAdmin: false };
+const CHAT = { model: "chat", messages: [{ role: "user", content: "Hello" }], max_tokens: 100 };
+test("a funded member pays returned chat usage at upstream plus 20%, once across retries", async t => {
+  const f = await fixture(t, { user: MEMBER, fetcher: async () => Response.json({ model: "chat", choices: [{ message: { content: "Hello" } }], usage: { prompt_tokens: 1000, completion_tokens: 100, total_tokens: 1100, prompt_tokens_details: { cached_tokens: 500 } } }) });
+  f.credit(MEMBER);
+  const first = await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 200);
+  assert.equal((await first.json()).tokvilo_billing.chargedMicrousd, 900);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000 - 900);
+  await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 200);
+  assert.equal(f.calls.length, 1);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000 - 900);
+  await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify({ ...CHAT, max_tokens: 200 }) }), 409);
+  assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM wallet_reservations").get().n, 1);
+});
+test("member requests require live prices and available funds before a generation call", async t => {
+  const f = await fixture(t, { user: MEMBER, pricingError: true }); f.credit(MEMBER);
+  await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 503);
+  assert.equal(f.calls.length, 0);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000);
+  const poor = await fixture(t, { user: MEMBER }); poor.credit(MEMBER, 1);
+  await expectStatus(poor.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 402);
+  assert.equal(poor.calls.length, 0);
+  assert.equal((await poor.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1);
+});
+test("a changed price above the client reserve ceiling requires repricing without wallet or generation mutations", async t => {
+  const oldQuote = pricing.quoteTokenHubRequest(PRICE_CATALOG, "chat", CHAT);
+  const changed = structuredClone(PRICE_CATALOG);
+  for (const rate of changed.models.find(model => model.model === "chat").rates) {
+    rate.upstreamMicrousd *= 2; rate.retailMicrousd *= 2;
+  }
+  const f = await fixture(t, { user: MEMBER, pricing: changed, fetcher: async () => Response.json({ usage: { prompt_tokens: 10, completion_tokens: 1 } }) });
+  f.credit(MEMBER);
+  const refused = await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT), headers: { "X-Tokvilo-Max-Reserve-Microusd": String(oldQuote.reservedMicrousd) } }), 409);
+  const error = (await refused.json()).error;
+  assert.equal(error.code, "reservation_limit_exceeded");
+  assert.ok(error.requiredReserveMicrousd > oldQuote.reservedMicrousd);
+  assert.equal(f.calls.length, 0);
+  assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM wallet_reservations").get().n, 0);
+  assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM tokenhub_requests").get().n, 0);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000);
+  await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT), headers: { "X-Tokvilo-Max-Reserve-Microusd": String(error.requiredReserveMicrousd) } }), 200);
+  assert.equal(f.calls.length, 1);
+});
+test("reserve ceiling headers reject malformed integers before credential lookup or wallet reservation", async t => {
+  for (const value of ["", "0", "-1", "1.5", "1e6", "NaN", "Infinity", "9007199254740992", "1,2"]) {
+    const f = await fixture(t, { user: MEMBER, onCredential: () => assert.fail("Malformed ceilings must not access provider credentials") });
+    f.credit(MEMBER);
+    await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT), headers: { "X-Tokvilo-Max-Reserve-Microusd": value } }), 400);
+    assert.equal(f.calls.length, 0);
+    assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM wallet_reservations").get().n, 0);
+  }
+});
+test("member image and video billing settles only evidenced output, refunds confirmed failures, and preserves unknown outcomes", async t => {
+  const image = await fixture(t, { user: MEMBER, fetcher: async () => Response.json({ data: [{ url: "https://media.example/image.png" }] }) }); image.credit(MEMBER);
+  const imageResponse = await expectStatus(image.handle, request("/v3/images/generations", { body: JSON.stringify({ model: "image", prompt: "A tree", n: 2 }) }), 200);
+  assert.equal((await imageResponse.json()).tokvilo_billing.chargedMicrousd, 108000);
+  assert.equal((await image.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000 - 108000);
+  const video = await fixture(t, { user: MEMBER, fetcher: async (_url, init) => Response.json(init.method === "POST" ? { id: "paid-video", status: "queued" } : { id: "paid-video", status: "succeeded", usage: { completion_tokens: 100000 } }) }); video.credit(MEMBER);
+  await expectStatus(video.handle, request(), 200);
+  assert.ok((await video.wallet.getWallet(MEMBER.id)).reservedMicrousd > 0);
+  const final = await expectStatus(video.handle, request(`${TASKS}/paid-video`, { method: "GET" }), 200);
+  assert.equal((await final.json()).tokvilo_billing.chargedMicrousd, 840000);
+  await expectStatus(video.handle, request(`${TASKS}/paid-video`, { method: "GET" }), 200);
+  assert.equal((await video.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000 - 840000);
+  const rejected = await fixture(t, { user: MEMBER, fetcher: async () => Response.json({ error: "invalid" }, { status: 422 }) }); rejected.credit(MEMBER);
+  await expectStatus(rejected.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 422);
+  assert.equal((await rejected.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000);
+  const unknown = await fixture(t, { user: MEMBER, fetcher: async () => { throw new Error("timeout"); } }); unknown.credit(MEMBER);
+  await expectStatus(unknown.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 502);
+  assert.ok((await unknown.wallet.getWallet(MEMBER.id)).reservedMicrousd > 0);
+  await expectStatus(unknown.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT) }), 409);
+  assert.equal(unknown.calls.length, 1);
+});
+test("unreported or above-reservation usage stays held, and tk_live keys support paid members", async t => {
+  const f = await fixture(t, { user: null, fetcher: async () => Response.json({ usage: { prompt_tokens: 10000000, completion_tokens: 1 } }) });
+  f.credit(MEMBER); f.insertKey(MEMBER, "tk_live_012345678901234567890123456789");
+  const response = await expectStatus(f.handle, request("/v1/chat/completions", { body: JSON.stringify(CHAT), rawHeaders: { "Content-Type": "application/json", Authorization: "Bearer tk_live_012345678901234567890123456789", "Idempotency-Key": "member-key-call" } }), 200);
+  assert.equal((await response.json()).tokvilo_billing.status, "pending_confirmation");
+  assert.ok((await f.wallet.getWallet(MEMBER.id)).reservedMicrousd > 0);
+});
+test("cron settles owner-bound existing videos without sending generation and stops polling settled rows", async t => {
+  const f = await fixture(t, { user: MEMBER, fetcher: async (_url, init) => Response.json(init.method === "POST" ? { id: "cron-video", status: "queued" } : { id: "cron-video", status: "succeeded", usage: { completion_tokens: 100000 } }) });
+  f.credit(MEMBER);
+  await expectStatus(f.handle, request(), 200);
+  const result = await f.reconcile({ maxTasks: 10 });
+  assert.equal(result.examined, 1); assert.equal(result.settled, 1);
+  assert.equal(f.calls.filter(call => call.init.method === "POST").length, 1);
+  assert.equal(f.calls.filter(call => call.init.method === "GET").length, 1);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000 - 840000);
+  assert.equal((await f.reconcile({ maxTasks: 10 })).examined, 0);
+});
+test("cron uses leases, preserves unresolved holds, refunds confirmed video failures, and refuses swapped task IDs", async t => {
+  for (const [replyValue, refund] of [[{ id: "cron-video", status: "failed" }, true], [{ id: "different-task", status: "failed" }, false], [{ id: "cron-video", status: "succeeded" }, false]]) {
+    const f = await fixture(t, { user: MEMBER, fetcher: async (_url, init) => Response.json(init.method === "POST" ? { id: "cron-video", status: "queued" } : replyValue) });
+    f.credit(MEMBER); await expectStatus(f.handle, request(), 200);
+    const result = await f.reconcile();
+    assert.equal(result.refunded, refund ? 1 : 0);
+    assert.equal((await f.reconcile()).examined, 0);
+    const state = await f.wallet.getWallet(MEMBER.id);
+    assert.equal(state.reservedMicrousd === 0, refund);
+    assert.equal(f.calls.length, 2);
+  }
+});
+
+test("portal keys require a funded member wallet, reject revoked or inactive users, and never forward the client credential", async t => {
   const key = "eco_live_012345678901234567890123456789";
   for (const [user, revoked, status, expected] of [
-    [{ ...ADMIN, id: "member", isAdmin: false }, false, "active", 403],
+    [{ ...ADMIN, id: "member", isAdmin: false }, false, "active", 402],
     [ADMIN, true, "active", 401], [ADMIN, false, "disabled", 401],
     [ADMIN, false, "active", 200],
     [{ ...ADMIN, id: "other-admin", email: "delegated-admin@example.com" }, false, "active", 200],
@@ -158,7 +284,9 @@ test("a video request retries from its persisted result and rejects changed payl
   const f = await fixture(t, { fetcher: async () => Response.json({ id: "task-durable", status: "queued" }, { status: 201 }) });
   const first = await expectStatus(f.handle, request(), 201);
   const retry = await expectStatus(f.handle, request(), 201);
-  assert.deepEqual(await retry.json(), await first.json());
+  const firstData = await first.json(), retryData = await retry.json();
+  assert.equal(retryData.id, firstData.id);
+  assert.equal(retryData.status, firstData.status);
   await expectStatus(f.handle, request(TASKS, { body: JSON.stringify({ ...VIDEO, duration: 5 }) }), 409);
   assert.equal(f.calls.length, 1);
   assert.equal(f.calls[0].url, "https://ai-tokenhub.ai/api/v3/contents/generations/tasks");
@@ -244,7 +372,7 @@ test("upstream redirects are rejected without forwarding credentials or redirect
 
 test("write throttling stops paid requests at five per minute while reads retain their separate allowance", async t => {
   const f = await fixture(t, { fetcher: async () => Response.json({ result: "ok" }) });
-  for (let index = 0; index < 5; index++) await expectStatus(f.handle, request("/v3/images/generations", { body: JSON.stringify({ model: "image", prompt: "test" }) }), 200);
+  for (let index = 0; index < 5; index++) await expectStatus(f.handle, request("/v3/images/generations", { body: JSON.stringify({ model: "image", prompt: "test" }), headers: { "Idempotency-Key": `image-request-${index}` } }), 200);
   await expectStatus(f.handle, request("/v3/images/generations", { body: JSON.stringify({ model: "image", prompt: "test" }) }), 429);
   await expectStatus(f.handle, request("/v1/models", { method: "GET" }), 200);
   assert.equal(f.calls.length, 5); assert.equal(f.modelCalls.length, 1);

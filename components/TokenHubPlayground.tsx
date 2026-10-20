@@ -63,7 +63,7 @@ function VideoPreview({ src, poster }: { src: string; poster?: string }) {
   return <div className="tokenhub-video-frame">{failed ? <MediaPreviewError kind="video" hasDirectLink /> : <video src={src} poster={poster} controls playsInline preload="metadata" onError={() => setFailed(true)} />}</div>;
 }
 
-export function TokenHubPlayground() {
+export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
   const [mode, setMode] = useState<Mode>("video");
   const [provider, setProvider] = useState<Provider | null>(null);
   const [models, setModels] = useState<Model[]>([]);
@@ -84,6 +84,8 @@ export function TokenHubPlayground() {
   const [format, setFormat] = useState<"json" | "curl">("json");
   const [tab, setTab] = useState<"result" | "request" | "tasks">("result");
   const [pending, setPending] = useState(false);
+  const [quoting, setQuoting] = useState(false);
+  const [quote, setQuote] = useState<{ body: string; mode: Mode; reservedMicrousd: number } | null>(null);
   const [error, setError] = useState("");
   const [result, setResult] = useState<unknown>(null);
   const [resultMode, setResultMode] = useState<Mode>("video");
@@ -99,17 +101,16 @@ export function TokenHubPlayground() {
   const [copyError, setCopyError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const inFlight = useRef(false);
-  const submission = useRef<{ body: string; key: string } | null>(null);
+  const submission = useRef<{ body: string; mode: Mode; key: string } | null>(null);
   const selection = useRef(0);
 
   useEffect(() => {
     const controller = new AbortController();
     const requested = selectionFromSearch(window.location.search), requestedModel = requested.model, requestedMode = requested.mode;
     const hasRequestedModel = !!requestedModel;
-    request("/api/admin/providers/tokenhub", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setProvider(record(value).tokenhub as Provider); }).catch(error => { if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "配置读取失败。"); });
-    request("/api/admin/providers/tokenhub/models", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) {
+    request("/api/tokenhub/v1/models", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) {
       const body = record(value), info = record(body.catalog);
-      const discovered = parseModels(body.models); setModels(discovered);
+      const discovered = parseModels(body.data); setModels(discovered); setProvider({ configured: true } as Provider);
       if (hasRequestedModel) { setModel(requestedModel); const selected = discovered.find(item => item.id === requestedModel); const selectedMode = requestedMode || (selected ? modes.find(item => modelMatches(selected, item.id))?.id : undefined); if (selectedMode) setMode(selectedMode); }
       else if (requestedMode) { setMode(requestedMode); setModel(discovered.find(item => modelMatches(item, requestedMode))?.id || defaults[requestedMode]); }
       setCatalog({ complete: info.complete === true, observedAt: text(info.observedAt), sources: Array.isArray(info.sources) ? info.sources.map(record).map(item => ({ source: text(item.source), status: text(item.status), modelCount: typeof item.modelCount === "number" ? item.modelCount : 0 })) : [], warnings: Array.isArray(info.warnings) ? info.warnings.filter((warning): warning is string => typeof warning === "string") : [] });
@@ -122,12 +123,13 @@ export function TokenHubPlayground() {
   const selectedModel = models.find(item => item.id === model);
   const selectedLimitations = (selectedModel?.limitations || []).map(item => limitationLabels[item]).filter(Boolean);
   const generated = useMemo(() => {
-    if (mode === "chat") return { model, messages: [{ role: "user", content: prompt }], stream: false };
+    if (mode === "chat") return { model, messages: [{ role: "user", content: prompt }], stream: false, max_tokens: 1024 };
     if (mode === "image") return { model, prompt, size: imageSize, watermark: false, response_format: "url" };
     return { model, content: [{ type: "text", text: prompt }, ...(reference.trim() ? [{ type: "image_url", image_url: { url: reference.trim() }, role: referenceRole }] : [])], resolution, ratio, duration: Number(duration), generate_audio: generateAudio, watermark: false };
   }, [mode, model, prompt, imageSize, reference, referenceRole, resolution, ratio, duration, generateAudio]);
   const json = advanced ? jsonInput : JSON.stringify(generated, null, 2);
-  const curl = `${mode === "video" ? 'TOKENHUB_REQUEST_ID="$(uuidgen)"\n\n' : ""}curl --request POST \\\n  --url 'https://api.eco-geo.org${endpoint[mode]}' \\\n  --header 'Authorization: Bearer YOUR_ECO_GEO_API_KEY' \\\n  --header 'Content-Type: application/json'${mode === "video" ? " \\\n  --header \"Idempotency-Key: $TOKENHUB_REQUEST_ID\"" : ""} \\\n  --data ${shellQuote(json)}`;
+  const currentQuote = quote?.body === json && quote.mode === mode ? quote : null;
+  const curl = `TOKVILO_REQUEST_ID="$(uuidgen)"\n\ncurl --request POST \\\n  --url 'https://tokvilo.com${endpoint[mode]}' \\\n  --header 'Authorization: Bearer YOUR_TOKVILO_API_KEY' \\\n  --header 'Content-Type: application/json' \\\n  --header "Idempotency-Key: $TOKVILO_REQUEST_ID" \\\n  --data ${shellQuote(json)}`;
   const taskData = payloadOf(result);
   const taskStatus = text(taskData.status).toLowerCase();
   const content = record(taskData.content);
@@ -192,8 +194,21 @@ export function TokenHubPlayground() {
     finally { setRefreshing(false); }
   }
 
+  async function estimate() {
+    if (quoting || pending) return;
+    setQuoting(true); setError(""); setQuote(null);
+    try {
+      const body: unknown = JSON.parse(json);
+      const value = record(await request("/api/pricing/quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider: "tokenhub", mode, body }) }));
+      if (!Number.isSafeInteger(value.reservedMicrousd) || Number(value.reservedMicrousd) <= 0) throw new Error("暂时无法取得该请求的预留金额。");
+      setQuote({ body: json, mode, reservedMicrousd: Number(value.reservedMicrousd) });
+    } catch (error) { setError(error instanceof SyntaxError ? "JSON 格式有误，请检查后重新报价。" : error instanceof Error ? error.message : "报价暂不可用。"); }
+    finally { setQuoting(false); }
+  }
+
   async function submit() {
     if (inFlight.current || !provider?.configured) return;
+    if (!currentQuote) { await estimate(); return; }
     setError("");
     let body: Json;
     try {
@@ -208,18 +223,19 @@ export function TokenHubPlayground() {
     if (mode === "video") setTasksLoaded(false);
     const version = ++selection.current;
     const serialized = JSON.stringify(body);
-    if (mode === "video" && submission.current?.body !== serialized) submission.current = { body: serialized, key: crypto.randomUUID() };
+    if (submission.current?.body !== serialized || submission.current.mode !== mode) submission.current = { body: serialized, mode, key: crypto.randomUUID() };
     try {
-      const value = await request(endpoint[mode], { method: "POST", headers: { "content-type": "application/json", ...(mode === "video" ? { "Idempotency-Key": submission.current!.key } : {}) }, body: serialized });
+      const value = await request(endpoint[mode], { method: "POST", headers: { "content-type": "application/json", "Idempotency-Key": submission.current!.key, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd) }, body: serialized });
       if (selection.current !== version) return;
-      setResult(value); setResultMode(mode); setTaskId(""); setPollCount(0);
+      setResult(value); setResultMode(mode); setTaskId(""); setPollCount(0); setQuote(null);
+      if (mode !== "video") submission.current = null;
       if (mode === "video") {
         setTasksLoaded(false);
         const id = text(payloadOf(value).id);
         if (id) { setTaskId(id); setQueryId(id); setPolling(!terminal.has(text(payloadOf(value).status).toLowerCase())); submission.current = null; }
         else setError("请求已返回，但未找到任务 ID。请查看原始响应与任务记录，勿重复提交。");
       }
-    } catch (error) { setError(error instanceof Error ? error.message : "请求未完成。请先检查任务记录。"); }
+    } catch (error) { setQuote(null); setError(error instanceof Error ? error.message : "请求未完成。请先检查任务记录。"); }
     finally { inFlight.current = false; setPending(false); }
   }
 
@@ -230,11 +246,11 @@ export function TokenHubPlayground() {
 
   return <div className="playground-layout tokenhub-workbench">
     <section className="playground-controls" aria-label="TokenHub 请求参数">
-      <div className="playground-control-header"><span>TOKENHUB</span><Link href="/admin" aria-label="管理 TokenHub 连接"><Icon name="settings" size={17} /></Link></div>
+      <div className="playground-control-header"><span>TOKENHUB</span><Link href={isAdmin ? "/admin" : "/dashboard/wallet"} aria-label={isAdmin ? "管理 TokenHub 连接" : "余额与充值"}><Icon name="settings" size={17} /></Link></div>
       <div className="playground-category-tabs" role="tablist" aria-label="TokenHub 模型类型">{modes.map(item => <button key={item.id} type="button" role="tab" aria-selected={mode === item.id} className={mode === item.id ? "selected" : ""} onClick={() => changeMode(item.id)} disabled={pending}><Icon name={item.icon} size={15} />{item.name}{modelsLoading ? "" : ` ${models.filter(model => modelMatches(model, item.id)).length}`}</button>)}</div>
       <div className="playground-form-fields">
         <p className="tokenhub-parameter-help" role="status">{modelsLoading ? "正在合并模型与价格目录…" : modelError ? "目录读取未完成，仍可填写完整模型 ID。" : `${catalog?.complete ? "当前完整目录" : "当前部分目录"} ${models.length} 个模型 · ${models.filter(item => modelMatches(item, "chat")).length} 个对话 / ${models.filter(item => modelMatches(item, "image")).length} 个图像 / ${models.filter(item => modelMatches(item, "video")).length} 个视频${unknownModels.length ? ` / ${unknownModels.length} 个待分类` : ""}`}</p>
-        <label className="playground-field"><span>模型 <span className="field-required">*</span></span><select aria-label="选择 TokenHub 模型" value={options.some(item => item.id === model) ? model : "custom"} onChange={event => chooseModel(event.target.value === "custom" ? "" : event.target.value)} disabled={advanced || pending}><option value="custom">填写完整模型 ID</option>{options.map(item => <option key={item.id} value={item.id}>{modelLabel(item)} · {item.id}</option>)}</select><small>{modelsLoading ? "正在读取当前类型的全部模型…" : `当前类型 ${options.length} 个模型 · 请求通过 ECO-GEO API 发送`}</small></label>
+        <label className="playground-field"><span>模型 <span className="field-required">*</span></span><select aria-label="选择 TokenHub 模型" value={options.some(item => item.id === model) ? model : "custom"} onChange={event => chooseModel(event.target.value === "custom" ? "" : event.target.value)} disabled={advanced || pending}><option value="custom">填写完整模型 ID</option>{options.map(item => <option key={item.id} value={item.id}>{modelLabel(item)} · {item.id}</option>)}</select><small>{modelsLoading ? "正在读取当前类型的全部模型…" : `当前类型 ${options.length} 个模型 · 请求通过 tokvilo API 发送`}</small></label>
         <label className="playground-field playground-model-id"><span>MODEL ID</span><input aria-label="TokenHub 模型 ID" value={model} onChange={event => chooseModel(event.target.value)} spellCheck={false} placeholder="填写上游模型 ID" disabled={advanced || pending} /><small>{selectedModel?.accountAccess === "unverified_public_catalog" ? "已接入转发；该模型来自公开价格目录，账户调用权限待实际请求确认。" : selectedModel ? "使用目录中的完整版本 ID，不替换为其他模型。" : "自定义模型 ID；请选择对应接口类型，也可编辑完整 JSON。"}</small></label>
         <label className="playground-field"><span>提示词<button type="button" disabled={advanced || pending} onClick={() => setPrompt(examples[mode])}><Icon name="sparkles" size={13} />试试示例</button></span><textarea aria-label="TokenHub 提示词" rows={5} maxLength={10000} value={prompt} onChange={event => setPrompt(event.target.value)} placeholder={mode === "video" ? "描述场景、主体动作和镜头运动…" : mode === "image" ? "描述画面、构图、光线和风格…" : "输入你的消息…"} disabled={advanced || pending} /><small>{prompt.length.toLocaleString()} / 10,000</small></label>
         {mode === "video" ? <>
@@ -246,22 +262,22 @@ export function TokenHubPlayground() {
         <button className={`tokenhub-advanced-toggle${advanced ? " selected" : ""}`} type="button" onClick={toggleAdvanced} aria-pressed={advanced} disabled={pending}><Icon name="code" size={14} />{advanced ? "返回参数表单" : "编辑完整 JSON"}<Icon name="arrow-right" size={14} /></button>
         <p className="tokenhub-parameter-help">各模型支持的尺寸、时长与素材类型不同。多图、参考视频及其他参数可在 JSON 中设置。{selectedLimitations.length ? ` ${selectedLimitations.join("；")}。` : ""}</p>{unknownModels.length ? <details className="tokenhub-parameter-help"><summary>{unknownModels.length} 个模型尚未识别接口类型</summary><p>{unknownModels.map(item => item.id).join("、")}。目录记录已保留，可根据模型文档选择接口并填写完整 ID。</p></details> : null}
       </div>
-      <div className="playground-run-area"><button className="playground-run" type="button" disabled={pending || !provider?.configured || (!advanced && (!model.trim() || !prompt.trim()))} onClick={submit}><Icon name={pending ? "clock" : "bolt"} size={16} />{pending ? "正在提交…" : mode === "video" ? "创建视频任务" : mode === "image" ? "生成图片" : "发送对话"}<Icon name="arrow-right" size={16} /></button><span><i />实际调用 · 消耗 TokenHub 账户额度</span></div>
+      <div className="playground-run-area">{currentQuote ? <p className="tokenhub-parameter-help" role="status">本次最多预留 <strong>${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)}</strong>。源头价格 × 1.20，完成后按实际用量结算并退还差额。<Link href="/dashboard/wallet">查看余额</Link></p> : null}<button className="playground-run" type="button" disabled={pending || quoting || !provider?.configured || (!advanced && (!model.trim() || !prompt.trim()))} onClick={submit}><Icon name={pending || quoting ? "clock" : "bolt"} size={16} />{pending ? "正在提交…" : quoting ? "正在报价…" : currentQuote ? "确认并生成" : "查看预留金额"}<Icon name="arrow-right" size={16} /></button><span><i />从 tokvilo 账户余额结算</span></div>
     </section>
     <section className="playground-workspace" aria-label="TokenHub 工作台">
-      <header className="playground-workspace-header"><div><h1>全部模型，一个入口。</h1><span>TIANSHU TOKENHUB · ECO-GEO API</span></div><Link href="/dashboard/docs?provider=tokenhub"><Icon name="book" size={15} />接口文档<Icon name="arrow-up-right" size={14} /></Link></header>
-      <div className="playground-notice"><span className="playground-notice-dot" /><p>{provider === null ? "正在读取服务配置…" : provider.configured ? "由 ECO-GEO 统一转发，使用后台保存的 TokenHub 密钥。" : "配置 TokenHub API Key 后，即可在这里发起模型请求。"}</p><Link href="/admin">管理连接 <Icon name="arrow-right" size={13} /></Link></div>
+      <header className="playground-workspace-header"><div><h1>全部模型，一个入口。</h1><span>TIANSHU TOKENHUB · tokvilo API</span></div><Link href="/dashboard/docs?provider=tokenhub"><Icon name="book" size={15} />接口文档<Icon name="arrow-up-right" size={14} /></Link></header>
+      <div className="playground-notice"><span className="playground-notice-dot" /><p>{provider === null ? "正在读取服务配置…" : provider.configured ? "选择模型后先查看预留金额，再确认生成。" : "服务尚未就绪，请稍后再试。"}</p><Link href={isAdmin ? "/admin" : "/dashboard/wallet"}>{isAdmin ? "管理连接" : "余额与充值"} <Icon name="arrow-right" size={13} /></Link></div>
       {modelError || catalog?.warnings.length ? <div className="tokenhub-error" role="status"><Icon name="info" size={15} /><span>{modelError || catalog?.warnings.join("；")} 当前展示已成功读取的模型，未用预设补充为已验证目录。</span></div> : null}
       <div className="tokenhub-output-tabs" role="tablist" aria-label="工作台内容"><button type="button" role="tab" aria-selected={tab === "result"} className={tab === "result" ? "selected" : ""} onClick={() => setTab("result")}><Icon name="sparkles" size={14} />生成结果</button><button type="button" role="tab" aria-selected={tab === "request"} className={tab === "request" ? "selected" : ""} onClick={() => setTab("request")}><Icon name="code" size={14} />请求代码</button><button type="button" role="tab" aria-selected={tab === "tasks"} className={tab === "tasks" ? "selected" : ""} onClick={() => { setTab("tasks"); if (!tasksLoaded) void loadTasks(); }}><Icon name="clock" size={14} />视频任务</button></div>
       {error ? <div className="tokenhub-error" role="alert"><Icon name="info" size={15} /><span>{error}</span></div> : null}
       {tab === "request" ? <div className="playground-preview-area">
         <div className="playground-preview-meta"><span className="request-method">POST</span><code>{endpoint[mode]}</code></div>
         <div className="playground-code-panel"><div className="playground-code-toolbar"><div role="tablist" aria-label="TokenHub 代码格式"><button type="button" role="tab" aria-selected={format === "json"} className={format === "json" ? "selected" : ""} onClick={() => setFormat("json")}>JSON</button><button type="button" role="tab" aria-selected={format === "curl"} className={format === "curl" ? "selected" : ""} onClick={() => setFormat("curl")}>cURL</button></div><button type="button" onClick={copy}><Icon name={copied ? "check" : "copy"} size={14} />{copied ? "已复制" : "复制代码"}</button></div>{advanced && format === "json" ? <textarea className="tokenhub-json-editor" aria-label="TokenHub JSON 请求" value={jsonInput} onChange={event => setJsonInput(event.target.value)} spellCheck={false} maxLength={60000} disabled={pending} /> : <pre tabIndex={0}><code>{format === "json" ? json : curl}</code></pre>}</div>
-        <p className="playground-code-note" role="status">{copyError || (advanced ? "JSON 编辑器中的内容将作为完整请求发送。请按模型文档填写；对话暂不支持流式输出。" : "此请求使用 ECO-GEO 的 API 密钥。点击左侧运行按钮才会调用模型。")}</p>
+        <p className="playground-code-note" role="status">{copyError || (advanced ? "JSON 编辑器中的内容将作为完整请求发送。请按模型文档填写；对话暂不支持流式输出。" : "此请求使用 tokvilo API 密钥，按源头价格加价 20% 计费。点击运行发起调用。")}</p>
         {mode === "video" ? <p className="tokenhub-parameter-help">每个视频请求使用独立的 Idempotency-Key。网络中断后重试同一请求时，应复用该值；创建新任务时再换一个值。</p> : null}
       </div> : tab === "tasks" ? <div className="tokenhub-task-panel">
-        <div className="tokenhub-section-heading"><div><h2>视频任务记录</h2><p>通过 ECO-GEO 创建的任务</p></div><button className="button button-ghost" type="button" disabled={tasksLoading} onClick={loadTasks}><Icon name="refresh" size={14} />{tasksLoading ? "读取中…" : "刷新"}</button></div>
-        <form className="tokenhub-task-query" onSubmit={event => { event.preventDefault(); void selectTask(queryId); }}><input aria-label="查询视频任务 ID" value={queryId} onChange={event => setQueryId(event.target.value)} placeholder="输入 ECO-GEO 已记录的视频任务 ID" maxLength={200} /><button className="button button-ghost" type="submit" disabled={!queryId.trim() || refreshing || pending}>{refreshing ? "查询中…" : "查询任务"}</button></form>
+        <div className="tokenhub-section-heading"><div><h2>视频任务记录</h2><p>通过 tokvilo 创建的任务</p></div><button className="button button-ghost" type="button" disabled={tasksLoading} onClick={loadTasks}><Icon name="refresh" size={14} />{tasksLoading ? "读取中…" : "刷新"}</button></div>
+        <form className="tokenhub-task-query" onSubmit={event => { event.preventDefault(); void selectTask(queryId); }}><input aria-label="查询视频任务 ID" value={queryId} onChange={event => setQueryId(event.target.value)} placeholder="输入 tokvilo 已记录的视频任务 ID" maxLength={200} /><button className="button button-ghost" type="submit" disabled={!queryId.trim() || refreshing || pending}>{refreshing ? "查询中…" : "查询任务"}</button></form>
         {tasksError ? <p className="tokenhub-error" role="alert">{tasksError}</p> : null}
         <div className="tokenhub-task-list">{tasks.map(task => <button key={task.id} type="button" disabled={refreshing || pending} onClick={() => selectTask(task.id)}><span className="tokenhub-task-icon"><Icon name="video" size={18} /></span><span className="tokenhub-task-label"><strong>{task.model || "视频生成"}</strong><code>{task.id}</code>{task.created_at ? <small>{new Date(task.created_at).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })}</small> : null}</span><TaskBadge status={task.status} /><Icon name="arrow-up-right" size={14} /></button>)}</div>
         {tasksLoaded && !tasks.length && !tasksError ? <div className="tokenhub-list-empty"><Icon name="video" size={26} /><h3>还没有视频任务</h3><p>创建首个任务后，记录将出现在这里。</p></div> : null}
@@ -274,8 +290,8 @@ export function TokenHubPlayground() {
           {taskId && !terminal.has(taskStatus) ? <div className="tokenhub-polling"><span><i className={polling ? "active" : ""} />{polling ? "每 5 秒查询一次 · 最长 10 分钟" : pollCount >= 120 ? "自动查询已暂停，可继续手动刷新。" : "自动查询已暂停"}</span><button type="button" onClick={() => setPolling(!polling)}>{polling ? "暂停查询" : "继续查询"}</button></div> : null}
         </> : resultMode === "image" ? <><div className="tokenhub-section-heading"><div><h2>{images.length ? "画面已生成" : "图片请求结果"}</h2><p>TokenHub Image Generation</p></div><span className="record-count">{images.length} 张</span></div><div className="tokenhub-image-grid">{images.map((item, index) => <figure key={index}><ImagePreview key={item.url || item.base64} src={item.url || `data:image/png;base64,${item.base64}`} alt={`生成结果 ${index + 1}`} hasDirectLink={!!item.url} />{item.url ? <figcaption><a href={item.url} target="_blank" rel="noopener noreferrer">打开原图 <Icon name="arrow-up-right" size={13} /></a></figcaption> : null}</figure>)}</div></> : <><div className="tokenhub-section-heading"><div><h2>模型回复</h2><p>{text(record(result).model) || "TokenHub Chat"}</p></div><Icon name="message" size={18} /></div>{answer ? <div className="tokenhub-chat-answer">{answer}</div> : <p className="tokenhub-parameter-help" role="status">{emptyAnswerAtTokenLimit ? "本次响应已达到输出 token 上限，尚未返回回复正文。可在完整 JSON 中提高 max_tokens 后重新请求。" : "请展开原始响应查看模型返回内容。"}</p>}</>}
         <details className="tokenhub-raw-response"><summary>原始响应 <Icon name="code" size={14} /></summary><pre tabIndex={0}><code>{JSON.stringify(result, null, 2)}</code></pre></details>
-      </div> : <div className="playground-empty-state tokenhub-empty"><div className="playground-empty-art" aria-hidden="true"><span /><span /><span /><Icon name={modes.find(item => item.id === mode)?.icon || "video"} size={32} /></div><span className="tokenhub-empty-kicker">ONE IDEA. MANY POSSIBILITIES.</span><h2>{mode === "video" ? "让每一个画面流动起来" : mode === "image" ? "把灵感，变成画面" : "让想法继续生长"}</h2><p>选择模型，描述你的想法。<br />由 ECO-GEO 连接 TokenHub，完成真实生成。</p><button className="tokenhub-prompt-example" type="button" onClick={() => setPrompt(examples[mode])}><Icon name="sparkles" size={16} /><span>{examples[mode]}</span><Icon name="arrow-up-right" size={14} /></button></div>}
-      <footer className="playground-workspace-footer"><span>ECO-GEO × TOKENHUB</span><span>管理员工作台 · 统一管理与调用</span></footer>
+      </div> : <div className="playground-empty-state tokenhub-empty"><div className="playground-empty-art" aria-hidden="true"><span /><span /><span /><Icon name={modes.find(item => item.id === mode)?.icon || "video"} size={32} /></div><span className="tokenhub-empty-kicker">ONE IDEA. MANY POSSIBILITIES.</span><h2>{mode === "video" ? "让每一个画面流动起来" : mode === "image" ? "把灵感，变成画面" : "让想法继续生长"}</h2><p>选择模型，描述你的想法。<br />由 tokvilo 连接 TokenHub，完成真实生成。</p><button className="tokenhub-prompt-example" type="button" onClick={() => setPrompt(examples[mode])}><Icon name="sparkles" size={16} /><span>{examples[mode]}</span><Icon name="arrow-up-right" size={14} /></button></div>}
+      <footer className="playground-workspace-footer"><span>tokvilo × TOKENHUB</span><span>按量计费 · 统一管理与调用</span></footer>
     </section>
   </div>;
 }

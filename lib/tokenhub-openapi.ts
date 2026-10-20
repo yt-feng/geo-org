@@ -3,23 +3,24 @@ import { TOKENHUB_MODEL_REFERENCE_DATE, TOKENHUB_REFERENCE_MODELS } from "./toke
 const BASE = "/api/tokenhub";
 const TASKS = BASE + "/v3/contents/generations/tasks";
 const models = (kind: "chat" | "image" | "video") => TOKENHUB_REFERENCE_MODELS.filter(model => model.kind === kind).map(model => model.id);
-const auth = "使用管理员账户的 ECO-GEO API Key（eco_live_ 前缀），不要提交上游密钥。管理员也可在本站会话中操作；浏览器写操作要求同源 Origin。";
+const auth = "使用当前账户的 tokvilo API Key（tk_live_ 前缀，兼容旧 eco_live_），不要提交上游密钥。会员按上游价格加价 20% 从余额结算；浏览器写操作要求同源 Origin。";
 const modelDescription = `以下枚举是 ${TOKENHUB_MODEL_REFERENCE_DATE} 的模型参考。完整实时目录通过 GET ${BASE}/v1/models 获取；新增模型以目录返回的 endpoint 和 integrationStatus 为准。目录在列不等于账户已获该模型调用权限。`;
 const jsonResponse = (description: string, schema: unknown = { type: "object", additionalProperties: true }) => ({ description, content: { "application/json": { schema } } });
 const errors = {
-  "400": jsonResponse("请求参数不合法。"), "401": jsonResponse("ECO-GEO API Key 无效或登录已过期。"),
-  "403": jsonResponse("非管理员账户，或浏览器写操作不是同源请求。"), "429": jsonResponse("请求限流，请按返回提示等待。"),
+  "400": jsonResponse("请求参数不合法。"), "401": jsonResponse("tokvilo API Key 无效或登录已过期。"),
+  "402": jsonResponse("账户余额不足。"), "403": jsonResponse("账户已停用，或浏览器写操作不是同源请求。"), "429": jsonResponse("请求限流，请按返回提示等待。"),
   "502": jsonResponse("上游未完整返回；收费请求结果可能待确认，不要盲目重复提交。"), "503": jsonResponse("服务或上游配置当前不可用。"),
 };
+const idempotency = [{ name: "Idempotency-Key", in: "header", required: true, schema: { type: "string", minLength: 8, maxLength: 128 }, example: "replace_with_unique_request_id", description: "每次新请求使用新编号，同一请求重试保持相同编号与请求体。" }];
 const body = (schema: unknown, example: unknown) => ({ required: true, content: { "application/json": { schema, example } } });
 
 export function tokenHubOpenApi(baseUrl: string): Record<string, unknown> {
   return {
     openapi: "3.0.3",
-    info: { title: "ECO-GEO TokenHub API", version: "1.0.0", description: `${auth} TokenHub 文档独立于数据接口目录。文本返回完整 JSON，当前不支持流式返回。` },
+    info: { title: "tokvilo TokenHub API", version: "1.0.0", description: `${auth} TokenHub 文档独立于数据接口目录。文本返回完整 JSON，当前不支持流式返回。` },
     servers: [{ url: baseUrl.replace(/\/+$/, "") }],
-    security: [{ EcoGeoBearer: [] }],
-    components: { securitySchemes: { EcoGeoBearer: { type: "http", scheme: "bearer", bearerFormat: "ECO-GEO API Key", description: auth } } },
+    security: [{ TokviloBearer: [] }],
+    components: { securitySchemes: { TokviloBearer: { type: "http", scheme: "bearer", bearerFormat: "tokvilo API Key", description: auth } } },
     tags: [{ name: "TokenHub · 模型" }, { name: "TokenHub · 文本" }, { name: "TokenHub · 图片" }, { name: "TokenHub · 视频" }],
     paths: {
       [BASE + "/v1/models"]: { get: {
@@ -33,8 +34,8 @@ export function tokenHubOpenApi(baseUrl: string): Record<string, unknown> {
         } }), ...errors },
       } },
       [BASE + "/v1/chat/completions"]: { post: {
-        operationId: "tokenhubChat", summary: "TokenHub 文本对话", tags: ["TokenHub · 文本"],
-        description: `${auth} ${modelDescription} stream 必须为 false。OpenAI 兼容客户端的文本 base_url 为 ${baseUrl.replace(/\/+$/, "")}${BASE}/v1。超时后先核对上游调用记录；此接口没有视频任务的本地幂等回执保障。`,
+        parameters: idempotency, operationId: "tokenhubChat", summary: "TokenHub 文本对话", tags: ["TokenHub · 文本"],
+        description: `${auth} ${modelDescription} stream 必须为 false。OpenAI 兼容客户端的文本 base_url 为 ${baseUrl.replace(/\/+$/, "")}${BASE}/v1。超时后先核对上游调用记录；会员所有生成请求必须提供 Idempotency-Key，重试沿用同一编号。`,
         requestBody: body({ type: "object", required: ["model", "messages"], properties: {
           model: { type: "string", enum: models("chat"), description: modelDescription },
           messages: { type: "array", minItems: 1, maxItems: 200, items: { type: "object", required: ["role", "content"], properties: { role: { type: "string", enum: ["system", "user", "assistant"] }, content: { type: "string" } }, additionalProperties: true } },
@@ -43,7 +44,7 @@ export function tokenHubOpenApi(baseUrl: string): Record<string, unknown> {
         responses: { "200": jsonResponse("对话结果与 usage，包含模型返回的推理字段（如有）。"), ...errors },
       } },
       [BASE + "/v3/images/generations"]: { post: {
-        operationId: "tokenhubImage", summary: "TokenHub 图片生成", tags: ["TokenHub · 图片"],
+        parameters: idempotency, operationId: "tokenhubImage", summary: "TokenHub 图片生成", tags: ["TokenHub · 图片"],
         description: `${auth} ${modelDescription} 使用图片专属 v3 路径。以下为最小文字生成图片示例；未添加当前模型不支持的 sequential_image_generation 参数。图片和文本超时后均须先核对调用记录。`,
         requestBody: body({ type: "object", required: ["model", "prompt"], properties: {
           model: { type: "string", enum: models("image"), description: modelDescription }, prompt: { type: "string", minLength: 1 },
@@ -54,7 +55,7 @@ export function tokenHubOpenApi(baseUrl: string): Record<string, unknown> {
       } },
       [TASKS]: {
         get: { operationId: "tokenhubTaskList", summary: "列出当前账户的 TokenHub 视频任务", tags: ["TokenHub · 视频"],
-          description: `${auth} 返回当前 ECO-GEO 账户在本站创建的最近 50 个任务；这是本地任务记录，不会创建视频，也不接受查询参数。实时状态通过任务详情接口读取。`,
+          description: `${auth} 返回当前 tokvilo 账户在本站创建的最近 50 个任务；这是本地任务记录，不会创建视频，也不接受查询参数。实时状态通过任务详情接口读取。`,
           responses: { "200": jsonResponse("当前账户的本地任务列表。"), ...errors } },
         post: { operationId: "tokenhubVideo", summary: "创建 TokenHub 视频任务", tags: ["TokenHub · 视频"],
           description: `${auth} ${modelDescription} 创建后保存返回 id，通过同一账户查询。每次新任务使用新的 Idempotency-Key；同一次提交重试必须沿用同一编号和完全相同的请求体。结果未知时会返回 409，不能通过更换编号来重复生成。`,
@@ -70,7 +71,7 @@ export function tokenHubOpenApi(baseUrl: string): Record<string, unknown> {
       },
       [TASKS + "/{task_id}"]: {
         get: { operationId: "tokenhubTaskGet", summary: "查询 TokenHub 视频任务", tags: ["TokenHub · 视频"],
-          description: `${auth} 只允许查询当前 ECO-GEO 账户在本站创建的任务。返回 status；仅在生成成功后读取视频 URL。`,
+          description: `${auth} 只允许查询当前 tokvilo 账户在本站创建的任务。返回 status；仅在生成成功后读取视频 URL。`,
           parameters: [{ name: "task_id", in: "path", required: true, description: "创建任务接口返回的 id。", schema: { type: "string", pattern: "^[A-Za-z0-9_-]{1,160}$" }, example: "task_id_from_create_response" }],
           responses: { "200": jsonResponse("上游实时任务状态及媒体结果（如已完成）。"), "404": jsonResponse("当前账户没有该任务。"), ...errors } },
         delete: { operationId: "tokenhubTaskDelete", summary: "取消或删除 TokenHub 视频任务", tags: ["TokenHub · 视频"],

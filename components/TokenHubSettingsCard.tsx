@@ -77,7 +77,7 @@ export function TokenHubSettingsCard() {
         </form>
       </div>
       <div className="tokenhub-provider-detail">
-        <div className="provider-endpoint"><span>ECO-GEO 统一接口</span><code>/api/tokenhub/*</code><span>管理员工作台与管理员名下的 ECO-GEO API 密钥可调用。</span></div>
+        <div className="provider-endpoint"><span>tokvilo 统一接口</span><code>/api/tokenhub/*</code><span>管理员工作台与管理员名下的 tokvilo API 密钥可调用。</span></div>
         <div className="provider-actions"><button className="button button-ghost" disabled={!!pending || !status?.configured} onClick={() => load("test")} type="button">{pending === "test" ? "测试中…" : "测试已保存连接"}</button><button className="button button-ghost" disabled={!!pending || !status?.configured} onClick={() => load("models")} type="button">{pending === "models" ? "读取中…" : "读取全量目录"}</button><Link className="button button-primary" href="/tokenhub">打开工作台 <Icon name="arrow-up-right" size={13} /></Link></div>
         <p className="provider-field-help">{status?.verifiedAt ? `最近验证：${new Date(status.verifiedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })}（北京时间）。` : "保存密钥后可测试连接。"}实际调用按 TokenHub 账户余额与模型价格计费。</p>
       </div>

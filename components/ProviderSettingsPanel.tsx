@@ -200,7 +200,7 @@ export function ProviderSettingsPanel() {
             <strong>由部署环境管理</strong>
             <p>此处展示配置状态；现有接口与平台调用统计继续使用该服务。</p>
           </div>
-          <div className="provider-endpoint"><span>ECO-GEO 数据接口</span><code>/api/v1/*</code><span>调用凭证与接口文档可在左侧导航中管理。</span></div>
+          <div className="provider-endpoint"><span>tokvilo 数据接口</span><code>/api/v1/*</code><span>调用凭证与接口文档可在左侧导航中管理。</span></div>
         </article>
 
         <article className="provider-card provider-apimart">

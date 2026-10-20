@@ -8,9 +8,11 @@ import { Icon } from "./Icon";
 import { ThemeToggle } from "./ThemeToggle";
 import { LogoutButton } from "./LogoutButton";
 
-type ConsoleSection = "overview" | "keys" | "usage" | "docs" | "admin" | "models" | "playground" | "tokenhub" | "tokenhub-audit";
+type ConsoleSection = "overview" | "keys" | "usage" | "docs" | "admin" | "models" | "playground" | "tokenhub" | "tokenhub-audit" | "wallet" | "orders";
 const navigation: Array<{ key: ConsoleSection; href: string; icon: string; label: string }> = [
   { key: "overview", href: "/dashboard", icon: "grid", label: "控制台" },
+  { key: "wallet", href: "/dashboard/wallet", icon: "chart", label: "余额与充值" },
+  { key: "orders", href: "/dashboard/orders", icon: "store", label: "商品订单" },
   { key: "keys", href: "/dashboard/keys", icon: "key", label: "API 密钥" },
   { key: "usage", href: "/dashboard/usage", icon: "activity", label: "调用日志" },
   { key: "docs", href: "/dashboard/docs", icon: "book", label: "API 文档" },
@@ -26,7 +28,7 @@ export function DashboardShell({ user, active, children }: {
     <div className={`dashboard-shell${collapsed ? " console-collapsed" : ""}`}>
       <aside className="console-sidebar">
         <div className="console-brand-row">
-          <Link className="console-brand" href="/" aria-label="ECO-GEO 首页"><Brand /></Link>
+          <Link className="console-brand" href="/" aria-label="tokvilo 首页"><Brand /></Link>
           <button className="console-collapse" onClick={() => setCollapsed(!collapsed)} type="button" aria-label={collapsed ? "展开导航" : "收起导航"} aria-expanded={!collapsed}><Icon name="panel" size={16} /></button>
         </div>
         <div className="console-switcher" aria-label="工作区">
@@ -35,7 +37,7 @@ export function DashboardShell({ user, active, children }: {
         </div>
         <nav className="console-navigation" aria-label="控制台导航">
           {navigation.map((item) => <Link key={item.key} className={`console-nav-link${active === item.key ? " active" : ""}`} href={item.href} aria-current={active === item.key ? "page" : undefined} title={item.label}><Icon name={item.icon} size={17} /><span>{item.label}</span></Link>)}
-          {user.isAdmin ? <Link className={`console-nav-link${active === "tokenhub" ? " active" : ""}`} href="/tokenhub" aria-current={active === "tokenhub" ? "page" : undefined} title="TokenHub 工作台"><Icon name="video" size={17} /><span>TokenHub 工作台</span></Link> : null}
+          {<Link className={`console-nav-link${active === "tokenhub" ? " active" : ""}`} href="/tokenhub" aria-current={active === "tokenhub" ? "page" : undefined} title="TokenHub 工作台"><Icon name="video" size={17} /><span>TokenHub 工作台</span></Link>}
           {user.isAdmin ? <Link className={`console-nav-link${active === "tokenhub-audit" ? " active" : ""}`} href="/tokenhub/audit" aria-current={active === "tokenhub-audit" ? "page" : undefined} title="每日模型核验"><Icon name="chart" size={17} /><span>每日模型核验</span></Link> : null}
           {user.isAdmin ? <Link className={`console-nav-link${active === "admin" ? " active" : ""}`} href="/admin" aria-current={active === "admin" ? "page" : undefined} title="上游管理"><Icon name="settings" size={17} /><span>上游管理</span></Link> : null}
         </nav>
@@ -46,7 +48,7 @@ export function DashboardShell({ user, active, children }: {
             <div className="console-account-info"><strong>{user.displayName}</strong><small>{user.isAdmin ? "管理员" : "个人账户"}</small></div>
             <LogoutButton />
           </div>
-          <div className="console-sidebar-footer"><span>ECO-GEO API</span><ThemeToggle /></div>
+          <div className="console-sidebar-footer"><span>tokvilo API</span><ThemeToggle /></div>
         </div>
       </aside>
       <main className="dashboard-main"><div className="console-page">{children}</div></main>

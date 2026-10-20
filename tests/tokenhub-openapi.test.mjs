@@ -16,6 +16,7 @@ async function load(path, mocks = {}) {
 const reference = await load("../lib/tokenhub-model-reference.ts");
 const docs = await load("../lib/tokenhub-openapi.ts", { "./tokenhub-model-reference": reference });
 const viewer = await load("../lib/api-documentation.ts");
+const apimart = (await load("../lib/apimart-openapi.ts")).apimartOpenApi("https://tokvilo.com");
 const BASE = "https://api.eco-geo.org";
 const spec = docs.tokenHubOpenApi(BASE);
 const plain = value => JSON.parse(JSON.stringify(value));
@@ -34,7 +35,7 @@ test("TokenHub OpenAPI covers all relay operations and exact nine model referenc
   for (const operation of operations.filter(operation => operation.method === "POST")) {
     const example = viewer.requestBodyExample(operation), schema = viewer.requestBodySchema(operation);
     assert.ok(schema.properties.model.enum.includes(example.model));
-    assert.ok(operation.description.includes("管理员"));
+    assert.ok(operation.description.includes("会员"));
     assert.ok(operation.description.includes("/api/tokenhub/v1/models"));
   }
   const serialized = JSON.stringify(spec);
@@ -44,9 +45,9 @@ test("TokenHub OpenAPI covers all relay operations and exact nine model referenc
   assert.match(serialized, /catalog\.complete/);
 });
 
-test("local TokenHub OpenAPI requires an administrator and never depends on provider access", async () => {
+test("local TokenHub OpenAPI requires a signed-in user and never depends on provider access", async () => {
   let configurationReads = 0;
-  for (const [user, expected] of [[null, 401], [{ id: "member", isAdmin: false }, 403], [{ id: "admin", isAdmin: true }, 200]]) {
+  for (const [user, expected] of [[null, 401], [{ id: "member", isAdmin: false }, 200], [{ id: "admin", isAdmin: true }, 200]]) {
     const route = await load("../app/api/private/tokenhub-openapi/route.ts", {
       "@/lib/auth": { getPortalUser: async () => user },
       "@/lib/config": { publicBaseUrl: () => { configurationReads++; return BASE; } },
@@ -55,35 +56,35 @@ test("local TokenHub OpenAPI requires an administrator and never depends on prov
     const response = await route.GET();
     assert.equal(response.status, expected);
     assert.equal(response.headers.get("cache-control"), "private, no-store, max-age=0");
-    if (expected === 200) assert.equal((await response.json()).info.title, "ECO-GEO TokenHub API");
+    if (expected === 200) assert.equal((await response.json()).info.title, "tokvilo TokenHub API");
     else assert.equal(configurationReads, 0);
   }
-  assert.equal(configurationReads, 1);
+  assert.equal(configurationReads, 2);
 });
 
 test("a failed data specification does not hide TokenHub docs, and the reverse remains usable", async () => {
-  for (const unavailable of ["tikhub", "tokenhub"]) {
+  for (const unavailable of ["tikhub", "tokenhub", "apimart"]) {
     const calls = [];
     const result = await viewer.loadApiDocumentation(async (url, init) => {
       calls.push(url); assert.equal(init.cache, "no-store"); assert.ok(init.signal);
-      const isTokenHub = url.includes("tokenhub-openapi");
-      return (isTokenHub ? "tokenhub" : "tikhub") === unavailable ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json(isTokenHub ? spec : dataSpec());
+      const source = url.includes("tokenhub-openapi") ? "tokenhub" : url.includes("apimart-openapi") ? "apimart" : "tikhub";
+      return source === unavailable ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json(source === "tokenhub" ? spec : source === "apimart" ? apimart : dataSpec());
     });
-    assert.equal(calls.length, 2);
+    assert.equal(calls.length, 3);
     assert.equal(result.warnings.length, 1);
-    assert.equal(result.sources.filter(source => source.loaded).length, 1);
-    assert.equal(result.operations.length, unavailable === "tikhub" ? 7 : 1);
+    assert.equal(result.sources.filter(source => source.loaded).length, 2);
+    assert.equal(result.operations.length, unavailable === "tikhub" ? 12 : unavailable === "tokenhub" ? 6 : 8);
     assert.ok(result.operations.every(operation => operation.source !== unavailable));
   }
 });
 
-test("nonadministrator sees data docs with an explicit TokenHub access note; malformed or failed sources never look loaded", async () => {
+test("a source access denial does not hide other docs; malformed or failed sources never look loaded", async () => {
   const member = await viewer.loadApiDocumentation(async url => url.includes("tokenhub-openapi") ? Response.json({}, { status: 403 }) : Response.json(dataSpec()));
-  assert.equal(member.operations.length, 1);
-  assert.match(member.warnings[0], /管理员权限/);
+  assert.equal(member.operations.length, 2);
+  assert.match(member.warnings[0], /当前账户无法访问/);
   const broken = await viewer.loadApiDocumentation(async url => { if (url.includes("tokenhub")) throw Error("transport details must not be displayed"); return Response.json({ notAnApi: true }); });
   assert.equal(broken.operations.length, 0);
-  assert.equal(broken.warnings.length, 2);
+  assert.equal(broken.warnings.length, 3);
   assert.ok(broken.sources.every(source => !source.loaded));
   assert.doesNotMatch(broken.warnings.join(" "), /transport details/);
 });
@@ -98,7 +99,7 @@ test("curl examples contain usable JSON bodies, content type, unique-video place
   assert.match(command, /dreamina-seedance-2-0-fast-260128/);
   const chat = operations.find(operation => operation.summary === "TokenHub 文本对话");
   assert.equal(viewer.requestBodyExample(chat).stream, false);
-  assert.doesNotMatch(viewer.apiCurlExample(BASE, chat), /Idempotency-Key/);
+  assert.match(viewer.apiCurlExample(BASE, chat), /Idempotency-Key/);
   const query = operations.find(operation => operation.summary === "查询 TokenHub 视频任务");
   assert.match(viewer.apiCurlExample(BASE, query), /\/tasks\/task_id_from_create_response/);
   assert.doesNotMatch(viewer.apiCurlExample(BASE, query), /\{task_id\}|--data-raw/);
@@ -115,6 +116,6 @@ test("upstream examples remain quoted display data, preserve inherited parameter
   const command = viewer.apiCurlExample(BASE, operations[0]);
   assert.match(command, /\/items\/example-id/);
   assert.match(command, /'"'"'/);
-  assert.match(command, /eco_live_your_api_key/);
+  assert.match(command, /tk_live_your_api_key/);
   assert.doesNotMatch(command, /untrusted-secret/);
 });

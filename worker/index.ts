@@ -3,6 +3,8 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 import type { RuntimeEnv } from "../lib/config";
 import { runAuditTick } from "../lib/tokenhub-audit";
+import { reconcileApimartTasks } from "../lib/apimart-relay";
+import { reconcileTokenHubTasks } from "../lib/tokenhub-relay";
 
 interface Env extends RuntimeEnv {
   ASSETS: Fetcher;
@@ -35,6 +37,14 @@ const worker = {
       // Do not expose provider responses or credentials in infrastructure logs.
       console.error("TokenHub audit tick failed; inspect the audit ledger.");
     }));
+    // Reconciliation only reads previously created, owner-bound tasks. It never
+    // submits a new generation request, and wallet settlement is idempotent.
+    ctx.waitUntil(Promise.allSettled([
+      reconcileApimartTasks(env, { maxTasks: 10 }),
+      reconcileTokenHubTasks(env, { maxTasks: 10 }),
+    ]).then(results => {
+      if (results.some(result => result.status === "rejected")) console.error("Wallet task reconciliation incomplete; inspect pending reservations.");
+    }));
   },
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -59,7 +69,7 @@ const worker = {
     if ((headers.get("content-type") || "").includes("text/html")) {
       headers.set(
         "content-security-policy",
-        "default-src 'self'; img-src 'self' data: https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com; media-src 'self' https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        "default-src 'self'; img-src 'self' data: https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai; media-src 'self' https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
       );
       headers.set("cache-control", "private, no-store");
     }

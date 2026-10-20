@@ -7,10 +7,13 @@ import {
   runtimeEnv,
 } from "./config";
 import { randomId, sha256Hex } from "./crypto";
+import { markupMicrousd } from "./pricing";
+import { getWallet, reserveWallet, settleWallet, refundWallet, WalletError } from "./wallet";
 import {
   buildReplacements,
   isTextualContentType,
   sanitizeLocation,
+  sanitizeText,
   sanitizeTextStream,
 } from "./sanitize";
 
@@ -73,6 +76,21 @@ const MAX_REQUEST_COST_MULTIPLIERS = new Map([
   ["/api/v1/linkedin/web/get_job_detail", 2],
 ]);
 
+// The provider explicitly documents these read-only operations as per-request:
+// https://tikhub.io/twitter-api . Expand only after checking the billing unit.
+const FIXED_PRICE_MEMBER_ENDPOINTS = new Set([
+  "/api/v1/twitter/web/fetch_tweet_detail",
+  "/api/v1/twitter/web/fetch_user_profile",
+  "/api/v1/twitter/web/fetch_user_post_tweet",
+  "/api/v1/twitter/web/fetch_user_tweet_replies",
+  "/api/v1/twitter/web/fetch_search_timeline",
+  "/api/v1/twitter/web/fetch_post_comments",
+  "/api/v1/twitter/web/fetch_retweet_user_list",
+  "/api/v1/twitter/web/fetch_user_followers",
+  "/api/v1/twitter/web/fetch_user_followings",
+  "/api/v1/twitter/web/fetch_trending",
+]);
+
 function jsonError(
   status: number,
   code: string,
@@ -99,7 +117,7 @@ function extractClientKey(request: Request): string {
 
 async function authorizeKey(request: Request): Promise<AuthorizedKey | null> {
   const rawKey = extractClientKey(request);
-  if (!rawKey.startsWith("eco_live_") || rawKey.length < 32) return null;
+  if (!/^(?:eco|tk)_live_/.test(rawKey) || rawKey.length < 32) return null;
   const keyHash = await sha256Hex(rawKey);
   const row = await getD1()
     .prepare(
@@ -178,12 +196,13 @@ async function handleLocalGatewayEndpoint(
       .first<{ calls: number; successes: number; errors: number }>();
     return localEnvelope(requestId, path, {
       email: key.email,
-      plan: "free",
+      plan: "prepaid",
       status: "active",
       daily_limit: key.dailyLimit,
       calls_today: Number(usage?.calls || 0),
       successes_today: Number(usage?.successes || 0),
       errors_today: Number(usage?.errors || 0),
+      wallet: await getWallet(key.userId),
     });
   }
 
@@ -208,11 +227,11 @@ async function handleLocalGatewayEndpoint(
     path === `${base}/user/get_all_endpoints_info`
   ) {
     return localEnvelope(requestId, path, {
-      plan: "free",
-      unit_price: 0,
+      plan: "prepaid",
+      markup_percent: 20,
       currency: "USD",
       daily_limit: key.dailyLimit,
-      note: "Usage is included while the account remains within its quota.",
+      note: "Supported requests use the current upstream per-request price plus 20%. Available wallet balance is required; daily request limits are separate.",
     });
   }
 
@@ -220,7 +239,7 @@ async function handleLocalGatewayEndpoint(
     return localEnvelope(requestId, path, {
       version: "1.0.0",
       download_url: null,
-      homepage: runtimeEnv().PUBLIC_BASE_URL || "https://api.eco-geo.org",
+      homepage: runtimeEnv().PUBLIC_BASE_URL || "https://tokvilo.com",
     });
   }
 
@@ -314,10 +333,11 @@ async function endpointCostMicrousd(endpoint: string): Promise<number | null> {
     const payload = (await response.json()) as {
       data?: { endpoint_cost?: number };
     };
-    const cost = Number(payload.data?.endpoint_cost);
+    const cost = payload.data?.endpoint_cost;
     if (
+      typeof cost !== "number" ||
       !Number.isFinite(cost) ||
-      cost < 0 ||
+      cost <= 0 ||
       cost > Number.MAX_SAFE_INTEGER / 1_000_000
     ) {
       return null;
@@ -518,6 +538,26 @@ export async function handleApiProxy(request: Request): Promise<Response> {
   if (!upstreamPath || BLOCKED_UNBOUNDED_ENDPOINTS.has(upstreamPath)) {
     return jsonError(404, "not_found", "Endpoint not found.", requestId);
   }
+  if (!KNOWN_ZERO_COST_ENDPOINTS.has(upstreamPath) &&
+      (request.method !== "GET" || !FIXED_PRICE_MEMBER_ENDPOINTS.has(upstreamPath))) {
+    return jsonError(503, "pricing_unavailable", "This endpoint does not yet have verified member billing. Choose an endpoint with published pricing.", requestId);
+  }
+  const idempotencyKey = request.headers.get("Idempotency-Key") || "";
+  const requestHash = await sha256Hex(request.method + "\n" + request.url);
+  if (idempotencyKey) {
+    const receipt = await getD1().prepare("SELECT request_hash,status_code,response_json FROM data_relay_receipts WHERE user_id=? AND idempotency_key=?")
+      .bind(key.userId, idempotencyKey).first<{ request_hash: string; status_code: number; response_json: string }>();
+    if (receipt) {
+      if (receipt.request_hash !== requestHash) return jsonError(409, "idempotency_conflict", "This Idempotency-Key belongs to a different request.", requestId);
+      const wallet = await getD1().prepare("SELECT status,charged_microusd FROM wallet_reservations WHERE user_id=? AND request_id=?")
+        .bind(key.userId, `data:${idempotencyKey}`).first<{ status: string; charged_microusd: number | null }>();
+      return new Response(receipt.response_json, { status: receipt.status_code, headers: {
+        "content-type": "application/json", "cache-control": "private, no-store", "x-request-id": requestId, "x-tokvilo-replayed": "true",
+        "x-tokvilo-wallet-request-id": `data:${idempotencyKey}`, "x-tokvilo-billing-status": wallet?.status || "pending_confirmation",
+        ...(wallet?.status === "settled" ? { "x-tokvilo-charge-microusd": String(wallet.charged_microusd) } : {}),
+      } });
+    }
+  }
 
   const unitCostMicrousd = await endpointCostMicrousd(upstreamPath).catch(() => null);
   if (unitCostMicrousd === null) {
@@ -533,7 +573,36 @@ export async function handleApiProxy(request: Request): Promise<Response> {
     upstreamPath,
     unitCostMicrousd,
   );
-  if (!(await reserveSpend(estimatedCostMicrousd))) {
+  let upstreamTarget: string, upstreamHeaders: Headers;
+  try {
+    upstreamTarget = upstreamUrlFor(request, upstreamPath);
+    upstreamHeaders = buildUpstreamHeaders(request);
+  } catch {
+    return jsonError(503, "service_configuration_unavailable", "Service configuration is unavailable.", requestId);
+  }
+  let walletRequestId: string | null = null;
+  let retailCostMicrousd = 0;
+  if (estimatedCostMicrousd > 0) {
+    const id = idempotencyKey;
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(id)) return jsonError(400, "idempotency_key_required", "Paid requests require an 8–128 character Idempotency-Key.", requestId);
+    walletRequestId = `data:${id}`;
+    retailCostMicrousd = markupMicrousd(unitCostMicrousd);
+    try {
+      const held = await reserveWallet({ userId: key.userId, requestId: walletRequestId, amountMicrousd: retailCostMicrousd,
+        description: `Data API ${upstreamPath}`, metadata: { requestHash, upstreamPath, unitCostMicrousd } });
+      if (held.reused || held.status !== "reserved") return jsonError(409, "request_already_submitted", "This request was already submitted. Check its wallet record; use a new Idempotency-Key only for a new request.", requestId);
+    } catch (cause) {
+      return jsonError(cause instanceof WalletError ? cause.status : 503, cause instanceof WalletError ? cause.code : "wallet_unavailable", cause instanceof WalletError ? cause.message : "Wallet is temporarily unavailable.", requestId);
+    }
+  }
+  let spendingAllowed = false;
+  try { spendingAllowed = await reserveSpend(estimatedCostMicrousd); }
+  catch {
+    if (walletRequestId) await refundWallet({ userId: key.userId, requestId: walletRequestId, description: "Request was not forwarded." }).catch(() => undefined);
+    return jsonError(503, "spend_guard_unavailable", "Service spending check is unavailable.", requestId);
+  }
+  if (!spendingAllowed) {
+    if (walletRequestId) await refundWallet({ userId: key.userId, requestId: walletRequestId, description: "Service limit reached before forwarding." }).catch(() => undefined);
     return jsonError(
       429,
       "spend_limit",
@@ -546,9 +615,9 @@ export async function handleApiProxy(request: Request): Promise<Response> {
   let upstream: Response;
   try {
     const timeoutMs = numericEnv("UPSTREAM_TIMEOUT_MS", 90_000, 1_000);
-    upstream = await fetch(upstreamUrlFor(request, upstreamPath), {
+    upstream = await fetch(upstreamTarget, {
       method: request.method,
-      headers: buildUpstreamHeaders(request),
+      headers: upstreamHeaders,
       body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
       redirect: "manual",
       signal: AbortSignal.timeout(timeoutMs),
@@ -568,6 +637,50 @@ export async function handleApiProxy(request: Request): Promise<Response> {
   }
 
   const headers = buildClientHeaders(upstream, requestId);
+  if (walletRequestId) {
+    let billingStatus = "pending_confirmation";
+    let receiptJson: string | null = null;
+    try {
+      let code: number | null = null;
+      if (upstream.status === 200 && upstream.headers.get("content-type")?.includes("json")) {
+        // Inspect a bounded clone, preserving the original response for the client.
+        const reader = upstream.clone().body?.getReader();
+        if (reader) {
+          const chunks: Uint8Array[] = []; let length = 0;
+          try {
+            for (;;) {
+              const { value, done } = await reader.read(); if (done) break;
+              length += value.byteLength; if (length > 8_000_000) { void reader.cancel(); throw new Error("Response exceeds settlement inspection limit"); }
+              chunks.push(value);
+            }
+            const bytes = new Uint8Array(length); let offset = 0;
+            for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+            const raw = new TextDecoder().decode(bytes), data = JSON.parse(raw);
+            if (data && typeof data === "object" && Number.isInteger(data.code)) code = data.code;
+            if (length <= 256_000) {
+              const secret = requiredEnv("UPSTREAM_API_TOKEN");
+              const sanitized = sanitizeText(raw, buildReplacements(runtimeEnv()))
+                .replaceAll(JSON.stringify(secret).slice(1, -1), "[redacted]").replaceAll(secret, "[redacted]").replaceAll(encodeURIComponent(secret), "[redacted]");
+              JSON.parse(sanitized);
+              receiptJson = sanitized;
+            }
+          } finally { reader.releaseLock(); }
+        }
+      }
+      if (upstream.status === 200 && code === 200) {
+        await settleWallet({ userId: key.userId, requestId: walletRequestId, amountMicrousd: retailCostMicrousd, description: `Data API ${upstreamPath}` });
+        billingStatus = "settled";
+      } else if ([400, 401, 402, 403, 404, 405, 413, 415, 422, 429].includes(upstream.status) || code !== null && code >= 400 && code < 500) {
+        await refundWallet({ userId: key.userId, requestId: walletRequestId, description: "Upstream rejected the request." });
+        billingStatus = "refunded";
+      }
+    } catch { /* An incomplete response retains its hold for reconciliation. */ }
+    headers.set("x-tokvilo-billing-status", billingStatus);
+    headers.set("x-tokvilo-wallet-request-id", walletRequestId);
+    if (billingStatus === "settled") headers.set("x-tokvilo-charge-microusd", String(retailCostMicrousd));
+    if (receiptJson) await getD1().prepare("INSERT INTO data_relay_receipts(user_id,idempotency_key,request_hash,status_code,response_json) VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING")
+      .bind(key.userId, idempotencyKey, requestHash, upstream.status, receiptJson).run().catch(() => undefined);
+  }
   const contentType = upstream.headers.get("content-type") || "application/octet-stream";
   const outputBytes = Number(upstream.headers.get("content-length") || 0);
   const body =
