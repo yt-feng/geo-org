@@ -1,5 +1,134 @@
 [
   {
+    "order": "727",
+    "row": "721",
+    "slug": "00721-geo-ai-ai-60d94ec1",
+    "title": "Eco-GEO：品牌化GEO为什么重要：存量增长期AI工具的AI可见性路线图",
+    "excerpt": "AI搜索先检索、再筛选、后生成，品牌若没有统一、可核验的事实与证据，很容易在答案里被漏掉或概括错。本文面向存量增长期的AI工具增长负责人，说明白帽GEO的边界，以及如何把客户案例转化为可引用的品牌证据链。",
+    "category": "GEO للعلامات التجارية",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, AI工具, 第三方背书, 客户案例, 存量增长, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-20",
+    "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/ar/blog/articles/00721-geo-ai-ai-60d94ec1/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-20T15:04:37+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Artificial Intelligence Measurement and Evaluation at the ... - NIST",
+        "url": "https://www.nist.gov/system/files/documents/2021/06/16/AIME_at_NIST-DRAFT-20210614.pdf",
+        "publisher": "National Institute of Standards and Technology",
+        "published": "",
+        "retrieved_at": "2026-10-20T15:04:38+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 53622,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "nist.gov",
+        "evidence_role": "industry_context",
+        "industries": [
+          "ai_tools"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "3b6ac40bebc0bcc39bd0bc9c55a164a16d15fac29841dbc05ba31948e1144701"
+      },
+      {
+        "id": "S3",
+        "title": "From Public Posts to AI-Search Citations: Measuring the Fragility of AI Search",
+        "url": "https://arxiv.org/html/2610.11932v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-20T15:04:38+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 106460,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "ce45b95ec44070764e5d1fbb4c8055ee56a81c13d766a31e9092edf7fa3d8ee0"
+      },
+      {
+        "id": "S4",
+        "title": "Generative AI experimentation in government (EN)",
+        "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2026/07/generative-ai-experimentation-in-government_706b6f2b/42815683-en.pdf",
+        "publisher": "OECD",
+        "published": "",
+        "retrieved_at": "2026-10-20T15:04:41+00:00",
+        "evidence_kind": "institutional_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 207325,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "oecd.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "ai_tools"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "41e571723334c9b355cbae0a8c3e20a501b4204b491d464cd4d9a06ae76535a9"
+      },
+      {
+        "id": "S5",
+        "title": "AI Adoption in 2024: 74% of Companies Struggle to Achieve and Scale Value",
+        "url": "https://www.bcg.com/press/24october2024-ai-adoption-in-2024-74-of-companies-struggle-to-achieve-and-scale-value",
+        "publisher": "BCG",
+        "published": "",
+        "retrieved_at": "2026-10-20T15:04:42+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 7158,
+        "body_chars": 7158,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "ai_tools"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "f087ef92099c912210f8dfc19ddafad5c6e624869e43b6de5d02e1747e7e74ae"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "review_type": "reviewed Chinese original",
+      "translation_status": "source_original",
+      "source_language": "zh-CN",
+      "requested_language": "ar",
+      "source_article_sha256": "f5d958affc7555f4092d7fc717f6acd0d8a19d1b1b70f468ca9e3cdf93ac9ad6",
+      "paid_translation_calls": 0,
+      "warnings": [
+        "Translation unavailable; the complete reviewed Chinese original is displayed."
+      ]
+    }
+  },
+  {
     "order": "726",
     "row": "720",
     "slug": "00720-ai-geo-7d99c030",
