@@ -8,7 +8,7 @@ import { Icon } from "./Icon";
 import { ThemeToggle } from "./ThemeToggle";
 import { LogoutButton } from "./LogoutButton";
 
-type ConsoleSection = "overview" | "keys" | "usage" | "docs" | "admin" | "models" | "playground" | "tokenhub" | "tokenhub-audit" | "wallet" | "orders";
+type ConsoleSection = "overview" | "keys" | "usage" | "docs" | "admin" | "models" | "playground" | "tokenhub" | "selected" | "tokenhub-audit" | "wallet" | "orders";
 const navigation: Array<{ key: ConsoleSection; href: string; icon: string; label: string }> = [
   { key: "overview", href: "/dashboard", icon: "grid", label: "控制台" },
   { key: "wallet", href: "/dashboard/wallet", icon: "chart", label: "余额与充值" },
@@ -38,6 +38,7 @@ export function DashboardShell({ user, active, children }: {
         <nav className="console-navigation" aria-label="控制台导航">
           {navigation.map((item) => <Link key={item.key} className={`console-nav-link${active === item.key ? " active" : ""}`} href={item.href} aria-current={active === item.key ? "page" : undefined} title={item.label}><Icon name={item.icon} size={17} /><span>{item.label}</span></Link>)}
           {<Link className={`console-nav-link${active === "tokenhub" ? " active" : ""}`} href="/studio" aria-current={active === "tokenhub" ? "page" : undefined} title="tokvilo 多模态 工作台"><Icon name="video" size={17} /><span>tokvilo 多模态 工作台</span></Link>}
+          <Link className={`console-nav-link${active === "selected" ? " active" : ""}`} href="/selected" aria-current={active === "selected" ? "page" : undefined} title="tokvilo 精选工作台"><Icon name="sparkles" size={17} /><span>tokvilo 精选工作台</span></Link>
           {user.isAdmin ? <Link className={`console-nav-link${active === "tokenhub-audit" ? " active" : ""}`} href="/admin/audit" aria-current={active === "tokenhub-audit" ? "page" : undefined} title="每日模型核验"><Icon name="chart" size={17} /><span>每日模型核验</span></Link> : null}
           {user.isAdmin ? <Link className={`console-nav-link${active === "admin" ? " active" : ""}`} href="/admin" aria-current={active === "admin" ? "page" : undefined} title="上游管理"><Icon name="settings" size={17} /><span>上游管理</span></Link> : null}
         </nav>

@@ -322,6 +322,62 @@ const REAL_SOURCE = JSON.parse(await readFile(new URL("./fixtures/apimart-pricin
 const REAL_CATALOG = apimart.parseApimartPricing(REAL_SOURCE);
 const VIDEO_PATH = "/v1/videos/generations", MUSIC_PATH = "/v1/music/generations";
 
+test("Wan 2.7 reference-image quotes use the selected resolution, exact seconds and current material rates", () => {
+  const base = { model: "wan2.7-r2v", prompt: "The character in image 1 walks through the garden", image_urls: ["https://example.com/character.png"] };
+  const quote = body => apimart.quoteApimartRequest({ ...base, ...body }, VIDEO_PATH, REAL_CATALOG).amountMicrousd;
+  assert.equal(quote({ duration: 2, resolution: "720p" }), 159360);
+  assert.equal(quote({ duration: 15, resolution: "1080p" }), 1972800);
+  assert.equal(quote({}), 657600, "default 5 seconds at 1080P");
+  assert.equal(apimart.quoteApimartRequest({ model: base.model, prompt: base.prompt, duration: 5, resolution: "720P", image_with_roles: [{ url: base.image_urls[0], role: "first_frame" }] }, VIDEO_PATH, REAL_CATALOG).amountMicrousd, 398400);
+  const changed = structuredClone(REAL_SOURCE);
+  changed.data.models.video.find(model => model.id === base.model).input_material_prices = { image: { unit: "usd_per_image", after_discount: 0.01, free_count: 1 } };
+  const updated = apimart.parseApimartPricing(changed);
+  assert.equal(apimart.quoteApimartRequest({ ...base, duration: 5, resolution: "720P", image_urls: Array(5).fill(base.image_urls[0]) }, VIDEO_PATH, updated).amountMicrousd, 446400, "all normalized reference roles are counted if the provider adds material fees");
+});
+
+test("Wan 2.7 reference-image submissions normalize before hashing, replay once and settle from the owned task", async t => {
+  const f = await fixture(t, { pricingCatalog: REAL_CATALOG, fetcher: async (_url, init) => init.method === "POST"
+    ? Response.json({ data: [{ task_id: "wan_reference", status: "submitted" }] })
+    : Response.json({ data: { id: "wan_reference", model: "wan2.7-r2v", status: "completed", cost: 0.3, result: { videos: [{ url: ["https://cdn.apimart.ai/reference.mp4"] }] } } }) });
+  const original = { model: "wan2.7-r2v", prompt: "Use image 1 as the character", image_urls: ["https://example.com/character.png"], duration: 5, resolution: "720p" };
+  const first = await expect(f, request(VIDEO_PATH, { body: JSON.stringify(original), headers: { "X-Tokvilo-Max-Reserve-Microusd": "398400" } }), 200);
+  assert.equal(first.tokvilo_billing.reservedMicrousd, 398400);
+  assert.equal(f.calls[0].url, "https://api.apimart.ai/v1/videos/generations");
+  const sent = JSON.parse(f.calls[0].init.body);
+  assert.equal(sent.image_urls, undefined);
+  assert.deepEqual(sent.image_with_roles, [{ url: original.image_urls[0], role: "reference_image" }]);
+  assert.equal(sent.resolution, "720P");
+  await expect(f, request(VIDEO_PATH, { body: JSON.stringify(sent) }), 200);
+  assert.equal(f.calls.length, 1, "alias and explicit role form share one paid submission");
+  f.setUser({ id: "other-user", email: "other@example.com", displayName: "Other" });
+  await expect(f, request("/v1/tasks/wan_reference", { method: "GET" }), 404);
+  f.setUser(MEMBER);
+  const done = await expect(f, request("/v1/tasks/wan_reference", { method: "GET" }), 200);
+  assert.equal(done.tokvilo_billing.chargedMicrousd, 360000);
+  assert.equal(done.data.cost, undefined);
+  await expect(f, request(VIDEO_PATH, { body: JSON.stringify(original) }), 200);
+  assert.equal(f.calls.filter(call => call.init.method === "POST").length, 1);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 640000);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).reservedMicrousd, 0);
+});
+
+test("unsupported Wan reference media and durations never reserve funds or reach the provider", async t => {
+  for (const extras of [
+    {}, { image_urls: Array(6).fill("https://example.com/image.png") },
+    { image_with_roles: [{ url: "https://example.com/image.png", reference_voice: "https://example.com/audio.mp3" }] },
+    { image_with_roles: [{ url: "https://example.com/image.png", role: "last_frame" }] },
+    { image_urls: ["https://example.com/image.png"], video_urls: ["https://example.com/video.mp4"] },
+    { image_urls: ["https://example.com/image.png"], duration: 0 },
+    { image_urls: ["https://example.com/image.png"], duration: 16 },
+  ]) {
+    const f = await fixture(t, { pricingCatalog: REAL_CATALOG });
+    await expect(f, request(VIDEO_PATH, { body: JSON.stringify({ model: "wan2.7-r2v", prompt: "Garden", ...extras }) }), 400);
+    assert.equal(f.calls.length, 0);
+    assert.equal(f.sqlite.prepare("SELECT COUNT(*) AS n FROM wallet_reservations").get().n, 0);
+    assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1000000);
+  }
+});
+
 test("documented image variants, input material fees, video units and music versions quote from their exact dimensions", () => {
   const quote = (path, body) => apimart.quoteApimartRequest(body, path, REAL_CATALOG).amountMicrousd;
   assert.equal(quote(IMAGE_PATH, { model: "qwen-image-3.0", prompt: "Tree", resolution: "2k" }), 24686);
@@ -433,10 +489,10 @@ test("all documented video defaults are executable quotes and absent adapter con
       ...(defaults.referenceRequired ? { image_urls: ["https://example.com/first.png"] } : {}) };
     assert.ok(apimart.quoteApimartRequest(body, VIDEO_PATH, REAL_CATALOG).amountMicrousd > 0, model);
   }
-  assert.equal(Object.keys(videoOptions.VIDEO_DEFAULTS).length, 40);
+  assert.equal(Object.keys(videoOptions.VIDEO_DEFAULTS).length, 41);
   const counts = Object.fromEntries(["chat", "image", "video", "audio"].map(kind => [kind, REAL_CATALOG.models.filter(model => model.kind === kind).length]));
   t.diagnostic(JSON.stringify({ counts, unavailable: REAL_CATALOG.unavailable.map(model => model.model) }));
-  assert.deepEqual(counts, { chat: 174, image: 32, video: 40, audio: 2 });
+  assert.deepEqual(counts, { chat: 174, image: 32, video: 41, audio: 2 });
   for (const model of ["dall-e-3", "grok-imagine-1.5-edit-apimart", "gpt-image-1"]) {
     assert.equal(REAL_CATALOG.models.some(item => item.model === model), false, model);
     assert.throws(() => apimart.quoteApimartRequest({ model, prompt: "Tree" }, IMAGE_PATH, REAL_CATALOG));
@@ -472,7 +528,7 @@ test("new fixed image models add exactly two adapters without altering the dated
   const parsed = apimart.parseApimartPricing(combined);
   assert.equal(Object.values(REAL_SOURCE.data.models).flat().length, 293);
   assert.equal(Object.values(combined.data.models).flat().length, 295);
-  assert.equal(parsed.models.length, 250); assert.equal(parsed.unavailable.length, 45);
+  assert.equal(parsed.models.length, 251); assert.equal(parsed.unavailable.length, 44);
   assert.equal(parsed.models.filter(model => model.kind === "image").length, 34);
   for (const [model, tiers, defaultPrice, referenceCount] of [
     ["flux-3-image-klein", { "768sq": 7680, "1k": 8640, "1.5k": 10560, "2k": 13440, "4k": 34560 }, 8640, 10],

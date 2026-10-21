@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 async function load(file, mocks = {}) {
+  mocks = { "@/lib/rkapi-pricing": { getRkapiDisplayPricing: async () => { throw Error("Unavailable"); }, quoteRkapiRequest: async () => { throw Error("Unexpected quote"); } }, ...mocks };
   const source = await readFile(new URL(file, import.meta.url), "utf8");
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
   const m = { exports: {} };
@@ -67,7 +68,7 @@ test("public catalog keeps an available source and reports the other source fail
   });
   const response = await route.GET(), payload = await response.json();
   assert.equal(response.status, 200); assert.equal(payload.models.length, 1);
-  assert.deepEqual(payload.sources.map(source => source.status), ["available", "unavailable"]);
+  assert.deepEqual(payload.sources.map(source => source.status), ["available", "unavailable", "unavailable"]);
   assert.doesNotMatch(JSON.stringify(payload), /upstreamMicrousd|markupPercent|sourceUrl|upstreamRates/);
 });
 
@@ -129,4 +130,41 @@ test("gateway quote accepts video and music contracts and returns public model a
   assert.equal(reads, 3);
   const malformed = await route.POST(request({ provider: "apimart", mode: "video", body: { model: "veo3.1-fast", prompt: "Ocean", duration: 10, resolution: "720p" } }));
   assert.equal(malformed.status, 400, "quote uses the same parameter constraints as paid generation");
+});
+
+test("selected public prices allowlist retail fields and keep unavailable calls distinct from unavailable prices", async () => {
+  const selected = { observedAt: "2026-10-21", models: [{ provider: "selected", model: "gpt-image-2", name: "GPT Image 2", kind: "image", available: false, billingReady: false,
+    group: "private", purchasePrice: 100, ratesCnyPerMillion: { request: 100 }, sourceUrl: "https://private.example", notes: ["价格已列示，服务待开通。"],
+    rates: [{ dimension: "request", label: "每次请求", condition: "每次 1 张", unit: "call", retailMicrousd: 6000, rateCny: 100, upstreamMicrousd: 5000 }] }], unavailable: [{ model: "gpt-image-2", reason: "private detail" }] };
+  const route = await load("../app/api/pricing/route.ts", {
+    "@/lib/pricing": { ...pricing, getTokenHubPricing: async () => catalog },
+    "@/lib/apimart-display-pricing": { getApimartDisplayPricing: async () => ({ observedAt: "2026-10-21", models: [{ provider: "apimart", model: "gpt-image-2", name: "Image", kind: "image", billingReady: true, rates: [] }], unavailable: [] }) },
+    "@/lib/rkapi-pricing": { getRkapiDisplayPricing: async () => selected },
+  });
+  const res = await route.GET(), body = await res.json();
+  assert.equal(res.status, 200);
+  const duplicates = body.models.filter(model => model.model === "gpt-image-2");
+  assert.equal(duplicates.length, 2);
+  assert.equal(duplicates.find(model => model.provider === "selected").billingReady, false);
+  assert.equal(duplicates.find(model => model.provider === "selected").rates[0].label, "每次请求");
+  assert.equal(duplicates.find(model => model.provider === "selected").rates[0].condition, "每次 1 张");
+  assert.deepEqual(body.unavailable, []);
+  assert.doesNotMatch(JSON.stringify(body), /rkapi|rateCny|ratesCny|upstream|purchasePrice|group|private|sourceUrl|markup/i);
+});
+
+test("selected quote routes separately, returns retail fields only and refuses interface mismatch", async () => {
+  let calls = 0;
+  const route = await load("../app/api/pricing/quote/route.ts", {
+    "@/lib/model-id": ids, "@/lib/apimart-request": requestTools,
+    "@/lib/auth": { getPortalUser: async () => ({ id: "member" }) },
+    "@/lib/config": { getD1: () => ({ prepare: () => ({ bind: () => ({ first: async () => ({}) }) }) }) },
+    "@/lib/pricing": pricing, "@/lib/apimart-pricing": {},
+    "@/lib/rkapi-pricing": { quoteRkapiRequest: async body => { calls++; return { provider: "selected", model: body.model, kind: "chat", currency: "USD", observedAt: "2026-10-21", reservedMicrousd: 2000, privateCost: 1000, rates: [{ dimension: "input", unit: "1M_tokens", retailMicrousd: 600000, upstreamMicrousd: 500000 }] }; } },
+  });
+  const response = await route.POST(request({ ...BODY, provider: "selected" })), value = await response.json();
+  assert.equal(response.status, 200); assert.equal(value.provider, "selected"); assert.equal(value.reservedMicrousd, 2000);
+  assert.doesNotMatch(JSON.stringify(value), /private|upstream|rkapi|markup/i);
+  assert.equal((await route.POST(request({ provider: "selected", mode: "video", body: { model: "chat" } }))).status, 422);
+  assert.equal(calls, 1);
+  assert.equal((await route.POST(request({ provider: "selected", mode: "image", body: { model: "chat", prompt: "Tree" } }))).status, 400);
 });

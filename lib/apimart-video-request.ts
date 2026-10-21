@@ -60,6 +60,12 @@ export function normalizeVideoRequest(input: Json): Json {
     body.image_with_roles = urls.map((value, i) => ({ url: value, role: i === 0 ? "first_frame" : "last_frame" }));
     delete body.image_urls;
   }
+  if (spec.referenceRoles && body.image_urls !== undefined) {
+    const urls = images(body, "image_urls", 5);
+    if (body.image_with_roles !== undefined) fail("请只使用一种参考图输入格式。");
+    body.image_with_roles = urls.map(value => ({ url: value, role: "reference_image" }));
+    delete body.image_urls;
+  }
   const allowed = ["model", "prompt", "duration", ...(spec.resolutions ? ["resolution"] : []),
     ...(spec.ratios ? [ratioField] : []), ...(spec.audio ? [spec.audio] : []),
     ...(spec.images ? ["image_urls"] : []), ...(spec.roles ? ["image_with_roles"] : []),
@@ -73,7 +79,19 @@ export function normalizeVideoRequest(input: Json): Json {
   if (refs.length && frameKeys.length) fail("参考图与首尾帧不能混用。");
   if (!spec.lastAlone && (body.last_frame_image || body.end_frame_image) && !body.first_frame_image) fail("尾帧必须与首帧同时提供。");
   let roleCount = 0;
-  if (body.image_with_roles !== undefined) {
+  if (spec.referenceRoles && body.image_with_roles !== undefined) {
+    if (!Array.isArray(body.image_with_roles) || !body.image_with_roles.length || body.image_with_roles.length > 5) fail("此型号需提供 1–5 张参考图。");
+    let firstFrames = 0;
+    body.image_with_roles = body.image_with_roles.map(entry => {
+      if (!object(entry) || Object.keys(entry).some(key => !["url", "role"].includes(key))) fail("参考图角色参数无效。");
+      const role = entry.role === undefined ? "reference_image" : entry.role;
+      if (role !== "reference_image" && role !== "first_frame") fail("此型号仅支持参考图或首帧角色。");
+      if (role === "first_frame" && ++firstFrames > 1) fail("此型号最多指定一张首帧。");
+      url(entry.url);
+      return { url: entry.url, role };
+    });
+    roleCount = (body.image_with_roles as unknown[]).length;
+  } else if (body.image_with_roles !== undefined) {
     if (refs.length || frameKeys.length || !Array.isArray(body.image_with_roles) || !body.image_with_roles.length || body.image_with_roles.length > 2) fail("首尾帧角色参数无效。");
     const roles = new Set<string>();
     for (const entry of body.image_with_roles) {

@@ -6,6 +6,7 @@ type Spec = {
   audio?: "audio" | "generate_audio"; audioDefault?: boolean; audioOnly?: true;
   images?: number; requiredImages?: boolean; frames?: "first" | "pair" | "end";
   lastAlone?: boolean; roles?: boolean; promptMax?: number; negativeMax?: number;
+  referenceRoles?: true;
   booleans?: string[]; seed?: [number, number]; modes?: string[]; extra?: string[];
   noImageRatio?: boolean;
 };
@@ -105,6 +106,12 @@ add(["wan2.7"], {
   duration: [2, 15], ratios: five, ratioField: "size", images: 2,
   promptMax: 5000, negativeMax: 500, seed: seed32, booleans: ["prompt_extend", "watermark"],
 });
+add(["wan2.7-r2v"], {
+  source: "wan2.7-r2v/generation", resolutions: ["720P", "1080P"], resolution: "1080P",
+  duration: [2, 15], ratios: five, ratioField: "size", roles: true, referenceRoles: true,
+  requiredImages: true, promptMax: 5000, negativeMax: 500,
+  seed: [0, Number.MAX_SAFE_INTEGER], booleans: ["prompt_extend", "watermark"],
+});
 add(["wan3.0-video", "wan3.0-video-prime"], {
   source: "wan3.0-video/generation", resolutions: ["480P", "720P", "1080P"], resolution: "1080P",
   duration: [2, 30], ratios: [...five, "adaptive"], ratioField: "size", ratio: "adaptive",
@@ -165,6 +172,7 @@ export const VIDEO_DEFAULTS = Object.fromEntries(Object.entries(specs).map(([id,
   ...(spec.resolution ? { resolution: spec.resolution } : {}),
   ...(spec.modes ? { mode: "std" } : {}),
   referenceRequired: !!spec.requiredImages || id === "MiniMax-Hailuo-2.3-Fast",
+  referenceRole: spec.referenceRoles ? "reference_image" : null,
   supportsRatio: !!spec.ratios, ratioField: spec.ratioField ?? "aspect_ratio",
   ratio: spec.ratio ?? "16:9", noImageRatio: !!spec.noImageRatio,
   audioField: spec.audio ?? null, audioDefault: spec.audioDefault ?? null,

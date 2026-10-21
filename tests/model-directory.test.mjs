@@ -16,8 +16,9 @@ const modelIds=await load('../lib/model-id.ts');
 const requestKinds=await load('../lib/model-request-kind.ts');
 const catalog=await load('../lib/model-catalog.ts',{'./tokenhub-model-reference':refs,'./model-directory-snapshot.json':{default:snapshot},'./model-id':modelIds,'./model-request-kind':requestKinds});
 const input={success:true,data:{models:{llm:[{id:'glm-5',name:'GLM-5'}],image:[{id:'gpt-image-2',name:'GPT Image 2'},{id:'grok-imagine-1.5-apimart',name:'Grok APIMart'}],video:[{id:'veo3.1-fast',name:'Veo'}],audio:[{id:'suno',name:'Suno'}]}}};
-async function directoryWith(pricing) {
- return load('../lib/model-directory.ts',{'./model-catalog':catalog,'./model-directory-snapshot.json':{default:snapshot},'./apimart-pricing':{parseApimartPricing:pricing,fetchApimartPricingPayload:async()=>input}});
+const selectedObservedAt='2026-10-01T08:00:00.000Z';
+async function directoryWith(pricing, selected = [], fetch = async()=>input) {
+ return load('../lib/model-directory.ts',{'./rkapi-catalog':{rkapiModelCatalog:async()=>selected,rkapiCatalogObservedAt:selectedObservedAt},'./model-catalog':catalog,'./model-directory-snapshot.json':{default:snapshot},'./apimart-pricing':{parseApimartPricing:pricing,fetchApimartPricingPayload:fetch}});
 }
 const parser=await directoryWith(()=>({models:[{model:'gpt-image-2',kind:'image'}]}));
 
@@ -76,6 +77,35 @@ test('new video and music adapters activate only their matching live priced inte
  assert.equal(catalog.catalogEntry('gpt-4o-transcribe','Transcribe','text',true).available,false);
 });
 
+test('selected service preserves duplicate model IDs without borrowing another service availability',async()=>{
+ const selected={id:'gpt-image-2',name:'GPT Image 2',provider:'OPENAI',category:'image',capabilities:['文生图'],description:'tokvilo 精选',docs:'/dashboard/docs?provider=selected',upstream:'selected',available:false};
+ const directory=await directoryWith(()=>({models:[{model:'gpt-image-2',kind:'image'}]}),[selected]);
+ const result=await directory.getModelDirectory();
+ const duplicates=result.models.filter(item=>item.id==='gpt-image-2');
+ assert.equal(duplicates.length,2);
+ assert.equal(duplicates.find(item=>item.upstream==='apimart').available,true);
+ assert.equal(duplicates.find(item=>item.upstream==='selected').available,false);
+ assert.equal(new URL(catalog.modelWorkbenchUrl(selected),'https://tokvilo.com').pathname,'/selected');
+ assert.equal(new URL(catalog.modelWorkbenchUrl(duplicates[0]),'https://tokvilo.com').pathname,'/playground');
+});
+
+test('directory freshness remains scoped to each service on live and fallback paths',async()=>{
+ const live=await parser.getModelDirectory();
+ const selected=live.sources.find(source=>source.service==='selected');
+ assert.equal(selected.live,false);
+ assert.equal(selected.observedAt,selectedObservedAt);
+ assert.equal(live.sources.find(source=>source.service==='gateway').live,true);
+ assert.equal(live.sources.find(source=>source.service==='gateway').observedAt,live.observedAt);
+ assert.deepEqual(JSON.parse(JSON.stringify(live.sources.find(source=>source.service==='studio'))),{service:'studio',observedAt:null,live:false});
+ assert.ok(live.sources.every(source=>Object.keys(source).sort().join(',')==='live,observedAt,service'));
+ const failing=await directoryWith(()=>({models:[]}),[],async()=>{throw Error('unavailable');});
+ const fallback=await failing.getModelDirectory();
+ assert.equal(fallback.sources.find(source=>source.service==='gateway').live,false);
+ assert.equal(fallback.sources.find(source=>source.service==='gateway').observedAt,snapshot.observedAt);
+ assert.equal(fallback.sources.find(source=>source.service==='selected').observedAt,selectedObservedAt);
+ assert.equal(fallback.sources.find(source=>source.service==='selected').live,false);
+});
+
 test('live directory keeps every row regardless of billing status and sees newly added models',async()=>{
  const models=parser.parseModelDirectory(input);
  assert.equal(models.length,5);
@@ -95,7 +125,10 @@ test('switching categories clears incompatible manufacturer filters and shows sc
   '@/lib/model-catalog':catalog,'@/lib/brand-display':brandDisplay,'react/jsx-runtime':jsx,'next/link':{default:'a'},'./Icon':{Icon:()=>null},'./PriceTable':{PriceTable:()=>null},
   react:{useState(initial){const i=index++;if(!(i in hooks))hooks[i]=initial;return [hooks[i],v=>{hooks[i]=v;}];},useEffect(){},useRef:()=>({current:null}),useMemo:f=>f()}
  });
- const render=()=>{index=0;tree=ui.ModelMarket({catalog:parser.parseModelDirectory(input),live:true});};render();
+ const render=()=>{index=0;tree=ui.ModelMarket({catalog:parser.parseModelDirectory(input),live:true,observedAt:'2026-10-21T00:00:00.000Z',sources:[{service:'selected',observedAt:selectedObservedAt,live:false}]});};render();
+ assert.match(text(tree),/tokvilo 模型服务目录已实时同步。 模型服务目录更新于 2026-10-21/);
+ assert.match(text(tree),/tokvilo 精选为 2026-10-01 目录与价格快照/);
+ assert.doesNotMatch(text(tree),/tokvilo 精选为 2026-10-21/);
  const label=all(tree,n=>n.type==='label').find(n=>text(n)==='ZHIPU');assert.ok(label);all(label,n=>n.type==='input')[0].props.onChange();render();assert.match(text(tree),/1 个模型/);
  all(tree,n=>n.props.role==='tab').find(n=>text(n)==='图像').props.onClick();render();
  assert.match(text(tree),/2 个模型/);assert.equal(all(tree,n=>n.type==='label').some(n=>text(n)==='ZHIPU'),false);

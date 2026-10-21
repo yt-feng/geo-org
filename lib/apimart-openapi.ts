@@ -32,10 +32,11 @@ export function apimartOpenApi(baseUrl: string) {
       } },
       [BASE + "/v1/videos/generations"]: { post: {
         summary: "创建 tokvilo 视频任务", tags: ["tokvilo · 视频"], parameters: idempotency,
-        description: `${auth} 仅支持价格目录 billingReady=true 的已适配模型与参数。必须明确填写 duration；按模型选择 resolution 或 mode。不同模型的时长、分辨率和音轨限制不同，报价与生成使用相同校验。参考视频、音频素材、编辑、续写、动作迁移与自动时长尚未开放。提交后使用统一任务接口查询；失败退回预留，未知结果保留预留。`,
+        description: `${auth} 仅支持价格目录 billingReady=true 的已适配模型与参数。必须明确填写 duration；按模型选择 resolution 或 mode。不同模型的时长、分辨率和音轨限制不同，报价与生成使用相同校验。wan2.7-r2v 支持 1–5 张参考图、2–15 秒、720P/1080P；image_with_roles 使用 reference_image 或单个 first_frame，也可用 image_urls 自动转换为 reference_image。参考视频、音频素材、编辑、续写、动作迁移与自动时长尚未开放。提交后使用统一任务接口查询；失败退回预留，未知结果保留预留。`,
         requestBody: body({ type: "object", required: ["model", "prompt", "duration"], properties: {
           model: { type: "string" }, prompt: { type: "string", minLength: 1, maxLength: 10000 }, duration: { type: "integer", minimum: 1, maximum: 30 }, resolution: { type: "string" }, mode: { type: "string", enum: ["std", "pro", "4k"] },
           audio: { type: "boolean" }, generate_audio: { type: "boolean" }, aspect_ratio: { type: "string" }, size: { type: "string" }, image_urls: { type: "array", maxItems: 10, items: { type: "string", format: "uri" } },
+          image_with_roles: { type: "array", minItems: 1, maxItems: 5, description: "wan2.7-r2v 的图片参考模式；最多一张 first_frame，其余为 reference_image，省略 role 时默认 reference_image。其他支持首尾帧的型号按各自限制使用 first_frame/last_frame。", items: { type: "object", required: ["url"], additionalProperties: false, properties: { url: { type: "string", format: "uri" }, role: { type: "string", enum: ["reference_image", "first_frame", "last_frame"] } } } },
         } }, { model: "veo3.1-fast", prompt: "晨光中的海岸，镜头缓缓前进。", duration: 8, resolution: "720p" }),
         responses: { "200": response("data[0].task_id 为已受理任务编号，tokvilo_billing 为余额预留。"), ...errors },
       } },

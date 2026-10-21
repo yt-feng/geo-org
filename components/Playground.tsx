@@ -98,7 +98,7 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
   const displayedRates = selectedPrice?.rates.filter(rate => model === "midjourney" ? rate.dimension === "imagine-v7" : category !== "audio" || rate.dimension === (model === "suno" ? `music-${musicVersion}` : "generate")).slice(0, 8) || [];
   const basePayload = category === "text" ? { model, messages: [{ role: "user", content: prompt }], stream: false, max_tokens: 1024 }
     : category === "audio" ? model === "flowmusic" ? { model, sound_prompt: prompt } : { model, custom: false, version: musicVersion, prompt, instrumental }
-    : category === "video" ? { model, prompt, duration: chosenDuration, ...(klingMode ? { mode: chosenVideoMode } : { resolution: chosenVideoResolution }), ...(reference.trim() ? { image_urls: [reference.trim()] } : {}) }
+    : category === "video" ? { model, prompt, duration: chosenDuration, ...(klingMode ? { mode: chosenVideoMode } : { resolution: chosenVideoResolution }), ...(reference.trim() ? videoOptions?.referenceRole ? { image_with_roles: [{ url: reference.trim(), role: videoOptions.referenceRole }] } : { image_urls: [reference.trim()] } : {}) }
     : { model, prompt, n: 1, size: ratio, ...(chosenResolution ? { resolution: chosenResolution } : {}), ...(versionedImage ? { version } : {}), ...(qualityImage ? { quality: chosenQuality } : {}), ...(reference.trim() ? { image_urls: [reference.trim()] } : {}) };
   let payload: Record<string, unknown> = basePayload, payloadError = "";
   if (advanced !== null) {

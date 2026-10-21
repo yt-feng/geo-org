@@ -145,7 +145,7 @@ export function quoteApimartRequest(body: Json, path: string, catalog: Awaited<R
       if (body.audio ?? body.generate_audio) dimension = dimension === "default" ? "sound" : `${dimension}-sound`;
     } else {
       if (retailRates[dimension] === undefined && (
-        ["wan2.6", "wan2.7"].includes(model) && dimension === "720p" ||
+        ["wan2.6", "wan2.7", "wan2.7-r2v"].includes(model) && dimension === "720p" ||
         /^MiniMax-Hailuo-2\.3/.test(model) && dimension === "768p")) dimension = "default";
       if ((body.audio ?? body.generate_audio) && /^(pixverse-v6|wan2\.6-i2v-flash|veo3\.1-.*-official)$/.test(model)) {
         const candidate = `${dimension}-audio`;

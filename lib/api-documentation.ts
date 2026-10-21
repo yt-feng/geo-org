@@ -1,4 +1,4 @@
-export type DocumentationSource = "tikhub" | "tokenhub" | "apimart";
+export type DocumentationSource = "tikhub" | "tokenhub" | "apimart" | "selected";
 type Json = Record<string, unknown>;
 export type ApiParameter = { name?: string; in?: string; required?: boolean; description?: string; example?: unknown; schema?: unknown };
 export type ApiOperation = { source: DocumentationSource; method: string; path: string; summary: string; description: string; tags: string[]; parameters: ApiParameter[]; requestBody?: unknown; responses?: unknown };
@@ -8,6 +8,7 @@ const SOURCES: Array<{ id: DocumentationSource; label: string; url: string }> = 
   { id: "tikhub", label: "数据接口", url: "/api/private/openapi" },
   { id: "tokenhub", label: "tokvilo 多模态", url: "/api/private/studio-openapi" },
   { id: "apimart", label: "tokvilo 模型服务", url: "/api/private/gateway-openapi" },
+  { id: "selected", label: "tokvilo 精选", url: "/api/private/selected-openapi" },
 ];
 function object(value: unknown): Json { return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Json : {}; }
 function parameters(value: unknown): ApiParameter[] { return Array.isArray(value) ? value.filter(item => item !== null && typeof item === "object" && !Array.isArray(item)) as ApiParameter[] : []; }

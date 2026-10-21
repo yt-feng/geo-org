@@ -1,11 +1,33 @@
-import { EmailMessage } from "cloudflare:email";
-import { runtimeEnv, type RuntimeEnv } from "./config";
+import { runtimeEnv, type AuthEmailMessage, type RuntimeEnv } from "./config";
 import { sha256Hex } from "./crypto";
 
 const FROM = "auth@tokvilo.com";
 const REDIRECT = "https://tokvilo.com/login?verified=1";
 const MAX_BODY = 65_536;
 const HEADERS = { "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
+// Only documented provider codes may enter logs; error messages can contain recipients.
+const EMAIL_ERROR_CODES = new Set([
+  "E_VALIDATION_ERROR", "E_FIELD_MISSING", "E_TOO_MANY_RECIPIENTS", "E_TOO_MANY_ATTACHMENTS",
+  "E_SENDER_NOT_VERIFIED", "E_RECIPIENT_NOT_ALLOWED", "E_RECIPIENT_SUPPRESSED", "E_ACCOUNT_SUSPENDED",
+  "E_SENDER_DOMAIN_NOT_AVAILABLE", "E_CONTENT_TOO_LARGE", "E_DELIVERY_FAILED", "E_RATE_LIMIT_EXCEEDED",
+  "E_DAILY_LIMIT_EXCEEDED", "E_INTERNAL_SERVER_ERROR", "E_HEADER_NOT_ALLOWED", "E_HEADER_USE_API_FIELD",
+  "E_HEADER_VALUE_INVALID", "E_HEADER_VALUE_TOO_LONG", "E_HEADER_NAME_INVALID", "E_HEADERS_TOO_LARGE",
+  "E_HEADERS_TOO_MANY",
+]);
+class DeliveryError extends Error {
+  constructor(public code: "SEND_TIMEOUT" | "HOOK_DEADLINE" | "INVALID_SEND_RESULT" | "RECEIPT_UNAVAILABLE") { super(code); }
+}
+function deliveryDiagnostic(cause: unknown, stage: "send" | "send_result" | "receipt", startedAt: number) {
+  let code = "UNCLASSIFIED";
+  if (cause instanceof DeliveryError) code = cause.code;
+  else if (cause && typeof cause === "object" && "code" in cause && typeof cause.code === "string" && EMAIL_ERROR_CODES.has(cause.code)) {
+    code = cause.code;
+  }
+  console.warn("auth_email_delivery_failed", {
+    code, stage, timedOut: code === "SEND_TIMEOUT" || code === "HOOK_DEADLINE",
+    elapsedMs: Math.max(0, Date.now() - startedAt),
+  });
+}
 class HookError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message); }
 }
@@ -108,7 +130,7 @@ function payload(body: Uint8Array) {
   }
   return { email, userId, tokenHash, action: data.email_action_type as "signup" | "recovery" };
 }
-function confirmationEmail(origin: string, input: ReturnType<typeof payload>, deliveryId: string) {
+function confirmationEmail(origin: string, input: ReturnType<typeof payload>): AuthEmailMessage {
   const recovery = input.action === "recovery";
   const link = recovery ? new URL("https://tokvilo.com/reset-password") : new URL("/auth/v1/verify", origin);
   if (recovery) {
@@ -127,18 +149,16 @@ function confirmationEmail(origin: string, input: ReturnType<typeof payload>, de
     "欢迎注册 tokvilo。", "", "请打开以下链接确认邮箱，然后返回 tokvilo 使用邮箱和密码登录：",
     link.href, "", "如果你没有注册 tokvilo，请忽略此邮件。",
   ]).join("\n");
-  const encoded = btoa(Array.from(new TextEncoder().encode(text), byte => String.fromCharCode(byte)).join(""));
-  return new EmailMessage(FROM, input.email, [
-    `From: tokvilo <${FROM}>`, `To: ${input.email}`, `Subject: ${recovery ? "Reset your tokvilo password" : "Confirm your tokvilo account"}`,
-    `Message-ID: <auth.${deliveryId}@tokvilo.com>`, `Date: ${new Date().toUTCString()}`,
-    "MIME-Version: 1.0", 'Content-Type: text/plain; charset="UTF-8"', "Content-Transfer-Encoding: base64", "",
-    encoded.match(/.{1,76}/g)!.join("\r\n"), "",
-  ].join("\r\n"));
+  return {
+    to: input.email, from: { email: FROM, name: "tokvilo" },
+    subject: recovery ? "Reset your tokvilo password" : "Confirm your tokvilo account",
+    text,
+  };
 }
 
 /** Only a valid, recent Supabase-signed authentication event can reach the email binding. */
 export async function handleAuthEmailHook(request: Request): Promise<Response> {
-  const deadline = Date.now() + 4_500;
+  const startedAt = Date.now(), deadline = startedAt + 4_500;
   try {
     if (request.method !== "POST") fail(405, "method_not_allowed", "Only POST is supported.");
     const { origin, key, db, email } = configuration(runtimeEnv());
@@ -168,20 +188,25 @@ export async function handleAuthEmailHook(request: Request): Promise<Response> {
       fail(503, "email_delivery_unconfirmed", "Email delivery is already processing or requires confirmation.");
     }
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let stage: "send" | "send_result" | "receipt" = "send";
     try {
       const remaining = deadline - Date.now();
-      if (remaining <= 0) throw new Error("deadline");
-      await Promise.race([
-        email.send(confirmationEmail(origin, input, deliveryId)),
+      if (remaining <= 0) throw new DeliveryError("HOOK_DEADLINE");
+      const result = await Promise.race([
+        email.send(confirmationEmail(origin, input)),
         new Promise<never>((_resolve, reject) => {
-          timer = setTimeout(() => reject(new Error("send_timeout")), Math.min(3_000, remaining));
+          timer = setTimeout(() => reject(new DeliveryError("SEND_TIMEOUT")), Math.min(3_000, remaining));
         }),
       ]);
+      stage = "send_result";
+      if (typeof result?.messageId !== "string" || !result.messageId.trim()) throw new DeliveryError("INVALID_SEND_RESULT");
+      stage = "receipt";
       const updated = await db.prepare(`UPDATE auth_email_deliveries SET status='sent',sent_at=CURRENT_TIMESTAMP,
         updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='sending' RETURNING id`).bind(deliveryId).first();
-      if (!updated) throw new Error("receipt_unavailable");
+      if (!updated) throw new DeliveryError("RECEIPT_UNAVAILABLE");
       return reply({});
-    } catch {
+    } catch (cause) {
+      deliveryDiagnostic(cause, stage, startedAt);
       // Sending may have been accepted. Never resubmit the same confirmation.
       await db.prepare(`UPDATE auth_email_deliveries SET status='unknown',updated_at=CURRENT_TIMESTAMP
         WHERE id=? AND status='sending'`).bind(deliveryId).run().catch(() => undefined);

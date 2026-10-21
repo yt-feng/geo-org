@@ -6,6 +6,7 @@ import { modelRequestKind, type ModelRequestKind } from "./model-request-kind";
 export { modelRequestKind } from "./model-request-kind";
 
 export type ModelCategory = "image" | "video" | "text" | "audio";
+export type ModelDirectorySource = { service: "gateway" | "studio" | "selected"; observedAt: string | null; live: boolean };
 export type CatalogModel = {
   id: string;
   name: string;
@@ -14,7 +15,7 @@ export type CatalogModel = {
   description: string;
   capabilities: string[];
   docs: string;
-  upstream?: "apimart" | "tokenhub";
+  upstream?: "apimart" | "tokenhub" | "selected";
   available?: boolean;
   requestKind?: ModelRequestKind;
 };
@@ -80,7 +81,7 @@ export const tokenhubModelCatalog: CatalogModel[] = TOKENHUB_REFERENCE_MODELS.ma
 }));
 export const allModelCatalog: CatalogModel[] = [...tokenhubModelCatalog, ...modelCatalog];
 export function modelWorkbenchUrl(model: CatalogModel) {
-  return `${model.upstream === "tokenhub" ? "/studio" : "/playground"}?model=${encodeURIComponent(model.id)}&category=${model.category}`;
+  return `${model.upstream === "tokenhub" ? "/studio" : model.upstream === "selected" ? "/selected" : "/playground"}?model=${encodeURIComponent(model.id)}&category=${model.category}`;
 }
 
 export function providerInitials(provider: string) {

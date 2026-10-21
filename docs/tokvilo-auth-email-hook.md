@@ -6,7 +6,13 @@ using the [Standard Webhooks signature contract](https://github.com/standard-web
 It sends signup confirmation and password recovery. Invitation, magic-link and
 email-change events return HTTP 422 explicitly; those product flows are not enabled.
 
-Before enabling the Supabase hook:
+The HTTPS Send Email hook is enabled on the current production Supabase project.
+The deployed structured-send implementation has produced a new recovery-email
+`sent` receipt in D1. This confirms Cloudflare accepted that send and the Worker
+saved its receipt. Actual mailbox arrival and the password-reset/login round trip
+still require user verification; the earlier `unknown` receipt remains unchanged.
+
+Deployment configuration:
 
 1. Apply `drizzle/0016_auth_email_hook.sql` to the existing D1 database.
 2. Set Worker secrets `AUTH_EMAIL_HOOK_SECRET` to the generated Supabase hook
@@ -18,7 +24,9 @@ Before enabling the Supabase hook:
    development does not send real email.
 4. In that Supabase project's Auth Hooks, create the HTTPS Send Email hook
    with this endpoint and the same secret. Enable the Email Provider and email
-   confirmation. Allow redirect `https://tokvilo.com/login?verified=1`.
+   confirmation. The required redirect allowlist contains both
+   `https://tokvilo.com/login?verified=1` and
+   `https://tokvilo.com/reset-password`.
 
 The request body is bounded to 64 KiB and one second of body reading. Verification
 uses HMAC-SHA256 over the exact original `webhook-id.timestamp.body` bytes and
@@ -35,6 +43,14 @@ the credential. The user explicitly continues to exchange the hash for a short-l
 single-use HttpOnly recovery grant, then submits a new password. Ordinary login
 cookies cannot authorize password recovery. Recovery and signup have separate
 delivery identifiers even when their token hashes match.
+
+The Worker uses Cloudflare's recommended
+[structured email builder](https://developers.cloudflare.com/email-service/api/send-emails/workers-api/):
+`send({ to, from: { email: "auth@tokvilo.com", name: "tokvilo" }, subject, text })`.
+Cloudflare builds the MIME message and message headers; the Worker no longer
+constructs a raw `EmailMessage`, MIME encoding, or custom `Message-ID`.
+A successful call must return a nonempty `messageId` before D1 can record `sent`.
+The provider message ID is not included in the webhook response or diagnostics.
 
 The email send has a maximum three-second wait and a deadline 4.5 seconds after
 request handling begins. Supabase's HTTP hook limit is five seconds; unusually
@@ -56,6 +72,23 @@ Supabase confirmation token creates a separate delivery. Do not delete receipts
 to force an uncertain send to repeat. Responses omit underlying provider
 diagnostics, tokens and addresses.
 
+Failed sends emit the `auth_email_delivery_failed` log event with only:
+
+- `code`: an allowlisted Cloudflare error code, an internal enum
+  (`SEND_TIMEOUT`, `HOOK_DEADLINE`, `INVALID_SEND_RESULT`,
+  `RECEIPT_UNAVAILABLE`), or `UNCLASSIFIED`.
+- `stage`: `send`, `send_result`, or `receipt`, distinguishing the sending call,
+  validation of its result, and the D1 success-receipt write.
+- `timedOut` and `elapsedMs`: whether the configured deadline was reached and
+  elapsed time since request handling began.
+
+Diagnostics never contain error messages/stacks, addresses, OTPs, token hashes,
+payloads, or provider message IDs. Missing `messageId`, sending exceptions, and
+success-receipt write failures all retain an unconfirmed outcome without resend.
+An eventual send completion after the three-second timeout does not automatically
+change `unknown` or trigger another email. The structured API removes manual MIME
+construction; it does not itself guarantee latency or inbox delivery.
+
 Offline verification:
 
 ```sh
@@ -63,5 +96,8 @@ node --test tests/auth-email-hook.test.mjs
 ```
 
 The tests use an in-memory SQLite database and a simulated email binding; they
-make no network requests and send no real mail. Deployment and a dedicated QA
-signup are separate acceptance steps.
+make no network requests and send no real mail. They cover structured signup and
+recovery payloads, signature verification, concurrent/replayed events, missing
+send results, private-error redaction, receipt failure, and late send completion.
+These checks and production provider acceptance are separate from an actual
+mailbox confirmation and password-reset/login round trip.

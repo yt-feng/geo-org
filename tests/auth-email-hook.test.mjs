@@ -38,34 +38,38 @@ async function fixture(t, options = {}) {
   const DB = { prepare(sql) {
     const statement = sqlite.prepare(sql);
     const bind = (values = []) => ({
-      bind: (...next) => bind(next), first: async () => statement.get(...values) || null,
+      bind: (...next) => bind(next), first: async () => {
+        if (options.receiptFailure && /SET status='sent'/.test(sql)) throw new Error("private database diagnostic");
+        return statement.get(...values) || null;
+      },
       run: async () => ({ success: true, meta: { changes: statement.run(...values).changes } }),
     });
     return bind();
   } };
-  const sent = [], timers = [];
+  const sent = [], timers = [], diagnostics = [];
   const env = {
     DB, AUTH_BASE_URL: "https://qa-project.supabase.co",
     AUTH_EMAIL_HOOK_SECRET: `v1,whsec_${secret.toString("base64")}`,
-    AUTH_EMAIL: { send: async message => { sent.push(message); return options.send?.(message); } },
+    AUTH_EMAIL: { send: async message => {
+      sent.push(message);
+      return options.send ? options.send(message) : { messageId: "qa-provider-message-id" };
+    } },
     ...options.env,
   };
   const mod = { exports: {} };
   vm.runInNewContext(outputText, {
     module: mod, exports: mod.exports, crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array,
     Request, Response, URL, URLSearchParams, atob, btoa, clearTimeout,
+    console: { warn: (...items) => diagnostics.push(items) },
     Date: options.now === undefined ? Date : class extends Date { static now() { return options.now; } },
     setTimeout(callback, delay) { timers.push(delay); return setTimeout(callback, options.fastTimeout && delay === 3000 ? 5 : delay); },
     require(name) {
       if (name === "./config") return { runtimeEnv: () => env };
       if (name === "./crypto") return { sha256Hex: async value => createHash("sha256").update(value).digest("hex") };
-      if (name === "cloudflare:email") return { EmailMessage: class {
-        constructor(from, to, raw) { Object.assign(this, { from, to, raw }); }
-      } };
       throw new Error(`Unexpected dependency ${name}`);
     },
   });
-  return { ...mod.exports, sqlite, env, sent, timers };
+  return { ...mod.exports, sqlite, env, sent, timers, diagnostics };
 }
 async function expect(f, request, status) {
   const response = await f.handleAuthEmailHook(request);
@@ -85,10 +89,11 @@ test("signed signup delivers one fixed-origin confirmation and stores only hashe
   const f = await fixture(t);
   assert.deepEqual(await expect(f, signedRequest(JSON.stringify(payload, null, 2)), 200), {});
   assert.equal(f.sent.length, 1);
-  const message = f.sent[0], [headers, encoded] = message.raw.split("\r\n\r\n");
-  assert.equal(message.from, "auth@tokvilo.com"); assert.equal(message.to, payload.user.email);
-  assert.match(headers, /Message-ID: <auth\.[a-f0-9]{64}@tokvilo\.com>/);
-  const text = Buffer.from(encoded.replaceAll("\r\n", ""), "base64").toString("utf8");
+  const message = f.sent[0], { text } = message;
+  assert.deepEqual(Object.keys(message).sort(), ["from", "subject", "text", "to"]);
+  assert.equal(message.from.email, "auth@tokvilo.com"); assert.equal(message.from.name, "tokvilo");
+  assert.equal(message.to, payload.user.email); assert.equal(message.subject, "Confirm your tokvilo account");
+  assert.match(text, /欢迎注册 tokvilo/);
   const url = new URL(text.match(/https:\/\/\S+/)[0]);
   assert.equal(url.origin, f.env.AUTH_BASE_URL);
   assert.equal(url.pathname, "/auth/v1/verify");
@@ -102,6 +107,7 @@ test("signed signup delivers one fixed-origin confirmation and stores only hashe
   ]);
   assert.doesNotMatch(stored, new RegExp(`${payload.user.email}|${payload.email_data.token_hash}|305805`));
   assert.equal(f.sqlite.prepare("SELECT status FROM auth_email_deliveries").get().status, "sent");
+  assert.equal(f.diagnostics.length, 0);
 });
 
 test("forged signatures and changed raw bytes, identifiers or timestamps cannot write or send", async t => {
@@ -140,9 +146,8 @@ test("signed recovery uses only the tokvilo reset page and cannot be confused wi
   await expect(f, signedRequest(recovery), 200);
   await expect(f, signedRequest(recovery, { id: "msg_recovery_retry" }), 200);
   assert.equal(f.sent.length, 1);
-  const [headers, encoded] = f.sent[0].raw.split("\r\n\r\n");
-  assert.match(headers, /Subject: Reset your tokvilo password/);
-  const text = Buffer.from(encoded.replaceAll("\r\n", ""), "base64").toString("utf8");
+  assert.equal(f.sent[0].subject, "Reset your tokvilo password");
+  const { text } = f.sent[0];
   const url = new URL(text.match(/https:\/\/\S+/)[0]);
   assert.equal(url.origin, "https://tokvilo.com");
   assert.equal(url.pathname, "/reset-password");
@@ -201,7 +206,7 @@ test("concurrent deliveries have one owner and a sent receipt can later be repla
   while (!finish) await new Promise(resolve => setImmediate(resolve));
   const second = await expect(f, signedRequest(), 503);
   assert.equal(second.error.code, "email_delivery_unconfirmed"); assert.equal(f.sent.length, 1);
-  finish();
+  finish({ messageId: "qa-concurrent-message-id" });
   assert.equal((await first).status, 200);
   await expect(f, signedRequest(), 200); assert.equal(f.sent.length, 1);
 });
@@ -217,12 +222,72 @@ test("unconfirmed sends do not repeat, and no provider diagnostic or recipient e
   // A newly issued confirmation token is a new delivery, without clearing history.
   await expect(f, signedRequest({ ...payload, email_data: { ...payload.email_data, token_hash: "b".repeat(56) } }, { id: "msg_fresh_token" }), 503);
   assert.equal(f.sent.length, 2);
+  assert.doesNotMatch(JSON.stringify(f.diagnostics), /provider diagnostic|qa-auth|305805/);
 });
 
 test("sending is bounded within the Supabase hook timeout and remains unconfirmed", async t => {
   const f = await fixture(t, { fastTimeout: true, send: () => new Promise(() => {}) });
   await expect(f, signedRequest(), 503);
   assert.ok(f.timers.includes(3000));
+  assert.equal(f.diagnostics[0][1].code, "SEND_TIMEOUT");
+  assert.equal(f.diagnostics[0][1].stage, "send");
+  assert.equal(f.diagnostics[0][1].timedOut, true);
   assert.equal(f.sqlite.prepare("SELECT status FROM auth_email_deliveries").get().status, "unknown");
   await expect(f, signedRequest(), 503); assert.equal(f.sent.length, 1);
+});
+
+test("delivery diagnostics allowlist provider codes and never log private error details", async t => {
+  for (const [providerCode, expectedCode] of [
+    ["E_SENDER_NOT_VERIFIED", "E_SENDER_NOT_VERIFIED"],
+    ["E_HEADER_NOT_ALLOWED", "E_HEADER_NOT_ALLOWED"],
+    [`E_PRIVATE_${payload.user.email}`, "UNCLASSIFIED"],
+  ]) {
+    const f = await fixture(t, { send: () => { throw Object.assign(
+      new Error(`private ${payload.user.email} ${payload.email_data.token_hash} ${payload.email_data.token}`),
+      { code: providerCode, rawBody: JSON.stringify(payload) },
+    ); } });
+    await expect(f, signedRequest(), 503);
+    assert.equal(f.diagnostics.length, 1);
+    const [event, diagnostic] = f.diagnostics[0];
+    assert.equal(event, "auth_email_delivery_failed");
+    assert.equal(diagnostic.code, expectedCode); assert.equal(diagnostic.stage, "send");
+    assert.equal(diagnostic.timedOut, false);
+    assert.equal(typeof diagnostic.elapsedMs, "number"); assert.ok(diagnostic.elapsedMs >= 0);
+    assert.deepEqual(Object.keys(diagnostic).sort(), ["code", "elapsedMs", "stage", "timedOut"]);
+    assert.doesNotMatch(JSON.stringify(f.diagnostics), /qa-auth|private|305805|token_hash|rawBody|at fixture/);
+    await expect(f, signedRequest(), 503); assert.equal(f.sent.length, 1);
+  }
+});
+
+test("a missing provider messageId never creates a sent receipt or automatically resends", async t => {
+  for (const result of [undefined, null, {}, { messageId: "" }, { messageId: 42 }]) {
+    const f = await fixture(t, { send: () => result });
+    await expect(f, signedRequest(), 503);
+    assert.equal(f.diagnostics[0][1].code, "INVALID_SEND_RESULT");
+    assert.equal(f.diagnostics[0][1].stage, "send_result");
+    assert.equal(f.sqlite.prepare("SELECT status FROM auth_email_deliveries").get().status, "unknown");
+    await expect(f, signedRequest(payload, { id: "msg_missing_result_retry" }), 503);
+    assert.equal(f.sent.length, 1);
+  }
+});
+
+test("accepted email with a failed D1 receipt is diagnosed separately and never resent", async t => {
+  const f = await fixture(t, { receiptFailure: true });
+  await expect(f, signedRequest(), 503);
+  assert.equal(f.diagnostics[0][1].stage, "receipt");
+  assert.equal(f.diagnostics[0][1].timedOut, false);
+  assert.doesNotMatch(JSON.stringify(f.diagnostics), /private|qa-provider-message-id/);
+  assert.equal(f.sqlite.prepare("SELECT status FROM auth_email_deliveries").get().status, "unknown");
+  await expect(f, signedRequest(), 503); assert.equal(f.sent.length, 1);
+});
+
+test("late send completion after the timeout does not turn an unknown outcome into a retry", async t => {
+  let finish;
+  const f = await fixture(t, { fastTimeout: true, send: () => new Promise(resolve => { finish = resolve; }) });
+  await expect(f, signedRequest(), 503);
+  finish({ messageId: "qa-late-message-id" });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.sqlite.prepare("SELECT status FROM auth_email_deliveries").get().status, "unknown");
+  await expect(f, signedRequest(), 503); assert.equal(f.sent.length, 1);
+  assert.doesNotMatch(JSON.stringify(f.diagnostics), /qa-late-message-id/);
 });

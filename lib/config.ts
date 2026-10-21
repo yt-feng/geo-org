@@ -1,5 +1,12 @@
 import { env } from "cloudflare:workers";
 
+export type AuthEmailMessage = {
+  to: string;
+  from: { email: string; name: string };
+  subject: string;
+  text: string;
+};
+
 export type RuntimeEnv = {
   DB?: D1Database;
   AUDIT_MEDIA?: AuditMediaBucket;
@@ -11,12 +18,13 @@ export type RuntimeEnv = {
   AUTH_BASE_URL?: string;
   AUTH_ANON_KEY?: string;
   AUTH_EMAIL_HOOK_SECRET?: string;
-  AUTH_EMAIL?: { send(message: import("cloudflare:email").EmailMessage): Promise<unknown> };
+  AUTH_EMAIL?: { send(message: AuthEmailMessage): Promise<{ messageId: string }> };
   ADMIN_EMAIL?: string;
   ADMIN_USERNAME?: string;
   ADMIN_PASSWORD?: string;
   ADMIN_SESSION_SECRET?: string;
   APIMART_API_KEY?: string;
+  RKAPI_ROUTES_JSON?: string;
   TOKENHUB_API_KEY?: string;
   UPSTREAM_BASE_URL?: string;
   UPSTREAM_OPENAPI_URL?: string;

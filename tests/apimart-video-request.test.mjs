@@ -23,9 +23,9 @@ const rejects = (model, extras) => assert.throws(() => normalize(make(model, ext
 const plain = value => JSON.parse(JSON.stringify(value));
 
 test("every supported video model has a valid normalized request and normalization is idempotent", () => {
-  assert.equal(models.size, 40);
+  assert.equal(models.size, 41);
   for (const model of models) {
-    const needsImage = ["MiniMax-Hailuo-2.3-Fast", "wan2.6-i2v-flash", "viduq3", "viduq3-mix", "viduq4-preview"].includes(model);
+    const needsImage = ["MiniMax-Hailuo-2.3-Fast", "wan2.6-i2v-flash", "wan2.7-r2v", "viduq3", "viduq3-mix", "viduq4-preview"].includes(model);
     const input = make(model, needsImage ? { image_urls: [image] } : {});
     const original = structuredClone(input), output = normalize(input);
     assert.deepEqual(input, original, "input unchanged: " + model);
@@ -128,6 +128,32 @@ test("Wan generation uses explicit correct ratio/audio defaults and finite durat
   rejects("wan3.0-video", { duration: -1 });
   rejects("wan3.0-video", { image_urls: [image, image, image] });
   assert.equal(normalize(make("wan3.0-video", { image_urls: [image, image, image], generation_type: "reference" })).generation_type, "reference");
+});
+
+test("Wan 2.7 reference generation keeps reference roles distinct and bounds image-only requests", () => {
+  const original = make("wan2.7-r2v", { image_urls: [image, other], duration: 15, resolution: "720p", aspect_ratio: "3:4" });
+  const unchanged = structuredClone(original), output = normalize(original);
+  assert.deepEqual(original, unchanged);
+  assert.deepEqual(plain(output.image_with_roles), [{ url: image, role: "reference_image" }, { url: other, role: "reference_image" }]);
+  assert.equal(output.image_urls, undefined); assert.equal(output.resolution, "720P"); assert.equal(output.size, "3:4");
+  assert.deepEqual(plain(normalize(output)), plain(output));
+  const frames = normalize(make("wan2.7-r2v", { image_with_roles: [{ url: image, role: "first_frame" }, { url: other }], duration: 2 }));
+  assert.deepEqual(plain(frames.image_with_roles), [{ url: image, role: "first_frame" }, { url: other, role: "reference_image" }]);
+  assert.equal(frames.resolution, "1080P");
+  assert.equal(normalize(make("wan2.7-r2v", { image_urls: Array(5).fill(image) })).image_with_roles.length, 5);
+  for (const extras of [
+    {}, { image_urls: [] }, { image_urls: Array(6).fill(image) }, { image_with_roles: [] },
+    { image_with_roles: Array(6).fill({ url: image }) },
+    { image_with_roles: [{ url: image, role: "last_frame" }] },
+    { image_with_roles: [{ url: image, role: "first_frame" }, { url: other, role: "first_frame" }] },
+    { image_with_roles: [{ url: image, reference_voice: "https://example.com/voice.mp3" }] },
+    { image_with_roles: [{ url: "data:image/png;base64,AA" }] },
+    { image_urls: [image], image_with_roles: [{ url: other }] },
+    ...[{ duration: 0 }, { duration: 16 }, { resolution: "4K" }, { size: "adaptive" },
+      { video_urls: ["https://example.com/video.mp4"] }, { audio_urls: ["https://example.com/audio.mp3"] },
+      { nsfw_check: true }, { first_frame_image: other }, { seed: -1 }, { prompt: "x".repeat(5001) },
+      { negative_prompt: "x".repeat(501) }].map(extra => ({ image_urls: [image], ...extra })),
+  ]) rejects("wan2.7-r2v", extras);
 });
 
 test("Vidu required references and model-specific duration/resolution rules are distinct", () => {

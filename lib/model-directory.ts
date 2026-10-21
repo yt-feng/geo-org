@@ -1,8 +1,10 @@
 import { fetchApimartPricingPayload, parseApimartPricing } from "./apimart-pricing";
-import { catalogEntry, modelCatalog, tokenhubModelCatalog, modelRequestKind, type ModelCategory, type CatalogModel } from "./model-catalog";
+import { catalogEntry, modelCatalog, tokenhubModelCatalog, modelRequestKind, type ModelCategory, type CatalogModel, type ModelDirectorySource } from "./model-catalog";
 import snapshot from "./model-directory-snapshot.json";
+import { rkapiCatalogObservedAt, rkapiModelCatalog } from "./rkapi-catalog";
 
-type Directory = { models: CatalogModel[]; observedAt: string; live: boolean };
+// Legacy top-level freshness refers to the gateway; each service has its own provenance.
+type Directory = { models: CatalogModel[]; observedAt: string; live: boolean; sources: ModelDirectorySource[] };
 const categories: Record<string, ModelCategory> = { llm: "text", image: "image", video: "video", audio: "audio" };
 function object(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -35,12 +37,20 @@ export function parseModelDirectory(payload: unknown): CatalogModel[] {
 
 /** Directory availability is separate from actual successful paid execution. */
 export async function getModelDirectory(): Promise<Directory> {
+  const [gateway, selected] = await Promise.allSettled([fetchApimartPricingPayload(), rkapiModelCatalog()]);
+  const selectedModels = selected.status === "fulfilled" ? selected.value : [];
+  const sources: ModelDirectorySource[] = [{ service: "studio", observedAt: null, live: false }];
+  if (selected.status === "fulfilled") sources.push({ service: "selected", observedAt: rkapiCatalogObservedAt, live: false });
   try {
-    const models = parseModelDirectory(await fetchApimartPricingPayload());
-    return { models: [...tokenhubModelCatalog, ...models], observedAt: new Date().toISOString(), live: true };
+    if (gateway.status === "rejected") throw gateway.reason;
+    const models = parseModelDirectory(gateway.value);
+    const observedAt = new Date().toISOString();
+    return { models: [...tokenhubModelCatalog, ...models, ...selectedModels], observedAt, live: true,
+      sources: [{ service: "gateway", observedAt, live: true }, ...sources] };
   } catch {
     // Preserve every last-observed model during a temporary catalogue outage.
     // Do not claim the snapshot confirms current pricing or call availability.
-    return { models: [...tokenhubModelCatalog, ...modelCatalog], observedAt: snapshot.observedAt, live: false };
+    return { models: [...tokenhubModelCatalog, ...modelCatalog, ...selectedModels], observedAt: snapshot.observedAt, live: false,
+      sources: [{ service: "gateway", observedAt: snapshot.observedAt, live: false }, ...sources] };
   }
 }

@@ -93,3 +93,19 @@ test("tiered, video, audio and add-on prices show their units and disabled adapt
   assert.equal(links.length, 1); assert.match(links[0].props.href, /model=music/);
   assert.doesNotMatch(rendered, /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
 });
+
+test("selected prices keep same-name models separate and never link unverified service rows to generation", async () => {
+  const f = await fixture({ observedAt: "2026-10-21", models: [
+    { provider: "apimart", model: "gpt-image-2", name: "Image", kind: "image", billingReady: true, rates: [{ dimension: "image", unit: "image", retailMicrousd: 12000 }] },
+    { provider: "selected", model: "gpt-image-2", name: "Image", kind: "image", billingReady: false, rates: [{ dimension: "request", unit: "call", retailMicrousd: 6000 }] },
+    { provider: "selected", model: "text", name: "Text", kind: "chat", billingReady: true, rates: [{ dimension: "input", unit: "1M_tokens", retailMicrousd: 800000 }] },
+  ] });
+  assert.equal(all(f.tree(), node => node.props.className === "price-model").length, 3);
+  assert.equal(new Set(all(f.tree(), node => node.props.className === "price-model").map(node => node.key)).size, 3);
+  all(f.tree(), node => node.type === "select")[0].props.onChange({ target: { value: "selected" } }); f.render();
+  assert.equal(all(f.tree(), node => node.type === "table").length, 2);
+  assert.match(text(f.tree()), /tokvilo 精选/); assert.match(text(f.tree()), /价格已列示 · 服务待开通/);
+  const links = all(f.tree(), node => node.type === "a");
+  assert.equal(links.length, 1); assert.equal(links[0].props.href, "/selected?model=text");
+  assert.doesNotMatch(text(f.tree()), /rkapi|源价|加价/i);
+});

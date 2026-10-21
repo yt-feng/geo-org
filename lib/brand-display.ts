@@ -10,5 +10,6 @@ export function displayServiceText(value: string): string {
 export function serviceLabel(provider: string): string {
   return provider === "tokenhub" ? "tokvilo 多模态"
     : provider === "apimart" ? "tokvilo 模型服务"
-      : provider === "tikhub" ? "tokvilo 数据接口" : displayServiceText(provider);
+      : provider === "selected" ? "tokvilo 精选"
+        : provider === "tikhub" ? "tokvilo 数据接口" : displayServiceText(provider);
 }

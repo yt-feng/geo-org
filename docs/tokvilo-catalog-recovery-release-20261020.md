@@ -78,8 +78,8 @@ request limits, and per-email limits apply.
 Signed recovery emails link to `/reset-password` with a one-time hash in the URL
 fragment. The page clears the URL and waits for an explicit click before
 exchanging that hash. A successful provider verification creates a separate,
-HttpOnly, ten-minute recovery cookie. The database stores only its hash and an
-encrypted recovery access token.
+HttpOnly recovery cookie valid for at most ten minutes. The database stores its
+hash, encrypted recovery access token, and user/state/time metadata.
 
 Password changes require this recovery grant; ordinary login cookies do not
 authorize recovery. A grant is claimed atomically before the provider request.
@@ -112,11 +112,39 @@ tests. All 29 browser JavaScript chunks were checked for internal price fields,
 with no matches. Chrome was unavailable for visual acceptance. No paid model
 generation or real signup/recovery email round trip was performed in this round.
 
-## Remaining external acceptance
+## Follow-up acceptance on 2026-10-21
 
-The Supabase Send Email hook must be enabled for the deployed
-`https://tokvilo.com/api/auth/email-hook` endpoint. Its secret is already stored
-privately and configured on the Worker. Browser access is currently disabled in
-Work settings, and no configured Supabase Management API credential was found.
-No real signup, mailbox confirmation, or password-reset round trip is claimed
-from offline tests or from an HTTP-200 provider settings check.
+Chrome access was restored. The production Supabase Send Email hook was enabled
+for `https://tokvilo.com/api/auth/email-hook`, using the existing Worker signing
+secret. Email signups, the Email provider, and email confirmation remain enabled.
+The exact login confirmation and password recovery redirects were saved.
+
+The first real recovery attempt reached the email provider and was delivered,
+but the legacy binding's completion exceeded the three-second local window.
+The hook returned an error, and Supabase rolled back the recovery token. That
+email was not a usable recovery link. Its D1 delivery remains `unknown` and was
+not replayed or relabelled as a successful hook request.
+
+Worker version `b54f1732-4214-4ed6-8213-8b05d7c65c90` switched authentication email
+to Cloudflare's structured send API and requires a valid `messageId` before
+recording acceptance. Safe failure diagnostics contain only an allowlisted code,
+stage, timeout flag, and elapsed time. All 371 local tests and the build passed.
+
+A fresh recovery request at 13:53 UTC succeeded: Supabase recorded `/recover`
+HTTP 200 and a non-empty recovery token; D1 recorded one new `sent` receipt at
+13:53:39 UTC. Cloudflare's activity log separately shows the new email as
+`Delivered`; a screenshot was saved in the ignored acceptance artifacts. This
+confirms provider delivery and token issuance, not proof that the user has
+changed their password and logged in again. The user was asked to
+complete those final steps using the latest email; no existing password was
+changed by the agent.
+
+The same deployment added the documented image-reference mode for `wan2.7-r2v`.
+Production readback confirmed 295 gateway entries and 251 implemented billing
+adapters, leaving 44 without enabled execution. The image filter was also tested
+in Chrome: switching from ZHIPU to images clears the incompatible manufacturer
+and shows all 49 gateway image entries.
+
+The 2026-10-20 readback above remains historical. A new signup through the enabled
+hook, receipt in the user's mailbox, and the complete password-reset/login round
+trip remain separate acceptance steps.

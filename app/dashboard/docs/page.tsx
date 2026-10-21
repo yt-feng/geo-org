@@ -15,7 +15,7 @@ export default async function DocsPage() {
         <div>
           <span className="section-kicker">PRIVATE REFERENCE</span>
           <h1>API 文档</h1>
-          <p>统一查看数据接口与 tokvilo 多模态 模型 API；各来源独立加载，使用你的 tokvilo 密钥与账户余额调用。</p>
+          <p>统一查看数据接口、tokvilo 多模态、模型服务与精选 API；各服务独立加载，使用你的 tokvilo 密钥与账户余额调用。</p>
         </div>
         <div className="private-badge">登录后可见</div>
       </header>

@@ -17,6 +17,8 @@ const reference = await load("../lib/tokenhub-model-reference.ts");
 const docs = await load("../lib/tokenhub-openapi.ts", { "./tokenhub-model-reference": reference });
 const viewer = await load("../lib/api-documentation.ts");
 const apimart = (await load("../lib/apimart-openapi.ts")).apimartOpenApi("https://tokvilo.com");
+const selectedDocs = await load("../lib/selected-openapi.ts");
+const selected = selectedDocs.selectedOpenApi("https://tokvilo.com");
 const BASE = "https://tokvilo.com";
 const spec = docs.tokenHubOpenApi(BASE);
 const plain = value => JSON.parse(JSON.stringify(value));
@@ -70,17 +72,17 @@ test("local TokenHub OpenAPI requires a signed-in user and never depends on prov
 });
 
 test("a failed data specification does not hide TokenHub docs, and the reverse remains usable", async () => {
-  for (const unavailable of ["tikhub", "tokenhub", "apimart"]) {
+  for (const unavailable of ["tikhub", "tokenhub", "apimart", "selected"]) {
     const calls = [];
     const result = await viewer.loadApiDocumentation(async (url, init) => {
       calls.push(url); assert.equal(init.cache, "no-store"); assert.ok(init.signal);
-      const source = url.includes("studio-openapi") ? "tokenhub" : url.includes("gateway-openapi") ? "apimart" : "tikhub";
-      return source === unavailable ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json(source === "tokenhub" ? spec : source === "apimart" ? apimart : dataSpec());
+      const source = url.includes("studio-openapi") ? "tokenhub" : url.includes("gateway-openapi") ? "apimart" : url.includes("selected-openapi") ? "selected" : "tikhub";
+      return source === unavailable ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json(source === "tokenhub" ? spec : source === "apimart" ? apimart : source === "selected" ? selected : dataSpec());
     });
-    assert.equal(calls.length, 3);
+    assert.equal(calls.length, 4);
     assert.equal(result.warnings.length, 1);
-    assert.equal(result.sources.filter(source => source.loaded).length, 2);
-    assert.equal(result.operations.length, unavailable === "tikhub" ? 15 : unavailable === "tokenhub" ? 9 : 8);
+    assert.equal(result.sources.filter(source => source.loaded).length, 3);
+    assert.equal(result.operations.length, unavailable === "tikhub" ? 17 : unavailable === "tokenhub" ? 11 : unavailable === "apimart" ? 10 : 16);
     assert.ok(result.operations.every(operation => operation.source !== unavailable));
     assert.doesNotMatch([...result.sources.map(source => source.label), ...result.warnings].join(" "), /tokenhub|api[\s-]*mart/i);
   }
@@ -88,13 +90,34 @@ test("a failed data specification does not hide TokenHub docs, and the reverse r
 
 test("a source access denial does not hide other docs; malformed or failed sources never look loaded", async () => {
   const member = await viewer.loadApiDocumentation(async url => url.includes("studio-openapi") ? Response.json({}, { status: 403 }) : Response.json(dataSpec()));
-  assert.equal(member.operations.length, 2);
+  assert.equal(member.operations.length, 3);
   assert.match(member.warnings[0], /当前账户无法访问/);
   const broken = await viewer.loadApiDocumentation(async url => { if (url.includes("studio")) throw Error("transport details must not be displayed"); return Response.json({ notAnApi: true }); });
   assert.equal(broken.operations.length, 0);
-  assert.equal(broken.warnings.length, 3);
+  assert.equal(broken.warnings.length, 4);
   assert.ok(broken.sources.every(source => !source.loaded));
   assert.doesNotMatch(broken.warnings.join(" "), /transport details/);
+});
+
+test("selected documentation has separate executable paths and remains private without provider credentials", async () => {
+  const operations = viewer.parseApiOperations(selected, "selected");
+  assert.equal(operations.length, 2);
+  assert.ok(operations.every(operation => operation.path.startsWith("/api/selected/") && operation.method === "POST"));
+  assert.doesNotMatch(JSON.stringify(selected), /rkapi|source.?price|rateCny|groupRatio|markup/i);
+  for (const operation of operations) {
+    assert.ok(operation.parameters.some(parameter => parameter.name === "Idempotency-Key" && parameter.required));
+    assert.match(viewer.apiCurlExample(BASE, operation), /https:\/\/tokvilo\.com\/api\/selected\//);
+  }
+  const chat = operations.find(operation => operation.path.endsWith("chat/completions"));
+  assert.equal(viewer.requestBodyExample(chat).stream, false);
+  assert.equal(viewer.requestBodySchema(chat).properties.max_tokens.maximum, 4096);
+  for (const [user, status] of [[null, 401], [{ id: "member" }, 200]]) {
+    const route = await load("../app/api/private/selected-openapi/route.ts", {
+      "@/lib/auth": { getPortalUser: async () => user }, "@/lib/config": { publicBaseUrl: () => BASE }, "@/lib/selected-openapi": selectedDocs,
+    });
+    const response = await route.GET(); assert.equal(response.status, status);
+    assert.equal(response.headers.get("cache-control"), "private, no-store, max-age=0");
+  }
 });
 
 test("curl examples contain usable JSON bodies, content type, unique-video placeholder, and owned task path", () => {

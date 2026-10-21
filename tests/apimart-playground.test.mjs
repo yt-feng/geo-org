@@ -161,7 +161,7 @@ test("priced discovery without a completed billing adapter stays disabled", asyn
 });
 
 test("video model selection uses legal defaults and requires reference images for image-only models", async () => {
-  for (const id of ["MiniMax-H3", "MiniMax-Hailuo-02", "MiniMax-Hailuo-2.3", "kling-v2-6", "wan2.6-i2v-flash"]) {
+  for (const id of ["MiniMax-H3", "MiniMax-Hailuo-02", "MiniMax-Hailuo-2.3", "kling-v2-6", "wan2.6-i2v-flash", "wan2.7-r2v"]) {
     const defaults = optionsModule.exports.VIDEO_DEFAULTS[id];
     const f = await fixture({ props: { initialModel: id, initialCategory: "video" },
       models: [{ id, name: id, provider: "MODEL", category: "video", upstream: "apimart" }],
@@ -178,6 +178,10 @@ test("video model selection uses legal defaults and requires reference images fo
     assert.ok(defaults.durations.includes(body.duration), id);
     if (defaults.mode) assert.ok(defaults.modes.includes(body.mode), id);
     else assert.ok(defaults.resolutions.includes(body.resolution), id);
+    if (id === "wan2.7-r2v") {
+      assert.equal(body.image_urls, undefined);
+      assert.deepEqual(body.image_with_roles, [{ url: "https://example.com/first.png", role: "reference_image" }]);
+    }
   }
 });
 

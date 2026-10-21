@@ -50,6 +50,7 @@ test("service labels and operational notices hide upstream branding without chan
   }
   assert.equal(brandDisplay.serviceLabel("tokenhub"), "tokvilo 多模态");
   assert.equal(brandDisplay.serviceLabel("apimart"), "tokvilo 模型服务");
+  assert.equal(brandDisplay.serviceLabel("selected"), "tokvilo 精选");
 });
 
 test("public and member pages render tokvilo branding and retail-only pricing copy", async () => {
@@ -83,7 +84,7 @@ test("public and member pages render tokvilo branding and retail-only pricing co
     return compiledModule.exports;
   }
   const targets = [
-    ...["PublicLanding", "ModelMarket", "ProviderSettingsPanel", "TokenHubSettingsCard", "TokenHubPlayground", "Playground", "ProductMarket", "WalletPanel"].map(name => [`components/${name}.tsx`, name]),
+    ...["PublicLanding", "ModelMarket", "ProviderSettingsPanel", "TokenHubSettingsCard", "TokenHubPlayground", "Playground", "SelectedPlayground", "ProductMarket", "WalletPanel"].map(name => [`components/${name}.tsx`, name]),
     ["app/pricing/page.tsx", "default"], ["app/products/page.tsx", "default"],
     ["app/forgot-password/page.tsx", "default"], ["app/reset-password/page.tsx", "default"],
   ];

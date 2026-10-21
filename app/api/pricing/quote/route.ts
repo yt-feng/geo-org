@@ -2,6 +2,7 @@ import { getPortalUser } from "@/lib/auth";
 import { getD1 } from "@/lib/config";
 import { getTokenHubPricing, quoteTokenHubRequest, PricingError, publicPriceRates } from "@/lib/pricing";
 import { getApimartPricing, quoteApimartRequest } from "@/lib/apimart-pricing";
+import { quoteRkapiRequest } from "@/lib/rkapi-pricing";
 
 import { APIMART_PATHS, type ApimartKind } from "@/lib/apimart-request";
 import { publicModelId } from "@/lib/model-id";
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     let input;
     try { input = JSON.parse(new TextDecoder().decode(bytes)); }
     catch { return Response.json({ error: "请求格式不正确。" }, { status: 400, headers }); }
-    if (!object(input) || Object.keys(input).some(key => !["provider", "mode", "body"].includes(key)) || !["tokenhub", "apimart"].includes(String(input.provider)) || !["chat", "image", "video", "audio"].includes(String(input.mode)) || !object(input.body)) return Response.json({ error: "请选择支持的服务、模型类型和请求参数。" }, { status: 400, headers });
+    if (!object(input) || Object.keys(input).some(key => !["provider", "mode", "body"].includes(key)) || !["tokenhub", "apimart", "selected"].includes(String(input.provider)) || !["chat", "image", "video", "audio"].includes(String(input.mode)) || !object(input.body)) return Response.json({ error: "请选择支持的服务、模型类型和请求参数。" }, { status: 400, headers });
     const body = input.body, mode = input.mode as ApimartKind;
     if (typeof body.model !== "string" || !body.model.trim() || body.model.length > 200 || body.stream) return Response.json({ error: "请填写有效模型并使用非流式请求。" }, { status: 400, headers });
     if (mode === "chat" && (!Array.isArray(body.messages) || body.messages.length < 1 || body.messages.length > 200) ||
@@ -42,6 +43,13 @@ export async function POST(request: Request) {
       expires_at=CASE WHEN expires_at<=? THEN excluded.expires_at ELSE expires_at END,updated_at=CURRENT_TIMESTAMP
       WHERE expires_at<=? OR attempts<10 RETURNING attempts`).bind(`price-quote:${user.id}`, expires, now, now, now).first();
     if (!allowed) return Response.json({ error: "报价请求较频繁，请一分钟后重试。" }, { status: 429, headers });
+    if (input.provider === "selected") {
+      if (mode !== "chat" && mode !== "image") throw new PricingError("tokvilo 精选暂未开放此接口。", 422);
+      const quote = await quoteRkapiRequest(body);
+      if (quote.kind !== mode) throw new PricingError("模型与所选接口不匹配。", 400);
+      return Response.json({ provider: "selected", model: quote.model, mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.reservedMicrousd,
+        rates: quote.rates.map(({ dimension, unit, retailMicrousd, label, condition }) => ({ dimension, unit, retailMicrousd, label, condition })) }, { headers });
+    }
     if (input.provider === "tokenhub") {
       if (mode === "audio") throw new PricingError("此接口尚未开通音乐生成。", 422);
       const quote = quoteTokenHubRequest(await getTokenHubPricing(), mode, body);
