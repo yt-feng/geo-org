@@ -1,5 +1,195 @@
 [
   {
+    "order": "728",
+    "row": "722",
+    "slug": "00722-geo-ai-73c66030",
+    "title": "Eco-GEO：从流量到信任：汽车品牌出海期，如何用白帽品牌化GEO进入AI答案",
+    "excerpt": "出海期车企真正该问的不是“能否在AI答案里排第一”，而是当海外买家向AI助手咨询选车时，答案里的品牌事实是否准确、可核验、可追溯。本文区分“被选为来源”与“被答案吸收”，给出白帽品牌化GEO的事实表、证据页与复测方法，并说明为什么低质AI内容矩阵是负债而非资产。",
+    "category": "汽车",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, 汽车出海, 内容治理, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-21",
+    "image": "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00722-geo-ai-73c66030/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-21T15:14:16+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Steering US Auto Dealers Toward a Profitable Future",
+        "url": "https://www.bcg.com/publications/2025/steering-us-auto-dealers-toward-profitable-future",
+        "publisher": "BCG",
+        "published": "2025-03-20",
+        "retrieved_at": "2026-10-21T15:14:18+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 17834,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "automotive"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "05050d31ddf6e243cd90e7ca546f48017d1418fe5787db4be242368064a6f917"
+      },
+      {
+        "id": "S3",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-21T15:14:18+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-21T15:14:23+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      },
+      {
+        "id": "S5",
+        "title": "Will AI Become the Best Car Sales Advisor?",
+        "url": "https://www.bcg.com/publications/2025/will-ai-become-best-car-sales-advisor",
+        "publisher": "BCG",
+        "published": "2025-09-16",
+        "retrieved_at": "2026-10-21T15:14:29+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 7119,
+        "body_chars": 7119,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "automotive"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "04a1464954eecf2c138c52cfd502ab821c497f6a1db658e2096ce78e06140e61"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "quality_profile": "seo-practical",
+        "h2_count": 5,
+        "table_count": 1,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 3,
+            "cells": 9
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 5,
+          "S2": 1,
+          "S3": 6,
+          "S4": 2,
+          "S5": 1
+        },
+        "visible_character_count": 2474,
+        "zh_character_count": 2035,
+        "word_count": 262,
+        "minimum_zh_characters": 900,
+        "executive_summary_takeaways": 4,
+        "tables_meeting_structure": 1,
+        "valid_citation_count": 15,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 4,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 0,
+      "warnings": [
+        "【低】执行摘要第2条 / 一、第2段：S1原文为AI功能“may use a query fan-out technique”（可能采用），正文摘要写成“AI功能会发起多个相关搜索”，把可能性表述为确定性机制；建议改为“可能发起”或“会视查询情况采用query fan-out”。",
+        "【低】执行摘要第2条：正文把“重要内容以文本形式可读”与“可被索引”并列成技术门槛，但S1把textual form列在SEO最佳实践清单，技术门槛只要求“已索引且可出摘要、满足Search技术规范”，并明确“There are no additional technical requirements”；建议将文本形式归入最佳实践。",
+        "【中】二、第1段、三、第1段：S3为arXiv预印本、作者为独立研究者，结论为描述性统计且明确声明不作因果推断；正文仅称“一项基于公开数据集的研究”，建议标注预印本/非同行评审状态与样本平台（ChatGPT、Google AI Overview/Gemini、Perplexity），以免读者误当同行评审因果证据。",
+        "【低】三、第3段：S2原文为“more of the customer journey, particularly financing, moves online”，正文概括为“更多客户旅程环节转向线上”，弱化了“以金融环节为主”的具体范围；建议补回限定语。",
+        "【低】二、第1段：S3的高影响页面特征（更长、更模块化、语义对齐、含可提取证据）是相关性描述，非可操作因果；正文虽已标注“描述性统计”，但“高影响页面往往……”易被读成写作配方，建议加一句“相关而非因果，未验证改写后是否提升吸收”。",
+        "【低】四、第1、2步：“指定唯一负责人与更新频率”“把经销商合作、认证文件整理为可公开引用页面”涉及客户/合作方信息授权与保密，建议提示需取得对方同意后再公开，避免把可核验写成可披露。",
+        "【低】四、衡量口径表：表格已标注“示例框架，非实测数据”，无问题；但“表述是否正确”一行需人工判定，建议注明判定者与判定口径（如双人独立标注、分歧复核），否则复测结果不可比。",
+        "【低】三、第3段：“汽车品类的特殊性放大了风险”未给出行业来源，属分析推断；建议明确标为推论，或改为“汽车购买涉及配置、价格、认证与售后等多重承诺，错误复述的纠错成本值得关注”，避免被读成已被行业数据验证的结论。",
+        "【中】五、结尾：“AI答案的可验证性，会反过来奖励给出可验证证据的品牌”超出S1/S4可支持范围；来源只说明平台标注来源、内联链接以便用户验证，未证明平台会奖励或带来商业回报。建议改为假设性表述并标注为待验证。"
+      ],
+      "review_type": "automated editorial review",
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 3,
+        "actionability": 4,
+        "originality": 3
+      }
+    }
+  },
+  {
     "order": "727",
     "row": "721",
     "slug": "00721-geo-ai-ai-60d94ec1",

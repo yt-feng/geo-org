@@ -1,5 +1,294 @@
 [
   {
+    "order": "728",
+    "row": "722",
+    "slug": "00722-geo-ai-73c66030",
+    "title": "Eco-GEO: From Traffic to Trust: How to Use White-Hat Branding to Enter GEO in the Era of Automobile Brands Going Global, with AI Answers",
+    "excerpt": "During the overseas expansion phase, what car companies really need to ask themselves is not “whether they can rank first in AI-based answers,” but whether the brand-related facts in the responses provided by AI assistants are accurate, verifiable, and traceable when overseas buyers consult these AI tools while choosing a vehicle. This article distinguishes between “being selected as a source” and “being absorbed by the answer,” provides a factual table, evidence pages, and methods for re-testing white-hat branding GEO strategies, and explains why a low-quality AI content matrix is a liability rather than an asset.",
+    "category": "Brand GEO",
+    "tags": "GEO, branded GEO, White Hat GEO, AI search, automotive expansion overseas, content governance, Eco-GEO, GEO services, AI search optimization",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-10-21",
+    "image": "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/en/blog/articles/00722-geo-ai-73c66030/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-10-21T15:14:16+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Steering US Auto Dealers Toward a Profitable Future",
+        "url": "https://www.bcg.com/publications/2025/steering-us-auto-dealers-toward-profitable-future",
+        "publisher": "BCG",
+        "published": "2025-03-20",
+        "retrieved_at": "2026-10-21T15:14:18+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 17834,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "automotive"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "05050d31ddf6e243cd90e7ca546f48017d1418fe5787db4be242368064a6f917"
+      },
+      {
+        "id": "S3",
+        "title": "From Citation Selection to Citation Absorption: A Measurement Framework for Generative Engine Optimization Across AI Search Platforms",
+        "url": "https://arxiv.org/html/2604.25707v2",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-10-21T15:14:18+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 60461,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "16760433f9e5a645c904be7c7b48c5433392981341235d191a0faee834f9c338"
+      },
+      {
+        "id": "S4",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-10-21T15:14:23+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      },
+      {
+        "id": "S5",
+        "title": "Will AI Become the Best Car Sales Advisor?",
+        "url": "https://www.bcg.com/publications/2025/will-ai-become-best-car-sales-advisor",
+        "publisher": "BCG",
+        "published": "2025-09-16",
+        "retrieved_at": "2026-10-21T15:14:29+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 7119,
+        "body_chars": 7119,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "automotive"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "04a1464954eecf2c138c52cfd502ab821c497f6a1db658e2096ce78e06140e61"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "en",
+        "gate_version": 1,
+        "semantic_review_required": false,
+        "quality_profile": "research",
+        "h2_count": 5,
+        "table_count": 1,
+        "table_shapes": [
+          {
+            "captions": 1,
+            "rows": 4,
+            "headers": 3,
+            "cells": 9
+          }
+        ],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 5,
+          "S2": 1,
+          "S3": 6,
+          "S4": 2,
+          "S5": 1
+        },
+        "visible_character_count": 8511,
+        "zh_character_count": 0,
+        "word_count": 1513,
+        "executive_summary_takeaways": 4,
+        "tables_meeting_structure": 1,
+        "valid_citation_count": 15,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "blogs.bing.com",
+          "developers.google.com"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 4,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": [],
+        "translation": {
+          "source_shape": {
+            "h2_count": 5,
+            "table_count": 1,
+            "table_shapes": [
+              {
+                "captions": 1,
+                "rows": 4,
+                "headers": 3,
+                "cells": 9
+              }
+            ],
+            "role_counts": {
+              "assumptions": 1,
+              "executive-summary": 1
+            },
+            "citation_id_counts": {
+              "S1": 5,
+              "S2": 1,
+              "S3": 6,
+              "S4": 2,
+              "S5": 1
+            }
+          },
+          "numeric_changes": {
+            "title": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "excerpt": {
+              "source": {},
+              "translated": {},
+              "missing": {},
+              "added": {}
+            },
+            "body_html": {
+              "source": {
+                "160": 1,
+                "20": 1,
+                "2030": 1,
+                "30": 1,
+                "602": 1
+              },
+              "translated": {
+                "1": 1,
+                "160": 1,
+                "20": 1,
+                "2030": 1,
+                "30": 1,
+                "602": 1
+              },
+              "missing": {},
+              "added": {
+                "1": 1
+              },
+              "block_alignment": "structural_position",
+              "block_differences": [
+                {
+                  "source": {
+                    "block_index": 7,
+                    "path": "/h2[1]",
+                    "fragment_index": 1,
+                    "tag": "h2",
+                    "text": "一、问题不在排名，而在AI如何复述你的品牌",
+                    "numbers": {},
+                    "text_truncated": false
+                  },
+                  "translated": {
+                    "block_index": 7,
+                    "path": "/h2[1]",
+                    "fragment_index": 1,
+                    "tag": "h2",
+                    "text": "1. The problem isn’t in the ranking, but in how AI can retell your brand’s story.",
+                    "numbers": {
+                      "1": 1
+                    },
+                    "text_truncated": false
+                  },
+                  "missing": {},
+                  "added": {
+                    "1": 1
+                  }
+                }
+              ],
+              "block_differences_total": 1,
+              "block_differences_truncated": false
+            }
+          }
+        },
+        "publication_policy": "translation-integrity-v2",
+        "quality_warning_count": 3
+      },
+      "revisions": 0,
+      "review_type": "offline translation structure check",
+      "warnings": [
+        {
+          "block": "excerpt",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.38",
+          "warning": "Hy-MT2 quantity warning: financial_quantity_changed_missing_or_added"
+        },
+        {
+          "block": "body_html.38",
+          "warning": "Offline translation changed numeric values within a text block"
+        },
+        {
+          "block": "body_html.42",
+          "warning": "Offline translation changed a protected term"
+        },
+        {
+          "block": "body_html.226",
+          "warning": "Offline translation changed a protected term"
+        },
+        "Article has 5 h2 sections; at least 6 are required.",
+        "Only 1 tables meet the analytical-table structure; at least 2 are required.",
+        "Translation changes numeric values in body_html; inspect numeric_changes metrics."
+      ],
+      "paid_translation_calls": 0
+    }
+  },
+  {
     "order": "727",
     "row": "721",
     "slug": "00721-geo-ai-ai-60d94ec1",
