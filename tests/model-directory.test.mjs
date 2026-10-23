@@ -8,13 +8,14 @@ import { brandDisplay } from './helpers/brand-display.mjs';
 async function load(path,mocks={}) {
  const f=new URL(path,import.meta.url), mod={exports:{}};
  const code=ts.transpileModule(await readFile(f,'utf8'),{fileName:f.pathname,compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
- vm.runInNewContext(code,{module:mod,exports:mod.exports,require:n=>{if(n in mocks)return mocks[n];throw Error(n);},URL,URLSearchParams});return mod.exports;
+ vm.runInNewContext(code,{module:mod,exports:mod.exports,require:n=>{if(n in mocks)return mocks[n];throw Error(n);},URL,URLSearchParams,Event,window:{dispatchEvent(){},location:{pathname:'/models',search:'',hash:''},history:{state:null,pushState(){},replaceState(){}}}});return mod.exports;
 }
 const snapshot=JSON.parse(await readFile(new URL('../lib/model-directory-snapshot.json',import.meta.url),'utf8'));
 const refs=await load('../lib/tokenhub-model-reference.ts');
 const modelIds=await load('../lib/model-id.ts');
 const requestKinds=await load('../lib/model-request-kind.ts');
-const catalog=await load('../lib/model-catalog.ts',{'./tokenhub-model-reference':refs,'./model-directory-snapshot.json':{default:snapshot},'./model-id':modelIds,'./model-request-kind':requestKinds});
+const modelIdentity=await load('../lib/model-identity.ts');
+const catalog=await load('../lib/model-catalog.ts',{'./tokenhub-model-reference':refs,'./model-directory-snapshot.json':{default:snapshot},'./model-id':modelIds,'./model-request-kind':requestKinds,'./model-identity':modelIdentity});
 const input={success:true,data:{models:{llm:[{id:'glm-5',name:'GLM-5'}],image:[{id:'gpt-image-2',name:'GPT Image 2'},{id:'grok-imagine-1.5-apimart',name:'Grok APIMart'}],video:[{id:'veo3.1-fast',name:'Veo'}],audio:[{id:'suno',name:'Suno'}]}}};
 const selectedObservedAt='2026-10-01T08:00:00.000Z';
 async function directoryWith(pricing, selected = [], fetch = async()=>input) {
@@ -122,15 +123,17 @@ const all=(n,p)=>Array.isArray(n)?n.flatMap(x=>all(x,p)):!n?.props?[]:[...(p(n)?
 test('switching categories clears incompatible manufacturer filters and shows scoped options',async()=>{
  const hooks=[];let index=0,tree;
  const ui=await load('../components/ModelMarket.tsx',{
-  '@/lib/model-catalog':catalog,'@/lib/brand-display':brandDisplay,'react/jsx-runtime':jsx,'next/link':{default:'a'},'./Icon':{Icon:()=>null},'./PriceTable':{PriceTable:()=>null},
+  '@/lib/model-catalog':catalog,'@/lib/brand-display':brandDisplay,'@/lib/model-identity':modelIdentity,'react/jsx-runtime':jsx,'next/link':{default:'a'},'./Icon':{Icon:()=>null},'./PriceTable':{PriceTable:()=>null},'./ProviderLogo':{ProviderLogo:()=>null},'./LocaleProvider':{useSiteLocale:()=>({isEnglish:false,t:zh=>zh,href:path=>path})},
   react:{useState(initial){const i=index++;if(!(i in hooks))hooks[i]=initial;return [hooks[i],v=>{hooks[i]=v;}];},useEffect(){},useRef:()=>({current:null}),useMemo:f=>f()}
  });
  const render=()=>{index=0;tree=ui.ModelMarket({catalog:parser.parseModelDirectory(input),live:true,observedAt:'2026-10-21T00:00:00.000Z',sources:[{service:'selected',observedAt:selectedObservedAt,live:false}]});};render();
  assert.match(text(tree),/tokvilo 模型服务目录已实时同步。 模型服务目录更新于 2026-10-21/);
  assert.match(text(tree),/tokvilo 精选为 2026-10-01 目录与价格快照/);
  assert.doesNotMatch(text(tree),/tokvilo 精选为 2026-10-21/);
- const label=all(tree,n=>n.type==='label').find(n=>text(n)==='ZHIPU');assert.ok(label);all(label,n=>n.type==='input')[0].props.onChange();render();assert.match(text(tree),/1 个模型/);
- all(tree,n=>n.props.role==='tab').find(n=>text(n)==='图像').props.onClick();render();
- assert.match(text(tree),/2 个模型/);assert.equal(all(tree,n=>n.type==='label').some(n=>text(n)==='ZHIPU'),false);
+ const providerGroup=all(tree,n=>n.props['aria-label']==='模型厂商')[0];
+ const provider=all(providerGroup,n=>n.type==='button').find(n=>text(n)==='智谱');assert.ok(provider);provider.props.onClick();render();assert.match(text(tree),/1 个模型/);
+ const categoryGroup=all(tree,n=>n.props['aria-label']==='模型类型')[0];
+ all(categoryGroup,n=>n.type==='button').find(n=>text(n).startsWith('图像')).props.onClick();render();
+ assert.match(text(tree),/2 个模型/);assert.equal(all(tree,n=>n.props['aria-label']==='模型厂商').some(n=>text(n).includes('智谱')),false);
  assert.doesNotMatch(text(tree),/未找到匹配模型|APIMart|源价|加价/);
 });

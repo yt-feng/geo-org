@@ -1,5 +1,7 @@
 "use client";
 
+import { useSiteLocale } from "./LocaleProvider";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PriceTable } from "./PriceTable";
@@ -19,6 +21,15 @@ async function fetchRecentRequests(): Promise<RecentRequest[]> {
 }
 
 export function SelectedPlayground({ initialModel }: { initialModel?: string }) {
+  const { t, isEnglish, href } = useSiteLocale();
+  const messageCopy = (value: string) => {
+    if (!isEnglish) return value;
+    if (/余额不足/.test(value)) return "Insufficient wallet balance. Please top up.";
+    if (/报价|价格/.test(value)) return "Pricing is unavailable or incomplete. Get a new quote before submitting.";
+    if (/最近请求/.test(value)) return "Request history could not load. Refresh the history list.";
+    if (/连接中断|原请求编号/.test(value)) return "The request ID has been retained. Check the existing request before trying again.";
+    return /[\u4e00-\u9fff]/.test(value) ? "The request is not confirmed. Check its result before retrying." : value;
+  };
   const [models, setModels] = useState<SelectedModel[]>([]);
   const [model, setModel] = useState(initialModel || "");
   const [prompt, setPrompt] = useState("");
@@ -117,31 +128,31 @@ export function SelectedPlayground({ initialModel }: { initialModel?: string }) 
     return typeof item.b64_json === "string" && /^[A-Za-z0-9+/=]+$/.test(item.b64_json) ? [`data:image/png;base64,${item.b64_json}`] : [];
   });
   return <>
-    <header className="dashboard-header"><div><span className="section-kicker">PLAYGROUND</span><h1>tokvilo 精选</h1><p>选择模型、查看报价，再确认从账户余额预留。完成后按实际用量结算。</p></div><Link href="/dashboard/docs?provider=selected">接口文档 ↗</Link></header>
+    <header className="dashboard-header"><div><span className="section-kicker">PLAYGROUND</span><h1>{t("tokvilo 精选", "tokvilo Select")}</h1><p>{t("选择模型、查看报价，再确认从账户余额预留。完成后按实际用量结算。", "Choose a model, get a quote and confirm the reservation from your wallet. Final billing uses actual usage.")}</p></div><Link href={href("/dashboard/docs?provider=selected")}>{t("接口文档 ↗", "API documentation ↗")}</Link></header>
     <div className="playground-layout">
-      <section className="playground-controls" aria-label="精选请求参数">
+      <section className="playground-controls" aria-label={t("精选请求参数", "Select request parameters")}>
         <div className="playground-form-fields">
-          <label className="playground-field"><span>模型</span><select aria-label="精选模型" value={model} onChange={event => { setModel(event.target.value); setResult(null); }} disabled={loading || busy}>{!models.some(item => item.model === model) ? <option value={model}>{model || "正在加载模型…"}</option> : null}{models.map(item => <option key={`selected:${item.model}`} value={item.model}>{item.name || item.model}{item.billingReady ? "" : " · 服务待开通"}</option>)}</select></label>
-          <label className="playground-field"><span>{kind === "image" ? "图片描述" : "提示词"}</span><textarea aria-label="精选提示词" value={prompt} onChange={event => setPrompt(event.target.value)} rows={8} maxLength={kind === "image" ? 4000 : 10000} placeholder={kind === "image" ? "描述你想生成的图片…" : "输入你的问题或任务…"} /></label>
-          {kind === "chat" ? <label className="playground-field"><span>最大输出 tokens</span><select aria-label="精选最大输出" value={maximum} onChange={event => setMaximum(Number(event.target.value))}>{[256, 512, 1024, 2048, 4096].map(value => <option value={value} key={value}>{value}</option>)}</select></label> : <p>当前图片模式：每次 1 张，1024 × 1024。</p>}
-          <p>{selected?.billingReady ? "当前模型已开通此接口，实际结果以请求返回为准。" : "价格已列示，服务待开通；当前不能提交生成请求。"}</p>
+          <label className="playground-field"><span>{t("模型", "Model")}</span><select aria-label={t("精选模型", "Select model")} value={model} onChange={event => { setModel(event.target.value); setResult(null); }} disabled={loading || busy}>{!models.some(item => item.model === model) ? <option value={model}>{model || t("正在加载模型…", "Loading models…")}</option> : null}{models.map(item => <option key={`selected:${item.model}`} value={item.model}>{item.name || item.model}{item.billingReady ? "" : t(" · 服务待开通", " · Activation pending")}</option>)}</select></label>
+          <label className="playground-field"><span>{kind === "image" ? t("图片描述", "Image description") : t("提示词", "Prompt")}</span><textarea aria-label={t("精选提示词", "Select prompt")} value={prompt} onChange={event => setPrompt(event.target.value)} rows={8} maxLength={kind === "image" ? 4000 : 10000} placeholder={kind === "image" ? t("描述你想生成的图片…", "Describe the image you want to create…") : t("输入你的问题或任务…", "Enter your question or task…")} /></label>
+          {kind === "chat" ? <label className="playground-field"><span>{t("最大输出 tokens", "Maximum output tokens")}</span><select aria-label={t("精选最大输出", "Select maximum output")} value={maximum} onChange={event => setMaximum(Number(event.target.value))}>{[256, 512, 1024, 2048, 4096].map(value => <option value={value} key={value}>{value}</option>)}</select></label> : <p>{t("当前图片模式：每次 1 张，1024 × 1024。", "Image mode: one 1024 × 1024 image per request.")}</p>}
+          <p>{selected?.billingReady ? t("当前模型已开通此接口，实际结果以请求返回为准。", "This model is enabled for this endpoint. Actual availability is determined by the response.") : t("价格已列示，服务待开通；当前不能提交生成请求。", "Pricing is listed; activation is pending. Generation is not available yet.")}</p>
         </div>
-        <div className="playground-run-area">{currentQuote ? <div role="status"><strong>本次预留 {money(currentQuote.reservedMicrousd)}</strong><p>修改参数后需重新报价，完成后退回预留差额。</p></div> : null}<button className="playground-run" type="button" disabled={loading || busy || !executable} onClick={currentQuote ? generate : prepareQuote}>{busy ? "处理中…" : currentQuote ? `确认预留 ${money(currentQuote.reservedMicrousd)} 并生成` : "获取准确报价"}</button>{currentQuote ? <button type="button" disabled={busy} onClick={prepareQuote}>刷新报价</button> : null}<Link href="/dashboard/wallet">查看余额与充值</Link></div>
+        <div className="playground-run-area">{currentQuote ? <div role="status"><strong>{t("本次预留 ", "Reservation ")}{money(currentQuote.reservedMicrousd)}</strong><p>{t("修改参数后需重新报价，完成后退回预留差额。", "Get a new quote after changing parameters. Unused reserved funds are returned after completion.")}</p></div> : null}<button className="playground-run" type="button" disabled={loading || busy || !executable} onClick={currentQuote ? generate : prepareQuote}>{busy ? t("处理中…", "Processing…") : currentQuote ? t(`确认预留 ${money(currentQuote.reservedMicrousd)} 并生成`, `Reserve ${money(currentQuote.reservedMicrousd)} & generate`) : t("获取准确报价", "Get exact quote")}</button>{currentQuote ? <button type="button" disabled={busy} onClick={prepareQuote}>{t("刷新报价", "Refresh quote")}</button> : null}<Link href={href("/dashboard/wallet")}>{t("查看余额与充值", "View wallet & top up")}</Link></div>
       </section>
-      <section className="playground-workspace" aria-label="精选请求结果">
-        <header className="playground-workspace-header"><h2>请求与结果</h2><Link href="/models">返回模型市场</Link></header>
-        {requestId ? <div role="status"><p>请求编号：<code>{requestId}</code></p><button type="button" disabled={busy} onClick={() => queryRequest(requestId)}>查询此请求</button><p>查询只读取已有结果，不会重新生成。</p></div> : null}
-        {error ? <p role="alert">{error}</p> : null}
+      <section className="playground-workspace" aria-label={t("精选请求结果", "Select request results")}>
+        <header className="playground-workspace-header"><h2>{t("请求与结果", "Requests & results")}</h2><Link href={href("/models")}>{t("返回模型市场", "Back to models")}</Link></header>
+        {requestId ? <div role="status"><p>{t("请求编号：", "Request ID: ")}<code>{requestId}</code></p><button type="button" disabled={busy} onClick={() => queryRequest(requestId)}>{t("查询此请求", "Check this request")}</button><p>{t("查询只读取已有结果，不会重新生成。", "Checking retrieves the existing result without generating again.")}</p></div> : null}
+        {error ? <p role="alert">{messageCopy(error)}</p> : null}
         {choices[0]?.message?.content ? <pre style={{ whiteSpace: "pre-wrap" }}>{choices[0].message.content}</pre> : null}
         {imageSources.map((source, index) => <figure key={index}>
           {/* Generated URLs and data URIs are displayed without an image proxy. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={source} alt={`生成图片 ${index + 1}`} style={{ maxWidth: "100%" }} />
+          <img src={source} alt={t(`生成图片 ${index + 1}`, `Generated image ${index + 1}`)} style={{ maxWidth: "100%" }} />
         </figure>)}
-        {result ? <details open><summary>请求结果与结算</summary><pre style={{ overflowX: "auto", maxHeight: 420 }}><code>{JSON.stringify(result, null, 2)}</code></pre></details> : <p>生成结果会显示在这里。</p>}
-        <section aria-label="最近精选请求"><h3>最近请求</h3><p>刷新页面后，可在这里查询本账户的原请求结果。</p><button type="button" disabled={historyLoading} onClick={refreshRecentRequests}>{historyLoading ? "正在加载记录…" : "刷新记录"}</button>{historyError ? <p role="alert">{historyError}</p> : null}{recentRequests.length ? <ul>{recentRequests.map(item => <li key={item.id}><p>{item.model} · {requestState(item.state)}{item.created_at ? ` · ${item.created_at}` : ""}</p><code>{item.id}</code> <button type="button" aria-label={`查询请求 ${item.id}`} disabled={busy} onClick={() => queryRequest(item.id)}>查看结果</button></li>)}</ul> : !historyLoading && !historyError ? <p>暂无请求记录。</p> : null}</section>
-        <details><summary>查看 JSON 请求参数</summary><pre><code>{json}</code></pre></details>
-        <details><summary>查看 API 调用示例</summary><pre style={{ overflowX: "auto" }}><code>{curl}</code></pre></details>
+        {result ? <details open><summary>{t("请求结果与结算", "Response & billing")}</summary><pre style={{ overflowX: "auto", maxHeight: 420 }}><code>{JSON.stringify(result, null, 2)}</code></pre></details> : <p>{t("生成结果会显示在这里。", "Generated results will appear here.")}</p>}
+        <section aria-label={t("最近精选请求", "Recent Select requests")}><h3>{t("最近请求", "Recent requests")}</h3><p>{t("刷新页面后，可在这里查询本账户的原请求结果。", "After refreshing, use this list to retrieve your account’s existing results.")}</p><button type="button" disabled={historyLoading} onClick={refreshRecentRequests}>{historyLoading ? t("正在加载记录…", "Loading history…") : t("刷新记录", "Refresh history")}</button>{historyError ? <p role="alert">{messageCopy(historyError)}</p> : null}{recentRequests.length ? <ul>{recentRequests.map(item => <li key={item.id}><p>{item.model} · {isEnglish ? ({ completed: "Completed", failed: "Failed", pending: "Processing", unknown: "Awaiting review" }[item.state] || "Awaiting review") : requestState(item.state)}{item.created_at ? ` · ${item.created_at}` : ""}</p><code>{item.id}</code> <button type="button" aria-label={t(`查询请求 ${item.id}`, `Check request ${item.id}`)} disabled={busy} onClick={() => queryRequest(item.id)}>{t("查看结果", "View result")}</button></li>)}</ul> : !historyLoading && !historyError ? <p>{t("暂无请求记录。", "No requests yet.")}</p> : null}</section>
+        <details><summary>{t("查看 JSON 请求参数", "View JSON request parameters")}</summary><pre><code>{json}</code></pre></details>
+        <details><summary>{t("查看 API 调用示例", "View API example")}</summary><pre style={{ overflowX: "auto" }}><code>{curl}</code></pre></details>
         {model ? <PriceTable provider="selected" model={model} /> : null}
       </section>
     </div>

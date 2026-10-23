@@ -15,6 +15,8 @@ function find(node, predicate) {
   else if (node?.props) { if (predicate(node)) return node; return find(node.props.children, predicate); }
   return null;
 }
+const authModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(await readFile(new URL("../components/AuthForm.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText, { module: authModule, exports: authModule.exports, require: name => name === "react/jsx-runtime" ? jsx : {} });
 const tokenHash = "private-recovery-hash-" + "a".repeat(35);
 async function fixture({ mode = "reset", href = `https://tokvilo.com/reset-password#token_hash=${tokenHash}&type=recovery`, fetcher } = {}) {
   const hooks = [], effects = [], calls = [], navigations = [], cleanups = [];
@@ -32,6 +34,8 @@ async function fixture({ mode = "reset", href = `https://tokvilo.com/reset-passw
       };
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
+      if (name === "./AuthForm") return { authMessageEnglish: authModule.exports.authMessageEnglish };
+      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: new URL(location.href).searchParams.get("lang") === "en", t: (zh,en) => new URL(location.href).searchParams.get("lang") === "en" ? en : zh, href: path => new URL(location.href).searchParams.get("lang") === "en" ? path + "?lang=en" : path }) };
       if (name === "./Icon") return { Icon: () => null };
       throw Error(`Unexpected dependency: ${name}`);
     },
@@ -44,7 +48,7 @@ async function fixture({ mode = "reset", href = `https://tokvilo.com/reset-passw
   function render() { cursor = 0; tree = compiled.exports.PasswordRecoveryForm({ mode }); for (const effect of effects.splice(0)) effect(); return tree; }
   function fill(name, value) { find(tree, node => node.props.name === name).props.onChange({ target: { value } }); render(); }
   const submit = () => find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
-  const verify = () => find(tree, node => node.type === "button" && text(node).includes("验证")).props.onClick();
+  const verify = () => find(tree, node => node.type === "button" && /验证|verification/.test(text(node))).props.onClick();
   render();
   for (let index = 0; index < 15; index++) await Promise.resolve();
   render();
@@ -133,4 +137,36 @@ test("a concurrent confirmation consumes a recovery link only once and failures 
   assert.match(text(f.tree()), /重置链接已失效/);
   assert.ok(find(f.tree(), node => node.props.href === "/forgot-password"));
   assert.equal(find(f.tree(), node => node.props.name === "password"), null);
+});
+
+test("English reset preserves language, strips token and retains pending recovery across a local language switch", async () => {
+  const f = await fixture({ href: `https://tokvilo.com/reset-password?lang=en#token_hash=${tokenHash}&type=recovery` });
+  assert.deepEqual(f.cleanups, ["/reset-password?lang=en"]);
+  assert.equal(f.calls.length, 0);
+  assert.match(text(f.tree()), /Continue verification/);
+  f.location.href = "https://tokvilo.com/reset-password?lang=zh"; f.render();
+  assert.match(text(f.tree()), /继续验证/);
+  await f.verify(); f.render();
+  assert.equal(f.calls.length, 1);
+  assert.deepEqual(f.calls[0].body, { tokenHash });
+});
+
+test("language-only reset query checks the recovery cookie and preserves English login navigation", async () => {
+  const f = await fixture({ href: "https://tokvilo.com/reset-password?lang=en" });
+  assert.equal(f.calls.length, 1); assert.deepEqual(f.calls[0].body, {});
+  assert.match(text(f.tree()), /New password/);
+  f.fill("password", "A-new-password-123"); f.fill("confirmPassword", "A-new-password-123");
+  await f.submit(); f.render();
+  assert.deepEqual(f.navigations, ["/login?lang=en"]);
+  assert.match(text(f.tree()), /Your password has been updated/);
+});
+
+test("English recovery keeps account existence generic and never echoes unknown server errors", async () => {
+  const f = await fixture({ mode: "forgot", href: "https://tokvilo.com/forgot-password?lang=en" });
+  f.fill("email", "buyer@example.com"); await f.submit(); f.render();
+  assert.match(text(f.tree()), /If an account exists for this email/);
+  const failure = await fixture({ mode: "forgot", href: "https://tokvilo.com/forgot-password?lang=en", fetcher: async () => Response.json({ error: "private-provider-detail" }, { status: 503 }) });
+  failure.fill("email", "buyer@example.com"); await failure.submit(); failure.render();
+  assert.match(text(failure.tree()), /could not complete this request/);
+  assert.doesNotMatch(text(failure.tree()), /private-provider-detail/);
 });

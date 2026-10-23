@@ -8,6 +8,8 @@ import ts from "typescript";
 
 const filename = new URL("../components/ProductMarket.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+const copyModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(await readFile(new URL("../lib/product-copy.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { module: copyModule, exports: copyModule.exports });
 const product = { id: "plus-test", name: "ChatGPT Plus", variant: "Test region", retailCents: 12000, delivery: "code", soldOut: false, description: "Subscription inquiry" };
 const text = value => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(text).join("") : value?.props ? text(value.props.children) : "";
 function find(node, predicate) {
@@ -15,7 +17,7 @@ function find(node, predicate) {
   else if (node?.props) { if (predicate(node)) return node; return find(node.props.children, predicate); }
   return null;
 }
-function fixture(fetcher = async () => Response.json({ ok: true, inquiryId: "inq-1", emailStatus: "sent" })) {
+function fixture(fetcher = async () => Response.json({ ok: true, inquiryId: "inq-1", emailStatus: "sent" }), locale = "zh") {
   const hooks = [], calls = []; let cursor = 0, tree;
   const react = {
     useState(initial) { const index = cursor++; if (!hooks[index]) hooks[index] = { value: initial }; return [hooks[index].value, value => { hooks[index].value = typeof value === "function" ? value(hooks[index].value) : value; }]; },
@@ -28,6 +30,9 @@ function fixture(fetcher = async () => Response.json({ ok: true, inquiryId: "inq
     require(name) {
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
+      if (name === "./ProviderLogo") return { ProviderLogo: () => null };
+      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ locale, isEnglish: locale === "en", t: (zh, en) => locale === "en" ? en : zh }) };
+      if (name === "@/lib/product-copy") return copyModule.exports;
       if (name === "@/lib/public-products") return { digitalProducts: [product], cny: cents => `¥${(cents / 100).toFixed(2)}` };
       throw Error(`Unexpected dependency: ${name}`);
     },
@@ -37,7 +42,7 @@ function fixture(fetcher = async () => Response.json({ ok: true, inquiryId: "inq
   function fill(name, value) { find(tree, node => node.props.name === name).props.onChange({ target: { value } }); render(); }
   const submit = () => find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
   render();
-  find(tree, node => node.type === "button" && text(node) === "提交购买需求").props.onClick(); render();
+  find(tree, node => node.type === "button" && text(node) === (locale === "en" ? "Send an inquiry" : "提交购买需求")).props.onClick(); render();
   return { calls, fill, submit, render, tree: () => tree };
 }
 
@@ -121,4 +126,45 @@ test("all eight audited product details retain their exact prices, source identi
   }
   const page = await readFile(new URL("../app/products/page.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(page, /PRODUCT_SOURCE|xiaoxin|小鑫/i);
+});
+
+
+test("English inquiries retain the same payload, idempotency and queued-delivery contract", async () => {
+  const f = fixture(async () => Response.json({ ok: true, inquiryId: "inq-en", emailStatus: "pending" }, { status: 202 }), "en");
+  assert.match(text(f.tree()), /Indicative price/);
+  assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
+  f.fill("email", " Buyer@Example.com "); f.fill("name", " Buyer "); f.fill("message", " One subscription for next week. ");
+  await f.submit(); f.render();
+  assert.equal(f.calls.length, 1);
+  assert.equal(f.calls[0].url, "/api/product-inquiries");
+  assert.deepEqual(JSON.parse(f.calls[0].init.body), { productId: product.id, email: "buyer@example.com", name: "Buyer", message: "One subscription for next week." });
+  assert.match(f.calls[0].init.headers["Idempotency-Key"], /^[A-Za-z0-9_-]{8,128}$/);
+  assert.match(text(f.tree()), /Inquiry received.*inq-en.*buyer@example\.com.*24 hours.*saved.*queued/s);
+  assert.equal(find(f.tree(), node => node.type === "form"), null);
+});
+
+test("English error handling localizes a server error without changing retry identity", async () => {
+  const f = fixture(async () => Response.json({ error: "需求提交未完成" }, { status: 503 }), "en");
+  f.fill("email", "buyer@example.com"); f.fill("message", "One subscription.");
+  await f.submit(); f.render();
+  assert.match(text(f.tree()), /could not be confirmed/);
+  assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
+  await f.submit();
+  assert.equal(f.calls[0].init.headers["Idempotency-Key"], f.calls[1].init.headers["Idempotency-Key"]);
+});
+
+test("all eight public products have complete English copy without modifying their commercial data", async () => {
+  const compiled = { exports: {} };
+  const productsSource = await readFile(new URL("../lib/public-products.ts", import.meta.url), "utf8");
+  vm.runInNewContext(ts.transpileModule(productsSource, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { module: compiled, exports: compiled.exports });
+  const products = compiled.exports.digitalProducts;
+  assert.equal(products.length, 8);
+  for (const item of products) {
+    const before = JSON.stringify(item), copy = copyModule.exports.productCopy(item, "en");
+    assert.ok(copy.variant.length > 5 && copy.description.length > 30, item.id);
+    assert.doesNotMatch(copy.variant + copy.description, /[\u4e00-\u9fff]/, item.id);
+    assert.notEqual(copy.description, "Send an inquiry to confirm product details and availability.", item.id);
+    assert.equal(JSON.stringify(item), before);
+    assert.equal(copyModule.exports.productCopy(item, "zh").variant, item.variant);
+  }
 });

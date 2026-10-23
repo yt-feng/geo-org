@@ -4,23 +4,25 @@ import Link from "next/link";
 import { useState } from "react";
 import { Brand } from "@/components/Brand";
 import { Icon } from "@/components/Icon";
+import { LanguageSwitcher, useSiteLocale } from "./LocaleProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function PublicNav() {
+  const { t, href } = useSiteLocale();
   const [open, setOpen] = useState(false);
   return (
     <header className="public-header">
-      <Link href="/" className="public-brand" aria-label="tokvilo 首页"><Brand /></Link>
-      <button className="public-menu-toggle" type="button" aria-label={open ? "关闭导航" : "打开导航"} aria-expanded={open} onClick={() => setOpen(!open)}><Icon name={open ? "close" : "menu"} size={20} /></button>
-      <nav className={`public-navigation${open ? " is-open" : ""}`} aria-label="主导航">
-        <Link href="/models" onClick={() => setOpen(false)}>模型市场 <Icon name="chevron-down" size={12} /></Link>
-        <Link href="/products" onClick={() => setOpen(false)}>数字商品</Link>
-        <Link href="/pricing" onClick={() => setOpen(false)}>价格</Link>
-        <Link href="/dashboard/docs" onClick={() => setOpen(false)}>API 文档</Link>
-        <Link href="/#integration" onClick={() => setOpen(false)}>接入指南</Link>
-        <Link href="/#faq" onClick={() => setOpen(false)}>支持 <Icon name="chevron-down" size={12} /></Link>
-        <ThemeToggle />
-        <Link href="/dashboard" className="public-account-link"><span className="public-account-avatar">t</span> 控制台 <Icon name="arrow-up-right" size={13} /></Link>
+      <Link href={href("/")} className="public-brand" aria-label={t("tokvilo 首页", "tokvilo home")}><Brand /></Link>
+      <button className="public-menu-toggle" type="button" aria-label={open ? t("关闭导航", "Close navigation") : t("打开导航", "Open navigation")} aria-expanded={open} onClick={() => setOpen(!open)}><Icon name={open ? "close" : "menu"} size={20} /></button>
+      <nav className={`public-navigation${open ? " is-open" : ""}`} aria-label={t("主导航", "Main navigation")}>
+        <Link href={href("/models")} onClick={() => setOpen(false)}>{t("模型市场", "Models")}</Link>
+        <Link href={href("/products")} onClick={() => setOpen(false)}>{t("数字商品", "Digital goods")}</Link>
+        <Link href={href("/pricing")} onClick={() => setOpen(false)}>{t("价格", "Pricing")}</Link>
+        <Link href={href("/dashboard/docs")} onClick={() => setOpen(false)}>{t("API 文档", "API docs")}</Link>
+        <Link href={href("/#integration")} onClick={() => setOpen(false)}>{t("接入指南", "Get started")}</Link>
+        <Link href={href("/#faq")} onClick={() => setOpen(false)}>{t("帮助", "Help")}</Link>
+        <LanguageSwitcher /><ThemeToggle />
+        <Link href={href("/dashboard")} className="public-account-link"><span className="public-account-avatar">t</span> {t("控制台", "Console")} <Icon name="arrow-up-right" size={13} /></Link>
       </nav>
     </header>
   );

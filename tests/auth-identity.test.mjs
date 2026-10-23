@@ -26,10 +26,10 @@ async function fixture(key = "sb_publishable_test") {
     ADMIN_PASSWORD: "test-admin-password", ADMIN_SESSION_SECRET: "test-only-secret-value-with-at-least-32-chars",
   };
   const helpers = await moduleAt("crypto", {});
-  const calls = [];
+  const calls = [], redirects = [];
   const auth = await moduleAt("auth", {
     "next/headers": { cookies: async () => ({ get: () => undefined }) },
-    "next/navigation": { redirect: () => { throw new Error("redirect"); } },
+    "next/navigation": { redirect: path => { redirects.push(path); throw new Error("redirect"); } },
     "./config": { runtimeEnv: () => env }, "./crypto": helpers,
     "./local-auth": { verifyLocalSession: async () => ({ id: "local_user", isAdmin: false }) },
   }, {
@@ -38,7 +38,7 @@ async function fixture(key = "sb_publishable_test") {
       return Response.json({ id: "provider-user", email: env.ADMIN_EMAIL, user_metadata: { display_name: "Member", isAdmin: true, role: "admin" } });
     },
   });
-  return { auth, env, calls };
+  return { auth, env, calls, redirects };
 }
 
 test("new provider identities never inherit administrator authority from email or user metadata", async () => {
@@ -48,6 +48,15 @@ test("new provider identities never inherit administrator authority from email o
   assert.equal(user.isAdmin, false);
   assert.equal(f.calls[0].options.headers.authorization, "Bearer test-user-access");
   assert.equal(f.calls[0].options.redirect, "manual");
+});
+
+test("missing sessions retain the selected language using only fixed login destinations", async () => {
+  const f = await fixture();
+  await assert.rejects(() => f.auth.requirePortalUser('en'), /redirect/);
+  await assert.rejects(() => f.auth.requirePortalUser(), /redirect/);
+  await assert.rejects(() => f.auth.requirePortalUser('https://untrusted.invalid'), /redirect/);
+  assert.deepEqual(f.redirects, ['/login?lang=en', '/login', '/login']);
+  assert.equal(f.calls.length, 0);
 });
 
 test("publishable keys are apikey only while legacy anonymous JWT configuration remains supported", async () => {

@@ -90,7 +90,9 @@ test("public and member pages render tokvilo branding and retail-only pricing co
   ];
   for (const [file, name] of targets) {
     const component = (await load(resolve(root, file)))[name];
-    const html = renderToStaticMarkup(React.createElement(component, { isAdmin: false, email: "buyer@example.invalid" }));
+    const props = { isAdmin: false, email: "buyer@example.invalid" };
+    const node = file.startsWith('app/') ? await component(props) : React.createElement(component, props);
+    const html = renderToStaticMarkup(node);
     const visible = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "").replace(/<[^>]+>/g, "");
     const text = visible;
     assert.doesNotMatch(text, upstreamBrand, file);

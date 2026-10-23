@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { Icon } from "./Icon";
+import { useSiteLocale } from "./LocaleProvider";
 
 const subscribe = (callback: () => void) => {
   window.addEventListener("eco-theme", callback);
@@ -10,9 +11,10 @@ const subscribe = (callback: () => void) => {
 const getSnapshot = () => document.documentElement.dataset.theme === "light";
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
+  const { t } = useSiteLocale();
   const light = useSyncExternalStore(subscribe, getSnapshot, () => false);
   return (
-    <button className={`theme-toggle ${className}`} type="button" title={light ? "切换深色主题" : "切换浅色主题"} aria-label={light ? "切换深色主题" : "切换浅色主题"} onClick={() => {
+    <button className={`theme-toggle ${className}`} type="button" title={light ? t("切换深色主题", "Switch to dark theme") : t("切换浅色主题", "Switch to light theme")} aria-label={light ? t("切换深色主题", "Switch to dark theme") : t("切换浅色主题", "Switch to light theme")} onClick={() => {
       const next = light ? "dark" : "light";
       document.documentElement.dataset.theme = next;
       try { localStorage.setItem("tokvilo-theme", next); } catch { /* Theme remains usable without storage. */ }

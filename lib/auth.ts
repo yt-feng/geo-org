@@ -177,9 +177,9 @@ export async function getPortalUser(): Promise<PortalUser | null> {
   return verifyAccessToken(cookieStore.get(ACCESS_COOKIE)?.value || "");
 }
 
-export async function requirePortalUser(): Promise<PortalUser> {
+export async function requirePortalUser(locale: "zh" | "en" = "zh"): Promise<PortalUser> {
   const user = await getPortalUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(locale === "en" ? "/login?lang=en" : "/login");
   return user;
 }
 

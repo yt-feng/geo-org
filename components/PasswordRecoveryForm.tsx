@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Icon } from "./Icon";
+import { useSiteLocale } from "./LocaleProvider";
+import { authMessageEnglish } from "./AuthForm";
 
 type ResetState = "loading" | "confirm" | "ready" | "invalid" | "complete";
 const confirmation = "如果该邮箱已注册，我们会发送密码重置邮件。请检查收件箱与垃圾邮件文件夹。";
@@ -18,6 +20,7 @@ async function recoveryRequest(path: string, body: Record<string, string>): Prom
 }
 
 export function PasswordRecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
+  const { t, href, isEnglish } = useSiteLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -40,7 +43,8 @@ export function PasswordRecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
     const tokenHash = params.get("token_hash") || "";
     const type = params.get("type");
     // Keep recovery material out of subsequent navigation and referrers.
-    window.history.replaceState(null, "", location.pathname);
+    const language = location.searchParams.get("lang");
+    window.history.replaceState(null, "", location.pathname + (language === "en" ? "?lang=en" : ""));
     if (tokenHash) {
       if (type !== "recovery" || !/^[A-Za-z0-9_-]{32,512}$/.test(tokenHash)) {
         queueMicrotask(() => setResetState("invalid")); return;
@@ -49,7 +53,9 @@ export function PasswordRecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
       queueMicrotask(() => setResetState("confirm"));
       return;
     }
-    if (location.search || location.hash) { queueMicrotask(() => setResetState("invalid")); return; }
+    const remainingParams = new URLSearchParams(location.search);
+    remainingParams.delete("lang");
+    if (remainingParams.toString() || location.hash) { queueMicrotask(() => setResetState("invalid")); return; }
     // This only checks an existing HttpOnly recovery cookie; it does not redeem a link.
     void recoveryRequest("/api/auth/reset-password", {}).then(result => {
       setResetState(result.ready === true ? "ready" : "invalid");
@@ -97,29 +103,29 @@ export function PasswordRecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
       if (result.passwordReset !== true) throw new Error("密码更新暂未确认，请稍后重试。");
       setPassword(""); setConfirmPassword(""); setResetState("complete");
       setMessage("密码已更新，请使用新密码登录。");
-      window.location.assign("/login");
+      window.location.assign(href("/login"));
     } catch (cause) {
       setIsError(true); setMessage(cause instanceof Error ? cause.message : "密码更新未完成，请稍后重试。");
     } finally { inFlight.current = false; setPending(false); }
   }
 
-  const notice = message ? <p className={isError ? "form-message error" : "form-message success"} role={isError ? "alert" : "status"}>{message}</p> : null;
+  const notice = message ? <p className={isError ? "form-message error" : "form-message success"} role={isError ? "alert" : "status"}>{isEnglish ? authMessageEnglish(message) : message}</p> : null;
   if (mode === "forgot") return <form className="auth-form" onSubmit={requestEmail}>
-    <label><span>注册邮箱</span><input name="email" type="email" autoComplete="email" inputMode="email" placeholder="name@example.com" maxLength={254} required value={email} disabled={pending || sent} onChange={event => setEmail(event.target.value)} /></label>
-    <button className="button button-primary auth-submit" disabled={pending || sent} type="submit">{pending ? "正在提交…" : sent ? "请求已提交" : "发送重置邮件"}<Icon name="arrow-right" size={15} /></button>
-    {notice}<p className="auth-switch"><Link href="/login">返回登录</Link></p>
+    <label><span>{t("注册邮箱", "Account email")}</span><input name="email" type="email" autoComplete="email" inputMode="email" placeholder="name@example.com" maxLength={254} required value={email} disabled={pending || sent} onChange={event => setEmail(event.target.value)} /></label>
+    <button className="button button-primary auth-submit" disabled={pending || sent} type="submit">{pending ? t("正在提交…", "Submitting…") : sent ? t("请求已提交", "Request submitted") : t("发送重置邮件", "Send reset email")}<Icon name="arrow-right" size={15} /></button>
+    {notice}<p className="auth-switch"><Link href={href("/login")}>{t("返回登录", "Back to login")}</Link></p>
   </form>;
 
   return <div className="auth-form">
-    {resetState === "loading" ? <p className="form-message" role="status">正在检查重置状态…</p> : null}
-    {resetState === "confirm" ? <><p className="auth-intro">点击继续验证邮件中的链接，然后设置新密码。</p><button className="button button-primary auth-submit" type="button" disabled={pending} onClick={verifyLink}>{pending ? "正在验证…" : "继续验证"}<Icon name="arrow-right" size={15} /></button></> : null}
-    {resetState === "invalid" ? <p className="form-message error" role="alert">此重置链接无效或已过期，请重新申请密码重置邮件。</p> : null}
+    {resetState === "loading" ? <p className="form-message" role="status">{t("正在检查重置状态…", "Checking reset status…")}</p> : null}
+    {resetState === "confirm" ? <><p className="auth-intro">{t("点击继续验证邮件中的链接，然后设置新密码。", "Continue to verify your email link, then choose a new password.")}</p><button className="button button-primary auth-submit" type="button" disabled={pending} onClick={verifyLink}>{pending ? t("正在验证…", "Verifying…") : t("继续验证", "Continue verification")}<Icon name="arrow-right" size={15} /></button></> : null}
+    {resetState === "invalid" ? <p className="form-message error" role="alert">{t("此重置链接无效或已过期，请重新申请密码重置邮件。", "This reset link is invalid or expired. Request a new password reset email.")}</p> : null}
     {resetState === "ready" ? <form className="auth-form" onSubmit={changePassword}>
-      <label><span>新密码</span><div className="auth-password-wrap"><input name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={10} maxLength={512} placeholder="至少 10 位" required value={password} disabled={pending} onChange={event => setPassword(event.target.value)} /><button className="auth-password-toggle" type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"}><Icon name={showPassword ? "shield" : "key"} size={15} /></button></div></label>
-      <label><span>确认新密码</span><input name="confirmPassword" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={10} maxLength={512} placeholder="再次输入新密码" required value={confirmPassword} disabled={pending} onChange={event => setConfirmPassword(event.target.value)} /></label>
-      <button className="button button-primary auth-submit" type="submit" disabled={pending}>{pending ? "正在保存…" : "保存新密码"}<Icon name="arrow-right" size={15} /></button>
+      <label><span>{t("新密码", "New password")}</span><div className="auth-password-wrap"><input name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={10} maxLength={512} placeholder={t("至少 10 位", "At least 10 characters")} required value={password} disabled={pending} onChange={event => setPassword(event.target.value)} /><button className="auth-password-toggle" type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t("隐藏密码", "Hide password") : t("显示密码", "Show password")}><Icon name={showPassword ? "shield" : "key"} size={15} /></button></div></label>
+      <label><span>{t("确认新密码", "Confirm new password")}</span><input name="confirmPassword" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={10} maxLength={512} placeholder={t("再次输入新密码", "Enter your new password again")} required value={confirmPassword} disabled={pending} onChange={event => setConfirmPassword(event.target.value)} /></label>
+      <button className="button button-primary auth-submit" type="submit" disabled={pending}>{pending ? t("正在保存…", "Saving…") : t("保存新密码", "Save new password")}<Icon name="arrow-right" size={15} /></button>
     </form> : null}
     {notice}
-    <p className="auth-switch"><Link href="/forgot-password">重新申请重置邮件</Link><Link href="/login">返回登录</Link></p>
+    <p className="auth-switch"><Link href={href("/forgot-password")}>{t("重新申请重置邮件", "Request a new reset email")}</Link><Link href={href("/login")}>{t("返回登录", "Back to login")}</Link></p>
   </div>;
 }

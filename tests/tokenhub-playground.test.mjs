@@ -29,6 +29,7 @@ async function fixture(options = {}) {
     window: { location: { search: "" } }, setTimeout: () => 1, clearTimeout() {},
     require(name) {
       if (name === "@/lib/brand-display") return brandDisplay;
+      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) };
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
@@ -51,9 +52,9 @@ async function fixture(options = {}) {
   function render() { cursor = 0; tree = compiled.exports.TokenHubPlayground({ isAdmin: false }); for (const effect of effects.splice(0)) effect(); return tree; }
   async function flush() { for (let i = 0; i < 15; i++) await Promise.resolve(); }
   const primary = () => find(tree, node => node.type === "button" && node.props.className === "playground-run");
-  function prompt(value) { find(tree, node => node.props["aria-label"] === "tokvilo 多模态 提示词").props.onChange({ target: { value } }); render(); }
-  function mode(value) { const name = { video: "视频", image: "图像", chat: "对话" }[value]; find(tree, node => node.type === "button" && node.props.role === "tab" && content(node).startsWith(name)).props.onClick(); render(); }
-  function advanced(body) { const toggle = find(tree, node => String(node.props.className || "").includes("tokenhub-advanced-toggle")); if (!toggle.props["aria-pressed"]) { toggle.props.onClick(); render(); } find(tree, node => node.props["aria-label"] === "tokvilo 多模态 JSON 请求").props.onChange({ target: { value: JSON.stringify(body, null, 2) } }); render(); }
+  function prompt(value) { find(tree, node => node.props["aria-label"] === (options.english ? "tokvilo Multimodal prompt" : "tokvilo 多模态 提示词")).props.onChange({ target: { value } }); render(); }
+  function mode(value) { const name = (options.english ? { video: "Video", image: "Image", chat: "Chat" } : { video: "视频", image: "图像", chat: "对话" })[value]; find(tree, node => node.type === "button" && node.props.role === "tab" && content(node).startsWith(name)).props.onClick(); render(); }
+  function advanced(body) { const toggle = find(tree, node => String(node.props.className || "").includes("tokenhub-advanced-toggle")); if (!toggle.props["aria-pressed"]) { toggle.props.onClick(); render(); } find(tree, node => node.props["aria-label"] === (options.english ? "tokvilo Multimodal JSON request" : "tokvilo 多模态 JSON 请求")).props.onChange({ target: { value: JSON.stringify(body, null, 2) } }); render(); }
   render(); await flush(); render(); prompt("A peaceful forest");
   return { calls, render, flush, primary, prompt, mode, advanced, tree: () => tree, paid: () => calls.filter(call => call.init?.method === "POST" && call.url !== "/api/pricing/quote") };
 }
@@ -122,4 +123,17 @@ test("changing interface mode creates a different idempotency identity even for 
   assert.equal(f.paid()[0].init.body, f.paid()[1].init.body);
   assert.notEqual(f.paid()[0].init.headers["Idempotency-Key"], f.paid()[1].init.headers["Idempotency-Key"]);
   assert.notEqual(f.paid()[0].url, f.paid()[1].url);
+});
+
+test("English multimodal controls retain exact Chinese user content and billing confirmation", async () => {
+  const f = await fixture({ english: true, generate: async () => Response.json({ choices: [{ message: { content: "原始中文回复" } }] }) });
+  assert.doesNotMatch(content(f.tree()), /[\u4e00-\u9fff]/);
+  f.mode("chat"); f.prompt("保留中文用户输入");
+  await f.primary().props.onClick(); f.render();
+  assert.equal(content(f.primary()), "Confirm & generate");
+  await f.primary().props.onClick(); f.render();
+  const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
+  assert.deepEqual(JSON.parse(f.paid()[0].init.body), quoted.body);
+  assert.equal(JSON.parse(f.paid()[0].init.body).messages[0].content, "保留中文用户输入");
+  assert.match(content(f.tree()), /原始中文回复/);
 });

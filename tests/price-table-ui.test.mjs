@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
+import { identity } from "./helpers/model-identity.mjs";
 import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const filename = new URL("../components/PriceTable.tsx", import.meta.url).pathname;
@@ -11,13 +12,17 @@ const code = ts.transpileModule(await readFile(filename, "utf8"), {
   fileName: filename,
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
+const priceCopyModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(await readFile(new URL('../lib/price-copy.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, { module: priceCopyModule, exports: priceCopyModule.exports });
 const text = value => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(text).join("") : value?.props ? text(value.props.children) : "";
 function all(node, predicate) {
   if (Array.isArray(node)) return node.flatMap(item => all(item, predicate));
   if (!node?.props) return [];
   return [...(predicate(node) ? [node] : []), ...all(node.props.children, predicate)];
 }
-async function fixture(payload) {
+async function fixture(payload, locale = 'zh') {
   const hooks = [], effects = []; let cursor = 0, tree;
   const compiled = { exports: {} };
   vm.runInNewContext(code, {
@@ -33,6 +38,10 @@ async function fixture(payload) {
       };
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
+      if (name === "@/lib/model-identity") return identity;
+      if (name === "./ProviderLogo") return {ProviderLogo:()=>null};
+      if (name === "./LocaleProvider") return {useSiteLocale:()=>({isEnglish:locale === 'en',t:(zh,en)=>locale === 'en' ? en : zh,href:p=>p})};
+      if (name === "@/lib/price-copy") return priceCopyModule.exports;
       if (name === "@/lib/brand-display") return brandDisplay;
       throw new Error(`Unexpected dependency: ${name}`);
     },
@@ -108,4 +117,31 @@ test("selected prices keep same-name models separate and never link unverified s
   const links = all(f.tree(), node => node.type === "a");
   assert.equal(links.length, 1); assert.equal(links[0].props.href, "/selected?model=text");
   assert.doesNotMatch(text(f.tree()), /rkapi|源价|加价/i);
+});
+
+test('English family comparisons preserve version order, billing units and independent service prices', async () => {
+  const f = await fixture({ observedAt: '2026-10-23', models: [
+    { provider: 'apimart', model: 'gpt-4.1', name: 'GPT 4.1', kind: 'chat', billingReady: true,
+      rates: [{ dimension: 'input', unit: '1M_tokens', retailMicrousd: 2400000, condition: '输入 ≤ 100,000 tokens' }] },
+    { provider: 'apimart', model: 'gpt-5.2', name: 'GPT 5.2', kind: 'chat', billingReady: true,
+      rates: [{ dimension: 'input', unit: '1M_tokens', retailMicrousd: 2100000 },
+        { dimension: 'cached_input', unit: '1M_tokens', retailMicrousd: 210000 },
+        { dimension: 'output', unit: '1M_tokens', retailMicrousd: 12000000 }],
+      capabilitiesNotes: ['当前开放纯文本对话；多模态输入、工具调用和显式缓存创建暂未开放。'] },
+    { provider: 'selected', model: 'gpt-5.2', name: 'GPT 5.2', kind: 'chat', billingReady: false,
+      rates: [{ dimension: 'input', unit: '1M_tokens', retailMicrousd: 800000 }], notes: ['价格已列示，服务待开通。'] },
+  ] }, 'en');
+  const cards = all(f.tree(), node => node.props.className === 'price-model');
+  assert.deepEqual(cards.map(node => node.key), ['apimart:gpt-5.2', 'selected:gpt-5.2', 'apimart:gpt-4.1']);
+  assert.match(text(f.tree()), /Input1M tokens\$2\.1/);
+  assert.match(text(f.tree()), /Input1M tokens\$0\.8/);
+  assert.match(text(f.tree()), /Input ≤ 100,000 tokens/);
+  assert.match(text(f.tree()), /Pricing listed · Activation pending/);
+  const preview = all(cards[0], node => node.props.className === 'price-preview')[0];
+  assert.match(text(preview), /Input.*Output/);
+  assert.doesNotMatch(text(preview), /Cached/);
+  assert.match(text(cards[0]), /Cached input1M tokens\$0\.21/, 'complete rates must retain caching prices');
+  assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]|tokenhub|apimart|rkapi/i);
+  assert.equal(all(f.tree(), node => node.type === 'a').length, 2);
+  assert.equal(all(f.tree(), node => node.type === 'details').every(node => node.props.open === false), true);
 });

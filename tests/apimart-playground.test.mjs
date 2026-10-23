@@ -43,16 +43,20 @@ async function fixture(options = {}) {
     require(name) {
       if (name === "@/lib/apimart-video-options") return optionsModule.exports;
       if (name === "@/lib/brand-display") return brandDisplay;
+      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) };
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
       if (name === "./Icon") return { Icon: () => null };
-      if (name === "@/lib/model-catalog") return catalog;
+      if (name === "@/lib/model-catalog") return options.initialCatalog ? { ...catalog, modelCatalog: options.initialCatalog } : catalog;
+      if (name === "@/lib/price-copy") return { englishPriceText: value => value };
       throw Error(`Unexpected dependency ${name}`);
     },
     fetch: async (url, init) => {
       calls.push({ url, init });
+      if (url === "/api/model-catalog" && options.directoryRequest) return options.directoryRequest();
       if (url === "/api/model-catalog") return Response.json({ models: options.models || catalog.modelCatalog.map(model => ({ ...model, upstream: "apimart" })) });
+      if (url === "/api/pricing" && options.pricingRequest) return options.pricingRequest();
       if (url === "/api/pricing") return Response.json({ models: options.prices || [{ provider: "apimart", model: "gpt-image-2", kind: "image", billingReady: true, rates: [{ dimension: "2k", unit: "image", retailMicrousd: 18000 }] }] });
       if (url === "/api/gateway/v1/tasks") return Response.json({ data: [] });
       if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ provider: "apimart", model: "gpt-image-2", mode: "image", currency: "USD", reservedMicrousd: 18000, observedAt: "2026-10-20T00:00:00Z" });
@@ -199,4 +203,59 @@ test("Midjourney displays one task and its default price, while image quality ch
   ] }] });
   const selector = find(quality.tree(), node => node.props["aria-label"] === "图片质量");
   assert.match(text(selector), /lowmedium/); assert.doesNotMatch(text(selector), /high/);
+});
+
+test("English model playground translates controls without rewriting the prompt, output or quote", async () => {
+  const f = await fixture({ english: true, generate: async () => Response.json({ choices: [{ message: { content: "原始中文输出" } }] }) });
+  assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
+  f.prompt("原样保留中文提示词");
+  await f.primary().props.onClick(); f.render();
+  assert.match(text(f.primary()), /Reserve \$0\.018000 & generate/);
+  await f.primary().props.onClick(); f.render();
+  const quote = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
+  const paid = f.calls.find(call => call.url.includes("images/generations"));
+  assert.deepEqual(JSON.parse(paid.init.body), quote.body);
+  assert.equal(JSON.parse(paid.init.body).prompt, "原样保留中文提示词");
+  assert.match(text(f.tree()), /原始中文输出/);
+});
+
+const defaultModels = [
+  { id: "dall-e-3", name: "DALL-E 3", category: "image", upstream: "apimart", provider: "OPENAI" },
+  { id: "gpt-image-2", name: "GPT Image 2", category: "image", upstream: "apimart", provider: "OPENAI" },
+  { id: "veo3.1-fast", name: "Veo", category: "video", upstream: "apimart", provider: "GOOGLE" },
+];
+const defaultPrices = [
+  { provider: "apimart", model: "dall-e-3", kind: "image", billingReady: false, rates: [] },
+  { provider: "apimart", model: "gpt-image-2", kind: "image", billingReady: true, rates: [{ dimension: "2k", unit: "image", retailMicrousd: 18000 }] },
+];
+const selectedModel = f => find(f.tree(), node => node.props["aria-label"] === "选择模型").props.value;
+test("plain playground initially selects the first billing-ready model instead of an unavailable catalogue entry", async () => {
+  for (const deferredDirectory of [false, true]) {
+    let finishDirectory;
+    const f = await fixture({ initialCatalog: [defaultModels[0]], models: defaultModels, prices: defaultPrices,
+      ...(deferredDirectory ? { directoryRequest: () => new Promise(resolve => { finishDirectory = resolve; }) } : {}) });
+    if (deferredDirectory) { assert.equal(selectedModel(f), "dall-e-3"); finishDirectory(Response.json({ models: defaultModels })); await f.flush(); f.render(); }
+    assert.equal(selectedModel(f), "gpt-image-2");
+    assert.equal(f.primary().props.disabled, false);
+    assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+  }
+});
+test("an explicit unavailable model deep link is preserved", async () => {
+  const f = await fixture({ initialCatalog: defaultModels, models: defaultModels, prices: defaultPrices, props: { initialModel: "dall-e-3", initialCategory: "image" } });
+  assert.equal(selectedModel(f), "dall-e-3");
+  assert.equal(f.primary().props.disabled, true);
+});
+test("late pricing cannot overwrite a user model, custom ID or category selection", async () => {
+  for (const selection of ["model", "custom", "category"]) {
+    let finishPricing;
+    const f = await fixture({ initialCatalog: defaultModels, models: defaultModels, pricingRequest: () => new Promise(resolve => { finishPricing = resolve; }) });
+    if (selection === "model") find(f.tree(), node => node.props["aria-label"] === "选择模型").props.onChange({ target: { value: "dall-e-3" } });
+    else if (selection === "custom") find(f.tree(), node => node.props.placeholder === "填写模型 ID").props.onChange({ target: { value: "custom-model-id" } });
+    else find(f.tree(), node => node.type === "button" && node.props.role === "tab" && text(node) === "视频").props.onClick();
+    f.render();
+    finishPricing(Response.json({ models: defaultPrices })); await f.flush(); f.render();
+    const id = find(f.tree(), node => node.props.placeholder === "填写模型 ID").props.value;
+    assert.equal(id, selection === "model" ? "dall-e-3" : selection === "custom" ? "custom-model-id" : "veo3.1-fast");
+    assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+  }
 });

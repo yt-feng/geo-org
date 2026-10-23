@@ -7,7 +7,7 @@ async function source(path) {
   return readFile(new URL(path, import.meta.url), "utf8");
 }
 
-test("replaces all starter metadata and keeps public copy documentation-free", async () => {
+test("replaces starter metadata and publishes a real read-only catalogue example", async () => {
   const [page, landing, layout, packageJson] = await Promise.all([
     source("../app/page.tsx"),
     source("../components/PublicLanding.tsx"),
@@ -15,13 +15,18 @@ test("replaces all starter metadata and keeps public copy documentation-free", a
     source("../package.json"),
   ]);
   assert.match(`${page}\n${landing}`, /进入控制台/);
-  assert.match(landing, /文档与调用凭证不对外公开/);
+  assert.match(landing, /无需登录即可读取公开目录/);
+  assert.match(landing, /Read the public catalogue without signing in/);
   assert.match(layout, /tokvilo/);
   assert.match(layout, /index:\s*false/);
   assert.doesNotMatch(`${page}\n${layout}\n${packageJson}`, /codex-preview|react-loading-skeleton|SkeletonPreview/i);
   assert.doesNotMatch(page, /eco_live_your_api_key|curl --request|\/api\/v1\//i);
   assert.doesNotMatch(landing, /eco_live_[a-z0-9]{12,}/i);
-  assert.match(landing, /\/api\/v1\/ENDPOINT/);
+  assert.match(landing, /https:\/\/tokvilo\.com\/api\/model-catalog/);
+  assert.doesNotMatch(landing, /\/api\/v1\/ENDPOINT|Authorization: Bearer|href="\/admin"/);
+  const catalogueRoute = await source("../app/api/model-catalog/route.ts");
+  assert.match(catalogueRoute, /export async function GET/);
+  assert.match(catalogueRoute, /Response\.json\(directory/);
 });
 
 test("keeps the OpenAPI document behind a server-side session check", async () => {
@@ -152,4 +157,51 @@ test("ships no configured upstream identity or credential in application source"
     assert.doesNotMatch(content, /UPSTREAM_BASE_URL=https?:\/\//i);
     assert.doesNotMatch(content, /UPSTREAM_API_TOKEN=\S+/i);
   }
+});
+
+
+test("homepage renders native Chinese and English content with working localized discovery links", async () => {
+  const [{ default: React }, { renderToStaticMarkup }, { default: ts }, { default: vm }, { createRequire }, { resolve, dirname }] = await Promise.all([
+    import("react"), import("react-dom/server"), import("typescript"), import("node:vm"), import("node:module"), import("node:path"),
+  ]);
+  const require = createRequire(import.meta.url), root = new URL("../", import.meta.url).pathname, cache = new Map();
+  async function load(file) {
+    if (cache.has(file)) return cache.get(file);
+    const contents = await readFile(file, "utf8"), ast = ts.createSourceFile(file, contents, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX), dependencies = {};
+    for (const statement of ast.statements) {
+      if (!ts.isImportDeclaration(statement) || statement.importClause?.isTypeOnly) continue;
+      const name = statement.moduleSpecifier.text;
+      if (name === "next/link") dependencies[name] = { default: ({ children, ...props }) => React.createElement("a", props, children) };
+      else if (name.startsWith("@/") || name.startsWith(".")) {
+        const base = name.startsWith("@/") ? resolve(root, name.slice(2)) : resolve(dirname(file), name);
+        let target;
+        for (const extension of [".tsx", ".ts"]) { try { await readFile(base + extension); target = base + extension; break; } catch {} }
+        assert.ok(target, `Unresolved ${name}`);
+        dependencies[name] = await load(target);
+      }
+    }
+    const compiled = { exports: {} };
+    vm.runInNewContext(ts.transpileModule(contents, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText,
+      { module: compiled, exports: compiled.exports, URL, URLSearchParams, require: name => dependencies[name] || require(name) }, { filename: file });
+    cache.set(file, compiled.exports); return compiled.exports;
+  }
+  const { PublicLanding } = await load(resolve(root, "components/PublicLanding.tsx"));
+  const { LocaleProvider } = await load(resolve(root, "components/LocaleProvider.tsx"));
+  const { ProductMarket } = await load(resolve(root, "components/ProductMarket.tsx"));
+  const render = (component, locale) => renderToStaticMarkup(React.createElement(LocaleProvider, { locale }, React.createElement(component)));
+  const zh = render(PublicLanding, "zh"), en = render(PublicLanding, "en");
+  const visible = html => html.replace(/<[^>]+>/g, "");
+  assert.match(visible(zh), /选对模型.*让想法成形/s);
+  assert.match(visible(en), /Find your model.*Create what/);
+  assert.match(en, /href="\/en\/models\?provider=OPENAI&amp;family=gpt&amp;category=text"/);
+  assert.match(en, /href="\/en\/products"/);
+  assert.match(en, /href="\/dashboard\/docs\?lang=en"/);
+  assert.match(zh, /href="\/models\?provider=OPENAI&amp;family=gpt&amp;category=text"/);
+  assert.doesNotMatch(visible(en).replace("中文", ""), /[\u4e00-\u9fff]/);
+  assert.match(en, /provider-logos\/claude\.svg/);
+  assert.match(en, /provider-logos\/gemini\.svg/);
+  const englishProducts = visible(render(ProductMarket, "en"));
+  assert.match(englishProducts, /Philippines.*Chile/s);
+  assert.match(englishProducts, /24 hours/);
+  assert.doesNotMatch(englishProducts, /[\u4e00-\u9fff]/);
 });

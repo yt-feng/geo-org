@@ -9,17 +9,17 @@ const code = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness(initialPath) {
+function harness(initialPath, search = '') {
   let pathname = initialPath, cleanup, dependencies;
   const requests = [], listeners = new Map(), timers = [], destinations = [];
   const mod = { exports: {} };
   vm.runInNewContext(code, {
-    module: mod, exports: mod.exports, AbortController,
+    module: mod, exports: mod.exports, AbortController, URLSearchParams,
     fetch: (url, options) => new Promise(resolve => requests.push({ url, options, resolve })),
     setTimeout: callback => { timers.push(callback); return timers.length; },
     clearTimeout: () => {},
     window: {
-      location: { get pathname() { return pathname; }, assign: path => destinations.push(path) },
+      location: { get pathname() { return pathname; }, search, assign: path => destinations.push(path) },
       addEventListener: (name, listener) => listeners.set(name, listener),
       removeEventListener: name => listeners.delete(name),
     },
@@ -60,4 +60,14 @@ test('entering recovery aborts prior refresh and suppresses stale scheduling', a
   assert.equal(app.timers.length, 0);
   assert.equal(app.listeners.size, 0);
   assert.deepEqual(app.destinations, []);
+});
+
+test('an existing session returns from login to the dashboard in the selected language', async () => {
+  for (const [search, destination] of [['?lang=en', '/dashboard?lang=en'], ['', '/dashboard']]) {
+    const app = harness('/login', search); app.render();
+    assert.equal(app.requests[0].url, '/api/auth/refresh');
+    assert.equal(app.requests[0].options.body, '{}');
+    app.requests[0].resolve({ ok: true, status: 200 }); await new Promise(setImmediate);
+    assert.deepEqual(app.destinations, [destination]);
+  }
 });

@@ -19,7 +19,8 @@ export function SessionKeepAlive() {
         });
         if (stopped || response.status === 401) return;
         if (response.ok && window.location.pathname === "/login") {
-          window.location.assign("/dashboard");
+          const isEnglish = new URLSearchParams(window.location.search).get("lang") === "en";
+          window.location.assign(isEnglish ? "/dashboard?lang=en" : "/dashboard");
           return;
         }
       } catch { if (stopped) return; }

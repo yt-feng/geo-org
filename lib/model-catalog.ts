@@ -31,10 +31,10 @@ export const modelCategories: Array<{ id: ModelCategory; label: string; icon: st
 // Only public model metadata is bundled here. Prices stay in the server pricing parser.
 export function modelManufacturer(id: string): string {
   const value = id.toLowerCase();
-  if (/^(gpt-|chatgpt-|dall-e|o[1-4](?:-|$)|babbage|davinci|text-|omni-moderation)/.test(value)) return "OPENAI";
+  if (/^(gpt-|chatgpt-|dall-e|o[1-9](?:-|$)|babbage|davinci|text-|omni-moderation|sora|whisper|tts-|codex)/.test(value)) return "OPENAI";
   if (/^(gemini-|imagen-|veo|omni-flash)/.test(value)) return "GOOGLE";
   if (value.startsWith("claude-")) return "ANTHROPIC";
-  if (/^(seedream|seedance)/.test(value)) return "BYTEDANCE";
+  if (/^(seedream|seedance|dreamina)/.test(value)) return "BYTEDANCE";
   if (value.startsWith("deepseek-")) return "DEEPSEEK";
   if (value.startsWith("glm-")) return "ZHIPU";
   if (/^(qwen|wan[0-9]|z-image|happyhorse)/.test(value)) return "ALIBABA";
@@ -45,6 +45,7 @@ export function modelManufacturer(id: string): string {
   if (value.startsWith("kimi-")) return "MOONSHOT";
   if (value.startsWith("mimo-")) return "XIAOMI";
   if (value.startsWith("mai-")) return "MICROSOFT";
+  if (/^(hy-image|hunyuan)/.test(value)) return "TENCENT";
   if (value.startsWith("vidu")) return "SHENGSHU";
   if (value.startsWith("pixverse-")) return "PIXVERSE";
   if (value.startsWith("skyreels-")) return "SKYREELS";

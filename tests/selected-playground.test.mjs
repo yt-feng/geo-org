@@ -24,7 +24,7 @@ async function fixture(options = {}) {
   };
   const mod = { exports: {} };
   vm.runInNewContext(code, { module: mod, exports: mod.exports, crypto: webcrypto, URL,
-    require(name) { if (name === "react") return react; if (name === "react/jsx-runtime") return jsx; if (name === "next/link") return { default: "a" }; if (name === "./PriceTable") return { PriceTable: () => null }; throw Error(name); },
+    require(name) { if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) }; if (name === "react") return react; if (name === "react/jsx-runtime") return jsx; if (name === "next/link") return { default: "a" }; if (name === "./PriceTable") return { PriceTable: () => null }; throw Error(name); },
     fetch: async (url, init) => {
       calls.push({ url, init });
       if (url === "/api/pricing") return Response.json({ models: [
@@ -39,7 +39,7 @@ async function fixture(options = {}) {
   }, { filename });
   function render() { cursor = 0; tree = mod.exports.SelectedPlayground({ initialModel: model }); for (const effect of effects.splice(0)) effect(); return tree; }
   async function flush() { for (let i = 0; i < 12; i++) await Promise.resolve(); }
-  const prompt = value => { find(tree, node => node.props["aria-label"] === "精选提示词").props.onChange({ target: { value } }); render(); };
+  const prompt = value => { find(tree, node => node.props["aria-label"] === (options.english ? "Select prompt" : "精选提示词")).props.onChange({ target: { value } }); render(); };
   const primary = () => find(tree, node => node.props.className === "playground-run");
   render(); await flush(); render(); prompt("Explain this model");
   return { calls, render, flush, prompt, primary, tree: () => tree };
@@ -182,4 +182,18 @@ test("viewing a settled historical request cannot clear a different unresolved r
   await find(f.tree(), node => node.props["aria-label"] === `查询请求 ${oldId}`).props.onClick(); f.render();
   await f.primary().props.onClick(); f.render();
   assert.equal(f.calls.at(-1).init.headers["Idempotency-Key"], original);
+});
+
+test("English selected playground keeps generated content and request identity unchanged", async () => {
+  const f = await fixture({ english: true, generate: async () => Response.json({ choices: [{ message: { content: "原始中文回答" } }], tokvilo_billing: { status: "settled", chargedMicrousd: 3000 } }) });
+  assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
+  f.prompt("不翻译这段用户提示词");
+  await f.primary().props.onClick(); f.render();
+  assert.match(text(f.primary()), /Reserve \$0\.012000 & generate/);
+  await f.primary().props.onClick(); f.render();
+  const paid = f.calls.find(call => call.url === "/api/selected/v1/chat/completions");
+  const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
+  assert.deepEqual(JSON.parse(paid.init.body), quoted.body);
+  assert.equal(JSON.parse(paid.init.body).messages[0].content, "不翻译这段用户提示词");
+  assert.match(text(f.tree()), /原始中文回答/);
 });
