@@ -5,6 +5,7 @@ import { englishPriceText } from "@/lib/price-copy";
 
 import { VIDEO_DEFAULTS } from "@/lib/apimart-video-options";
 import { displayServiceText } from "@/lib/brand-display";
+import { modelRequestKind } from "@/lib/model-request-kind";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -16,6 +17,14 @@ const prompts: Record<ModelCategory, string> = { image: "描述你想创建的�
 const examples: Record<ModelCategory, string[]> = { image: ["清晨薄雾中的山间小屋，柔和自然光，电影摄影质感。", "极简风格产品摄影，银色耳机置于浅灰色石材上，细腻阴影。", "蓝白配色的未来城市，等距视角，干净的几何线条。"], video: ["航拍镜头缓缓掠过海岸线，晨光照亮波浪，电影感。", "镜头向前推进，穿过一座安静花园，树叶在微风中摇动。"], text: ["请将以下想法整理成清晰的产品介绍：一个统一管理多种 API 的开发者平台。", "帮我写一个 Python 示例，读取 JSON 文件并汇总每种类别的数量。"], audio: ["轻柔的 lo-fi 钢琴，雨声背景，适合深夜专注工作的氛围。", "温暖明亮的原声吉他旋律，轻快的节奏，没有人声。"] };
 
 function shellQuote(value: string) { return `'${value.replaceAll("'", "'\\''")}'`; }
+type PlaygroundStatus = { authenticated: boolean; serviceEnabled?: boolean; configured?: boolean; accountActive?: boolean; balanceMicrousd?: number; code: string };
+async function getPlaygroundStatus(signal?: AbortSignal): Promise<PlaygroundStatus> {
+  const response = await fetch("/api/playground/status?service=gateway", { cache: "no-store", signal });
+  const data = await response.json();
+  if (response.status === 401) return { authenticated: false, code: "login_required" };
+  if (!response.ok || data.authenticated !== true || typeof data.serviceEnabled !== "boolean" || typeof data.configured !== "boolean" || typeof data.accountActive !== "boolean" || !Number.isSafeInteger(data.balanceMicrousd) || data.balanceMicrousd < 0) throw Error("status_unavailable");
+  return data;
+}
 
 export function Playground({ initialModel, initialCategory, isAdmin }: { initialModel?: string; initialCategory?: string; isAdmin: boolean }) {
   const { t, isEnglish, href } = useSiteLocale();
@@ -54,14 +63,38 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
   const [prices, setPrices] = useState<Array<{ provider: string; model: string; kind: string; billingReady?: boolean; rates: Array<{ dimension: string; label?: string; unit: string; retailMicrousd: number }> }>>([]);
   const [priceError, setPriceError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<"quote" | "generate" | "query" | null>(null);
+  const [serviceStatus, setServiceStatus] = useState<PlaygroundStatus | null>(null);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [statusError, setStatusError] = useState(false);
   const [quote, setQuote] = useState<{ signature: string; reservedMicrousd: number; observedAt: string } | null>(null);
   const [requestError, setRequestError] = useState("");
+  const [pendingId, setPendingId] = useState("");
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [tasks, setTasks] = useState<Array<{ id: string; model: string; status: string }>>([]);
   const polls = useRef<Record<string, number>>({});
-  const pendingRequest = useRef<{ signature: string; id: string } | null>(null);
+  const pendingRequest = useRef<{ signature: string; id: string; model: string; taskId?: string } | null>(null);
+  const clearPendingRequest = () => { pendingRequest.current = null; setPendingId(""); };
   const inFlight = useRef(false);
   const automaticSelection = useRef({ allowed: !initialModel, category: firstCategory });
+  const resultRef = useRef<HTMLDivElement | null>(null);
+  const statusRequest = useRef(0);
+  const scrollToResult = () => setTimeout(() => resultRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }), 0);
+  async function refreshStatus() {
+    const request = ++statusRequest.current;
+    setStatusLoading(true); setStatusError(false);
+    try { const status = await getPlaygroundStatus(); if (statusRequest.current === request) setServiceStatus(status); }
+    catch { if (statusRequest.current === request) { setServiceStatus(null); setStatusError(true); } }
+    finally { if (statusRequest.current === request) setStatusLoading(false); }
+  }
+  useEffect(() => {
+    const controller = new AbortController();
+    const request = ++statusRequest.current;
+    getPlaygroundStatus(controller.signal).then(status => { if (!controller.signal.aborted && statusRequest.current === request) setServiceStatus(status); })
+      .catch(() => { if (!controller.signal.aborted && statusRequest.current === request) setStatusError(true); })
+      .finally(() => { if (!controller.signal.aborted && statusRequest.current === request) setStatusLoading(false); });
+    return () => controller.abort();
+  }, []);
   useEffect(() => {
     let active = true;
     let loadedDirectory = modelCatalog;
@@ -97,16 +130,23 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
         const response = await fetch(`/api/gateway/v1/tasks/${encodeURIComponent(task.id)}`, { cache: "no-store" });
         const data = await response.json();
         if (!active) return;
-        if (response.ok && typeof data.data?.status === "string") {
-          setTasks(current => current.map(item => item.id === task.id ? { ...item, status: data.data.status } : item));
-          if (["completed", "failed", "cancelled"].includes(data.data.status)) { setResult(data); setShowPreview(true); }
+        const taskResult = data.data && typeof data.data === "object" && !Array.isArray(data.data) ? data.data : data;
+        if (response.ok && typeof taskResult.status === "string") {
+          setTasks(current => current.map(item => item.id === task.id ? { ...item, status: taskResult.status } : item));
+          if (["completed", "failed", "cancelled"].includes(taskResult.status)) {
+            setResult(data); setShowPreview(true);
+            if (pendingRequest.current?.taskId === task.id && ["settled", "refunded"].includes(data.tokvilo_billing?.status)) { clearPendingRequest(); setQuote(null); }
+            void refreshStatus();
+          }
         } else setTasks(current => [...current]);
       } catch { if (active) setTasks(current => [...current]); }
     }, 5000);
     return () => { active = false; clearTimeout(timer); };
   }, [tasks, busy]);
   const selectedPrice = prices.find(item => item.model === model);
-  const executable = selectedPrice?.billingReady === true && selectedPrice.kind === (category === "text" ? "chat" : category);
+  const requestKind = modelRequestKind(model, category);
+  const supportedCapability = requestKind === (category === "text" ? "chat" : category === "audio" ? "music" : category);
+  const executable = supportedCapability && selectedPrice?.billingReady === true && selectedPrice.kind === (category === "text" ? "chat" : category);
   const selected = directory.find(item => item.id === model);
   const detailedImage = category === "image";
   const imageDimensions = selectedPrice?.rates.filter(rate => rate.unit === "image" && !rate.dimension.startsWith("input:")).map(rate => rate.dimension.toLowerCase()) || [];
@@ -139,26 +179,39 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
   const json = JSON.stringify(payload, null, 2);
   const signature = endpoints[category] + "\n" + json;
   const currentQuote = quote?.signature === signature ? quote : null;
+  const serviceReady = serviceStatus?.authenticated === true && serviceStatus.accountActive === true && serviceStatus.serviceEnabled === true && serviceStatus.configured === true && !statusLoading && !statusError;
+  const insufficientBalance = !!currentQuote && serviceStatus?.authenticated === true && typeof serviceStatus.balanceMicrousd === "number" && serviceStatus.balanceMicrousd < currentQuote.reservedMicrousd;
+  const canGenerate = serviceReady && !insufficientBalance;
+  const capabilityNotice = !supportedCapability ? t("此模型需要专用接口，工作台暂未支持该能力。可以查看文档或选择其他模型。", "This model requires a dedicated endpoint that is not available in this playground yet. Check its documentation or choose another model.") : "";
+  const statusNotice = statusLoading ? t("正在检查账户与服务状态…", "Checking account and service status…")
+    : statusError ? t("账户与服务状态暂时无法确认，请重试检查。", "Account and service status could not be checked. Retry the check.")
+    : serviceStatus?.code === "login_required" ? t("登录已失效，请重新登录后生成。", "Your session has expired. Sign in again to generate.")
+    : serviceStatus?.accountActive === false ? t("当前账户暂不可用，请联系支持。", "This account is unavailable. Contact support.")
+    : serviceStatus?.serviceEnabled === false ? t("生成服务暂时关闭，可以先查看价格。", "Generation is temporarily disabled. You can still check the price.")
+    : serviceStatus?.configured === false ? t("生成服务尚未就绪，可以先查看价格。", "The generation service is not ready. You can still check the price.")
+    : insufficientBalance ? t("钱包余额不足以支付本次预留金额。充值后刷新余额，再确认生成。", "Your wallet balance is below this reservation. Top up, refresh your balance, then confirm generation.")
+    : serviceStatus?.balanceMicrousd === 0 ? t("当前钱包余额为 $0。可以先查看价格，充值后即可确认生成。", "Your wallet balance is $0. Check the price first, then top up to confirm generation.") : "";
   const curl = `curl --request POST \\\n  --url 'https://tokvilo.com/api/gateway${endpoints[category]}' \\\n  --header 'Authorization: Bearer YOUR_TOKVILO_API_KEY' \\\n  --header 'Idempotency-Key: YOUR_UNIQUE_REQUEST_ID' \\\n  --header 'Content-Type: application/json' \\\n  --data ${shellQuote(json)}`;
   function changeCategory(value: ModelCategory) { automaticSelection.current.allowed = false; setCategory(value); setModel(directory.find(item => item.category === value && prices.some(price => price.model === item.id && price.billingReady))?.id || directory.find(item => item.category === value)?.id || ""); setAdvanced(null); setShowPreview(false); setCopied(false); setPromptExample(0); }
   async function copy() { try { await navigator.clipboard.writeText(format === "json" ? json : curl); setCopied(true); setCopyError(false); setTimeout(() => setCopied(false), 1800); } catch { setCopyError(true); } }
 
   async function refreshTask(id: string) {
-    setBusy(true); setRequestError("");
+    setBusy(true); setPhase("query"); setRequestError("");
     try {
       const response = await fetch(`/api/gateway/v1/tasks/${encodeURIComponent(id)}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || "任务查询失败，请稍后刷新。");
-      setResult(data); setShowPreview(true);
+      setResult(data); setShowPreview(true); scrollToResult();
       const status = data.data?.status || data.status;
       if (typeof status === "string") setTasks(current => current.map(task => task.id === id ? { ...task, status } : task));
     } catch (cause) { setRequestError(cause instanceof Error ? cause.message : "任务查询失败。"); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setPhase(null); }
   }
   async function prepareQuote() {
     if (inFlight.current || payloadError || !executable) return;
     inFlight.current = true;
-    setBusy(true); setRequestError(""); setQuote(null);
+    setBusy(true); setPhase("quote"); setRequestError(""); setQuote(null);
+    const statusRefresh = refreshStatus();
     try {
       const response = await fetch("/api/pricing/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider: "apimart", mode: category === "text" ? "chat" : category, body: payload }) });
       const data = await response.json();
@@ -166,25 +219,63 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
       if (data.provider !== "apimart" || data.model !== model || data.currency !== "USD" || !Number.isSafeInteger(data.reservedMicrousd) || data.reservedMicrousd < 1 || data.reservedMicrousd > 1_000_000_000_000) throw new Error("报价内容不完整，请重新获取。");
       setQuote({ signature, reservedMicrousd: data.reservedMicrousd, observedAt: typeof data.observedAt === "string" ? data.observedAt : "" });
     } catch (cause) { setRequestError(cause instanceof Error ? cause.message : "报价暂不可用，请稍后重试。"); }
-    finally { setBusy(false); inFlight.current = false; }
+    finally { await statusRefresh; setBusy(false); setPhase(null); inFlight.current = false; }
   }
   async function run() {
-    if (inFlight.current || !currentQuote) return;
+    if (inFlight.current || pendingRequest.current || !currentQuote || !canGenerate || !executable) return;
     inFlight.current = true;
-    setBusy(true); setRequestError(""); setResult(null); setShowPreview(true);
-    if (pendingRequest.current?.signature !== signature) pendingRequest.current = { signature, id: crypto.randomUUID() };
+    setBusy(true); setPhase("generate"); setRequestError(""); setResult(null); setShowPreview(true);
+    pendingRequest.current = { signature, id: crypto.randomUUID(), model };
+    setPendingId(pendingRequest.current.id);
     try {
       const response = await fetch(`/api/gateway${endpoints[category]}`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pendingRequest.current.id, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd) }, body: json });
       const data = await response.json();
       if (!response.ok) {
-        if (data.error?.code === "reservation_limit_exceeded") setQuote(null);
-        if (response.status < 500 && response.status !== 409) pendingRequest.current = null;
+        const serviceBalanceUnavailable = data.error?.code === "service_balance_unavailable";
+        const confirmedRefund = serviceBalanceUnavailable && data.tokvilo_billing?.status === "refunded" && data.tokvilo_billing.chargedMicrousd === 0;
+        if (confirmedRefund) { clearPendingRequest(); setQuote(null); }
+        if (data.error?.code === "reservation_limit_exceeded") { clearPendingRequest(); setQuote(null); }
+        if (response.status < 500 && response.status !== 409) clearPendingRequest();
+        if (serviceBalanceUnavailable) throw new Error(confirmedRefund
+          ? t("生成服务暂时不可用，本次未扣费。请稍后重试或联系支持。", "Service temporarily unavailable. You were not charged. Try later or contact support.")
+          : t("生成服务暂时不可用，请先查询此请求的状态。", "Service temporarily unavailable. Check this request’s status before trying again."));
         throw new Error(data.error?.message || "请求未完成，请保留当前参数后重试查询。");
       }
-      setResult(data); setQuote(null); pendingRequest.current = null;
+      setResult(data); setQuote(null); clearPendingRequest(); scrollToResult();
       if (Array.isArray(data.data) && data.data[0]?.task_id) setTasks(current => [{ id: data.data[0].task_id, model, status: data.data[0].status || "submitted" }, ...current.filter(task => task.id !== data.data[0].task_id)].slice(0, 50));
     } catch (cause) { setRequestError(cause instanceof Error ? cause.message : "连接中断，请保留当前参数重试查询原请求。"); }
-    finally { setBusy(false); inFlight.current = false; }
+    finally { setBusy(false); setPhase(null); inFlight.current = false; void refreshStatus(); }
+  }
+  async function queryPendingRequest() {
+    const original = pendingRequest.current;
+    if (inFlight.current || !original) return;
+    inFlight.current = true; setBusy(true); setPhase("query"); setRequestError("");
+    try {
+      const response = await fetch(`/api/gateway/v1/requests/${encodeURIComponent(original.id)}`, { cache: "no-store" });
+      const data = await response.json();
+      if (response.status === 404 && data.error?.code === "request_not_found") {
+        clearPendingRequest(); setQuote(null);
+        setRequestError(t("未找到此请求记录，可以重新获取报价后生成。", "No record was found for this request. Get a new quote before generating."));
+        return;
+      }
+      const billing = data.tokvilo_billing;
+      const finalized = billing?.status === "refunded" && billing.chargedMicrousd === 0 || billing?.status === "settled" && Number.isSafeInteger(billing.chargedMicrousd) && billing.chargedMicrousd >= 0;
+      if (finalized) { clearPendingRequest(); setQuote(null); }
+      if (!response.ok) {
+        if (data.error?.code === "service_balance_unavailable") throw new Error(finalized && billing.status === "refunded"
+          ? t("生成服务暂时不可用，本次未扣费。请稍后重试或联系支持。", "Service temporarily unavailable. You were not charged. Try later or contact support.")
+          : t("生成服务暂时不可用，请先查询此请求的状态。", "Service temporarily unavailable. Check this request’s status before trying again."));
+        if (data.error?.code === "outcome_pending") throw new Error(t("原请求结果尚未确认，预留金额可能仍在处理中。请稍后查询，不会重复生成。", "The original request is not confirmed yet and funds may still be reserved. Check again later; this does not generate again."));
+        throw new Error(data.error?.message || t("原请求暂时无法查询，请稍后再试。", "The original request could not be checked. Try again later."));
+      }
+      setResult(data); setShowPreview(true); scrollToResult();
+      if (Array.isArray(data.data) && data.data[0]?.task_id) {
+        const task = data.data[0];
+        if (pendingRequest.current?.id === original.id) pendingRequest.current.taskId = task.task_id;
+        setTasks(current => [{ id: task.task_id, model: original.model, status: task.status || "submitted" }, ...current.filter(item => item.id !== task.task_id)].slice(0, 50));
+      }
+    } catch (cause) { setRequestError(cause instanceof Error ? cause.message : t("原请求暂时无法查询，请稍后再试。", "The original request could not be checked. Try again later.")); }
+    finally { setBusy(false); setPhase(null); inFlight.current = false; void refreshStatus(); }
   }
   const output = result && typeof result.data === "object" && result.data && !Array.isArray(result.data) ? result.data as Record<string, unknown> : result;
   const media = output?.result && typeof output.result === "object" ? output.result as { images?: Array<{ url?: string | string[] }>; videos?: Array<{ url?: string | string[] }>; music?: Array<{ audio_url?: string; title?: string }> } : null;
@@ -220,14 +311,25 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
         {category === "video" || (category === "image" && !detailedImage) || category === "text" ? <div className="playground-parameter-note"><Icon name="info" size={15} /><p>{t("这里提供基础请求。其他选项请按所选模型的参数文档补充。", "These are basic parameters. Check the selected model’s documentation for additional options.")}</p></div> : null}
         <div className="playground-field"><button type="button" onClick={() => { automaticSelection.current.allowed = false; setAdvanced(advanced === null ? json : null); }}>{advanced === null ? t("编辑完整 JSON 参数", "Edit full JSON parameters") : t("返回基础参数", "Back to basic parameters")}</button>{advanced !== null ? <><textarea aria-label={t("完整 JSON 参数", "Full JSON parameters")} value={advanced} onChange={event => setAdvanced(event.target.value)} rows={12} spellCheck={false} /><small>{t("完整 JSON 为本次报价与生成的唯一请求内容。", "The full JSON is the exact request used for quoting and generation.")}</small></> : null}{payloadError ? <p role="alert">{messageCopy(payloadError)}</p> : null}</div>
       </div>
-      <div className="playground-run-area">{currentQuote ? <div role="status"><strong>{t("本次预留 $", "Reservation $")}{(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)}</strong><p>{t("完成后按实际用量结算，退回预留差额。修改参数后需重新报价。", "Billed on actual usage, with any unused reservation returned. Get a new quote after changing parameters.")}</p></div> : null}<button className="playground-run" type="button" disabled={busy || !executable || !model.trim() || !!needsReference || !!payloadError || (advanced === null && !prompt.trim())} onClick={currentQuote ? run : prepareQuote}><Icon name="sparkles" size={17} />{busy ? t("处理中…", "Processing…") : currentQuote ? t(`确认预留 $${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)} 并生成`, `Reserve $${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)} & generate`) : t("获取准确报价", "Get exact quote")}<Icon name="arrow-right" size={17} /></button>{currentQuote ? <button type="button" disabled={busy} onClick={prepareQuote}>{t("刷新报价", "Refresh quote")}</button> : null}<button type="button" onClick={() => { setShowPreview(true); setCopied(false); }}>{t("预览请求", "Preview request")}</button><span><i />{t("按页面价格计费 · 从钱包余额扣费", "Displayed prices · Billed from your wallet")}</span></div>
+      <div className="playground-run-area">
+        <p className="playground-generation-steps">{t("1. 查看价格 → 2. 确认生成", "1. Check price → 2. Confirm generation")}</p>
+        {serviceStatus?.authenticated && typeof serviceStatus.balanceMicrousd === "number" ? <div className="playground-wallet-status"><span>{t("可用余额", "Available balance")}</span><strong>${(serviceStatus.balanceMicrousd / 1_000_000).toFixed(6)}</strong><Link href={href("/dashboard/wallet")}>{t("充值", "Top up")}</Link></div> : null}
+        {statusNotice ? <p className="playground-action-notice" role="status">{statusNotice}</p> : null}
+        {serviceStatus?.code === "login_required" ? <Link href={href("/login?next=%2Fplayground")}>{t("重新登录", "Sign in again")}</Link> : <button className="playground-status-refresh" type="button" disabled={statusLoading || busy} onClick={refreshStatus}>{statusLoading ? t("检查中…", "Checking…") : t("刷新余额与服务状态", "Refresh balance & service status")}</button>}
+        {capabilityNotice ? <p className="playground-action-notice" role="status">{capabilityNotice}</p> : null}
+        {needsReference ? <p className="playground-action-notice" role="status">{t("此模型需要参考图片，请填写公开 HTTPS 图片地址。", "This model needs a reference image. Enter a public HTTPS image URL.")}</p> : null}
+        {priceError || requestError || payloadError ? <p className="playground-action-error" role="alert">{messageCopy(requestError || payloadError || priceError)}</p> : null}
+        {pendingId ? <div className="playground-request-recovery" role="status"><p>{t("原请求编号", "Original request ID")}</p><code>{pendingId}</code><p>{t("先查询原请求结果。查询不需要可用余额，也不会再次生成或扣费。", "Check the original request first. No available balance is needed, and checking does not generate or charge again.")}</p><button type="button" disabled={busy} onClick={queryPendingRequest}>{phase === "query" ? t("正在查询原请求…", "Checking original request…") : t("查询原请求", "Check original request")}</button></div> : null}
+        {currentQuote ? <div className="playground-quote-summary" role="status"><strong>{t("本次预留 $", "Reservation $")}{(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)}</strong><p>{t("报价已就绪，尚未开始生成。确认后预留余额，完成后退回未使用的差额。", "Your quote is ready; generation has not started. Confirm to reserve funds. Unused funds are returned after completion.")}</p></div> : null}
+        <button className="playground-run" type="button" disabled={busy || !executable || !model.trim() || !!needsReference || !!payloadError || (advanced === null && !prompt.trim()) || (!!currentQuote && (!canGenerate || !!pendingId))} onClick={currentQuote ? run : prepareQuote}><Icon name="sparkles" size={17} />{busy ? phase === "quote" ? t("正在获取报价…", "Getting your quote…") : phase === "generate" ? t("正在提交生成…", "Submitting generation…") : t("正在查询结果…", "Checking result…") : currentQuote ? pendingId ? t("请先查询原请求", "Check the original request first") : insufficientBalance ? t("充值后确认生成", "Top up to generate") : t(`确认预留 $${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)} 并生成`, `Reserve $${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)} & generate`) : t("获取准确报价", "Get exact quote")}<Icon name="arrow-right" size={17} /></button>
+        {currentQuote ? <button type="button" disabled={busy} onClick={prepareQuote}>{t("刷新报价", "Refresh quote")}</button> : null}<button type="button" onClick={() => { setShowPreview(true); setCopied(false); }}>{t("预览请求", "Preview request")}</button><span><i />{t("按页面价格计费 · 从钱包余额扣费", "Displayed prices · Billed from your wallet")}</span>
+      </div>
     </section>
     <section className="playground-workspace" aria-label={t("请求工作台", "Playground")}>
       <header className="playground-workspace-header"><div><h1>{t("请求工作台", "Playground")}</h1><span>{t("从一个想法开始", "Start with an idea")}</span></div><a href={href("/dashboard/docs?provider=gateway")} target="_blank" rel="noreferrer"><Icon name="book" size={15} />{t("模型文档", "Model documentation")}<Icon name="arrow-up-right" size={14} /></a></header>
-      <div className="playground-notice"><span className="playground-notice-dot" /><p>{(priceError ? messageCopy(priceError) : "") || (executable ? t("已开通会员生成。提交时预留余额，完成后按实际用量结算。", "Generation is enabled. Funds are reserved when you submit and settled on actual usage.") : t("此模型的计费尚未开通，可以预览参数或选择其他模型。", "Billing for this model is not enabled yet. Preview its parameters or choose another model."))}</p>{isAdmin ? <Link href={href("/admin")}>{t("管理上游 ", "Manage service ")}<Icon name="arrow-right" size={13} /></Link> : <Link href={href("/dashboard/docs")}>{t("查看已开通 API ", "View available APIs ")}<Icon name="arrow-right" size={13} /></Link>}</div>
+      <div className="playground-notice"><span className="playground-notice-dot" /><p>{(priceError ? messageCopy(priceError) : "") || capabilityNotice || (executable ? t("此模型支持报价。先查看本次价格，再确认生成；调用状态以实际响应为准。", "Pricing is available for this model. Check the price, then confirm generation. Actual availability is determined by the response.") : t("此模型的计费尚未开通，可以预览参数或选择其他模型。", "Billing for this model is not enabled yet. Preview its parameters or choose another model."))}</p>{isAdmin ? <Link href={href("/admin")}>{t("管理服务 ", "Manage service ")}<Icon name="arrow-right" size={13} /></Link> : <Link href={href("/dashboard/docs")}>{t("查看接口文档 ", "View API documentation ")}<Icon name="arrow-right" size={13} /></Link>}</div>
       {selectedPrice ? <div className="playground-notice"><p>{displayedRates.map(rate => `${isEnglish ? englishPriceText(rate.label || rate.dimension) : rate.label || rate.dimension}: $${(rate.retailMicrousd / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 6 })}/${rate.unit === "image" ? t("张", "images") : rate.unit === "second" ? t("秒", "seconds") : rate.unit === "call" ? t("次", "requests") : t("百万 tokens", "1M tokens")}`).join(" · ")}</p><Link href={href("/pricing")}>{t("完整价格", "Full pricing")}</Link><Link href={href("/dashboard/wallet")}>{t("钱包与充值", "Wallet & top up")}</Link></div> : null}
-      {requestError ? <div className="playground-notice" role="alert"><p>{messageCopy(requestError)}</p></div> : null}
-      {result ? <div className="playground-preview-area"><h2>{t("生成结果", "Results")}</h2>{imageUrls.map((url, index) => <figure key={url}>
+      {result ? <div className="playground-preview-area" ref={resultRef}><h2>{t("生成结果", "Results")}</h2>{imageUrls.map((url, index) => <figure key={url}>
         {/* Official task results use upload.apimart.ai; preserve their signed URL without optimizing. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={url} alt={t(`生成图片 ${index + 1}`, `Generated image ${index + 1}`)} style={{ maxWidth: "100%", maxHeight: 560, objectFit: "contain" }} referrerPolicy="no-referrer" />

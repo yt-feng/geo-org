@@ -39,11 +39,14 @@ async function fixture(options = {}) {
     },
     fetch: async (url, init) => {
       calls.push({ url, init });
+      if (url === "/api/playground/status?service=studio") return options.status ? options.status() : Response.json({ service: "studio", authenticated: true, currency: "USD", balanceMicrousd: options.balance ?? 10_000_000, serviceEnabled: true, configured: true, accountActive: true });
+      if (url === "/api/studio/v1/models" && options.catalogue) return options.catalogue();
       if (url === "/api/studio/v1/models") return Response.json({ data: [
         { id: "dreamina-seedance-2-0-260128", modelType: "video", category: ["video"] },
         { id: "dola-seedream-5-0-pro-260628", modelType: "image", category: ["image"] },
         { id: "chat-model", modelType: "chat", category: ["chat"] },
       ], catalog: { complete: true } });
+      if (url.startsWith("/api/studio/v1/requests/")) return options.receipt ? options.receipt() : Response.json({ choices: [{ message: { content: "Recovered" } }], tokvilo_billing: { status: "settled" } });
       if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ reservedMicrousd: 2_000_000 });
       if (init?.method === "POST") return options.generate ? options.generate(url, init) : Response.json(url.includes("/images/") ? { data: [{ url: "https://media.example/image.png" }] } : { id: "video-created", status: "queued" });
       throw new Error(`Unexpected request ${url}`);
@@ -136,4 +139,49 @@ test("English multimodal controls retain exact Chinese user content and billing 
   assert.deepEqual(JSON.parse(f.paid()[0].init.body), quoted.body);
   assert.equal(JSON.parse(f.paid()[0].init.body).messages[0].content, "保留中文用户输入");
   assert.match(content(f.tree()), /原始中文回复/);
+});
+
+
+test("empty multimodal wallets can get a free quote but cannot send generation, with the explanation beside the button", async () => {
+  const f = await fixture({ balance: 0 });
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  const area = find(f.tree(), node => node.props.className === "playground-run-area");
+  assert.match(content(area), /可用余额不足/);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.paid().length, 0);
+});
+
+test("a catalogue outage does not silently disable manually entered models when the separate status check succeeds", async () => {
+  const f = await fixture({ catalogue: async () => Response.json({ error: { message: "目录暂不可用" } }, { status: 503 }) });
+  assert.equal(f.primary().props.disabled, false);
+  await f.primary().props.onClick(); f.render();
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.paid().length, 1);
+});
+
+test("unknown service status blocks paid confirmation and offers a status refresh", async () => {
+  const f = await fixture({ status: async () => Response.json({ error: {} }, { status: 503 }) });
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  await f.primary().props.onClick();
+  assert.equal(f.paid().length, 0);
+  assert.match(content(find(f.tree(), node => node.props.className === "playground-run-area")), /刷新状态/);
+});
+
+
+test("an interrupted multimodal request can recover by GET after its balance was fully reserved", async () => {
+  let balance = 2_000_000;
+  const f = await fixture({
+    status: async () => Response.json({ service: "studio", authenticated: true, currency: "USD", balanceMicrousd: balance, configured: true, accountActive: true, serviceEnabled: true }),
+    generate: async () => { balance = 0; throw Error("Connection interrupted"); },
+  });
+  await f.primary().props.onClick(); await f.flush(); f.render();
+  await f.primary().props.onClick(); await f.flush(); f.render();
+  const recovery = find(f.tree(), node => node.type === "button" && content(node) === "查询原请求（不重新生成）");
+  assert.ok(recovery); assert.equal(recovery.props.disabled, false);
+  await recovery.props.onClick(); await f.flush(); f.render();
+  assert.equal(f.paid().length, 1);
+  assert.equal(f.calls.filter(call => call.url.startsWith("/api/studio/v1/requests/")).length, 1);
+  assert.match(content(f.tree()), /Recovered/);
 });

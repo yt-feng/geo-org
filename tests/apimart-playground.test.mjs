@@ -9,6 +9,8 @@ import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const optionsSource = ts.transpileModule(await readFile(new URL("../lib/apimart-video-options.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 const optionsModule = { exports: {} }; vm.runInNewContext(optionsSource, { module: optionsModule, exports: optionsModule.exports });
+const requestKindSource = ts.transpileModule(await readFile(new URL("../lib/model-request-kind.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const requestKindModule = { exports: {} }; vm.runInNewContext(requestKindSource, { module: requestKindModule, exports: requestKindModule.exports });
 const filename = new URL("../components/Playground.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const catalog = {
@@ -22,7 +24,7 @@ function find(node, predicate) {
   return null;
 }
 async function fixture(options = {}) {
-  const hooks = [], effects = [], calls = []; let cursor = 0, tree;
+  const hooks = [], effects = [], calls = [], timers = new Map(); let cursor = 0, tree, timerId = 0;
   const react = {
     useState(initial) {
       const index = cursor++;
@@ -33,15 +35,17 @@ async function fixture(options = {}) {
     useEffect(effect, deps) {
       const index = cursor++, previous = hooks[index];
       if (!previous || deps.some((value, position) => !Object.is(value, previous.deps[position]))) {
-        hooks[index] = { deps }; effects.push(effect);
+        previous?.cleanup?.(); hooks[index] = { deps }; effects.push(() => { hooks[index].cleanup = effect(); });
       }
     },
   };
   const compiled = { exports: {} };
   vm.runInNewContext(code, {
-    module: compiled, exports: compiled.exports, crypto: webcrypto, URL, setTimeout: () => 1, clearTimeout() {},
+    module: compiled, exports: compiled.exports, crypto: webcrypto, URL, AbortController,
+    setTimeout: (callback, ms) => { const id = ++timerId; timers.set(id, { callback, ms }); return id; }, clearTimeout: id => timers.delete(id),
     require(name) {
       if (name === "@/lib/apimart-video-options") return optionsModule.exports;
+      if (name === "@/lib/model-request-kind") return requestKindModule.exports;
       if (name === "@/lib/brand-display") return brandDisplay;
       if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) };
       if (name === "react") return react;
@@ -54,11 +58,14 @@ async function fixture(options = {}) {
     },
     fetch: async (url, init) => {
       calls.push({ url, init });
+      if (url === "/api/playground/status?service=gateway") return options.status ? options.status(url, init) : Response.json({ service: "gateway", authenticated: true, serviceEnabled: true, configured: true, accountActive: true, balanceMicrousd: 10_000_000, currency: "USD", code: "configuration_available", checks: "configuration_only" });
       if (url === "/api/model-catalog" && options.directoryRequest) return options.directoryRequest();
       if (url === "/api/model-catalog") return Response.json({ models: options.models || catalog.modelCatalog.map(model => ({ ...model, upstream: "apimart" })) });
       if (url === "/api/pricing" && options.pricingRequest) return options.pricingRequest();
       if (url === "/api/pricing") return Response.json({ models: options.prices || [{ provider: "apimart", model: "gpt-image-2", kind: "image", billingReady: true, rates: [{ dimension: "2k", unit: "image", retailMicrousd: 18000 }] }] });
-      if (url === "/api/gateway/v1/tasks") return Response.json({ data: [] });
+      if (url === "/api/gateway/v1/tasks") return Response.json({ data: options.tasks || [] });
+      if (url.startsWith("/api/gateway/v1/tasks/") && options.taskResult) return options.taskResult(url, init);
+      if (url.startsWith("/api/gateway/v1/requests/") && options.recover) return options.recover(url, init);
       if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ provider: "apimart", model: "gpt-image-2", mode: "image", currency: "USD", reservedMicrousd: 18000, observedAt: "2026-10-20T00:00:00Z" });
       return options.generate ? options.generate(url, init) : Response.json({ data: [{ task_id: "new_task", status: "submitted" }] });
     },
@@ -72,7 +79,8 @@ async function fixture(options = {}) {
   function prompt(value) { find(tree, node => node.type === "textarea").props.onChange({ target: { value } }); render(); }
   const primary = () => find(tree, node => node.type === "button" && node.props.className === "playground-run");
   render(); await flush(); render(); prompt("A tree in morning light");
-  return { calls, render, flush, prompt, primary, tree: () => tree };
+  async function tick(ms = 5000) { const entry = [...timers].find(([, timer]) => timer.ms === ms); if (!entry) return false; timers.delete(entry[0]); await entry[1].callback(); await flush(); render(); return true; }
+  return { calls, render, flush, prompt, primary, tick, tree: () => tree };
 }
 
 test("APIMart requires a displayed exact quote before confirming a paid request with the same body and cap", async () => {
@@ -257,5 +265,156 @@ test("late pricing cannot overwrite a user model, custom ID or category selectio
     const id = find(f.tree(), node => node.props.placeholder === "填写模型 ID").props.value;
     assert.equal(id, selection === "model" ? "dall-e-3" : selection === "custom" ? "custom-model-id" : "veo3.1-fast");
     assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+  }
+});
+
+const statusBody = overrides => ({ service: "gateway", authenticated: true, serviceEnabled: true, configured: true, accountActive: true, balanceMicrousd: 10_000_000, currency: "USD", code: "configuration_available", ...overrides });
+test("a zero wallet can get a price but cannot submit; the quote and top-up instruction stay beside the action", async () => {
+  const f = await fixture({ status: async () => Response.json(statusBody({ balanceMicrousd: 0, code: "balance_empty" })) });
+  assert.equal(f.primary().props.disabled, false);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  assert.equal(text(f.primary()), "充值后确认生成");
+  const actions = find(f.tree(), node => node.props.className === "playground-run-area");
+  assert.match(text(actions), /钱包余额不足.*报价已就绪，尚未开始生成/s);
+  assert.ok(find(actions, node => node.props.href === "/dashboard/wallet"));
+  await f.primary().props.onClick();
+  assert.equal(f.calls.filter(call => call.url.includes("/images/generations")).length, 0);
+});
+
+test("unknown readiness blocks confirmation and the retry uses the refreshed wallet balance", async () => {
+  let attempts = 0;
+  const f = await fixture({ status: async () => ++attempts <= 2 ? Response.json({ code: "status_unavailable" }, { status: 503 }) : Response.json(statusBody({ balanceMicrousd: 20000 })) });
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  await f.primary().props.onClick();
+  assert.equal(f.calls.filter(call => call.url.includes("/images/generations")).length, 0);
+  await find(f.tree(), node => node.props.className === "playground-status-refresh").props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, false);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.calls.filter(call => call.url.includes("/images/generations")).length, 1);
+});
+
+test("expired login and missing service configuration show actionable status without claiming generation is enabled", async () => {
+  for (const expired of [true, false]) {
+    const f = await fixture({ status: async () => expired ? Response.json({ authenticated: false, code: "login_required" }, { status: 401 }) : Response.json(statusBody({ configured: false, code: "service_not_configured" })) });
+    await f.primary().props.onClick(); f.render();
+    assert.equal(f.primary().props.disabled, true);
+    assert.doesNotMatch(text(f.tree()), /已开通会员生成/);
+    const actions = find(f.tree(), node => node.props.className === "playground-run-area");
+    assert.match(text(actions), expired ? /登录已失效.*重新登录/s : /生成服务尚未就绪/);
+  }
+});
+
+test("quote errors appear beside the button and quoting has a distinct pending state", async () => {
+  let finish;
+  const f = await fixture({ quote: () => new Promise(resolve => { finish = resolve; }) });
+  const pending = f.primary().props.onClick(); f.render();
+  assert.equal(text(f.primary()), "正在获取报价…");
+  finish(Response.json({ error: { message: "此请求的价格暂不可用" } }, { status: 422 }));
+  await pending; f.render();
+  const actions = find(f.tree(), node => node.props.className === "playground-run-area");
+  assert.match(text(find(actions, node => node.props.role === "alert")), /价格暂不可用/);
+  assert.equal(text(f.primary()), "获取准确报价");
+});
+
+test("automatic polling accepts a root-level completed task and displays its result", async () => {
+  const f = await fixture({ tasks: [{ id: "root-task", model: "gpt-image-2", status: "processing" }], taskResult: async () => Response.json({ id: "root-task", status: "completed", result: { images: [{ url: "https://cdn.apimart.ai/result.png" }] } }) });
+  assert.equal(await f.tick(), true);
+  assert.ok(find(f.tree(), node => node.type === "img" && node.props.src === "https://cdn.apimart.ai/result.png"));
+  assert.match(text(f.tree()), /completed/);
+  assert.equal(await f.tick(), false);
+});
+
+test("dedicated endpoint models cannot be sent through chat even if a catalogue entry claims billing readiness", async () => {
+  const model = { id: "text-embedding-3-small", name: "Embedding", category: "text", upstream: "apimart", provider: "OPENAI" };
+  const f = await fixture({ initialCatalog: [model], models: [model], props: { initialModel: model.id, initialCategory: "text" }, prices: [{ provider: "apimart", model: model.id, kind: "chat", billingReady: true, rates: [] }] });
+  assert.equal(f.primary().props.disabled, true);
+  assert.match(text(f.tree()), /此模型需要专用接口/);
+  await f.primary().props.onClick();
+  assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+});
+
+test("getting a quote refreshes a previously empty wallet before allowing confirmation", async () => {
+  let checks = 0;
+  const f = await fixture({ status: async () => Response.json(statusBody({ balanceMicrousd: ++checks === 1 ? 0 : 20000 })) });
+  assert.match(text(f.tree()), /当前钱包余额为 \$0/);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(checks, 2);
+  assert.equal(f.primary().props.disabled, false);
+  assert.match(text(f.primary()), /确认预留/);
+});
+
+test("a failed status refresh during quoting cannot reuse an earlier positive balance", async () => {
+  let checks = 0;
+  const f = await fixture({ status: async () => ++checks === 1 ? Response.json(statusBody({})) : Response.json({ code: "status_unavailable" }, { status: 503 }) });
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  await f.primary().props.onClick();
+  assert.equal(f.calls.filter(call => call.url.includes("/images/generations")).length, 0);
+});
+
+test("a confirmed service-balance refund explains no charge and starts a new request only after requoting", async () => {
+  let attempts = 0;
+  const f = await fixture({ english: true, generate: async () => ++attempts === 1 ? Response.json({ error: { code: "service_balance_unavailable", message: "服务暂时不可用，本次未扣费。" }, tokvilo_billing: { status: "refunded", chargedMicrousd: 0 } }, { status: 503 }) : Response.json({ data: [{ task_id: "new-task", status: "submitted" }] }) });
+  await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); await f.flush(); f.render();
+  assert.equal(text(f.primary()), "Get exact quote");
+  assert.match(text(f.tree()), /Service temporarily unavailable\. You were not charged\. Try later or contact support\./);
+  assert.doesNotMatch(text(f.tree()), /Insufficient wallet balance/);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(attempts, 1);
+  await f.primary().props.onClick(); f.render();
+  const paid = f.calls.filter(call => call.url.includes("/images/generations"));
+  assert.equal(paid.length, 2);
+  assert.notEqual(paid[0].init.headers["Idempotency-Key"], paid[1].init.headers["Idempotency-Key"]);
+  assert.equal(paid[0].init.body, paid[1].init.body);
+});
+
+test("an unavailable service without a confirmed zero-charge refund retains its identity for GET recovery", async () => {
+  for (const billing of [{ status: "awaiting_reconciliation", chargedMicrousd: null }, { status: "refunded" }, { status: "refunded", chargedMicrousd: 1 }]) {
+    const f = await fixture({ english: true, generate: async () => Response.json({ error: { code: "service_balance_unavailable", message: "服务暂时不可用。" }, tokvilo_billing: billing }, { status: 503 }), recover: async () => Response.json({ error: { code: "outcome_pending" }, tokvilo_billing: billing }, { status: 409 }) });
+    await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); await f.flush(); f.render();
+    assert.equal(text(f.primary()), "Check the original request first");
+    assert.equal(f.primary().props.disabled, true);
+    assert.doesNotMatch(text(f.tree()), /You were not charged/);
+    await f.primary().props.onClick(); await f.flush(); f.render();
+    await find(f.tree(), node => node.type === "button" && text(node) === "Check original request").props.onClick(); await f.flush(); f.render();
+    const paid = f.calls.filter(call => call.url.includes("/images/generations"));
+    const recovery = f.calls.find(call => call.url.includes("/v1/requests/"));
+    assert.equal(paid.length, 1);
+    assert.equal(recovery.url.split("/").at(-1), paid[0].init.headers["Idempotency-Key"]);
+    assert.equal(recovery.init.method, undefined);
+    assert.ok(find(f.tree(), node => node.props.className === "playground-request-recovery"));
+  }
+});
+
+test("an unknown request can be recovered with zero available balance and edited input without another generation", async () => {
+  let balance = 20000;
+  const f = await fixture({ status: async () => Response.json(statusBody({ balanceMicrousd: balance })), generate: async () => { balance = 0; throw Error("Connection interrupted"); }, recover: async () => Response.json({ choices: [{ message: { content: "Original completed answer" } }], tokvilo_billing: { status: "settled", chargedMicrousd: 18000 } }) });
+  await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); await f.flush(); f.render();
+  const paid = f.calls.find(call => call.url.includes("/images/generations"));
+  assert.equal(f.primary().props.disabled, true);
+  f.prompt("Keep this new unsent input");
+  const query = find(f.tree(), node => node.type === "button" && text(node) === "查询原请求");
+  assert.equal(query.props.disabled, false);
+  await query.props.onClick(); await f.flush(); f.render();
+  assert.match(text(f.tree()), /Original completed answer/);
+  assert.equal(find(f.tree(), node => node.type === "textarea").props.value, "Keep this new unsent input");
+  assert.equal(f.calls.filter(call => call.url.includes("/images/generations")).length, 1);
+  const recovered = f.calls.find(call => call.url.includes("/v1/requests/"));
+  assert.equal(recovered.url, `/api/gateway/v1/requests/${paid.init.headers["Idempotency-Key"]}`);
+  assert.equal(recovered.init.body, undefined);
+  assert.equal(find(f.tree(), node => node.props.className === "playground-request-recovery"), null);
+});
+
+test("a missing original request allows requoting while a confirmed refunded receipt clears recovery", async () => {
+  for (const missing of [true, false]) {
+    const f = await fixture({ english: true, generate: async () => { throw Error("Connection interrupted"); }, recover: async () => missing ? Response.json({ error: { code: "request_not_found" } }, { status: 404 }) : Response.json({ error: { code: "service_balance_unavailable" }, tokvilo_billing: { status: "refunded", chargedMicrousd: 0 } }, { status: 503 }) });
+    await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); await f.flush(); f.render();
+    await find(f.tree(), node => node.type === "button" && text(node) === "Check original request").props.onClick(); await f.flush(); f.render();
+    assert.equal(find(f.tree(), node => node.props.className === "playground-request-recovery"), null);
+    assert.equal(text(f.primary()), "Get exact quote");
+    assert.match(text(f.tree()), missing ? /No record was found for this request/ : /You were not charged/);
+    assert.equal(f.calls.filter(call => call.url.includes("/images/generations")).length, 1);
   }
 });

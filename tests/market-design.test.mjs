@@ -68,6 +68,13 @@ test('family overview and paginated model lists retain every catalogue service i
     for (;;) {
       const cards = nodes(h.tree, node => node.type === 'article');
       assert.ok(cards.length <= h.ui.MARKET_PAGE_SIZE);
+      for (const card of cards) {
+        const link = nodes(card, node => node.type === 'a' && node.props.href?.startsWith('/playground?'))[0];
+        assert.ok(link, `Playground missing for ${card.props['data-model-id']}`);
+        const url = new URL(link.props.href, 'https://tokvilo.com');
+        assert.equal(url.searchParams.get('model'), card.props['data-model-id']);
+        assert.equal(url.searchParams.get('service'), card.props['data-service']);
+      }
       identities.push(...cards.map(node => `${node.props['data-service']}:${node.props['data-model-id']}`));
       const next = nodes(h.tree, node => node.props['aria-label'] === '下一页')[0];
       if (!next || next.props.disabled) break;
@@ -175,11 +182,15 @@ test('filter URL roundtrip validates stale parameters and keeps repeated capabil
 test('same model across services has independent availability and exact workbench destinations', async () => {
   const models = ['apimart', 'selected', 'tokenhub'].map(upstream => ({ id: 'gpt-6.1-sol', name: 'GPT 6.1 Sol', provider: 'OPENAI', category: 'text', upstream, available: true, capabilities: ['文本生成'], description: '', docs: '/dashboard/docs' }));
   const h = await harness({ models, url: 'https://tokvilo.com/models?provider=openai&family=gpt' });
-  for (const [service, route] of [['gateway', '/playground'], ['selected', '/selected'], ['studio', '/studio']]) {
+  for (const service of ['gateway', 'selected', 'studio']) {
     const card = nodes(h.tree, node => node.type === 'article' && node.props['data-service'] === service)[0];
     nodes(card, node => node.type === 'button')[0].props.onClick(); h.render();
-    const link = nodes(h.tree, node => node.type === 'a' && node.props.href?.startsWith(`${route}?`))[0];
-    assert.ok(link); assert.equal(new URL(link.props.href, 'https://tokvilo.com').searchParams.get('model'), 'gpt-6.1-sol');
+    const detail = nodes(h.tree, node => node.props.className === 'model-detail-actions')[0];
+    const link = nodes(detail, node => node.type === 'a' && node.props.href?.startsWith('/playground?'))[0];
+    assert.ok(link);
+    const url = new URL(link.props.href, 'https://tokvilo.com');
+    assert.equal(url.searchParams.get('model'), 'gpt-6.1-sol');
+    assert.equal(url.searchParams.get('service'), service);
     nodes(h.tree, node => node.type === 'button' && node.props['aria-label'] === '关闭模型详情')[0].props.onClick(); h.render();
   }
 });
@@ -196,4 +207,22 @@ test('English catalogue translates manufacturer, family, capabilities and servic
   nodes(reference, node => node.type === 'button')[0].props.onClick(); h.render();
   assert.match(text(nodes(h.tree, node => node.props.id === 'model-detail-title')[0]), /tokvilo Models/);
   assert.doesNotMatch(text(h.tree), /[\u4e00-\u9fff]/);
+});
+
+test('catalogue-only models keep a playground entry while clearly describing unavailable execution', async () => {
+  for (const upstream of ['apimart', 'selected']) {
+    const model = { id: 'unavailable-v2', name: 'Unavailable V2', provider: 'OPENAI', category: 'text', upstream, available: false, capabilities: ['文本生成'], description: '', docs: '/dashboard/docs' };
+    const h = await harness({ models: [model], english: true, url: 'https://tokvilo.com/en/models?view=list' });
+    const card = nodes(h.tree, node => node.type === 'article')[0];
+    assert.match(text(card), /Coming later/);
+    assert.ok(nodes(card, node => node.type === 'a' && node.props.href.includes('model=unavailable-v2'))[0]);
+    nodes(card, node => node.type === 'button')[0].props.onClick(); h.render();
+    assert.match(text(h.tree), upstream === 'selected' ? /Generation requests are not yet available/ : /billing or API integration is still in progress/);
+    const actions = nodes(h.tree, node => node.props.className === 'model-detail-actions')[0];
+    const link = nodes(actions, node => node.type === 'a' && node.props.href.startsWith('/playground?'))[0];
+    const url = new URL(link.props.href, 'https://tokvilo.com');
+    assert.equal(url.searchParams.get('model'), model.id);
+    assert.equal(url.searchParams.get('service'), upstream === 'selected' ? 'selected' : 'gateway');
+    assert.equal(url.searchParams.get('lang'), 'en');
+  }
 });

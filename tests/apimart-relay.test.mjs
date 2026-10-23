@@ -64,17 +64,19 @@ async function fixture(t, options = {}) {
   credit();
   let currentUser = options.user === undefined ? MEMBER : options.user;
   const calls = [];
+  let credentialReads = 0, pricingReads = 0;
   const env = { DB, SERVICE_ENABLED: "true", ...options.env };
   const { handleApimartRelay, reconcileApimartTasks } = await load("../lib/apimart-relay.ts", {
     "./auth": { getPortalUser: async () => currentUser },
     "./config": { runtimeEnv: () => env, getD1: () => DB },
     "./crypto": { sha256Hex: async value => hash(value) },
     "./store": { ensureUser: async value => user(value) },
-    "./provider-settings": { ProviderError, createProviderSettings: () => ({ credential: async () => KEY, models: async () => ({ models: [{ id: "gpt-5", provider: "openai" }] }) }) },
+    "./provider-settings": { ProviderError, createProviderSettings: () => ({ credential: async () => { credentialReads++; if (options.credentialFailure) throw new ProviderError("Unavailable"); return KEY; }, models: async () => ({ models: [{ id: "gpt-5", provider: "openai" }] }) }) },
     "./pricing": pricing, "./wallet": wallet, "./apimart-request": requestTools, "./model-id": modelIds,
-    "./apimart-pricing": { ...apimart, getApimartPricing: async () => { if (options.priceFailure) throw new pricing.PricingError("Unavailable"); return options.pricingCatalog || CATALOG; } },
+    "./apimart-pricing": { ...apimart, getApimartPricing: async () => { pricingReads++; if (options.priceFailure) throw new pricing.PricingError("Unavailable"); return options.pricingCatalog || CATALOG; } },
   }, { fetch: async (url, init) => { calls.push({ url, init }); return options.fetcher ? options.fetcher(url, init) : Response.json({ code: 200, data: { choices: [{ message: { content: "hello" } }], usage: { prompt_tokens: 20, completion_tokens: 10, prompt_tokens_details: { cached_tokens: 10 } } } }); } });
-  return { handle: handleApimartRelay, reconcile: () => reconcileApimartTasks(env, { maxTasks: 10 }), calls, sqlite, wallet, credit, user, setUser: value => { currentUser = value; } };
+  return { handle: handleApimartRelay, reconcile: () => reconcileApimartTasks(env, { maxTasks: 10 }), calls, sqlite, wallet, credit, user, env,
+    credentialReads: () => credentialReads, pricingReads: () => pricingReads, setUser: value => { currentUser = value; } };
 }
 function request(path = CHAT_PATH, options = {}) {
   const method = options.method || "POST";
@@ -149,7 +151,9 @@ test("anonymous, disabled accounts, cross-origin mutations, revoked keys and ins
   const anonymous = await fixture(t, { user: null }); await expect(anonymous, request(), 401);
   const f = await fixture(t);
   await expect(f, request(CHAT_PATH, { headers: { Origin: "https://elsewhere.example" } }), 403);
-  f.credit(MEMBER, 0); await expect(f, request(), 402);
+  f.credit(MEMBER, 0); const insufficient = await expect(f, request(), 402);
+  assert.equal(insufficient.error.code, "insufficient_balance");
+  assert.equal(insufficient.error.message, "可用余额不足，请先充值。");
   assert.equal(f.calls.length, 0); assert.equal(f.sqlite.prepare("SELECT COUNT(*) AS n FROM apimart_requests").get().n, 0);
   f.sqlite.prepare("UPDATE users SET status='disabled' WHERE id=?").run(MEMBER.id);
   await expect(f, request(), 403);
@@ -215,9 +219,121 @@ test("network uncertainty, malformed responses and redirects retain reservations
 test("explicit upstream client failures refund while unknown server outcomes retain the hold", async t => {
   for (const status of [400, 402, 429, 500]) {
     const f = await fixture(t, { fetcher: async () => Response.json({ error: { message: "failed" } }, { status }) });
-    const result = await expect(f, request(), status);
+    const publicStatus = status === 402 ? 503 : status;
+    const result = await expect(f, request(), publicStatus);
     assert.equal(result.tokvilo_billing.status, status < 500 ? "refunded" : "awaiting_reconciliation");
-    await expect(f, request(), status); assert.equal(f.calls.length, 1);
+    await expect(f, request(), publicStatus); assert.equal(f.calls.length, 1);
+  }
+});
+
+test("service account balance and credential failures refund once and expose no private diagnostics", async t => {
+  for (const status of [401, 402, 403]) {
+    const privateMessage = "[token_id=105092] insufficient balance (current: 0.044204 USD, required: 0.050000 USD). APIMart token sk-private-service-diagnostic";
+    const f = await fixture(t, { fetcher: async () => Response.json({ error: { message: privateMessage, type: "apimart_error", token_id: 105092 },
+      internal_balance: 0.044204, provider: "apimart", diagnostic: privateMessage }, { status }) });
+    const first = await expect(f, request(), 503);
+    assert.deepEqual(first.error, {
+      code: status === 402 ? "service_balance_unavailable" : "service_authentication_unavailable",
+      message: "生成服务暂不可用，本次未扣费。请稍后重试或联系支持。",
+    });
+    assert.equal(first.tokvilo_billing.status, "refunded");
+    assert.equal(first.tokvilo_billing.chargedMicrousd, 0);
+    assert.deepEqual(Object.keys(first).sort(), ["error", "tokvilo_billing"]);
+    assert.doesNotMatch(JSON.stringify(first), /105092|0\.044204|0\.050000|apimart|token_id|private-service|internal_balance|diagnostic/i);
+    const saved = f.sqlite.prepare("SELECT response_json,status_code FROM apimart_requests").get();
+    assert.equal(saved.status_code, 503);
+    assert.doesNotMatch(saved.response_json, /105092|0\.044204|apimart|private-service/i);
+    const repeated = await expect(f, request(), 503);
+    assert.deepEqual(repeated, first);
+    assert.equal(f.calls.length, 1);
+    const wallet = await f.wallet.getWallet(MEMBER.id);
+    assert.equal(wallet.balanceMicrousd, 1_000_000);
+    assert.equal(wallet.reservedMicrousd, 0);
+    assert.equal(f.sqlite.prepare("SELECT count(*) n FROM wallet_reservations").get().n, 1);
+    assert.equal(f.sqlite.prepare("SELECT count(*) n FROM wallet_ledger").get().n, 2, "one reserve and one refund, including replay");
+  }
+});
+
+test("older service failure receipts are projected on replay without another request or wallet mutation", async t => {
+  const f = await fixture(t, { fetcher: async () => Response.json({ error: { message: "old source balance details" } }, { status: 402 }) });
+  const first = await expect(f, request(), 503);
+  f.sqlite.prepare("UPDATE apimart_requests SET status_code=402,response_json=?").run(JSON.stringify({ error: {
+    message: "[token_id=105092] insufficient balance (current: 0.044204 USD, required: 0.050000 USD)", type: "apimart_error",
+  }, tokvilo_billing: first.tokvilo_billing }));
+  const repeated = await expect(f, request(), 503);
+  assert.deepEqual(repeated, first);
+  assert.equal(f.calls.length, 1);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1_000_000);
+  assert.equal(f.sqlite.prepare("SELECT count(*) n FROM wallet_ledger").get().n, 2);
+});
+
+test("GET receipt recovery returns an owned result even with zero funds and service configuration unavailable", async t => {
+  const options = {};
+  const f = await fixture(t, options);
+  const first = await expect(f, request(), 200);
+  f.credit(MEMBER, 0);
+  options.credentialFailure = true; options.priceFailure = true; f.env.SERVICE_ENABLED = "false";
+  const before = { credentials: f.credentialReads(), prices: f.pricingReads(), ledger: f.sqlite.prepare("SELECT count(*) n FROM wallet_ledger").get().n };
+  for (const base of ["apimart", "gateway"]) {
+    const res = await expect(f, new Request(`https://tokvilo.com/api/${base}/v1/requests/request-0001`), 200);
+    assert.deepEqual(res, first);
+  }
+  assert.equal(f.calls.length, 1, "recovery never sends a second generation or polls upstream");
+  assert.equal(f.credentialReads(), before.credentials);
+  assert.equal(f.pricingReads(), before.prices);
+  assert.equal(f.sqlite.prepare("SELECT count(*) n FROM wallet_ledger").get().n, before.ledger);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 0);
+});
+
+test("GET receipt recovery retains uncertain reservations and isolates owners", async t => {
+  const f = await fixture(t, { fetcher: async () => { throw Error("Timeout"); } });
+  f.credit(MEMBER, 18000);
+  await expect(f, request(IMAGE_PATH), 502);
+  const pending = await expect(f, request("/v1/requests/request-0001", { method: "GET" }), 409);
+  assert.equal(pending.error.code, "outcome_pending");
+  assert.equal(pending.tokvilo_billing.status, "awaiting_reconciliation");
+  assert.equal(pending.tokvilo_billing.reservedMicrousd, 18000);
+  assert.equal(pending.tokvilo_billing.chargedMicrousd, null);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 0);
+  assert.equal(f.sqlite.prepare("SELECT count(*) n FROM wallet_ledger").get().n, 1);
+  const other = { ...MEMBER, id: "other", email: "other@example.com" }; f.user(other); f.setUser(other);
+  const hidden = await expect(f, request("/v1/requests/request-0001", { method: "GET" }), 404);
+  assert.equal(hidden.error.code, "request_not_found");
+  assert.equal(hidden.tokvilo_billing, undefined);
+  f.setUser(MEMBER);
+  const absent = await expect(f, request("/v1/requests/missing-request", { method: "GET" }), 404);
+  assert.equal(absent.error.code, "request_not_found");
+  f.setUser(null);
+  await expect(f, request("/v1/requests/request-0001", { method: "GET" }), 401);
+  assert.equal(f.calls.length, 1);
+  assert.equal(f.sqlite.prepare("SELECT status FROM wallet_reservations").get().status, "reserved");
+  assert.equal(f.sqlite.prepare("SELECT count(*) n FROM wallet_ledger").get().n, 1);
+});
+
+test("GET receipt recovery reads current settlement and projects legacy service errors", async t => {
+  const f = await fixture(t, { fetcher: async () => Response.json({ error: { message: "private service balance" } }, { status: 402 }) });
+  const first = await expect(f, request(), 503);
+  f.sqlite.prepare("UPDATE apimart_requests SET status_code=402,response_json=?").run(JSON.stringify({
+    error: { message: "APIMart token_id=105092 balance 0.044204", type: "apimart_error" },
+    tokvilo_billing: { status: "reserved", chargedMicrousd: null, reservedMicrousd: first.tokvilo_billing.reservedMicrousd, currency: "USD" },
+  }));
+  const recovered = await expect(f, request("/v1/requests/request-0001", { method: "GET" }), 503);
+  assert.deepEqual(recovered, first);
+  assert.equal(f.calls.length, 1);
+  await expect(f, request("/v1/requests/request-0001"), 405);
+  await expect(f, request("/v1/requests/short", { method: "GET" }), 404);
+});
+
+test("task queries distinguish a service authentication or balance problem from customer funds", async t => {
+  for (const status of [401, 402, 403]) {
+    const f = await fixture(t, { fetcher: async (_url, init) => init.method === "POST"
+      ? Response.json({ data: [{ task_id: "existing_task", status: "submitted" }] })
+      : Response.json({ error: { message: "APIMart token_id=105092 private balance 0.044204" } }, { status }) });
+    await expect(f, request(IMAGE_PATH), 200);
+    const result = await expect(f, request("/v1/tasks/existing_task", { method: "GET" }), 503);
+    assert.equal(result.error.message, "暂时无法查询任务，请稍后刷新。");
+    assert.doesNotMatch(JSON.stringify(result), /APIMart|105092|0\.044204|充值|未扣费|insufficient_balance/);
+    assert.equal((await f.wallet.getWallet(MEMBER.id)).reservedMicrousd, 18000, "query failure cannot establish generation failure or refund");
   }
 });
 

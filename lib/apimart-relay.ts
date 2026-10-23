@@ -13,6 +13,7 @@ const BASE = "/api/gateway";
 const COMPAT_BASE = "/api/apimart";
 const ORIGIN = "https://api.apimart.ai";
 const TASK_ID = /^[A-Za-z0-9_-]{1,160}$/;
+const REQUEST_ID = /^[A-Za-z0-9_-]{8,128}$/;
 const HEADERS = { "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
 type Json = Record<string, unknown>;
 type Actor = { userId: string; keyId: string | null };
@@ -33,7 +34,22 @@ function publicMetadata(value: unknown): unknown {
   return result;
 }
 function reply(data: unknown, status = 200) { return Response.json(publicRelayResponse(publicMetadata(data)), { status, headers: HEADERS }); }
-function error(message: string, status: number) { return reply({ error: { message: publicServiceText(message) } }, status); }
+function error(message: string, status: number, code?: string) { return reply({ error: { message: publicServiceText(message), ...(code ? { code } : {}) } }, status); }
+
+/** Supplier-account failures are service failures, never a customer's wallet
+ * error. Explicitly project them so balances, token IDs and diagnostics cannot
+ * escape through either a fresh response or an older persisted receipt. */
+function publicServiceFailure(status: number, billing: Json): { data: Json; status: number } | null {
+  if (![401, 402, 403].includes(status)) return null;
+  const refunded = billing.status === "refunded" && billing.chargedMicrousd === 0;
+  return { status: 503, data: {
+    error: {
+      code: status === 402 ? "service_balance_unavailable" : "service_authentication_unavailable",
+      message: refunded ? "生成服务暂不可用，本次未扣费。请稍后重试或联系支持。" : "生成服务暂不可用，请稍后重试或联系支持。",
+    },
+    tokvilo_billing: billing,
+  } };
+}
 
 async function actor(request: Request): Promise<Actor> {
   const authorization = request.headers.get("authorization");
@@ -121,11 +137,24 @@ async function persistedBilling(db: D1Database, userId: string, requestId: strin
   return { ...fallback, status: row.status === "reserved" && fallback.status === "awaiting_reconciliation" ? fallback.status : row.status, reservedMicrousd: row.reserved_microusd, chargedMicrousd: row.charged_microusd, currency: "USD" };
 }
 
+async function requestReceipt(db: D1Database, userId: string, stored: StoredRequest): Promise<Response> {
+  if (stored.response_json && stored.status_code) {
+    const output = JSON.parse(stored.response_json);
+    output.tokvilo_billing = await persistedBilling(db, userId, stored.wallet_request_id, object(output.tokvilo_billing) ? output.tokvilo_billing : {});
+    const failure = publicServiceFailure(stored.status_code, output.tokvilo_billing);
+    return failure ? reply(failure.data, failure.status) : reply(output, stored.status_code);
+  }
+  return reply({
+    error: { code: "outcome_pending", message: "此请求已受理，结果尚未确认。请保留原请求编号，稍后查询。" },
+    tokvilo_billing: await persistedBilling(db, userId, stored.wallet_request_id, { status: "awaiting_reconciliation", currency: "USD" }),
+  }, 409);
+}
+
 async function pollApimartTask(task: Task, key: string, db: D1Database): Promise<Json> {
   const cached = await db.prepare("SELECT response_json FROM apimart_tasks WHERE id=? AND user_id=?").bind(task.id, task.user_id).first<{ response_json: string | null }>();
   if (cached?.response_json) return JSON.parse(cached.response_json);
   const result = await upstream(`${isMusicModel(task.model) ? "/v1/music/tasks" : "/v1/tasks"}/${task.id}`, key);
-  if (!result.ok) throw new ProviderError("暂时无法查询任务。", result.status >= 400 ? result.status : 502);
+  if (!result.ok) throw new ProviderError("暂时无法查询任务，请稍后刷新。", [401, 402, 403].includes(result.status) ? 503 : result.status >= 400 ? result.status : 502);
   const data = object(result.data.data) ? result.data.data : result.data;
   if (data.id !== task.id || typeof data.status !== "string" || typeof data.model === "string" && upstreamModelId(data.model) !== task.model) throw new ProviderError("任务响应与请求编号不符。", 502);
   const terminal = ["completed", "failed", "cancelled"].includes(data.status);
@@ -180,17 +209,25 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
   let reserved = false, sent = false;
   try {
     const who = await actor(request), db = getD1(), env = runtimeEnv(), url = new URL(request.url);
-    if (env.SERVICE_ENABLED?.toLowerCase() !== "true") return error("生成服务当前未启用。", 503);
     const prefix = [BASE, COMPAT_BASE].find(base => url.pathname.startsWith(base + "/"));
     if (!prefix) return error("tokvilo 模型服务接口不存在。", 404);
     const path = url.pathname.slice(prefix.length);
     if (url.search) return error("此接口不接受查询参数。", 400);
     const taskPrefix = ["/v1/tasks/", "/v1/music/tasks/"].find(prefix => path.startsWith(prefix));
     const taskId = taskPrefix ? path.slice(taskPrefix.length) : null;
-    const methods = ["/v1/models", "/v1/tasks"].includes(path) || (taskId && TASK_ID.test(taskId)) ? ["GET"] : (Object.values(APIMART_PATHS) as string[]).includes(path) ? ["POST"] : [];
+    const requestId = path.startsWith("/v1/requests/") ? path.slice("/v1/requests/".length) : null;
+    const receiptRead = requestId !== null && REQUEST_ID.test(requestId) && request.method === "GET";
+    // Existing receipts remain readable during a service pause. Reading them
+    // never needs current pricing, provider credentials or a new wallet hold.
+    if (env.SERVICE_ENABLED?.toLowerCase() !== "true" && !receiptRead) return error("生成服务当前未启用。", 503);
+    const methods = ["/v1/models", "/v1/tasks"].includes(path) || (taskId && TASK_ID.test(taskId)) || (requestId && REQUEST_ID.test(requestId)) ? ["GET"] : (Object.values(APIMART_PATHS) as string[]).includes(path) ? ["POST"] : [];
     if (!methods.length) return error("tokvilo 模型服务 接口不存在。", 404);
     if (!methods.includes(request.method)) return error("不支持此请求方法。", 405);
     await limitRequests(who.userId, request.method !== "GET");
+    if (requestId) {
+      const receipt = await db.prepare("SELECT request_hash,wallet_request_id,response_json,status_code FROM apimart_requests WHERE user_id=? AND idempotency_key=?").bind(who.userId, requestId).first<StoredRequest>();
+      return receipt ? await requestReceipt(db, who.userId, receipt) : error("未找到此账户的请求。", 404, "request_not_found");
+    }
     if (path === "/v1/tasks") {
       const rows = await db.prepare("SELECT id,model,status,created_at,updated_at FROM apimart_tasks WHERE user_id=? ORDER BY created_at DESC LIMIT 50").bind(who.userId).all();
       return reply({ data: rows.results || [] });
@@ -212,17 +249,12 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
     if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return error("请提交 application/json。", 415);
     const body = normalizeApimartRequest(await readObject(request.body, 64_000), path);
     const id = request.headers.get("Idempotency-Key") || "";
-    if (!/^[A-Za-z0-9_-]{8,128}$/.test(id)) return error("需要 8–128 位 Idempotency-Key，重试请使用相同编号。", 400);
+    if (!REQUEST_ID.test(id)) return error("需要 8–128 位 Idempotency-Key，重试请使用相同编号。", 400);
     const hash = await sha256Hex(path + "\n" + JSON.stringify(body));
     const existing = await db.prepare("SELECT request_hash,wallet_request_id,response_json,status_code FROM apimart_requests WHERE user_id=? AND idempotency_key=?").bind(who.userId, id).first<StoredRequest>();
     if (existing) {
       if (existing.request_hash !== hash) return error("相同请求编号不能用于不同内容。", 409);
-      if (existing.response_json && existing.status_code) {
-        const output = JSON.parse(existing.response_json);
-        output.tokvilo_billing = await persistedBilling(db, who.userId, existing.wallet_request_id, object(output.tokvilo_billing) ? output.tokvilo_billing : {});
-        return reply(output, existing.status_code);
-      }
-      return error("此请求已受理，结果尚未确认。请查询任务记录并保留原请求编号。", 409);
+      return await requestReceipt(db, who.userId, existing);
     }
     const rawMaximum = request.headers.get("X-Tokvilo-Max-Reserve-Microusd");
     const maximum = rawMaximum === null ? null : Number(rawMaximum);
@@ -257,7 +289,9 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
         billing = { ...billing, status: settlement.status, chargedMicrousd: settlement.chargedMicrousd };
       } catch { billing = { ...billing, status: "awaiting_reconciliation" }; }
     }
-    const output = { ...result.data, tokvilo_billing: billing }, status = result.ok ? result.status : result.status >= 400 ? result.status : 502;
+    const failure = result.ok ? null : publicServiceFailure(result.status, billing);
+    const output = failure?.data || { ...result.data, tokvilo_billing: billing };
+    const status = failure?.status || (result.ok ? result.status : result.status >= 400 ? result.status : 502);
     await db.prepare("UPDATE apimart_requests SET response_json=?,status_code=? WHERE user_id=? AND idempotency_key=?").bind(JSON.stringify(output), status, who.userId, id).run();
     await recordUsage(who, path, status, started).catch(() => undefined);
     return reply(output, status);
@@ -267,6 +301,6 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
       else await getD1().prepare("DELETE FROM apimart_requests WHERE user_id=? AND idempotency_key=?").bind(claimed.userId, claimed.id).run().catch(() => undefined);
     }
     const known = cause instanceof ProviderError || cause instanceof PricingError || cause instanceof WalletError;
-    return error(known ? cause.message : "tokvilo 模型服务 服务暂不可用，请稍后重试。", known ? cause.status : 503);
+    return error(known ? cause.message : "tokvilo 模型服务 服务暂不可用，请稍后重试。", known ? cause.status : 503, cause instanceof WalletError ? cause.code : undefined);
   }
 }

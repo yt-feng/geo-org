@@ -114,12 +114,24 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
   let sent = false;
   try {
     const who = await actor(request), env = runtimeEnv(), db = getD1();
-    if (env.SERVICE_ENABLED?.toLowerCase() !== "true") return error("生成服务当前未启用。", 503);
     const url = new URL(request.url);
     const prefix = [BASE, COMPAT_BASE].find(base => url.pathname.startsWith(base + "/"));
     if (!prefix) return error("tokvilo 多模态接口不存在。", 404);
     const path = url.pathname.slice(prefix.length);
     if (url.search) return error("此接口不接受查询参数。", 400);
+    const receiptId = path.startsWith("/v1/requests/") ? path.slice("/v1/requests/".length) : null;
+    if (receiptId && /^[A-Za-z0-9_-]{8,128}$/.test(receiptId)) {
+      if (request.method !== "GET") return error("不支持此请求方法。", 405);
+      await limitRequests(who.userId, false);
+      const stored = await db.prepare("SELECT response_json,status_code FROM tokenhub_requests WHERE user_id=? AND idempotency_key=?").bind(who.userId, receiptId).first<StoredRequest>();
+      if (!stored) return reply({ error: { code: "request_not_found", message: "未找到此账户的原请求。" } }, 404);
+      if (!stored.response_json || !stored.status_code) return reply({ error: { code: "outcome_pending", message: "原请求结果尚未确认，请稍后再次查询。" } }, 409);
+      const cached = JSON.parse(stored.response_json) as Json;
+      const receipt = await db.prepare("SELECT status,reserved_microusd AS reservedMicrousd,charged_microusd AS chargedMicrousd FROM wallet_reservations WHERE user_id=? AND request_id=?")
+        .bind(who.userId, `tokenhub:${receiptId}`).first<{ status: string; reservedMicrousd: number; chargedMicrousd: number | null }>();
+      return reply(receipt ? { ...cached, tokvilo_billing: { currency: "USD", ...receipt } } : cached, stored.status_code);
+    }
+    if (env.SERVICE_ENABLED?.toLowerCase() !== "true") return error("生成服务当前未启用。", 503);
     const taskId = path.startsWith(TASKS + "/") ? path.slice(TASKS.length + 1) : null;
     const allowed = path === "/v1/models" ? ["GET"] : path === TASKS ? ["GET", "POST"] : taskId && TASK_ID.test(taskId) ? ["GET", "DELETE"] : ["/v1/chat/completions", "/v3/images/generations"].includes(path) ? ["POST"] : [];
     if (!allowed.length) return error("tokvilo 多模态 接口不存在。", 404);

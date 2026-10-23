@@ -6,6 +6,7 @@ import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
 import { identity } from "./helpers/model-identity.mjs";
 import { brandDisplay } from "./helpers/brand-display.mjs";
+import { catalog } from "./helpers/model-catalog.mjs";
 
 const filename = new URL("../components/PriceTable.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), {
@@ -40,6 +41,7 @@ async function fixture(payload, locale = 'zh', props = {}) {
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
       if (name === "@/lib/model-identity") return identity;
+      if (name === "@/lib/model-catalog") return catalog;
       if (name === "./ProviderLogo") return {ProviderLogo:()=>null};
       if (name === "./LocaleProvider") return {useSiteLocale:()=>({isEnglish:locale === 'en',t:(zh,en)=>locale === 'en' ? en : zh,href:p=>p})};
       if (name === "@/lib/price-copy") return priceCopyModule.exports;
@@ -75,7 +77,7 @@ test("loaded model prices render only retail amounts, with filters preserving th
   assert.doesNotMatch(text(f.tree()), /Text model|\$7\.5|\$81/);
 });
 
-test("tiered, video, audio and add-on prices show their units and disabled adapters never link to generation", async () => {
+test("tiered, video, audio and add-on prices keep their units and all adapters link to their own playground", async () => {
   const f = await fixture({ observedAt: "2026-10-20T00:00:00Z", models: [
     { provider: "apimart", model: "video", name: "Video", kind: "video", billingReady: false, rates: [
       { dimension: "720p", label: "720p", unit: "second", retailMicrousd: 12000 },
@@ -100,11 +102,17 @@ test("tiered, video, audio and add-on prices show their units and disabled adapt
   assert.match(rendered, /价格已列示 · 接口暂未开放/);
   assert.match(rendered, /当前开放基础音乐生成；其他操作价格仅供查阅/);
   const links = all(f.tree(), node => node.type === "a");
-  assert.equal(links.length, 1); assert.match(links[0].props.href, /model=music/);
+  assert.equal(links.length, 3);
+  for (const link of links) {
+    const url = new URL(link.props.href, "https://tokvilo.com");
+    assert.equal(url.pathname, "/playground");
+    assert.equal(url.searchParams.get("service"), "gateway");
+    assert.equal(url.searchParams.get("category"), url.searchParams.get("model") === "video" ? "video" : url.searchParams.get("model") === "music" ? "audio" : "text");
+  }
   assert.doesNotMatch(rendered, /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
 });
 
-test("selected prices keep same-name models separate and never link unverified service rows to generation", async () => {
+test("selected prices keep same-name models and activation status separate with exact playground links", async () => {
   const f = await fixture({ observedAt: "2026-10-21", models: [
     { provider: "apimart", model: "gpt-image-2", name: "Image", kind: "image", billingReady: true, rates: [{ dimension: "image", unit: "image", retailMicrousd: 12000 }] },
     { provider: "selected", model: "gpt-image-2", name: "Image", kind: "image", billingReady: false, rates: [{ dimension: "request", unit: "call", retailMicrousd: 6000 }] },
@@ -116,8 +124,21 @@ test("selected prices keep same-name models separate and never link unverified s
   assert.equal(all(f.tree(), node => node.type === "table").length, 2);
   assert.match(text(f.tree()), /tokvilo 精选/); assert.match(text(f.tree()), /价格已列示 · 服务待开通/);
   const links = all(f.tree(), node => node.type === "a");
-  assert.equal(links.length, 1); assert.equal(links[0].props.href, "/selected?model=text");
+  assert.equal(links.length, 2);
+  assert.deepEqual(links.map(link => link.props.href).sort(), ["/playground?service=selected&model=gpt-image-2&category=image", "/playground?service=selected&model=text&category=text"]);
   assert.doesNotMatch(text(f.tree()), /rkapi|源价|加价/i);
+});
+
+test("token-priced speech and transcription keep audio categories without claiming chat availability", async () => {
+  const models = ["tts-1", "whisper-1", "gpt-4o-realtime-preview", "text-embedding-3-small"].map(model => ({
+    provider: "apimart", model, name: model, kind: "chat", billingReady: false, rates: [],
+  }));
+  const f = await fixture({ observedAt: "2026-10-23", models }, "en");
+  for (const card of all(f.tree(), node => node.props.className === "price-model")) {
+    const link = all(card, node => node.type === "a")[0], url = new URL(link.props.href, "https://tokvilo.com");
+    assert.equal(url.searchParams.get("category"), url.searchParams.get("model").startsWith("text-embedding") ? "text" : "audio");
+    assert.match(text(card), /Interface unavailable/);
+  }
 });
 
 test('English family comparisons preserve version order, billing units and independent service prices', async () => {
@@ -143,7 +164,7 @@ test('English family comparisons preserve version order, billing units and indep
   assert.doesNotMatch(text(preview), /Cached/);
   assert.match(text(cards[0]), /Cached input1M tokens\$0\.21/, 'complete rates must retain caching prices');
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]|tokenhub|apimart|rkapi/i);
-  assert.equal(all(f.tree(), node => node.type === 'a').length, 2);
+  assert.equal(all(f.tree(), node => node.type === 'a').length, 3);
   assert.equal(all(f.tree(), node => node.type === 'details').every(node => node.props.open === false), true);
 });
 

@@ -259,6 +259,23 @@
 .playground-run:disabled { opacity: .4; cursor: not-allowed; }
 .playground-run-area > span { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; color: var(--muted); font-size: 14px; }
 .playground-run-area > span i { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); }
+.playground-generation-steps, .playground-flow-steps { margin: 0 0 12px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.playground-wallet-status, .playground-account-state { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 12px 0; font-size: 14px; border-top: 1px solid var(--line); }
+.playground-wallet-status strong, .playground-account-state strong { color: var(--text); font-size: 18px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.playground-wallet-status a, .playground-account-state a { margin-left: auto; color: var(--text); text-underline-offset: 4px; }
+.playground-action-notice, .playground-action-error, .playground-inline-error { display: block; margin: 8px 0 12px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--text); background: var(--bg); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.playground-action-error, .playground-inline-error { border-left: 3px solid var(--accent); }
+.playground-action-notice a, .playground-action-error a, .playground-inline-error a { color: inherit; text-underline-offset: 4px; }
+.playground-status-refresh { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 8px; padding: 6px 0; background: transparent; border: 0; color: var(--text); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.playground-status-refresh:disabled { color: var(--muted); cursor: wait; }
+.playground-quote-summary { margin: 10px 0 14px; font-size: 15px; line-height: 1.6; }
+.playground-quote-summary strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.playground-run-area > button:not(.playground-run):not(.playground-status-refresh) { min-height: 44px; font: inherit; font-size: 14px; margin: 8px 10px 0 0; }
+.playground-run { white-space: normal; overflow-wrap: anywhere; padding: 12px; line-height: 1.5; }
+.playground-run-area:has(.playground-action-error), .playground-run-area:has(.playground-inline-error) { position: static; }
+.playground-request-recovery { margin: 12px 0; padding: 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; font-size: 14px; line-height: 1.6; }
+.playground-request-recovery code, .playground-action-notice code { overflow-wrap: anywhere; }
+.playground-request-recovery button, .playground-action-notice button { min-height: 44px; font: inherit; margin-top: 8px; }
 .playground-workspace { display: flex; flex-direction: column; min-width: 0; padding: 24px 28px 18px; }
 .playground-workspace-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 36px; margin-bottom: 26px; flex-wrap: wrap; }
 .playground-workspace-header > div { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
@@ -333,6 +350,9 @@
   .playground-preview-meta > span:last-child { display: none; }
   .playground-code-panel pre { padding: 20px 15px; font-size: 14px; }
   .playground-workspace-footer { font-size: 14px; flex-wrap: wrap; }
+}
+@media (max-height: 850px) {
+  .playground-run-area { position: static; }
 }
 @media (max-width: 700px) {
   .dashboard-main:has(.playground-layout), .console-collapsed .dashboard-main:has(.playground-layout) { margin-left: 62px; }

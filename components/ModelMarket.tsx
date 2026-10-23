@@ -152,7 +152,7 @@ export function ModelMarket({ catalog = allModelCatalog, live = false, observedA
         <code className="model-exact-id" title={model.id}>{model.id}</code>
         <div className="model-card-tags">{model.capabilities.map(item => <span key={item}>{capabilityName(item)}</span>)}</div>
       </div>
-      <div className="model-card-footer"><span>{serviceName(model.upstream || "apimart")}</span><button className="model-detail-button" type="button" aria-label={t(`查看 ${model.name} · ${serviceName(model.upstream || "apimart")} 的价格与详情`, `View pricing and details for ${modelName(model.name)} · ${serviceName(model.upstream || "apimart")}`)} onClick={() => setDetail(model)}>{t("价格与详情", "Pricing & details")}<Icon name="arrow-right" size={14} /></button></div>
+      <div className="model-card-footer"><span>{serviceName(model.upstream || "apimart")}</span><button className="model-detail-button" type="button" aria-label={t(`查看 ${model.name} · ${serviceName(model.upstream || "apimart")} 的价格与详情`, `View pricing and details for ${modelName(model.name)} · ${serviceName(model.upstream || "apimart")}`)} onClick={() => setDetail(model)}>{t("价格与详情", "Pricing & details")}<Icon name="arrow-right" size={14} /></button><Link className="model-detail-button" href={href(modelWorkbenchUrl(model))} aria-label={t(`打开 ${model.name} · ${serviceName(model.upstream || "apimart")} 的 Playground`, `Open playground for ${modelName(model.name)} · ${serviceName(model.upstream || "apimart")}`)}>Playground<Icon name="arrow-up-right" size={14} /></Link></div>
     </article>;
   }
 
@@ -206,7 +206,7 @@ export function ModelMarket({ catalog = allModelCatalog, live = false, observedA
           {detail.upstream === "tokenhub" ? <><dt>{t("tokvilo 接口", "tokvilo endpoint")}</dt><dd><code>{detail.category === "text" ? "/api/studio/v1/chat/completions" : detail.category === "image" ? "/api/studio/v3/images/generations" : "/api/studio/v3/contents/generations/tasks"}</code></dd></> : null}
           <dt>{t("计费", "Billing")}</dt><dd>{t("按页面价格和实际用量结算", "Billed at the displayed price based on actual usage")}</dd>
         </dl><PriceTable provider={detail.upstream || "apimart"} model={detail.id} />
-        <div className="model-detail-actions"><a href={href(detail.docs)} target="_blank" rel="noreferrer">{t("查看模型文档", "API documentation")}<Icon name="arrow-up-right" size={15} /></a>{detail.available !== false ? <Link href={href(modelWorkbenchUrl(detail))}>{t("打开工作台", "Open playground")}<Icon name="arrow-right" size={15} /></Link> : <span>{detail.upstream === "selected" ? t("服务开通后可在工作台调用", "Available in the playground after service activation") : t("接口适配完成后开放工作台调用", "Playground access opens after API integration")}</span>}</div>
+        <div className="model-detail-actions"><a href={href(detail.docs)} target="_blank" rel="noreferrer">{t("查看模型文档", "API documentation")}<Icon name="arrow-up-right" size={15} /></a><Link href={href(modelWorkbenchUrl(detail))}>{t("打开工作台", "Open playground")}<Icon name="arrow-right" size={15} /></Link></div>
       </div>
     </dialog> : null}
   </section>;

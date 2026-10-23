@@ -86,7 +86,8 @@ test('selected service preserves duplicate model IDs without borrowing another s
  assert.equal(duplicates.length,2);
  assert.equal(duplicates.find(item=>item.upstream==='apimart').available,true);
  assert.equal(duplicates.find(item=>item.upstream==='selected').available,false);
- assert.equal(new URL(catalog.modelWorkbenchUrl(selected),'https://tokvilo.com').pathname,'/selected');
+ assert.equal(new URL(catalog.modelWorkbenchUrl(selected),'https://tokvilo.com').pathname,'/playground');
+ assert.equal(new URL(catalog.modelWorkbenchUrl(selected),'https://tokvilo.com').searchParams.get('service'),'selected');
  assert.equal(new URL(catalog.modelWorkbenchUrl(duplicates[0]),'https://tokvilo.com').pathname,'/playground');
 });
 

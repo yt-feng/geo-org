@@ -8,6 +8,7 @@ import { useSiteLocale } from "./LocaleProvider";
 import { englishPriceText } from "@/lib/price-copy";
 import { ProviderLogo } from "./ProviderLogo";
 import { groupModels, modelProvider, providerIdentity } from "@/lib/model-identity";
+import { modelRequestKind, modelWorkbenchUrl, type ModelCategory } from "@/lib/model-catalog";
 
 type Rate = { dimension: string; label?: string; unit: string; retailMicrousd: number; condition?: string };
 type ModelPrice = { provider: string; model: string; name: string; kind: string; rates: Rate[]; billingReady?: boolean; notes?: string[]; capabilitiesNotes?: string[] };
@@ -15,6 +16,10 @@ type Catalog = { observedAt: string; models: ModelPrice[]; unavailable?: { model
 const labels: Record<string, string> = { input: "输入", output: "输出", cacheRead: "缓存读取", cacheWrite: "缓存写入", fixed: "图像生成", image: "图像生成", cached_input: "缓存输入" };
 const units: Record<string, string> = { "1M_tokens": "百万 tokens", image: "张", second: "秒", call: "次", "1000_queries": "千次查询", "1M_token_hours": "百万 token·小时" };
 const PAGE_SIZE = 12;
+const priceCategory = (model: string, kind: string): ModelCategory => {
+  const category = kind === "image" || kind === "video" ? kind : ["audio", "music", "speech", "transcription", "realtime"].includes(kind) ? "audio" : "text";
+  return ["audio", "speech", "transcription", "realtime"].includes(modelRequestKind(model, category)) ? "audio" : category;
+};
 const money = (value: number) => `$${(value / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 6 })}`;
 const keyRates = (rates: Rate[]) => {
   const input = rates.find(rate => /^(?:.*:)?input$/.test(rate.dimension));
@@ -78,7 +83,8 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
     <button type="button" disabled={currentPage === pageCount} onClick={() => changePage(currentPage + 1)}>{t("下一页", "Next")}</button>
   </nav> : null;
   const priceCard = (item: ModelPrice) => <section className="price-model" key={`${item.provider}:${item.model}`}>
-    <div className="price-model-heading"><div><small>{serviceName(item.provider)}</small><h3>{copy(item.name || item.model)}</h3><code>{item.model}</code></div>{item.billingReady !== false ? <Link href={href(item.provider === "tokenhub" ? `/studio?model=${encodeURIComponent(item.model)}&mode=${item.kind}` : item.provider === "selected" ? `/selected?model=${encodeURIComponent(item.model)}` : `/playground?model=${encodeURIComponent(item.model)}`)}>{t("打开工作台 ↗", "Open playground ↗")}</Link> : <span>{item.provider === "selected" ? t("价格已列示 · 服务待开通", "Pricing listed · Activation pending") : t("价格已列示 · 接口暂未开放", "Pricing listed · Interface unavailable")}</span>}</div>
+    <div className="price-model-heading"><div><small>{serviceName(item.provider)}</small><h3>{copy(item.name || item.model)}</h3><code>{item.model}</code></div><Link href={href(modelWorkbenchUrl({ id: item.model, category: priceCategory(item.model, item.kind), upstream: item.provider === "tokenhub" || item.provider === "selected" ? item.provider : "apimart" }))}>{t("打开工作台 ↗", "Open playground ↗")}</Link></div>
+    {item.billingReady === false ? <p className="price-caption">{item.provider === "selected" ? t("价格已列示 · 服务待开通", "Pricing listed · Activation pending") : t("价格已列示 · 接口暂未开放", "Pricing listed · Interface unavailable")}</p> : null}
     {item.capabilitiesNotes?.map(note => <p className="price-caption" key={note}>{copy(note)}</p>)}
     <details className="price-rate-detail" open={!!model}>
       <summary>{t("查看完整费率", "View full rates")} <span>{item.rates.length} {t("个计费项", "rate items")}</span></summary>

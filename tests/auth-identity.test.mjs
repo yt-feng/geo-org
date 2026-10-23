@@ -12,7 +12,7 @@ async function moduleAt(name, mocks, globals = {}) {
   });
   vm.runInNewContext(outputText, {
     module: compiled, exports: compiled.exports, crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array,
-    Headers, Response, AbortSignal, atob, btoa,
+    Headers, Response, AbortSignal, URL, URLSearchParams, atob, btoa,
     require(dependency) { assert.ok(Object.hasOwn(mocks, dependency), dependency); return mocks[dependency]; },
     ...globals,
   }, { filename });
@@ -32,6 +32,7 @@ async function fixture(key = "sb_publishable_test") {
     "next/navigation": { redirect: path => { redirects.push(path); throw new Error("redirect"); } },
     "./config": { runtimeEnv: () => env }, "./crypto": helpers,
     "./local-auth": { verifyLocalSession: async () => ({ id: "local_user", isAdmin: false }) },
+    "./auth-return-path": await moduleAt("auth-return-path", {}),
   }, {
     async fetch(url, options) {
       calls.push({ url, options });
@@ -57,6 +58,18 @@ test("missing sessions retain the selected language using only fixed login desti
   await assert.rejects(() => f.auth.requirePortalUser('https://untrusted.invalid'), /redirect/);
   assert.deepEqual(f.redirects, ['/login?lang=en', '/login', '/login']);
   assert.equal(f.calls.length, 0);
+});
+
+test("missing sessions keep a sanitized playground destination and discard external or secret-bearing return data", async () => {
+  const f = await fixture();
+  await assert.rejects(() => f.auth.requirePortalUser("en", "/playground?service=selected&model=gpt-image-2&category=image&lang=en&access_token=secret#refresh_token=secret"), /redirect/);
+  const login = new URL(f.redirects[0], "https://tokvilo.com");
+  assert.equal(login.pathname, "/login");
+  assert.equal(login.searchParams.get("lang"), "en");
+  assert.equal(login.searchParams.get("next"), "/playground?service=selected&model=gpt-image-2&category=image&lang=en");
+  assert.doesNotMatch(f.redirects[0], /secret|access_token|refresh_token/);
+  await assert.rejects(() => f.auth.requirePortalUser("en", "https://example.invalid/playground"), /redirect/);
+  assert.equal(f.redirects[1], "/login?lang=en");
 });
 
 test("publishable keys are apikey only while legacy anonymous JWT configuration remains supported", async () => {

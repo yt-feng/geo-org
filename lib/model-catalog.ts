@@ -81,8 +81,9 @@ export const tokenhubModelCatalog: CatalogModel[] = TOKENHUB_REFERENCE_MODELS.ma
   docs: "/dashboard/docs?provider=studio",
 }));
 export const allModelCatalog: CatalogModel[] = [...tokenhubModelCatalog, ...modelCatalog];
-export function modelWorkbenchUrl(model: CatalogModel) {
-  return `${model.upstream === "tokenhub" ? "/studio" : model.upstream === "selected" ? "/selected" : "/playground"}?model=${encodeURIComponent(model.id)}&category=${model.category}`;
+export function modelWorkbenchUrl(model: Pick<CatalogModel, "upstream" | "id" | "category">) {
+  const service = model.upstream === "tokenhub" ? "studio" : model.upstream === "selected" ? "selected" : "gateway";
+  return `/playground?service=${service}&model=${encodeURIComponent(model.id)}&category=${model.category}`;
 }
 
 export function providerInitials(provider: string) {

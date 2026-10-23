@@ -427,3 +427,24 @@ test("all nine current TokenHub model IDs forward their exact bodies through the
     }
   }
 });
+
+
+test("receipt recovery is owner-scoped, read-only, and available without funds, credentials or an enabled service", async t => {
+  const f = await fixture(t, { user: MEMBER, env: { SERVICE_ENABLED: "false" }, onCredential: () => { throw Error("Must not read provider credentials"); } });
+  f.insertUser(MEMBER);
+  f.sqlite.prepare("INSERT INTO tokenhub_requests(user_id,idempotency_key,request_hash,response_json,status_code) VALUES(?,?,?,?,?)")
+    .run(MEMBER.id, "receipt-0001", "hash", JSON.stringify({ choices: [{ message: { content: "Saved answer" } }] }), 200);
+  const before = await f.wallet.getWallet(MEMBER.id);
+  const response = await expectStatus(f.handle, request("/v1/requests/receipt-0001", { method: "GET" }), 200);
+  assert.match(await response.text(), /Saved answer/);
+  assert.deepEqual(await f.wallet.getWallet(MEMBER.id), before);
+  assert.equal(f.calls.length, 0);
+  f.setUser({ ...MEMBER, id: "different-owner", email: "different@example.com" });
+  const absent = await expectStatus(f.handle, request("/v1/requests/receipt-0001", { method: "GET" }), 404);
+  assert.equal((await absent.json()).error.code, "request_not_found");
+  f.setUser(MEMBER);
+  f.sqlite.prepare("UPDATE tokenhub_requests SET response_json=NULL,status_code=NULL WHERE idempotency_key=?").run("receipt-0001");
+  const pending = await expectStatus(f.handle, request("/v1/requests/receipt-0001", { method: "GET" }), 409);
+  assert.equal((await pending.json()).error.code, "outcome_pending");
+  assert.equal(f.calls.length, 0);
+});

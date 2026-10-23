@@ -32,7 +32,8 @@ test("all nine TokenHub reference models select the correct gateway workbench an
     const model = entries[0], url = new URL(catalog.modelWorkbenchUrl(model), "https://api.eco-geo.org");
     assert.equal(model.upstream, "tokenhub");
     assert.equal(model.docs, "/dashboard/docs?provider=studio");
-    assert.equal(url.pathname, "/studio");
+    assert.equal(url.pathname, "/playground");
+    assert.equal(url.searchParams.get("service"), "studio");
     assert.equal(url.searchParams.get("model"), reference.id);
     const selection = workbench.helpers.selectionFromSearch(url.search);
     assert.equal(selection.model, reference.id);

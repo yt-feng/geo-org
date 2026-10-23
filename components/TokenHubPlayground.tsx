@@ -3,6 +3,7 @@
 import { useSiteLocale } from "./LocaleProvider";
 
 import { displayServiceText } from "@/lib/brand-display";
+import type { PlaygroundStatus } from "@/lib/playground-status";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -14,7 +15,6 @@ type Json = Record<string, unknown>;
 type Model = { id: string; name?: string; provider: string; category: string[]; sources?: string[]; modelType?: string; accountAccess?: string; integrationStatus?: string; limitations?: string[] };
 type Catalog = { complete: boolean; observedAt: string; sources: Array<{ source: string; status: string; modelCount: number }>; warnings: string[] };
 type Task = { id: string; model: string; status: string; created_at?: string; updated_at?: string };
-type Provider = { configured: boolean; verifiedAt: string | null };
 const endpoint: Record<Mode, string> = { video: "/api/studio/v3/contents/generations/tasks", image: "/api/studio/v3/images/generations", chat: "/api/studio/v1/chat/completions" };
 const modes: Array<{ id: Mode; name: string; icon: string }> = [{ id: "video", name: "视频", icon: "video" }, { id: "image", name: "图像", icon: "image" }, { id: "chat", name: "对话", icon: "message" }];
 const defaults: Record<Mode, string> = { video: "dreamina-seedance-2-0-260128", image: "dola-seedream-5-0-pro-260628", chat: "" };
@@ -81,7 +81,9 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
     return /[\u4e00-\u9fff]/.test(value) ? "The request could not be completed. Check the existing task before retrying." : displayServiceText(value);
   };
   const [mode, setMode] = useState<Mode>("video");
-  const [provider, setProvider] = useState<Provider | null>(null);
+  const [readiness, setReadiness] = useState<PlaygroundStatus | null>(null);
+  const [statusError, setStatusError] = useState("");
+  const [checking, setChecking] = useState(false);
   const [models, setModels] = useState<Model[]>([]);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [modelsLoading, setModelsLoading] = useState(true);
@@ -120,13 +122,37 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
   const submission = useRef<{ body: string; mode: Mode; key: string } | null>(null);
   const selection = useRef(0);
 
+  async function refreshStatus() {
+    setChecking(true); setStatusError("");
+    try {
+      const response = await fetch("/api/playground/status?service=studio", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || data.service !== "studio" || data.authenticated !== true || data.currency !== "USD" || !Number.isSafeInteger(data.balanceMicrousd)) {
+        throw Error(response.status === 401 ? t("登录已过期，请重新登录。", "Your session expired. Please sign in again.") : t("无法检查余额和服务状态，请刷新状态。", "Could not check your balance and service. Refresh status to continue."));
+      }
+      setReadiness(data);
+      return data as PlaygroundStatus;
+    } catch (cause) { setReadiness(null); setStatusError(cause instanceof Error ? cause.message : t("状态检查失败。", "Status check failed.")); return null; }
+    finally { setChecking(false); }
+  }
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/playground/status?service=studio", { cache: "no-store" }).then(async response => {
+      const data = await response.json();
+      if (!response.ok || data.service !== "studio" || data.currency !== "USD" || !Number.isSafeInteger(data.balanceMicrousd)) throw Error("status_unavailable");
+      if (active) setReadiness(data);
+    }).catch(() => { if (active) setStatusError("status_unavailable"); });
+    return () => { active = false; };
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     const requested = selectionFromSearch(window.location.search), requestedModel = requested.model, requestedMode = requested.mode;
     const hasRequestedModel = !!requestedModel;
     request("/api/studio/v1/models", { signal: controller.signal }).then(value => { if (!controller.signal.aborted) {
       const body = record(value), info = record(body.catalog);
-      const discovered = parseModels(body.data); setModels(discovered); setProvider({ configured: true } as Provider);
+      const discovered = parseModels(body.data); setModels(discovered);
       if (hasRequestedModel) { setModel(requestedModel); const selected = discovered.find(item => item.id === requestedModel); const selectedMode = requestedMode || (selected ? modes.find(item => modelMatches(selected, item.id))?.id : undefined); if (selectedMode) setMode(selectedMode); }
       else if (requestedMode) { setMode(requestedMode); setModel(discovered.find(item => modelMatches(item, requestedMode))?.id || defaults[requestedMode]); }
       setCatalog({ complete: info.complete === true, observedAt: text(info.observedAt), sources: Array.isArray(info.sources) ? info.sources.map(record).map(item => ({ source: text(item.source), status: text(item.status), modelCount: typeof item.modelCount === "number" ? item.modelCount : 0 })) : [], warnings: Array.isArray(info.warnings) ? info.warnings.filter((warning): warning is string => typeof warning === "string") : [] });
@@ -145,6 +171,13 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
   }, [mode, model, prompt, imageSize, reference, referenceRole, resolution, ratio, duration, generateAudio]);
   const json = advanced ? jsonInput : JSON.stringify(generated, null, 2);
   const currentQuote = quote?.body === json && quote.mode === mode ? quote : null;
+  const configurationReady = !!readiness?.serviceEnabled && readiness.configured && readiness.accountActive;
+  const insufficient = !!readiness && readiness.balanceMicrousd < (currentQuote?.reservedMicrousd || 1);
+  const blockedMessage = (statusError === "status_unavailable" ? t("无法检查余额和服务状态，请刷新状态。", "Could not check your balance and service. Refresh status to continue.") : statusError) || (!readiness ? t("正在检查余额和服务状态…", "Checking balance and service status…")
+    : !readiness.accountActive ? t("此账户已停用，请联系支持。", "This account is inactive. Please contact support.")
+      : !readiness.serviceEnabled ? t("生成服务暂未启用，可以查看参数和报价。", "Generation is currently disabled. You can review parameters and pricing.")
+        : !readiness.configured ? t("此服务尚未配置完成，可以查看参数和报价。", "This service is awaiting configuration. You can review parameters and pricing.")
+          : insufficient ? t("可用余额不足，请充值后生成。查看报价不会扣费。", "Insufficient available balance. Top up before generating. Checking a quote is free.") : "");
   const curl = `TOKVILO_REQUEST_ID="$(uuidgen)"\n\ncurl --request POST \\\n  --url 'https://tokvilo.com${endpoint[mode]}' \\\n  --header 'Authorization: Bearer YOUR_TOKVILO_API_KEY' \\\n  --header 'Content-Type: application/json' \\\n  --header "Idempotency-Key: $TOKVILO_REQUEST_ID" \\\n  --data ${shellQuote(json)}`;
   const taskData = payloadOf(result);
   const taskStatus = text(taskData.status).toLowerCase();
@@ -213,6 +246,7 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
   async function estimate() {
     if (quoting || pending) return;
     setQuoting(true); setError(""); setQuote(null);
+    void refreshStatus();
     try {
       const body: unknown = JSON.parse(json);
       const value = record(await request("/api/pricing/quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider: "tokenhub", mode, body }) }));
@@ -223,8 +257,9 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
   }
 
   async function submit() {
-    if (inFlight.current || !provider?.configured) return;
+    if (inFlight.current || quoting || pending) return;
     if (!currentQuote) { await estimate(); return; }
+    if (!configurationReady || insufficient) { setError(blockedMessage); return; }
     setError("");
     let body: Json;
     try {
@@ -252,7 +287,27 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
         else setError("请求已返回，但未找到任务 ID。请查看原始响应与任务记录，勿重复提交。");
       }
     } catch (error) { setQuote(null); setError(error instanceof Error ? error.message : "请求未完成。请先检查任务记录。"); }
-    finally { inFlight.current = false; setPending(false); }
+    finally { inFlight.current = false; setPending(false); void refreshStatus(); }
+  }
+
+  async function recoverRequest() {
+    const saved = submission.current;
+    if (!saved || pending || refreshing) return;
+    setRefreshing(true); setError("");
+    try {
+      const response = await fetch(`/api/studio/v1/requests/${encodeURIComponent(saved.key)}`, { cache: "no-store" });
+      const value = await response.json();
+      if (!response.ok) {
+        if (value.error?.code === "request_not_found" || value.tokvilo_billing?.status === "refunded") { submission.current = null; setQuote(null); }
+        if (value.tokvilo_billing) { setResult(value); setTab("result"); }
+        throw Error(value.error?.message || t("原请求结果尚未确认，请稍后查询。", "The original request is still unconfirmed. Check again later."));
+      }
+      setResult(value); setResultMode(saved.mode); setTab("result"); setQuote(null);
+      const id = text(payloadOf(value).id);
+      if (saved.mode === "video" && id) { setTaskId(id); setQueryId(id); setPolling(!terminal.has(text(payloadOf(value).status).toLowerCase())); submission.current = null; }
+      else if (["settled", "refunded"].includes(value.tokvilo_billing?.status)) submission.current = null;
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t("查询失败，请稍后重试查询。", "Could not retrieve the request. Check again later.")); }
+    finally { setRefreshing(false); void refreshStatus(); }
   }
 
   async function copy() {
@@ -278,11 +333,19 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
         <button className={`tokenhub-advanced-toggle${advanced ? " selected" : ""}`} type="button" onClick={toggleAdvanced} aria-pressed={advanced} disabled={pending}><Icon name="code" size={14} />{advanced ? t("返回参数表单", "Back to form") : t("编辑完整 JSON", "Edit full JSON")}<Icon name="arrow-right" size={14} /></button>
         <p className="tokenhub-parameter-help">{t("各模型支持的尺寸、时长与素材类型不同。多图、参考视频及其他参数可在 JSON 中设置。", "Models support different sizes, durations and media types. Set multiple images, reference videos and other parameters in JSON.")}{selectedLimitations.length ? ` ${selectedLimitations.join(isEnglish ? "; " : "；")}。` : ""}</p>{unknownModels.length ? <details className="tokenhub-parameter-help"><summary>{unknownModels.length}{t(" 个模型尚未识别接口类型", " models have an unclassified endpoint type")}</summary><p>{unknownModels.map(item => item.id).join("、")}{t("。目录记录已保留，可根据模型文档选择接口并填写完整 ID。", ". Catalogue entries are retained. Select the endpoint and exact ID according to the model documentation.")}</p></details> : null}
       </div>
-      <div className="playground-run-area">{currentQuote ? <p className="tokenhub-parameter-help" role="status">{t("本次最多预留 ", "Maximum reservation ")}<strong>${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)}</strong>{t("。完成后按实际用量结算并退还差额。", ". Final billing uses actual usage; unused funds are returned.")}<Link href={href("/dashboard/wallet")}>{t("查看余额", "View balance")}</Link></p> : null}<button className="playground-run" type="button" disabled={pending || quoting || !provider?.configured || (!advanced && (!model.trim() || !prompt.trim()))} onClick={submit}><Icon name={pending || quoting ? "clock" : "bolt"} size={16} />{pending ? t("正在提交…", "Submitting…") : quoting ? t("正在报价…", "Getting quote…") : currentQuote ? t("确认并生成", "Confirm & generate") : t("查看预留金额", "Get reservation quote")}<Icon name="arrow-right" size={16} /></button><span><i />{t("从 tokvilo 账户余额结算", "Billed from your tokvilo wallet")}</span></div>
+      <div className="playground-run-area">
+        {submission.current ? <div className="playground-action-notice"><p>{t("原请求编号：", "Original request ID: ")}<code>{submission.current.key}</code></p><button type="button" disabled={pending || refreshing} onClick={recoverRequest}>{refreshing ? t("查询中…", "Checking…") : t("查询原请求（不重新生成）", "Check original request (no new generation)")}</button></div> : null}
+        <p className="playground-flow-steps">{t("1. 查看报价（不扣费） → 2. 确认生成", "1. Check quote (free) → 2. Confirm generation")}</p>
+        <div className="playground-account-state"><span>{t("可用余额", "Available balance")}</span><strong>{readiness ? `$${(readiness.balanceMicrousd / 1_000_000).toFixed(6)}` : "—"}</strong><Link href={href("/dashboard/wallet")}>{t("充值", "Top up")}</Link></div>
+        {blockedMessage ? <p className="playground-action-notice" role="status">{blockedMessage}</p> : null}
+        {error ? <p className="playground-inline-error" role="alert">{messageCopy(error)}</p> : null}
+        {modelError ? <p className="playground-action-notice">{messageCopy(modelError)}</p> : null}
+        <button className="playground-status-refresh" type="button" disabled={checking || pending} onClick={() => void refreshStatus()}>{checking ? t("检查中…", "Checking…") : t("刷新余额与服务状态", "Refresh balance & service")}</button>
+        {currentQuote ? <p className="tokenhub-parameter-help" role="status">{t("本次最多预留 ", "Maximum reservation ")}<strong>${(currentQuote.reservedMicrousd / 1_000_000).toFixed(6)}</strong>{t("。完成后按实际用量结算并退还差额。", ". Final billing uses actual usage; unused funds are returned.")}<Link href={href("/dashboard/wallet")}>{t("查看余额", "View balance")}</Link></p> : null}<button className="playground-run" type="button" disabled={pending || quoting || (!!currentQuote && (!configurationReady || insufficient)) || (!advanced && (!model.trim() || !prompt.trim()))} onClick={submit}><Icon name={pending || quoting ? "clock" : "bolt"} size={16} />{pending ? t("正在提交…", "Submitting…") : quoting ? t("正在报价…", "Getting quote…") : currentQuote ? t("确认并生成", "Confirm & generate") : t("查看预留金额", "Get reservation quote")}<Icon name="arrow-right" size={16} /></button><span><i />{t("从 tokvilo 账户余额结算", "Billed from your tokvilo wallet")}</span></div>
     </section>
     <section className="playground-workspace" aria-label={t("tokvilo 多模态 工作台", "tokvilo Multimodal playground")}>
       <header className="playground-workspace-header"><div><h1>{t("全部模型，一个入口。", "All models. One workspace.")}</h1><span>TOKVILO · MULTIMODAL API</span></div><Link href={href("/dashboard/docs?provider=studio")}><Icon name="book" size={15} />{t("接口文档", "API documentation")}<Icon name="arrow-up-right" size={14} /></Link></header>
-      <div className="playground-notice"><span className="playground-notice-dot" /><p>{provider === null ? t("正在读取服务配置…", "Loading service configuration…") : provider.configured ? t("选择模型后先查看预留金额，再确认生成。", "Choose a model, review the reservation amount, then confirm generation.") : t("服务尚未就绪，请稍后再试。", "The service is not ready. Please try again later.")}</p><Link href={href(isAdmin ? "/admin" : "/dashboard/wallet")}>{isAdmin ? t("管理连接", "Manage connection") : t("余额与充值", "Wallet & top up")} <Icon name="arrow-right" size={13} /></Link></div>
+      <div className="playground-notice"><span className="playground-notice-dot" /><p>{blockedMessage || t("选择模型后先查看预留金额，再确认生成。", "Choose a model, review the reservation amount, then confirm generation.")}</p><Link href={href(isAdmin ? "/admin" : "/dashboard/wallet")}>{isAdmin ? t("管理连接", "Manage connection") : t("余额与充值", "Wallet & top up")} <Icon name="arrow-right" size={13} /></Link></div>
       {modelError || catalog?.warnings.length ? <div className="tokenhub-error" role="status"><Icon name="info" size={15} /><span>{messageCopy(modelError || catalog?.warnings.join("; ") || "")}{t(" 当前展示已成功读取的模型，未用预设补充为已验证目录。", " Only successfully loaded models are shown. Reference entries do not count as verified models.")}</span></div> : null}
       <div className="tokenhub-output-tabs" role="tablist" aria-label={t("工作台内容", "Playground content")}><button type="button" role="tab" aria-selected={tab === "result"} className={tab === "result" ? "selected" : ""} onClick={() => setTab("result")}><Icon name="sparkles" size={14} />{t("生成结果", "Results")}</button><button type="button" role="tab" aria-selected={tab === "request"} className={tab === "request" ? "selected" : ""} onClick={() => setTab("request")}><Icon name="code" size={14} />{t("请求代码", "Request code")}</button><button type="button" role="tab" aria-selected={tab === "tasks"} className={tab === "tasks" ? "selected" : ""} onClick={() => { setTab("tasks"); if (!tasksLoaded) void loadTasks(); }}><Icon name="clock" size={14} />{t("视频任务", "Video tasks")}</button></div>
       {error ? <div className="tokenhub-error" role="alert"><Icon name="info" size={15} /><span>{messageCopy(error)}</span></div> : null}

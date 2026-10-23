@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { runtimeEnv } from "./config";
 import { safeEqual } from "./crypto";
 import { verifyLocalSession } from "./local-auth";
+import { safeAuthReturnPath } from "./auth-return-path";
 
 export const ACCESS_COOKIE = "eco_geo_access";
 export const REFRESH_COOKIE = "eco_geo_refresh";
@@ -177,9 +178,15 @@ export async function getPortalUser(): Promise<PortalUser | null> {
   return verifyAccessToken(cookieStore.get(ACCESS_COOKIE)?.value || "");
 }
 
-export async function requirePortalUser(locale: "zh" | "en" = "zh"): Promise<PortalUser> {
+export async function requirePortalUser(locale: "zh" | "en" = "zh", next?: string): Promise<PortalUser> {
   const user = await getPortalUser();
-  if (!user) redirect(locale === "en" ? "/login?lang=en" : "/login");
+  if (!user) {
+    const params = new URLSearchParams();
+    if (locale === "en") params.set("lang", "en");
+    const destination = safeAuthReturnPath(next);
+    if (destination) params.set("next", destination);
+    redirect(`/login${params.size ? `?${params}` : ""}`);
+  }
   return user;
 }
 

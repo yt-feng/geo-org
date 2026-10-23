@@ -27,6 +27,7 @@ async function fixture(options = {}) {
     require(name) { if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) }; if (name === "react") return react; if (name === "react/jsx-runtime") return jsx; if (name === "next/link") return { default: "a" }; if (name === "./PriceTable") return { PriceTable: () => null }; throw Error(name); },
     fetch: async (url, init) => {
       calls.push({ url, init });
+      if (url === "/api/playground/status?service=selected") return options.status ? options.status(url, init) : Response.json({ service: "selected", authenticated: true, serviceEnabled: true, configured: true, accountActive: true, balanceMicrousd: 1_000_000, currency: "USD", code: "configuration_available", checks: "configuration_only" });
       if (url === "/api/pricing") return Response.json({ models: [
         { provider: "apimart", model, name: "Other service model", kind, billingReady: true },
         { provider: "selected", model, name: "Selected model", kind, billingReady: options.ready !== false },
@@ -181,7 +182,7 @@ test("viewing a settled historical request cannot clear a different unresolved r
   const original = f.calls.find(call => call.url.endsWith("/chat/completions")).init.headers["Idempotency-Key"];
   await find(f.tree(), node => node.props["aria-label"] === `查询请求 ${oldId}`).props.onClick(); f.render();
   await f.primary().props.onClick(); f.render();
-  assert.equal(f.calls.at(-1).init.headers["Idempotency-Key"], original);
+  assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).at(-1).init.headers["Idempotency-Key"], original);
 });
 
 test("English selected playground keeps generated content and request identity unchanged", async () => {
@@ -196,4 +197,68 @@ test("English selected playground keeps generated content and request identity u
   assert.deepEqual(JSON.parse(paid.init.body), quoted.body);
   assert.equal(JSON.parse(paid.init.body).messages[0].content, "不翻译这段用户提示词");
   assert.match(text(f.tree()), /原始中文回答/);
+});
+
+const accountStatus = overrides => ({ service: "selected", authenticated: true, serviceEnabled: true, configured: true, accountActive: true,
+  balanceMicrousd: 1_000_000, currency: "USD", code: "configuration_available", checks: "configuration_only", ...overrides });
+
+test("zero balance permits a quote but prevents generation, then refreshing funded balance restores confirmation", async () => {
+  let balance = 0;
+  const f = await fixture({ status: async () => Response.json(accountStatus({ balanceMicrousd: balance })) });
+  assert.match(text(f.tree()), /可用余额 \$0\.000000/);
+  assert.match(text(f.tree()), /1 获取准确报价 → 2 确认金额并生成/);
+  assert.equal(f.primary().props.disabled, false, "a quote does not charge an empty wallet");
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  assert.match(text(f.tree()), /还需充值 \$0\.012000/);
+  await f.primary().props.onClick();
+  assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).length, 0);
+  balance = 50_000;
+  await find(f.tree(), node => node.type === "button" && text(node) === "刷新余额与状态").props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, false);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).length, 1);
+});
+
+test("a priced model cannot submit with missing service configuration", async () => {
+  const f = await fixture({ status: async () => Response.json(accountStatus({ configured: false, code: "service_not_configured" })) });
+  assert.match(text(f.tree()), /此服务暂未开通生成/);
+  assert.doesNotMatch(text(f.tree()), /当前模型已开通此接口/);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  await f.primary().props.onClick();
+  assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).length, 0);
+  assert.ok(find(f.tree(), node => node.type === "summary" && text(node) === "查看 JSON 请求参数"), "parameters remain available");
+});
+
+test("session expiry is actionable in both languages before any quote or generation", async () => {
+  for (const english of [false, true]) {
+    const f = await fixture({ english, status: async () => Response.json({ code: "login_required", authenticated: false }, { status: 401 }) });
+    assert.match(text(f.tree()), english ? /Your session has expired/ : /登录已过期/);
+    assert.ok(find(f.tree(), node => node.props.href?.startsWith("/login")));
+    assert.equal(f.primary().props.disabled, true);
+    if (english) assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
+    assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+  }
+});
+
+test("generation is blocked when account status cannot be read and can recover with refresh", async () => {
+  let unavailable = true;
+  const f = await fixture({ status: async () => unavailable ? Response.json({ code: "status_unavailable" }, { status: 503 }) : Response.json(accountStatus()) });
+  assert.match(text(f.tree()), /暂时无法读取账户状态/);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, true);
+  unavailable = false;
+  await find(f.tree(), node => node.type === "button" && text(node) === "刷新余额与状态").props.onClick(); f.render();
+  assert.equal(f.primary().props.disabled, false);
+});
+
+test("quote failure is displayed beside the action button", async () => {
+  const f = await fixture({ quote: async () => Response.json({ error: "报价暂不可用。" }, { status: 503 }) });
+  await f.primary().props.onClick(); f.render();
+  const runArea = find(f.tree(), node => node.props.className === "playground-run-area");
+  const alert = find(runArea, node => node.props.role === "alert");
+  assert.ok(alert);
+  assert.match(text(alert), /报价暂不可用/);
+  assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).length, 0);
 });

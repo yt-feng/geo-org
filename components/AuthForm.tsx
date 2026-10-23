@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState, type ReactNode } from "react";
 import { useSiteLocale } from "./LocaleProvider";
 import { Icon } from "@/components/Icon";
+import { safeAuthReturnPath } from "@/lib/auth-return-path";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const { t, href, isEnglish } = useSiteLocale();
@@ -59,7 +60,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       if (!response.ok) throw new Error(result.error || "请求失败，请稍后再试。");
 
       if (mode === "login" || result.authenticated) {
-        window.location.assign(href("/dashboard"));
+        const destination = safeAuthReturnPath(new URL(window.location.href).searchParams.get("next"));
+        window.location.assign(href(destination || "/dashboard"));
         return;
       }
       setMessage(
