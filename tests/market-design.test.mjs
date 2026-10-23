@@ -25,31 +25,101 @@ const text = node => typeof node === 'string' || typeof node === 'number' ? Stri
 
 async function harness({ models = fullCatalog, url = 'https://tokvilo.com/models', english = false } = {}) {
   let location = new URL(url), hooks = [], index = 0, tree;
-  const effects = [], listeners = new Map(), history = [];
+  const effects = [], listeners = new Map(), history = [], scrollCalls = [], focusCalls = [];
   const window = { get location() { return location; }, dispatchEvent(event) { listeners.get(event.type)?.(event); }, history: { state: { preserved: true }, pushState(state, _, path) { history.push(['push', state, path]); location = new URL(path, location); }, replaceState(state, _, path) { history.push(['replace', state, path]); location = new URL(path, location); } }, addEventListener(name, fn) { listeners.set(name, fn); }, removeEventListener(name) { listeners.delete(name); } };
   const ui = await load('../components/ModelMarket.tsx', {
     '@/lib/model-catalog': catalog, '@/lib/brand-display': brandDisplay, '@/lib/model-identity': identity,
     'react/jsx-runtime': jsx, 'next/link': { default: 'a' }, './Icon': { Icon: () => null }, './PriceTable': { PriceTable: () => null }, './ProviderLogo': { ProviderLogo: () => null },
     './LocaleProvider': { useSiteLocale: () => ({ isEnglish: english, locale: english ? 'en' : 'zh', t: (zh, en) => english ? en : zh, href: path => english ? `${path}${path.includes('?') ? '&' : '?'}lang=en` : path }) },
-    react: { useState(initial) { const i = index++; if (!(i in hooks)) hooks[i] = initial; return [hooks[i], value => { hooks[i] = typeof value === 'function' ? value(hooks[i]) : value; }]; }, useEffect(fn) { effects.push(fn); }, useRef: () => ({ current: null }), useMemo: fn => fn() },
+    react: {
+      useState(initial) { const i = index++; if (!(i in hooks)) hooks[i] = initial; return [hooks[i], value => { hooks[i] = typeof value === 'function' ? value(hooks[i]) : value; }]; },
+      useEffect(fn, deps) { const i = index++; const old = hooks[i]; if (!old || !deps || deps.some((dep, position) => !Object.is(dep, old[position]))) effects.push(fn); hooks[i] = deps; },
+      useRef(initial) { const i = index++; if (!(i in hooks)) hooks[i] = { current: initial }; return hooks[i]; },
+      useMemo: fn => fn(),
+    },
   }, { window });
-  const render = () => { index = 0; tree = ui.ModelMarket({ catalog: models }); return tree; };
-  render(); effects.slice(0, 3).forEach(effect => effect()); render();
-  return { ui, render, history, get tree() { return tree; }, get url() { return location; }, goBack(nextUrl) { location = new URL(nextUrl); listeners.get('popstate')(); render(); } };
+  const render = () => {
+    index = 0; tree = ui.ModelMarket({ catalog: models });
+    const results = nodes(tree, node => node.props.className === 'market-results')[0];
+    if (results) results.props.ref.current = { focus: options => focusCalls.push(options), scrollIntoView: options => scrollCalls.push(options) };
+    effects.splice(0).forEach(effect => effect());
+    return tree;
+  };
+  render(); render();
+  return { ui, render, history, scrollCalls, focusCalls, get tree() { return tree; }, get url() { return location; }, goBack(nextUrl) { location = new URL(nextUrl); listeners.get('popstate')(); render(); } };
 }
 
-test('grouped market renders all catalogue service identities exactly once without decorative stock art', async () => {
+test('family overview and paginated model lists retain every catalogue service identity exactly once', async () => {
   const h = await harness();
-  const articles = nodes(h.tree, node => node.type === 'article');
-  assert.equal(articles.length, 336);
+  assert.equal(nodes(h.tree, node => node.type === 'article').length, 0, 'Overview does not render hundreds of models');
+  const families = [];
+  for (;;) {
+    const tiles = nodes(h.tree, node => node.props.className === 'market-family-tile');
+    assert.ok(tiles.length <= h.ui.MARKET_PAGE_SIZE);
+    families.push(...tiles.map(node => [node.props['data-provider-id'], node.props['data-family-id']]));
+    const next = nodes(h.tree, node => node.props['aria-label'] === '下一页')[0];
+    if (!next || next.props.disabled) break;
+    next.props.onClick(); h.render();
+  }
+  assert.equal(families.length, identity.groupModels(fullCatalog).length);
+  const identities = [];
+  for (const [provider, family] of families) {
+    h.goBack(`https://tokvilo.com/models?provider=${provider}&family=${family}`);
+    for (;;) {
+      const cards = nodes(h.tree, node => node.type === 'article');
+      assert.ok(cards.length <= h.ui.MARKET_PAGE_SIZE);
+      identities.push(...cards.map(node => `${node.props['data-service']}:${node.props['data-model-id']}`));
+      const next = nodes(h.tree, node => node.props['aria-label'] === '下一页')[0];
+      if (!next || next.props.disabled) break;
+      next.props.onClick(); h.render();
+    }
+  }
   const expected = fullCatalog.map(model => `${model.upstream === 'selected' ? 'selected' : model.upstream === 'tokenhub' ? 'studio' : 'gateway'}:${model.id}`).sort();
-  assert.deepEqual(articles.map(node => `${node.props['data-service']}:${node.props['data-model-id']}`).sort(), expected);
+  assert.deepEqual(identities.sort(), expected);
   assert.equal(nodes(h.tree, node => node.type === 'img').length, 0);
-  const gpt = nodes(h.tree, node => node.props.className === 'market-family-section').find(node => node.props['aria-label'] === 'OpenAI GPT');
-  assert.ok(gpt);
-  const gptIds = nodes(gpt, node => node.type === 'article').map(node => node.props['data-model-id']);
-  assert.ok(gptIds.indexOf('gpt-6.1-sol') < gptIds.indexOf('gpt-4o'));
   assert.doesNotMatch(text(h.tree), /APIMart|TokenHub|rkapi|源价|加价|20%/i);
+});
+
+test('sidebar provider and family navigation is explicit and collapses the mobile menu after selection', async () => {
+  const h = await harness({ english: true, url: 'https://tokvilo.com/en/models' });
+  const toggle = () => nodes(h.tree, node => node.props.className === 'market-sidebar-toggle')[0];
+  assert.equal(toggle().props['aria-expanded'], false);
+  toggle().props.onClick(); h.render();
+  assert.equal(toggle().props['aria-expanded'], true);
+  const provider = nodes(h.tree, node => node.props.className === 'market-sidebar-provider').find(node => text(node).startsWith('OpenAI'));
+  provider.props.onClick(); h.render();
+  assert.equal(toggle().props['aria-expanded'], false);
+  assert.equal(h.url.searchParams.get('provider'), 'openai');
+  assert.equal(h.url.searchParams.get('family'), null);
+  assert.equal(nodes(h.tree, node => node.type === 'article').length, 0, 'Provider selection presents families before versions');
+  const familyNav = nodes(h.tree, node => node.props['aria-label'] === 'OpenAI model families')[0];
+  nodes(familyNav, node => node.type === 'button').find(node => text(node).startsWith('GPT') && !text(node).startsWith('GPT Image')).props.onClick(); h.render();
+  assert.equal(h.url.searchParams.get('family'), 'gpt');
+  assert.equal(nodes(h.tree, node => node.type === 'article').length, h.ui.MARKET_PAGE_SIZE);
+  assert.ok(nodes(h.tree, node => node.props['aria-current'] === 'true').some(node => text(node).startsWith('GPT')));
+  nodes(h.tree, node => node.props.className === 'market-family-back')[0].props.onClick(); h.render();
+  assert.equal(h.url.searchParams.get('family'), null);
+  assert.equal(h.url.searchParams.get('provider'), 'openai');
+  assert.ok(nodes(h.tree, node => node.props.className === 'market-family-tile').length > 0);
+});
+
+test('pagination is shareable, clamped and restored with Back; filtering returns to page one', async () => {
+  const h = await harness({ url: 'https://tokvilo.com/en/models?provider=openai&family=gpt&page=2', english: true });
+  const pageTwoIds = nodes(h.tree, node => node.type === 'article').map(node => node.props['data-model-id']);
+  assert.equal(pageTwoIds.length, h.ui.MARKET_PAGE_SIZE);
+  assert.match(text(h.tree), /13–24 of/);
+  nodes(h.tree, node => node.props['aria-label'] === 'Next page')[0].props.onClick(); h.render();
+  assert.equal(h.url.searchParams.get('page'), '3');
+  assert.deepEqual(JSON.parse(JSON.stringify(h.scrollCalls.at(-1))), { block: 'start', behavior: 'auto' });
+  assert.deepEqual(JSON.parse(JSON.stringify(h.focusCalls.at(-1))), { preventScroll: true });
+  assert.deepEqual(h.history.at(-1)[1], { preserved: true });
+  h.goBack('https://tokvilo.com/en/models?provider=openai&family=gpt&page=2');
+  assert.deepEqual(nodes(h.tree, node => node.type === 'article').map(node => node.props['data-model-id']), pageTwoIds);
+  nodes(h.tree, node => node.props['aria-label'] === 'Search models')[0].props.onChange({ target: { value: '6.1' } }); h.render();
+  assert.equal(h.url.searchParams.get('page'), null);
+  h.goBack('https://tokvilo.com/en/models?provider=openai&family=gpt&page=999999');
+  assert.ok(nodes(h.tree, node => node.type === 'article').length > 0);
+  assert.equal(nodes(h.tree, node => node.props['aria-label'] === 'Next page')[0].props.disabled, true);
 });
 
 test('deep links preserve exact service route, normalize manufacturer and survive history navigation', async () => {
@@ -81,15 +151,18 @@ test('category changes clear incompatible manufacturer, family and capability se
   assert.equal(h.url.searchParams.get('provider'), null);
   assert.equal(h.url.searchParams.get('family'), null);
   assert.equal(h.url.searchParams.get('capability'), null);
-  assert.equal(nodes(h.tree, node => node.type === 'article').length, fullCatalog.filter(model => model.category === 'image').length);
+  assert.equal(nodes(h.tree, node => node.type === 'article').length, 0);
+  assert.ok(nodes(h.tree, node => node.props.className === 'market-family-tile').length > 0);
+  assert.match(text(h.tree), new RegExp(`${fullCatalog.filter(model => model.category === 'image').length} 个模型`));
   assert.doesNotMatch(text(h.tree), /未找到匹配模型/);
 });
 
 test('filter URL roundtrip validates stale parameters and keeps repeated capabilities', async () => {
   const { ui } = await harness();
-  const params = new URLSearchParams('provider=ANTHROPIC&family=claude&category=text&service=selected&q=claude&capability=文本生成&capability=文本生成&view=list');
+  const params = new URLSearchParams('provider=ANTHROPIC&family=claude&category=text&service=selected&q=claude&capability=文本生成&capability=文本生成&view=list&page=3');
   const parsed = ui.readMarketFilters(params, fullCatalog);
   assert.equal(parsed.provider, 'anthropic');
+  assert.equal(parsed.page, 3);
   assert.equal(parsed.capabilities.length, 1);
   assert.equal(ui.marketFilterParams(parsed).get('service'), 'selected');
   const roundtrip = ui.readMarketFilters(ui.marketFilterParams(parsed), fullCatalog);
@@ -101,7 +174,7 @@ test('filter URL roundtrip validates stale parameters and keeps repeated capabil
 
 test('same model across services has independent availability and exact workbench destinations', async () => {
   const models = ['apimart', 'selected', 'tokenhub'].map(upstream => ({ id: 'gpt-6.1-sol', name: 'GPT 6.1 Sol', provider: 'OPENAI', category: 'text', upstream, available: true, capabilities: ['文本生成'], description: '', docs: '/dashboard/docs' }));
-  const h = await harness({ models });
+  const h = await harness({ models, url: 'https://tokvilo.com/models?provider=openai&family=gpt' });
   for (const [service, route] of [['gateway', '/playground'], ['selected', '/selected'], ['studio', '/studio']]) {
     const card = nodes(h.tree, node => node.type === 'article' && node.props['data-service'] === service)[0];
     nodes(card, node => node.type === 'button')[0].props.onClick(); h.render();
@@ -113,9 +186,9 @@ test('same model across services has independent availability and exact workbenc
 
 test('English catalogue translates manufacturer, family, capabilities and service copy', async () => {
   const models = fullCatalog.map((model, index) => index === 0 ? { ...model, name: `${model.name} tokvilo 模型服务` } : model);
-  const h = await harness({ models, english: true, url: 'https://tokvilo.com/en/models' });
+  const h = await harness({ models, english: true, url: 'https://tokvilo.com/en/models?service=studio&view=list' });
   assert.doesNotMatch(text(h.tree), /[\u4e00-\u9fff]/);
-  assert.match(text(h.tree), /Alibaba|ByteDance|Zhipu/);
+  assert.match(text(h.tree), /OpenAI|ByteDance|Google/);
   assert.match(text(h.tree), /tokvilo Select/);
   assert.match(text(h.tree), /Text generation/);
   assert.ok(nodes(h.tree, node => node.props['aria-label']).every(node => !/[\u4e00-\u9fff]/.test(node.props['aria-label'])));

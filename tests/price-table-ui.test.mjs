@@ -22,8 +22,8 @@ function all(node, predicate) {
   if (!node?.props) return [];
   return [...(predicate(node) ? [node] : []), ...all(node.props.children, predicate)];
 }
-async function fixture(payload, locale = 'zh') {
-  const hooks = [], effects = []; let cursor = 0, tree;
+async function fixture(payload, locale = 'zh', props = {}) {
+  const hooks = [], effects = [], scrolls = [], focusCalls = []; let cursor = 0, tree;
   const compiled = { exports: {} };
   vm.runInNewContext(code, {
     module: compiled, exports: compiled.exports, AbortController,
@@ -34,6 +34,7 @@ async function fixture(payload, locale = 'zh') {
           if (!hooks[index]) hooks[index] = { value: initial };
           return [hooks[index].value, value => { hooks[index].value = value; }];
         },
+        useRef(initial) { const index = cursor++; if (!hooks[index]) hooks[index] = { current: initial }; return hooks[index]; },
         useEffect(effect) { const index = cursor++; if (!hooks[index]) { hooks[index] = {}; effects.push(effect); } },
       };
       if (name === "react/jsx-runtime") return jsx;
@@ -47,12 +48,12 @@ async function fixture(payload, locale = 'zh') {
     },
     fetch: async url => { assert.equal(url, "/api/pricing"); return Response.json(payload); },
   }, { filename });
-  function render() { cursor = 0; tree = compiled.exports.PriceTable({}); for (const effect of effects.splice(0)) effect(); return tree; }
+  function render() { cursor = 0; tree = compiled.exports.PriceTable(props); for (const node of all(tree, node => node.props.ref)) node.props.ref.current = { scrollIntoView: options => scrolls.push(options), focus: options => focusCalls.push(options) }; for (const effect of effects.splice(0)) effect(); return tree; }
   render();
   const loading = text(tree);
   for (let i = 0; i < 12; i++) await Promise.resolve();
   render();
-  return { loading, render, tree: () => tree };
+  return { loading, render, tree: () => tree, scrolls, focusCalls };
 }
 
 test("loaded model prices render only retail amounts, with filters preserving the selected rate", async () => {
@@ -67,7 +68,7 @@ test("loaded model prices render only retail amounts, with filters preserving th
   assert.match(text(f.tree()), /图像生成张\$0\.025/);
   assert.doesNotMatch(text(f.tree()), /\$98|\$81|源价|源头|加价|20\s*%|×\s*1\.20/);
   assert.deepEqual(all(f.tree(), node => node.type === "th").map(text), ["计费项", "单位", "tokvilo 价格", "计费项", "单位", "tokvilo 价格"]);
-  all(f.tree(), node => node.type === "select")[0].props.onChange({ target: { value: "apimart" } });
+  all(f.tree(), node => node.type === "select" && node.props['aria-label'] === '筛选价格服务')[0].props.onChange({ target: { value: "apimart" } });
   f.render();
   assert.equal(all(f.tree(), node => node.type === "table").length, 1);
   assert.match(text(f.tree()), /Image model.*\$0\.025/);
@@ -111,7 +112,7 @@ test("selected prices keep same-name models separate and never link unverified s
   ] });
   assert.equal(all(f.tree(), node => node.props.className === "price-model").length, 3);
   assert.equal(new Set(all(f.tree(), node => node.props.className === "price-model").map(node => node.key)).size, 3);
-  all(f.tree(), node => node.type === "select")[0].props.onChange({ target: { value: "selected" } }); f.render();
+  all(f.tree(), node => node.type === "select" && node.props['aria-label'] === '筛选价格服务')[0].props.onChange({ target: { value: "selected" } }); f.render();
   assert.equal(all(f.tree(), node => node.type === "table").length, 2);
   assert.match(text(f.tree()), /tokvilo 精选/); assert.match(text(f.tree()), /价格已列示 · 服务待开通/);
   const links = all(f.tree(), node => node.type === "a");
@@ -144,4 +145,71 @@ test('English family comparisons preserve version order, billing units and indep
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]|tokenhub|apimart|rkapi/i);
   assert.equal(all(f.tree(), node => node.type === 'a').length, 2);
   assert.equal(all(f.tree(), node => node.type === 'details').every(node => node.props.open === false), true);
+});
+
+const catalogPrice = (model, provider = 'apimart') => ({ provider, model, name: model, kind: 'chat', billingReady: true,
+  rates: [{ dimension: 'input', unit: '1M_tokens', retailMicrousd: 2400000 }, { dimension: 'output', unit: '1M_tokens', retailMicrousd: 9600000 }] });
+
+test('pricing pages stay bounded while every family version and separate service remains reachable', async () => {
+  const models = [...Array.from({ length: 27 }, (_, index) => catalogPrice(`gpt-5.${index}`)),
+    ...Array.from({ length: 3 }, (_, index) => catalogPrice(`gpt-5.${index}`, 'selected')),
+    catalogPrice('claude-sonnet-4'), catalogPrice('claude-opus-4'), catalogPrice('gpt-image-2')];
+  const f = await fixture({ observedAt: '2026-10-23', models }, 'en');
+  const seen = new Set();
+  for (let page = 1; page <= 3; page++) {
+    const cards = all(f.tree(), node => node.props.className === 'price-model');
+    assert.equal(cards.length, page === 3 ? 9 : 12);
+    for (const card of cards) { assert.equal(seen.has(card.key), false); seen.add(card.key); }
+    assert.match(text(f.tree()), new RegExp(`Showing ${(page - 1) * 12 + 1}–${Math.min(page * 12, 33)} of 33 service versions`));
+    const next = all(f.tree(), node => node.type === 'button' && text(node) === 'Next')[0];
+    assert.equal(next.props.disabled, page === 3);
+    if (page < 3) { next.props.onClick(); f.render(); }
+  }
+  assert.deepEqual(seen, new Set(models.map(item => `${item.provider}:${item.model}`)));
+  assert.equal(f.scrolls.length, 2, 'page changes return to the result heading');
+  assert.equal(f.scrolls.every(options => options.block === 'start'), true);
+  assert.equal(f.focusCalls.length, 2, 'keyboard focus follows page changes back to the results');
+  assert.equal(f.focusCalls.every(options => options.preventScroll === true), true);
+  assert.equal(all(f.tree(), node => node.props.className === 'price-results')[0].props.tabIndex, -1);
+  all(f.tree(), node => node.type === 'button' && text(node) === 'Previous')[0].props.onClick(); f.render();
+  assert.match(text(f.tree()), /Showing 13–24 of 33/);
+  all(f.tree(), node => node.type === 'select' && node.props['aria-label'] === 'Select price page')[0].props.onChange({ target: { value: '1' } }); f.render();
+  assert.equal(all(f.tree(), node => node.type === 'button' && text(node) === 'Previous')[0].props.disabled, true);
+});
+
+test('provider and family navigation resets pagination and retains active context in both locales', async () => {
+  const models = [...Array.from({ length: 15 }, (_, index) => catalogPrice(`gpt-5.${index}`)),
+    catalogPrice('claude-sonnet-4'), catalogPrice('gpt-image-2')];
+  for (const locale of ['en', 'zh']) {
+    const f = await fixture({ observedAt: '2026-10-23', models }, locale);
+    all(f.tree(), node => node.type === 'button' && text(node) === (locale === 'en' ? 'Next' : '下一页'))[0].props.onClick(); f.render();
+    const providerNav = all(f.tree(), node => node.type === 'nav' && node.props.className === 'price-provider-list')[0];
+    all(providerNav, node => node.type === 'button' && text(node).includes('Anthropic'))[0].props.onClick(); f.render();
+    assert.equal(all(f.tree(), node => node.props.className === 'price-model').length, 1);
+    assert.match(text(f.tree()), locale === 'en' ? /Showing 1–1 of 1/ : /显示 1–1 \/ 共 1/);
+    assert.equal(all(f.tree(), node => node.type === 'nav' && node.props.className === 'price-pagination').length, 0);
+    const mobileProvider = all(f.tree(), node => node.type === 'label' && node.props.className === 'price-mobile-provider')[0];
+    all(mobileProvider, node => node.type === 'select')[0].props.onChange({ target: { value: 'OPENAI' } }); f.render();
+    const filters = all(f.tree(), node => node.props.className === 'price-filters')[0];
+    const familySelect = all(filters, node => node.type === 'select').find(node => all(node, option => option.type === 'option' && option.props.value === 'OPENAI:gpt-image').length);
+    familySelect.props.onChange({ target: { value: 'OPENAI:gpt-image' } }); f.render();
+    assert.match(text(all(f.tree(), node => node.props.className === 'price-results-heading')[0]), /OpenAI \/ GPT Image/);
+    assert.equal(all(f.tree(), node => node.props.className === 'price-model')[0].key, 'apimart:gpt-image-2');
+    all(f.tree(), node => node.type === 'input')[0].props.onChange({ target: { value: 'gpt-5.14' } }); f.render();
+    assert.equal(all(f.tree(), node => node.props.className === 'price-model')[0].key, 'apimart:gpt-5.14');
+    assert.doesNotMatch(text(f.tree()), /tokenhub|apimart|rkapi|源价/i);
+  }
+});
+
+test('model-specific price details preserve the full service-filtered rates without catalogue navigation', async () => {
+  const models = [catalogPrice('gpt-5.2'), catalogPrice('gpt-5.2', 'selected'), catalogPrice('claude-sonnet-4')];
+  models[0].rates.push({ dimension: 'tool:search', label: '搜索', unit: '1000_queries', retailMicrousd: 16800000, condition: '输入 ≤ 100,000 tokens' });
+  const f = await fixture({ observedAt: '2026-10-23', models }, 'en', { provider: 'apimart', model: 'gpt-5.2' });
+  assert.equal(all(f.tree(), node => node.props.className === 'price-model').length, 1);
+  assert.equal(all(f.tree(), node => node.type === 'aside' || node.type === 'nav').length, 0);
+  assert.equal(all(f.tree(), node => node.type === 'details')[0].props.open, true);
+  assert.equal(all(f.tree(), node => node.type === 'tbody')[0].props.children.length, 3);
+  assert.match(text(f.tree()), /1,000 queries\$16\.8/);
+  assert.match(text(f.tree()), /Input ≤ 100,000 tokens/);
+  assert.doesNotMatch(text(f.tree()), /\$0|claude|tokvilo Select/);
 });

@@ -131,7 +131,7 @@ test('switching categories clears incompatible manufacturer filters and shows sc
  assert.match(text(tree),/tokvilo 精选为 2026-10-01 目录与价格快照/);
  assert.doesNotMatch(text(tree),/tokvilo 精选为 2026-10-21/);
  const providerGroup=all(tree,n=>n.props['aria-label']==='模型厂商')[0];
- const provider=all(providerGroup,n=>n.type==='button').find(n=>text(n)==='智谱');assert.ok(provider);provider.props.onClick();render();assert.match(text(tree),/1 个模型/);
+ const provider=all(providerGroup,n=>n.type==='button').find(n=>all(n,child=>child.type==='span').some(child=>text(child)==='智谱'));assert.ok(provider);assert.match(text(provider),/智谱1$/);provider.props.onClick();render();assert.match(text(tree),/1 个模型/);
  const categoryGroup=all(tree,n=>n.props['aria-label']==='模型类型')[0];
  all(categoryGroup,n=>n.type==='button').find(n=>text(n).startsWith('图像')).props.onClick();render();
  assert.match(text(tree),/2 个模型/);assert.equal(all(tree,n=>n.props['aria-label']==='模型厂商').some(n=>text(n).includes('智谱')),false);

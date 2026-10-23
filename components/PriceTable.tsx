@@ -2,7 +2,7 @@
 
 import { displayServiceText, serviceLabel } from "@/lib/brand-display";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSiteLocale } from "./LocaleProvider";
 import { englishPriceText } from "@/lib/price-copy";
@@ -14,6 +14,7 @@ type ModelPrice = { provider: string; model: string; name: string; kind: string;
 type Catalog = { observedAt: string; models: ModelPrice[]; unavailable?: { model: string; reason: string }[] };
 const labels: Record<string, string> = { input: "输入", output: "输出", cacheRead: "缓存读取", cacheWrite: "缓存写入", fixed: "图像生成", image: "图像生成", cached_input: "缓存输入" };
 const units: Record<string, string> = { "1M_tokens": "百万 tokens", image: "张", second: "秒", call: "次", "1000_queries": "千次查询", "1M_token_hours": "百万 token·小时" };
+const PAGE_SIZE = 12;
 const money = (value: number) => `$${(value / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 6 })}`;
 const keyRates = (rates: Rate[]) => {
   const input = rates.find(rate => /^(?:.*:)?input$/.test(rate.dimension));
@@ -31,7 +32,9 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
   const [search, setSearch] = useState("");
   const [source, setSource] = useState("");
   const [manufacturer, setManufacturer] = useState("");
-  const [limit, setLimit] = useState(8);
+  const [family, setFamily] = useState("");
+  const [page, setPage] = useState(1);
+  const resultsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/pricing", { signal: controller.signal }).then(async response => {
@@ -41,9 +44,39 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
     }).catch(cause => { if (!controller.signal.aborted) setError(cause.message); });
     return () => controller.abort();
   }, []);
-  const models = data?.models?.filter(item => (!provider || item.provider === provider) && (!model || item.model === model) && (!source || item.provider === source) && (!manufacturer || modelProvider(item.model) === manufacturer) && (!search || `${item.name} ${item.model}`.toLowerCase().includes(search.toLowerCase().trim()))) || [];
-  const groups = groupModels(models.map(item => ({ ...item, id: item.model, service: item.provider, provider: modelProvider(item.model) })));
-  const vendors = Array.from(new Set((data?.models || []).map(item => modelProvider(item.model))));
+  const serviceModels = data?.models?.filter(item => (!provider || item.provider === provider) && (!model || item.model === model) && (!source || item.provider === source)) || [];
+  const candidates = serviceModels.filter(item => !search || `${item.name} ${item.model}`.toLowerCase().includes(search.toLowerCase().trim()));
+  const candidateGroups = groupModels(candidates.map(item => ({ ...item, id: item.model, service: item.provider, provider: modelProvider(item.model) })));
+  const vendors = Array.from(new Set(groupModels(serviceModels.map(item => ({ ...item, id: item.model, service: item.provider, provider: modelProvider(item.model) }))).map(group => group.provider)));
+  const families = candidateGroups.filter(group => !manufacturer || group.provider === manufacturer);
+  const groups = families.filter(group => !family || `${group.provider}:${group.family.id}` === family);
+  const modelCount = groups.reduce((total, group) => total + group.models.length, 0);
+  const pageCount = Math.max(1, Math.ceil(modelCount / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  let offset = 0;
+  const visibleGroups = groups.map(group => {
+    const groupStart = offset;
+    offset += group.models.length;
+    return { ...group, total: group.models.length, models: group.models.slice(Math.max(0, start - groupStart), Math.max(0, start + PAGE_SIZE - groupStart)) };
+  }).filter(group => group.models.length);
+  const vendorName = (value: string) => isEnglish ? providerIdentity(value).nameEn : providerIdentity(value).name;
+  const resetPosition = () => { setPage(1); setFamily(""); };
+  const focusResults = () => {
+    resultsRef.current?.focus({ preventScroll: true });
+    resultsRef.current?.scrollIntoView({ block: "start" });
+  };
+  const selectManufacturer = (value: string) => {
+    setManufacturer(value); resetPosition(); focusResults();
+  };
+  const changePage = (value: number) => {
+    setPage(Math.max(1, Math.min(pageCount, value))); focusResults();
+  };
+  const pagination = (position: "top" | "bottom") => pageCount > 1 ? <nav className="price-pagination" aria-label={position === "top" ? t("价格结果分页", "Price results pagination") : t("价格结果底部分页", "Price results pagination at bottom")}>
+    <button type="button" disabled={currentPage === 1} onClick={() => changePage(currentPage - 1)}>{t("上一页", "Previous")}</button>
+    <label>{t("页码", "Page")}<select aria-label={t("选择价格页码", "Select price page")} value={currentPage} onChange={event => changePage(Number(event.target.value))}>{Array.from({ length: pageCount }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} / {pageCount}</option>)}</select></label>
+    <button type="button" disabled={currentPage === pageCount} onClick={() => changePage(currentPage + 1)}>{t("下一页", "Next")}</button>
+  </nav> : null;
   const priceCard = (item: ModelPrice) => <section className="price-model" key={`${item.provider}:${item.model}`}>
     <div className="price-model-heading"><div><small>{serviceName(item.provider)}</small><h3>{copy(item.name || item.model)}</h3><code>{item.model}</code></div>{item.billingReady !== false ? <Link href={href(item.provider === "tokenhub" ? `/studio?model=${encodeURIComponent(item.model)}&mode=${item.kind}` : item.provider === "selected" ? `/selected?model=${encodeURIComponent(item.model)}` : `/playground?model=${encodeURIComponent(item.model)}`)}>{t("打开工作台 ↗", "Open playground ↗")}</Link> : <span>{item.provider === "selected" ? t("价格已列示 · 服务待开通", "Pricing listed · Activation pending") : t("价格已列示 · 接口暂未开放", "Pricing listed · Interface unavailable")}</span>}</div>
     {item.capabilitiesNotes?.map(note => <p className="price-caption" key={note}>{copy(note)}</p>)}
@@ -56,12 +89,32 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
   </section>;
   return <div className="tokvilo-prices">
     {error ? <p role="status">{t(displayServiceText(error), "Pricing is temporarily unavailable. Please refresh this page.")}</p> : !data ? <p role="status">{t("正在读取价格…", "Loading prices…")}</p> : <>
-      {!model ? <><div className="price-filters"><label>{t("查找模型", "Find a model")}<input value={search} onChange={event => { setSearch(event.target.value); setLimit(8); }} placeholder={t("搜索模型或版本…", "Search models or versions…")} /></label>{!provider ? <label>{t("服务", "Service")}<select value={source} onChange={event => { setSource(event.target.value); setLimit(8); }}><option value="">{t("全部服务", "All services")}</option><option value="tokenhub">{t("tokvilo 多模态", "tokvilo Multimodal")}</option><option value="apimart">{t("tokvilo 模型服务", "tokvilo Models")}</option><option value="selected">{t("tokvilo 精选", "tokvilo Select")}</option></select></label> : null}<label>{t("厂商", "Provider")}<select value={manufacturer} onChange={event => { setManufacturer(event.target.value); setLimit(8); }}><option value="">{t("全部厂商", "All providers")}</option>{vendors.map(vendor => <option key={vendor} value={vendor}>{isEnglish ? providerIdentity(vendor).nameEn : providerIdentity(vendor).name}</option>)}</select></label><span role="status">{models.length} {t("个服务版本", "service versions")} · {groups.length} {t("个系列", "families")}</span></div><p className="price-caption">{t("同一系列的版本并排展示。不同计费单位独立列示；展开完整费率可查看上下文档位与附加费用。", "Versions in each family appear side by side. Billing units are listed separately; expand full rates for context tiers and additional charges.")}</p></> : null}
-      {!models.length ? <div className="price-empty"><p>{t("没有匹配的报价。", "No matching prices.")}</p><button type="button" onClick={() => { setSearch(""); setSource(""); setManufacturer(""); setLimit(8); }}>{t("清除价格筛选", "Clear filters")}</button></div> : model ? models.map(priceCard) : groups.slice(0, limit).map(group => <section className="price-family" key={`${group.provider}:${group.family.id}`}>
-        <header className="price-family-heading"><ProviderLogo provider={group.provider} size={30} /><div><small>{isEnglish ? providerIdentity(group.provider).nameEn : providerIdentity(group.provider).name}</small><h2>{isEnglish ? group.family.nameEn : group.family.name}</h2></div><span>{group.models.length} {t("个服务版本", "service versions")}</span></header>
-        <div className="price-family-grid">{group.models.map(item => priceCard({ ...item, provider: item.service }))}</div>
-      </section>)}
-      {!model && groups.length > limit ? <button type="button" className="price-load-more" onClick={() => setLimit(limit + 8)}>{t(`继续查看系列（剩余 ${groups.length - limit} 组）`, `Show more families (${groups.length - limit} remaining)`)}</button> : null}
+      <div className={model ? "price-detail-layout" : "price-browser"}>
+        {!model ? <aside className="price-sidebar" aria-label={t("按厂商浏览价格", "Browse prices by provider")}>
+          <div className="price-sidebar-title">{t("按厂商浏览", "Browse providers")}</div>
+          <label className="price-mobile-provider">{t("厂商", "Provider")}<select value={manufacturer} onChange={event => selectManufacturer(event.target.value)}><option value="">{t("全部厂商", "All providers")} · {candidates.length}</option>{vendors.map(vendor => <option key={vendor} value={vendor}>{vendorName(vendor)} · {candidates.filter(item => modelProvider(item.model) === vendor).length}</option>)}</select></label>
+          <nav className="price-provider-list" aria-label={t("价格厂商导航", "Pricing providers")}>
+            <button type="button" aria-pressed={!manufacturer} onClick={() => selectManufacturer("")}><span>{t("全部厂商", "All providers")}</span><small>{candidates.length}</small></button>
+            {vendors.map(vendor => <button type="button" key={vendor} aria-pressed={manufacturer === vendor} onClick={() => selectManufacturer(vendor)}><ProviderLogo provider={vendor} size={24} /><span>{vendorName(vendor)}</span><small>{candidates.filter(item => modelProvider(item.model) === vendor).length}</small></button>)}
+          </nav>
+        </aside> : null}
+        <div className="price-results" ref={resultsRef} tabIndex={-1} role="region" aria-label={t("价格结果", "Price results")}>
+          {!model ? <>
+            <div className="price-filters">
+              <label>{t("查找模型", "Find a model")}<input value={search} onChange={event => { setSearch(event.target.value); resetPosition(); }} placeholder={t("搜索模型或版本…", "Search models or versions…")} /></label>
+              {!provider ? <label>{t("服务", "Service")}<select aria-label={t("筛选价格服务", "Filter pricing service")} value={source} onChange={event => { setSource(event.target.value); setManufacturer(""); resetPosition(); }}><option value="">{t("全部服务", "All services")}</option><option value="tokenhub">{t("tokvilo 多模态", "tokvilo Multimodal")}</option><option value="apimart">{t("tokvilo 模型服务", "tokvilo Models")}</option><option value="selected">{t("tokvilo 精选", "tokvilo Select")}</option></select></label> : null}
+              <label>{t("模型系列", "Model family")}<select value={family} onChange={event => { setFamily(event.target.value); setPage(1); }}><option value="">{t("全部系列", "All families")}</option>{families.map(group => <option key={`${group.provider}:${group.family.id}`} value={`${group.provider}:${group.family.id}`}>{isEnglish ? group.family.nameEn : group.family.name} · {group.models.length}</option>)}</select></label>
+            </div>
+            <div className="price-results-heading"><div><h2>{manufacturer ? vendorName(manufacturer) : t("全部厂商", "All providers")}{family ? ` / ${isEnglish ? groups[0]?.family.nameEn || "" : groups[0]?.family.name || ""}` : ""}</h2><p role="status">{modelCount ? t(`显示 ${start + 1}–${Math.min(start + PAGE_SIZE, modelCount)} / 共 ${modelCount} 个服务版本`, `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, modelCount)} of ${modelCount} service versions`) : t("没有匹配的服务版本", "No matching service versions")}</p></div>{pagination("top")}</div>
+            <p className="price-caption">{t("同系列版本并排比较，每页最多展示 12 个。展开完整费率可查看所有计费单位、上下文档位与附加费用。", "Compare versions side by side, up to 12 per page. Expand full rates for all billing units, context tiers and additional charges.")}</p>
+          </> : null}
+          {!modelCount ? <div className="price-empty"><p>{t("没有匹配的报价。", "No matching prices.")}</p>{!model ? <button type="button" onClick={() => { setSearch(""); setSource(""); setManufacturer(""); resetPosition(); }}>{t("清除价格筛选", "Clear filters")}</button> : null}</div> : model ? candidates.map(priceCard) : visibleGroups.map(group => <section className="price-family" key={`${group.provider}:${group.family.id}`}>
+            <header className="price-family-heading"><ProviderLogo provider={group.provider} size={30} /><div><small>{vendorName(group.provider)}</small><h2>{isEnglish ? group.family.nameEn : group.family.name}</h2></div><span>{group.models.length === group.total ? t(`${group.total} 个服务版本`, `${group.total} service versions`) : t(`本页 ${group.models.length} / 共 ${group.total} 个`, `${group.models.length} of ${group.total} on this page`)}</span></header>
+            <div className="price-family-grid">{group.models.map(item => priceCard({ ...item, provider: item.service }))}</div>
+          </section>)}
+          {!model ? pagination("bottom") : null}
+        </div>
+      </div>
       {!model && !!data.unavailable?.length ? <details><summary>{data.unavailable.length} {t("项报价暂不可用", "prices unavailable")}</summary>{data.unavailable.map((item, index) => <p key={index}>{item.model}：{copy(item.reason)}</p>)}</details> : null}
       <p className="price-caption">{t("报价读取时间：", "Prices retrieved: ")}{new Date(data.observedAt).toLocaleString(isEnglish ? "en-US" : "zh-CN", { timeZone: "Asia/Shanghai" })}{t("（北京时间）。最终扣费按实际用量计算，金额向上取整到百万分之一美元。", " (UTC+8). Final charges use actual usage, rounded up to the nearest micro-USD.")}</p>
     </>}
