@@ -253,3 +253,25 @@
   .auth-privacy { align-items:flex-start; }
 }
 .public-navigation > a[aria-current=page] { color:var(--text); text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:8px; }
+
+/* Shared tokvilo identity and editorial entry points. */
+.public-footer{width:100%;border-top:1px solid var(--line);margin-top:56px}
+.public-footer-top>div,.public-footer-brand p{font-size:16px;line-height:1.7}
+.public-footer-top h3{font-size:16px}
+.public-footer-brand .brand{font-size:24px;letter-spacing:-.03em}
+.public-footer-brand .brand-symbol{width:32px;height:32px}
+.public-navigation>a[aria-current="page"]{color:var(--text)}
+.landing-blog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.landing-blog .blog-card h2{font-size:25px;line-height:1.4}
+.landing-blog .blog-card-copy{padding:25px}
+.landing-blog .blog-artwork{min-height:230px;padding:22px}
+.landing-blog .blog-artwork-node{width:58px;height:58px}
+@media(max-width:1180px) and (min-width:801px){
+ .public-menu-toggle{display:grid;place-items:center;min-width:44px;min-height:44px}
+ .public-navigation{display:none;position:absolute;top:71px;left:0;right:0;padding:24px 36px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap;gap:18px 24px}
+ .public-navigation.is-open{display:flex}
+ .public-footer-top{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .public-footer-brand{grid-column:1/-1}
+}
+@media(max-width:900px){.landing-blog-grid{grid-template-columns:1fr}.landing-blog .blog-card-link{display:grid;grid-template-columns:1fr 1.2fr}.landing-blog .blog-artwork{height:100%;border-bottom:0;border-right:1px solid var(--line)}}
+@media(max-width:600px){.landing-blog .blog-card-link{display:flex}.landing-blog .blog-artwork{border-right:0;border-bottom:1px solid var(--line)}.public-footer{padding-inline:24px}.public-footer-top{grid-template-columns:1fr 1fr;gap:28px 20px}.public-footer-brand{grid-column:1/-1}}

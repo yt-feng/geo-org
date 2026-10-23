@@ -6,6 +6,7 @@ import { runAuditTick } from "../lib/tokenhub-audit";
 import { reconcileApimartTasks } from "../lib/apimart-relay";
 import { reconcileTokenHubTasks } from "../lib/tokenhub-relay";
 import { reconcileProductInquiries } from "../lib/product-inquiries";
+import { discoveryResponse, robotsTag, SITE_PATH_HEADER, siteLocaleForPath } from "../lib/site-seo";
 
 interface Env extends RuntimeEnv {
   ASSETS: Fetcher;
@@ -74,6 +75,8 @@ const worker = {
   },
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const discovery = discoveryResponse(request);
+    if (discovery) return discovery;
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
@@ -86,13 +89,19 @@ const worker = {
       }, allowedWidths);
     }
 
-    const response = await handler.fetch(request, env, ctx);
+    // Layouts receive the real URL even during RSC navigation. Overwrite any
+    // caller-supplied value; query strings are never used in canonical URLs.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(SITE_PATH_HEADER, url.pathname + url.search);
+    const response = await handler.fetch(new Request(request, { headers: requestHeaders }), env, ctx);
     const headers = new Headers(response.headers);
     headers.set("referrer-policy", "no-referrer");
     headers.set("x-content-type-options", "nosniff");
     headers.set("x-frame-options", "DENY");
     headers.set("permissions-policy", "camera=(), microphone=(), geolocation=()");
+    headers.set("x-robots-tag", robotsTag(url, response));
     if ((headers.get("content-type") || "").includes("text/html")) {
+      headers.set("content-language", siteLocaleForPath(url.pathname + url.search) === "en" ? "en" : "zh-CN");
       headers.set(
         "content-security-policy",
         contentSecurityPolicy(url, env),

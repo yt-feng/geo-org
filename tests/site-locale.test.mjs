@@ -28,3 +28,10 @@ test('external and mail links are unchanged', () => {
     assert.equal(localizedHref(value, 'en'), value);
   }
 });
+test('blog language links preserve the same article, query and section', () => {
+  const path = '/blog/getting-started-with-model-apis?ref=guide#prepare-your-account';
+  assert.equal(localizedHref('/blog', 'en'), '/en/blog');
+  assert.equal(localizedHref(path, 'en'), '/en' + path);
+  assert.equal(localizedHref('/en' + path, 'zh'), path);
+  assert.equal(localizedHref('/en/blog/comparing-models-for-your-workflow?lang=en', 'zh'), '/blog/comparing-models-for-your-workflow');
+});

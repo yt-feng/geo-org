@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { PublicNav } from "./PublicNav";
-import { LegalLinks } from "./LegalLinks";
+import { PublicFooter } from "./PublicFooter";
 import { useSiteLocale } from "./LocaleProvider";
 
 export type LegalDocument = "terms" | "refunds" | "privacy";
@@ -27,7 +27,7 @@ const sections: Record<LegalDocument, Section[]> = {
       ["模型能力、容量和可用性可能变化，生成结果也可能不准确或不符合预期。请根据使用场景核实结果。我们不保证指定模型永久提供、每次请求成功或生成结果适用于某项专业决策。服务未提供或付款异常时，可按退款政策联系处理。", "Model capabilities, capacity and availability may change, and generated content may be inaccurate or unsuitable. Review outputs for your intended use. We do not guarantee permanent access to a particular model, success for every request, or suitability for a professional decision. Contact us under the refund policy for undelivered service or payment problems."],
     ] },
     { id: "inquiries", title: ["5. 独立商品咨询", "5. Separate product inquiries"], paragraphs: [
-      ["数字商品页的表单仅提交需求，不代表订单成立或已付款。我们在 24 小时内通过邮件回复适用条件与交付安排。这类咨询与 Paddle API 软件用量购买分开处理，API 服务额度不能用于购买这些商品。", "Forms on the digital goods page submit an inquiry, not a paid order. We reply within 24 hours by email with eligibility and delivery details. These inquiries are handled separately from Paddle API software usage purchases, and API service usage cannot be spent on these goods."],
+      ["数字商品页的表单仅提交需求，不代表订单成立或已付款。我们在 24 小时内通过邮件回复适用条件与交付安排。这类咨询与 tokvilo API 软件用量购买分开处理，API 服务额度不能用于购买这些商品。", "Forms on the digital goods page submit an inquiry, not a paid order. We reply within 24 hours by email with eligibility and delivery details. These inquiries are handled separately from tokvilo API software usage purchases, and API service usage cannot be spent on these goods."],
     ] },
     { id: "rights", title: ["6. 服务变更与法定权利", "6. Changes & statutory rights"], paragraphs: [
       ["违反本条款、未授权使用或出现账务争议时，我们可能限制相关账户或请求，并保留必要的处理记录。条款更新会在本页显示日期；既有付款争议按该笔交易适用的条款和法律处理。", "We may restrict affected accounts or requests for breaches, unauthorized use or billing disputes, and retain records needed to address them. Updates show a date on this page. Existing payment disputes are handled under the terms and law applicable to that transaction."],
@@ -39,7 +39,7 @@ const sections: Record<LegalDocument, Section[]> = {
       ["请发送邮件至 yt.feng@foxmail.com，提供 tokvilo 注册邮箱、交易或银行流水编号、购买日期、希望处理的金额及原因。涉及 API 请求时请附请求编号。无需发送密码、API 密钥或完整银行卡信息。我们在 24 小时内回复。", "Email yt.feng@foxmail.com with your tokvilo account email, transaction or bank reference, purchase date, amount and reason. Include request IDs for API issues. Do not send passwords, API keys or full card details. We reply within 24 hours."],
       ["重复付款、付款成功但未增加用量、未提供的软件服务及疑似错误扣费均可申请核查。确认结果前，请保留原交易和请求编号。", "We review duplicate payments, successful payments without usage delivery, undelivered software services and potentially incorrect charges. Keep the original transaction and request IDs while the result is being checked."],
     ] },
-    { id: "paddle", title: ["2. 通过 Paddle 购买", "2. Purchases through Paddle"], paragraphs: [
+    { id: "paddle", title: ["2. 在线购买", "2. Online purchases"], paragraphs: [
       ["通过 Paddle 处理的购买适用 Paddle 的退款政策和收银台展示的买方条款。你也可以直接通过 paddle.net 提交支付或退款问题。适用法律赋予的不可放弃权利优先适用。", "Purchases processed by Paddle are subject to Paddle's refund policy and the buyer terms shown at checkout. You may also contact paddle.net directly for payment or refund assistance. Non-waivable rights under applicable law take precedence."],
       ["我们会根据实际付款、服务是否提供、已消耗用量及适用权利核查未使用部分的申请。是否可退和可退金额以具体交易核查、Paddle 处理及适用法律为准；本页不作所有购买均可退或均不可退的承诺。", "We assess requests for unused usage against the amount actually paid, service delivery, consumption and applicable rights. Eligibility and amounts depend on the transaction review, Paddle's processing and applicable law; this page does not promise that every purchase is refundable or non-refundable."],
       ["退款获批后按原支付方式退回，并撤回与退款对应的服务用量。到账时间取决于支付机构。退还款项对应的用量不能继续使用；已消耗用量或其他账务争议由支持进一步核对。", "Approved refunds return through the original payment method, and the corresponding service usage is removed. Posting time depends on the payment provider. Refunded usage cannot continue to be used; support will review consumption or other billing discrepancies."],
@@ -80,8 +80,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
   const { t, href, locale } = useSiteLocale();
   const titles: Record<LegalDocument, [string, string]> = { terms: ["服务条款", "Terms of service"], refunds: ["退款政策", "Refund policy"], privacy: ["隐私政策", "Privacy policy"] };
   return <div className="market-page" lang={locale}><PublicNav /><main className="billing-main legal-main">
-    <header className="billing-intro"><span className="landing-eyebrow">TOKVILO / {document.toUpperCase()}</span><h1>{t(...titles[document])}</h1><p>{t("BO，以 tokvilo 品牌运营", "BO, operating as tokvilo")}<br />{t("更新日期：2026 年 10 月 23 日", "Updated October 23, 2026")}</p></header>
-    <div className="legal-layout"><aside className="legal-contents"><span>{t("本页内容", "On this page")}</span><nav aria-label={t("本页目录", "Page contents")}>{sections[document].map(section => <a href={`#${section.id}`} key={section.id}>{t(...section.title)}</a>)}</nav><Link href={href("/billing")}>{t("← 支付方式", "← Payment options")}</Link></aside><article className="legal-copy">{sections[document].map(section => <section id={section.id} key={section.id}><h2>{t(...section.title)}</h2>{section.paragraphs.map((paragraph, index) => <p key={index}>{t(...paragraph)}</p>)}{document === "refunds" && section.id === "paddle" ? <p className="legal-source-links"><a href="https://www.paddle.com/legal/refund-policy" target="_blank" rel="noreferrer">{t("Paddle 退款政策", "Paddle refund policy")} ↗</a><a href="https://paddle.net" target="_blank" rel="noreferrer">{t("Paddle 买方支持", "Paddle buyer support")} ↗</a></p> : null}{document === "terms" && section.id === "payment" ? <p><Link href={href("/refunds")}>{t("查看退款政策", "Read the refund policy")} ↗</Link></p> : null}</section>)}</article></div>
-    <footer className="billing-footer"><p>{t("需要帮助？", "Need help?")} <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a> · {t("24 小时内回复", "Reply within 24 hours")}</p><LegalLinks /></footer>
-  </main></div>;
+    <header className="billing-intro"><span className="landing-eyebrow">TOKVILO / {document.toUpperCase()}</span><h1>{t(...titles[document])}</h1><p>{t("更新日期：2026 年 10 月 23 日", "Updated October 23, 2026")}</p></header>
+    <div className="legal-layout"><aside className="legal-contents"><span>{t("本页内容", "On this page")}</span><nav aria-label={t("本页目录", "Page contents")}>{sections[document].map(section => <a href={`#${section.id}`} key={section.id}>{t(...section.title)}</a>)}</nav><Link href={href("/billing")}>{t("← 支付方式", "← Payment options")}</Link></aside><article className="legal-copy">{sections[document].map(section => <section id={section.id} key={section.id}><h2>{t(...section.title)}</h2>{section.paragraphs.map((paragraph, index) => <p key={index}>{t(...paragraph)}</p>)}{document === "refunds" && section.id === "paddle" ? <p className="legal-source-links"><a href="https://www.paddle.com/legal/refund-policy" target="_blank" rel="noreferrer">{t("支付服务商退款政策", "Payment provider refund policy")} ↗</a><a href="https://paddle.net" target="_blank" rel="noreferrer">{t("支付服务商买方支持", "Payment provider buyer support")} ↗</a></p> : null}{document === "terms" && section.id === "payment" ? <p><Link href={href("/refunds")}>{t("查看退款政策", "Read the refund policy")} ↗</Link></p> : null}</section>)}</article></div>
+  </main><PublicFooter /></div>;
 }

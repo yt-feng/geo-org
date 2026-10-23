@@ -176,3 +176,22 @@ test("synchronous loaded/error events and throwing observers cannot strand readi
   await assert.rejects(g.api.openPaddleCheckout(input()), /order is saved/);
   assert.equal(g.steps.filter(step => step.action === "close").length, 1);
 });
+
+
+test("checkout failures use neutral customer copy while retaining same-order recovery", async () => {
+  const cases = [
+    { options: { deferredScript: true }, trigger: f => f.advance(15_000) },
+    { options: {}, trigger: f => f.advance(20_000) },
+    { options: {}, trigger: f => f.emit("checkout.error") },
+  ];
+  for (const entry of cases) {
+    const f = fixture(entry.options), opening = f.api.openPaddleCheckout(input());
+    const rejected = assert.rejects(opening, error => {
+      assert.doesNotMatch(error.message, /paddle/i);
+      assert.match(error.message, /order is saved.*same checkout/s);
+      return true;
+    });
+    await flush(); await entry.trigger(f); await rejected;
+    assert.ok(f.steps.filter(step => step.action === "open").every(step => step.transactionId === "txn_verified"));
+  }
+});

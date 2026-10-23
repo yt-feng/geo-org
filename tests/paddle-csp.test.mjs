@@ -9,10 +9,11 @@ const code = compile(await readFile(new URL("../worker/index.ts", import.meta.ur
 async function response(path, environment = "production", contentType = "text/html; charset=utf-8") {
   const compiledModule = { exports: {} };
   vm.runInNewContext(code, {
-    module: compiledModule, exports: compiledModule.exports, URL, Headers, Response,
+    module: compiledModule, exports: compiledModule.exports, URL, Headers, Response, Request,
     require(name) {
       if (name === "vinext/server/app-router-entry") return { default: { fetch: async () => new Response("fixture", { headers: { "content-type": contentType, "x-app-header": "preserved" } }) } };
       if (name === "vinext/server/image-optimization") return { DEFAULT_DEVICE_SIZES: [], DEFAULT_IMAGE_SIZES: [] };
+      if (name === "../lib/site-seo") return { discoveryResponse: () => null, robotsTag: () => "noindex, nofollow", SITE_PATH_HEADER: "x-tokvilo-request-path", siteLocaleForPath: () => "zh" };
       if (name.startsWith("../lib/")) return {};
       throw Error(name);
     },
@@ -58,7 +59,7 @@ test("normal HTML pages keep the original policy and JSON responses retain their
 });
 
 test("all literal wallet links load the payment document instead of inheriting another page CSP", async () => {
-  const files = ["components/PublicLanding.tsx", "components/BillingInformation.tsx", "components/Playground.tsx", "components/SelectedPlayground.tsx", "components/TokenHubPlayground.tsx", "app/pricing/page.tsx", "app/en/pricing/page.tsx"];
+  const files = ["components/PublicFooter.tsx", "components/BillingInformation.tsx", "components/Playground.tsx", "components/SelectedPlayground.tsx", "components/TokenHubPlayground.tsx", "app/pricing/page.tsx", "app/en/pricing/page.tsx"];
   for (const file of files) {
     const source = await readFile(new URL(`../${file}`, import.meta.url), "utf8");
     assert.doesNotMatch(source, /<Link\b[^>]*dashboard\/wallet/, file);

@@ -48,6 +48,7 @@ export function DashboardShell({ user, active, children }: {
         </nav>
         <div className="console-sidebar-bottom">
           <Link className={`console-nav-link${active === "models" ? " active" : ""}`} href={href("/models")} title={t("模型广场", "Model catalog")}><Icon name="store" size={17} /><span>{t("模型广场", "Model catalog")}</span></Link>
+          <Link className="console-nav-link" href={href("/blog")} title={t("tokvilo 博客", "tokvilo Blog")}><Icon name="book" size={17} /><span>{t("tokvilo 博客", "tokvilo Blog")}</span></Link>
           <div className="console-account">
             <span className="console-avatar" aria-hidden="true">{user.displayName.slice(0, 2).toUpperCase()}</span>
             <div className="console-account-info"><strong>{user.displayName}</strong><small>{user.isAdmin ? t("管理员", "Administrator") : t("个人账户", "Personal account")}</small></div>

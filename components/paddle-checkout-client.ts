@@ -82,7 +82,7 @@ function handlePaddleEvent(event: PaddleCheckoutEvent) {
       finishAttempt(attempt, new Error("Checkout was closed. Your order is saved; check its status or resume the same checkout."));
     } else if (event.name === "checkout.error" && (!transactionId || matches)) {
       // Paddle documents checkout.error without a transaction data payload.
-      finishAttempt(attempt, new Error("Paddle checkout could not load. Your order is saved; check its status, then resume the same checkout."), true);
+      finishAttempt(attempt, new Error("Checkout could not load. Your order is saved; check its status, then resume the same checkout."), true);
     }
   }
   for (const listener of listeners) {
@@ -97,17 +97,17 @@ function loadPaddle(): Promise<PaddleClient> {
     const script = document.createElement("script");
     script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
     script.async = true;
-    const timeout = window.setTimeout(() => finish(new Error("Paddle checkout took too long to load. Please retry the same order.")), 15_000);
+    const timeout = window.setTimeout(() => finish(new Error("Checkout took too long to load. Please retry the same order.")), 15_000);
     function finish(error?: Error) {
       window.clearTimeout(timeout);
       script.onload = null; script.onerror = null;
       if (error || !browser.Paddle) {
         script.remove(); loading = null;
-        reject(error || new Error("Paddle checkout could not load. Please retry the same order."));
+        reject(error || new Error("Checkout could not load. Please retry the same order."));
       } else resolve(browser.Paddle);
     }
     script.onload = () => finish();
-    script.onerror = () => finish(new Error("Paddle checkout could not load. Please retry the same order."));
+    script.onerror = () => finish(new Error("Checkout could not load. Please retry the same order."));
     document.head.appendChild(script);
   });
   return loading;
@@ -132,7 +132,7 @@ async function beginCheckout(attempt: CheckoutAttempt) {
   }
   let paddle: PaddleClient;
   try { paddle = await loadPaddle(); }
-  catch { finishAttempt(attempt, new Error("Paddle checkout could not load. Your order is saved; resume the same checkout to try again.")); return; }
+  catch { finishAttempt(attempt, new Error("Checkout could not load. Your order is saved; resume the same checkout to try again.")); return; }
   if (!stillCurrent(attempt)) return;
   attempt.paddle = paddle;
   const identity = `${input.environment}:${input.clientToken}`;
@@ -146,7 +146,7 @@ async function beginCheckout(attempt: CheckoutAttempt) {
   attempt.state = "opening";
   attempt.readinessTimer = window.setTimeout(() => {
     if (stillCurrent(attempt) && attempt.state === "opening") finishAttempt(attempt,
-      new Error("Paddle checkout did not finish loading. Your order is saved; close the payment window if it is still visible, check its status, then resume the same checkout."), true);
+      new Error("Checkout did not finish loading. Your order is saved; close the payment window if it is still visible, check its status, then resume the same checkout."), true);
   }, 20_000);
   paddle.Checkout.open({ transactionId: input.transactionId, settings: { displayMode: "overlay", locale: "en", allowLogout: false } });
 }
@@ -167,6 +167,6 @@ export function openPaddleCheckout(input: CheckoutInput): Promise<void> {
   };
   attempt.currentTimer = window.setTimeout(checkCurrent, 250);
   void beginCheckout(attempt).catch(() => finishAttempt(attempt,
-    new Error("Paddle checkout could not open. Your order is saved; check its status, then resume the same checkout."), true));
+    new Error("Checkout could not open. Your order is saved; check its status, then resume the same checkout."), true));
   return promise;
 }

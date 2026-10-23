@@ -22,7 +22,7 @@ export function PublicNav() {
         <Link href={href("/pricing")} aria-current={pathname === "/pricing" ? "page" : undefined} onClick={() => setOpen(false)}>{t("价格", "Pricing")}</Link>
         <Link href={href("/billing")} aria-current={["/billing", "/terms", "/refunds", "/privacy"].includes(pathname) ? "page" : undefined} onClick={() => setOpen(false)}>{t("支付方式", "Payments")}</Link>
         <Link href={href("/dashboard/docs")} onClick={() => setOpen(false)}>{t("API 文档", "API docs")}</Link>
-        <Link href={href("/#integration")} onClick={() => setOpen(false)}>{t("接入指南", "Get started")}</Link>
+        <Link href={href("/blog")} aria-current={pathname === "/blog" || pathname.startsWith("/blog/") ? "page" : undefined} onClick={() => setOpen(false)}>{t("博客", "Blog")}</Link>
         <Link href={href("/#faq")} onClick={() => setOpen(false)}>{t("帮助", "Help")}</Link>
         <LanguageSwitcher /><ThemeToggle />
         <Link href={href("/dashboard")} className="public-account-link"><span className="public-account-avatar">t</span> {t("控制台", "Console")} <Icon name="arrow-up-right" size={13} /></Link>

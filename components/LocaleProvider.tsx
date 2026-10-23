@@ -40,7 +40,12 @@ export function LanguageSwitcher() {
   const target = languageTarget(browserLocation?.route === route ? browserLocation.path : route, locale === "en" ? "zh" : "en");
   useEffect(() => {
     const update = () => setBrowserLocation({ route, path: window.location.pathname + window.location.search + window.location.hash });
-    update();
+    // vinext can render the new route before committing window.location. Do
+    // not label that old URL as the new route: the route may stay unchanged
+    // after commit, leaving the copied/new-tab href stuck on the previous page.
+    const browserQuery = new URLSearchParams(window.location.search).toString();
+    const browserRoute = window.location.pathname + (browserQuery ? `?${browserQuery}` : "");
+    if (browserRoute === route) update();
     window.addEventListener("popstate", update);
     window.addEventListener("hashchange", update);
     window.addEventListener("tokvilo:locationchange", update);

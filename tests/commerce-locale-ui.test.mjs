@@ -54,7 +54,7 @@ test("English customers see only the Paddle and enterprise payment panel, with n
   const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet, billing }));
   assert.match(text(f.tree()), /Available balance\$10\.00/);
   assert.match(text(f.tree()), /Reserved for pending requests\$2\.00/);
-  assert.doesNotMatch(text(f.tree()), /Buy through Liandong|Redeem a code|Redemption code inventory|fixed top-up conversion/);
+  assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农|Redeem a code|Redemption code inventory|fixed top-up conversion/i);
   assert.equal(find(f.tree(), node => node.props.id === "redeem-code"), null);
   assert.equal(find(f.tree(), node => node.props.href === "https://shop.example/product"), null);
   const panel = find(f.tree(), node => node.type === "PaddlePaymentPanel");
@@ -67,6 +67,7 @@ test("English customers see only the Paddle and enterprise payment panel, with n
 test("English administrators retain inventory tools with revocation confirmation", async () => {
   const f = await fixture("WalletPanel", { userId: "admin", email: "admin@example.com", isAdmin: true }, async url => url.includes("redemption-batches") ? Response.json({ batches: [] }) : Response.json({ wallet, billing }));
   assert.match(text(f.tree()), /Redemption code inventory/);
+  assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农/i);
   const revoke = find(f.tree(), node => node.type === "button" && text(node) === "Disable code");
   assert.equal(revoke.props.disabled, true);
   const form = find(f.tree(), node => node.type === "form" && find(node, child => child === revoke));
@@ -77,6 +78,10 @@ test("English administrators retain inventory tools with revocation confirmation
 test("Chinese checkout and redemption preserve their destination, confirmation, and exact code", async () => {
   const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async url => url.endsWith("redeem") ? Response.json({ wallet, alreadyRedeemed: true, redemption: { credit_microusd: 4109589 } }) : Response.json({ wallet, billing }), "zh");
   assert.equal(find(f.tree(), node => node.type === "PaddlePaymentPanel"), null);
+  assert.match(text(f.tree()), /tokvilo 用量包/);
+  assert.match(text(f.tree()), /购买用量/);
+  assert.match(text(f.tree()), /不支持其他平台的兑换码/);
+  assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农/i);
   assert.equal(find(f.tree(), node => node.type === "a").props.href, "https://shop.example/product");
   const button = () => find(f.tree(), node => node.type === "button" && text(node) === "确认兑换");
   assert.equal(button().props.disabled, true);
@@ -126,5 +131,37 @@ test("wallet and orders pages preserve English at server render and sign-in redi
     assert.match(page, /requirePortalUser\(locale(?:, next)?\)/);
     assert.match(page, /<LocaleProvider locale=\{locale\}>/);
     assert.match(page, /generateMetadata/);
+  }
+});
+
+
+test("historical redemption entries display tokvilo labels without changing recorded descriptions or values", async () => {
+  const original = JSON.stringify(wallet);
+  for (const locale of ["en", "zh"]) {
+    const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet, billing }), locale);
+    assert.match(text(f.tree()), locale === "en" ? /tokvilo code, face value ¥30/ : /tokvilo 兑换码，面值 ¥30/);
+    assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农/i);
+    assert.match(text(f.tree()), /\+\$10\.00/);
+  }
+  assert.equal(JSON.stringify(wallet), original);
+});
+
+test("administrator revocation copy uses the payment provider label and preserves exact code and note", async () => {
+  for (const locale of ["en", "zh"]) {
+    const f = await fixture("WalletPanel", { userId: "admin", email: "admin@example.com", isAdmin: true }, async url => {
+      if (url.endsWith("/revoke")) return Response.json({ creditReversedMicrousd: 10_000_000, alreadyRevoked: false });
+      return url.includes("redemption-batches") ? Response.json({ batches: [] }) : Response.json({ wallet, billing });
+    }, locale);
+    const form = () => find(f.tree(), node => node.type === "form" && text(node).includes(locale === "en" ? "Full redemption code" : "完整兑换码"));
+    const codeInput = find(form(), node => node.type === "input" && node.props.maxLength === 128);
+    codeInput.props.onChange({ target: { value: "TK-EXACT-ADMIN-CODE" } }); f.render();
+    find(form(), node => node.type === "input" && node.props.maxLength === 500).props.onChange({ target: { value: "  Buyer refund confirmed  " } }); f.render();
+    find(form(), node => node.type === "input" && node.props.type === "checkbox").props.onChange({ target: { checked: true } }); f.render();
+    await form().props.onSubmit({ preventDefault() {} }); await f.settle();
+    const post = f.calls.find(call => call.init?.method === "POST");
+    assert.equal(post.url, "/api/admin/redemption-codes/revoke");
+    assert.deepEqual(JSON.parse(post.init.body), { code: "TK-EXACT-ADMIN-CODE", note: "  Buyer refund confirmed  " });
+    assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农/i);
+    assert.match(text(f.tree()), locale === "en" ? /Code disabled.*payment provider/s : /兑换码已停用.*支付服务商/s);
   }
 });

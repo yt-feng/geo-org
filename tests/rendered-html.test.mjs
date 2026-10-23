@@ -18,7 +18,7 @@ test("replaces starter metadata and publishes a real read-only catalogue example
   assert.match(landing, /无需登录即可读取公开目录/);
   assert.match(landing, /Read the public catalogue without signing in/);
   assert.match(layout, /tokvilo/);
-  assert.match(layout, /index:\s*false/);
+  assert.match(layout, /siteMetadata\(requestHeaders\.get\(SITE_PATH_HEADER\)/);
   assert.doesNotMatch(`${page}\n${layout}\n${packageJson}`, /codex-preview|react-loading-skeleton|SkeletonPreview/i);
   assert.doesNotMatch(page, /eco_live_your_api_key|curl --request|\/api\/v1\//i);
   assert.doesNotMatch(landing, /eco_live_[a-z0-9]{12,}/i);

@@ -37,6 +37,8 @@ function fixture(initial = '/en/models?provider=OPENAI', server = false, locale 
   const commit = () => { for (const effect of effects.splice(0)) effect(); };
   return { render, commit, navigations, replacements, dispatch,
     navigate: path => { routerUrl = new URL(path, routerUrl); browserUrl = new URL(routerUrl); },
+    previewNavigation: path => { routerUrl = new URL(path, routerUrl); },
+    commitNavigation: () => { browserUrl = new URL(routerUrl); },
     native: path => { browserUrl = new URL(path, browserUrl); },
   };
 }
@@ -50,6 +52,30 @@ test('language href follows Next client path and query navigation before effects
   f.commit();
   f.navigate('/en/pricing?provider=OPENAI');
   assert.equal(f.render().props.href, '/pricing?provider=OPENAI');
+});
+
+test('vinext render-before-history commit does not pin the language href to the previous page', () => {
+  const f = fixture('/en/blog');
+  assert.equal(f.render().props.href, '/blog'); f.commit();
+  for (const [path, expected] of [
+    ['/en/blog/getting-started-with-model-apis', '/blog/getting-started-with-model-apis'],
+    ['/en/blog/comparing-models-for-your-workflow', '/blog/comparing-models-for-your-workflow'],
+    ['/en/models?provider=GOOGLE', '/models?provider=GOOGLE'],
+    ['/en/models?provider=OPENAI', '/models?provider=OPENAI'],
+  ]) {
+    f.previewNavigation(path); // Router snapshot advances before the URL.
+    assert.equal(f.render().props.href, expected);
+    f.commit(); // Effect must not associate the old browser URL with this route.
+    assert.equal(f.render().props.href, expected);
+    f.commitNavigation(); // No popstate event or different router snapshot.
+    assert.equal(f.render().props.href, expected, 'copy and new-tab destinations remain correct after commit');
+  }
+});
+
+test('initial browser hashes survive equivalent query string encoding', () => {
+  const f = fixture('/en/models?query=hello%20world#results');
+  f.render(); f.commit();
+  assert.equal(f.render().props.href, '/models?query=hello+world#results');
 });
 
 test('native market filters, hash changes and back navigation refresh the actual anchor', () => {

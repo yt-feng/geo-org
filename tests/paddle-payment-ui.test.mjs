@@ -14,7 +14,7 @@ function find(node, predicate) {
   return null;
 }
 const config = { enabled: true, environment: "production", clientToken: "live_public_test_fixture", packages: [20, 50, 100].map(amountUsd => ({ id: String(amountUsd), amountUsd, creditMicrousd: amountUsd * 1_000_000 })), reason: null };
-const ready = { id: "paddle-order-1", environment: "production", status: "checkout_ready", transactionId: "txn_fixture", amountUsd: 20, creditMicrousd: 20_000_000, creditedMicrousd: 0, credited: false };
+const ready = { id: "6e299bcd-95f4-4405-a407-8235718009ea", environment: "production", status: "checkout_ready", transactionId: "txn_fixture", amountUsd: 20, creditMicrousd: 20_000_000, creditedMicrousd: 0, credited: false };
 const paid = { ...ready, status: "paid", creditedMicrousd: 20_000_000, credited: true };
 const storageKey = "tokvilo:paddle:pending:buyer";
 
@@ -53,7 +53,7 @@ async function fixture({ responder, storage = new Map(), userId = "buyer", broke
 
 test("unapproved or unavailable Paddle never opens checkout and offers honest enterprise instructions", async () => {
   const f = await fixture({ responder: async () => Response.json({ ...config, enabled: false, clientToken: null, reason: "approval_pending" }) });
-  assert.match(text(f.tree()), /Paddle payments are not available yet/);
+  assert.match(text(f.tree()), /Online payments are not available yet/);
   assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Not available yet").props.disabled, true);
   assert.match(text(f.tree()), /opens your email app/);
   assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
@@ -63,7 +63,7 @@ test("unapproved or unavailable Paddle never opens checkout and offers honest en
 test("client checkout completion cannot credit a wallet; verified order completion refreshes it once", async () => {
   let serverOrder = ready;
   const f = await fixture({ responder: async url => Response.json(url.endsWith("config") ? config : { order: serverOrder }) });
-  await f.click("Pay with Paddle");
+  await f.click("Pay securely");
   assert.equal(f.checkouts.length, 1); assert.equal(f.checkouts[0].transactionId, ready.transactionId);
   const post = f.calls.find(call => call.init?.method === "POST");
   assert.deepEqual(Object.keys(JSON.parse(post.init.body)).sort(), ["packageId", "requestId"]);
@@ -84,15 +84,15 @@ test("client checkout completion cannot credit a wallet; verified order completi
 test("unknown creation response persists the exact request across reload, while other accounts cannot resume it", async () => {
   const storage = new Map();
   const first = await fixture({ storage, responder: async (url, init) => { if (init?.method === "POST") throw Error("Connection interrupted"); return Response.json(config); } });
-  await first.click("Pay with Paddle");
+  await first.click("Pay securely");
   const original = JSON.parse(first.calls.find(call => call.init?.method === "POST").init.body);
   assert.equal(JSON.parse(storage.get(storageKey)).requestId, original.requestId);
   const restored = await fixture({ storage });
-  await restored.click("Resume Paddle checkout");
+  await restored.click("Continue payment");
   assert.deepEqual(JSON.parse(restored.calls.find(call => call.init?.method === "POST").init.body), original);
   assert.equal(restored.checkouts.length, 1);
   const other = await fixture({ storage, userId: "other" });
-  assert.equal(find(other.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout"), null);
+  assert.equal(find(other.tree(), node => node.type === "button" && text(node) === "Continue payment"), null);
   assert.equal(other.calls.some(call => call.url.includes("/orders/")), false);
 });
 
@@ -101,14 +101,14 @@ test("refreshing a known order only reads server state and does not create anoth
   const f = await fixture({ storage, responder: async url => Response.json(url.endsWith("config") ? config : { order: { ...ready, status: "outcome_unknown", transactionId: null } }) });
   assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
   assert.ok(f.calls.some(call => call.url.endsWith(`/orders/${ready.id}`)));
-  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout"), null);
+  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Continue payment"), null);
   await f.click("Check payment status");
   assert.equal(f.checkouts.length, 0); assert.equal(f.storage.has(storageKey), true);
 });
 
 test("storage failure prevents creating a payment that cannot be safely resumed", async () => {
   const f = await fixture({ brokenStorage: true });
-  await f.click("Pay with Paddle");
+  await f.click("Pay securely");
   assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
   assert.match(text(f.tree()), /Browser storage is unavailable/);
 });
@@ -116,8 +116,8 @@ test("storage failure prevents creating a payment that cannot be safely resumed"
 test("sandbox completion is labeled and never claims spendable balance was added", async () => {
   let serverOrder = { ...ready, environment: "sandbox" };
   const f = await fixture({ responder: async url => Response.json(url.endsWith("config") ? { ...config, environment: "sandbox" } : { order: serverOrder }) });
-  assert.match(text(f.tree()), /Test checkout.*No real payment/s);
-  await f.click("Pay with Paddle"); serverOrder = { ...serverOrder, status: "paid" };
+  assert.match(text(f.tree()), /Test checkout.*no real payment/is);
+  await f.click("Pay securely"); serverOrder = { ...serverOrder, status: "paid" };
   await f.click("Check payment status");
   assert.equal(f.confirmed(), 0); assert.equal(f.storage.has(storageKey), false);
   assert.match(text(f.tree()), /no spendable API balance was added/);
@@ -140,7 +140,7 @@ test("enterprise email contains the signed-in account and entered company and am
 test("Paddle return URLs recover only an owner-checked server order and ignore arbitrary transaction IDs", async () => {
   const f = await fixture({ url: `https://tokvilo.com/dashboard/wallet?lang=en&paddle_order=${ready.id}&_ptxn=txn_untrusted` });
   assert.ok(f.calls.some(call => call.url.endsWith(`/orders/${ready.id}`)));
-  await f.click("Resume Paddle checkout");
+  await f.click("Continue payment");
   assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
   assert.equal(f.checkouts.length, 1); assert.equal(f.checkouts[0].transactionId, ready.transactionId);
   const arbitrary = await fixture({ url: "https://tokvilo.com/dashboard/wallet?lang=en&_ptxn=txn_untrusted" });
@@ -154,13 +154,13 @@ test("a new payment after completion stays recoverable if its create response is
     if (init?.method === "POST" && failNext) throw Error("Connection interrupted");
     return Response.json(url.endsWith("config") ? config : { order: serverOrder });
   } });
-  await f.click("Pay with Paddle"); serverOrder = paid;
+  await f.click("Pay securely"); serverOrder = paid;
   await f.click("Check payment status");
   failNext = true;
-  await f.click("Pay with Paddle");
+  await f.click("Pay securely");
   const pending = JSON.parse(f.storage.get(storageKey));
   assert.equal(pending.orderId, undefined);
-  assert.ok(find(f.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout"));
+  assert.ok(find(f.tree(), node => node.type === "button" && text(node) === "Continue payment"));
   assert.doesNotMatch(text(f.tree()), new RegExp(`Order ${ready.id}`));
 });
 
@@ -170,7 +170,7 @@ test("a saved unpaid package has an actionable top-card resume while other packa
   const packages = find(f.tree(), node => node.props.className === "wallet-packages paddle-packages");
   const cards = packages.props.children;
   const first = find(cards[0], node => node.type === "button");
-  assert.equal(text(first), "Resume Paddle checkout"); assert.equal(first.props.disabled, false);
+  assert.equal(text(first), "Continue payment"); assert.equal(first.props.disabled, false);
   for (const card of cards.slice(1)) {
     const button = find(card, node => node.type === "button");
     assert.equal(button.props.disabled, true); assert.equal(text(button), "Finish existing checkout first");
@@ -188,16 +188,16 @@ test("a hanging create request times out, releases the action, and retries only 
     if (init?.method === "POST" && hanging) return new Promise(() => {});
     return Response.json(url.endsWith("config") ? config : { order: ready });
   } });
-  await f.click("Pay with Paddle");
+  await f.click("Pay securely");
   const post = f.calls.find(call => call.init?.method === "POST"), saved = f.storage.get(storageKey);
   assert.ok(find(f.tree(), node => node.type === "button" && text(node) === "Preparing checkout…").props["aria-busy"]);
   await f.expireRequests();
   assert.equal(post.init.signal.aborted, true);
   assert.equal(f.storage.get(storageKey), saved);
   assert.match(text(f.tree()), /Checkout confirmation took too long/);
-  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout").props.disabled, false);
+  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Continue payment").props.disabled, false);
   hanging = false;
-  await f.click("Resume Paddle checkout");
+  await f.click("Continue payment");
   const posts = f.calls.filter(call => call.init?.method === "POST");
   assert.equal(posts.length, 2); assert.equal(posts[1].init.body, post.init.body);
   assert.equal(f.checkouts.length, 1);
@@ -220,13 +220,13 @@ test("stalled background status reads do not display a blocking spinner and thei
     return Response.json(url.endsWith("config") ? config : { order: ready });
   } });
   assert.doesNotMatch(text(f.tree()), /Checking payment…/);
-  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout").props.disabled, false);
+  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Continue payment").props.disabled, false);
   await f.expireRequests(20_000);
   assert.match(text(f.tree()), /Payment status took too long/);
   assert.equal(JSON.parse(f.storage.get(storageKey)).orderId, ready.id);
   hanging = false;
   await f.tick();
-  await f.click("Resume Paddle checkout");
+  await f.click("Continue payment");
   assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
   assert.equal(f.checkouts.length, 1);
 });
@@ -234,7 +234,7 @@ test("stalled background status reads do not display a blocking spinner and thei
 test("checkout completion after the initial polling window restarts confirmation until the delayed server receipt arrives", async () => {
   let serverOrder = ready;
   const f = await fixture({ responder: async url => Response.json(url.endsWith("config") ? config : { order: serverOrder }) });
-  await f.click("Pay with Paddle");
+  await f.click("Pay securely");
   for (let index = 0; index < 30; index++) await f.tick();
   assert.equal(f.pollCount(), 0); assert.equal(f.confirmed(), 0);
   f.event({ name: "checkout.completed", data: { transaction_id: ready.transactionId } }); await f.settle();
@@ -254,7 +254,7 @@ for (const lateFailure of ["network error", "deadline"]) test(`a stale backgroun
     if (++reads === 1) return new Promise((_, reject) => { rejectBackground = reject; });
     return Response.json({ order: paid });
   } });
-  await f.click("Resume Paddle checkout");
+  await f.click("Continue payment");
   assert.equal(f.confirmed(), 1); assert.equal(f.storage.has(storageKey), false);
   assert.match(text(f.tree()), /Payment confirmed\. \$20\.00 has been added/);
   if (lateFailure === "deadline") await f.expireRequests(20_000);
@@ -262,4 +262,37 @@ for (const lateFailure of ["network error", "deadline"]) test(`a stale backgroun
   assert.match(text(f.tree()), /Payment confirmed\. \$20\.00 has been added/);
   assert.doesNotMatch(text(f.tree()), /Old background request failed|Payment status took too long/);
   assert.equal(f.confirmed(), 1); assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+});
+
+
+test("customer payment controls and lifecycle notices keep tokvilo branding", async () => {
+  for (const paymentConfig of [config, { ...config, enabled: false, clientToken: null }, { ...config, environment: "sandbox" }]) {
+    const f = await fixture({ responder: async url => Response.json(url.endsWith("config") ? paymentConfig : { order: { ...ready, environment: paymentConfig.environment } }) });
+    assert.doesNotMatch(text(f.tree()), /paddle/i);
+    assert.match(text(f.tree()), /tokvilo API service packages/);
+    if (!paymentConfig.enabled) continue;
+    await f.click("Pay securely");
+    assert.doesNotMatch(text(f.tree()), /paddle/i);
+    assert.ok(find(f.tree(), node => node.type === "button" && text(node) === "Continue payment"));
+    for (const name of ["checkout.completed", "checkout.closed", "checkout.error"]) {
+      f.event({ name, data: { transaction_id: ready.transactionId } }); await f.settle();
+      assert.doesNotMatch(text(f.tree()), /paddle/i);
+    }
+    assert.ok(f.calls.some(call => call.url === "/api/billing/paddle/checkout"), "branding must not change the integration route");
+    assert.equal(JSON.parse(f.storage.get(storageKey)).orderId, ready.id);
+  }
+});
+
+test("processor-specific server diagnostics do not leak into customer errors or discard the saved request", async () => {
+  const f = await fixture({ responder: async (url, init) => init?.method === "POST"
+    ? Response.json({ error: { message: "Paddle checkout is awaiting approval for Tokvilo API services." } }, { status: 503 })
+    : Response.json(config) });
+  await f.click("Pay securely");
+  assert.doesNotMatch(text(f.tree()), /paddle/i);
+  assert.match(text(f.tree()), /Online payment could not be confirmed.*request is saved/s);
+  const original = JSON.parse(f.storage.get(storageKey));
+  await f.click("Continue payment");
+  assert.deepEqual(JSON.parse(f.storage.get(storageKey)), original);
+  const attempts = f.calls.filter(call => call.init?.method === "POST").map(call => JSON.parse(call.init.body));
+  assert.equal(attempts.length, 2); assert.deepEqual(attempts[0], attempts[1]);
 });
