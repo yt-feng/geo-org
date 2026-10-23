@@ -13,10 +13,24 @@ const dollars = (value: number) => new Intl.NumberFormat("en-US", { style: "curr
 const terminal = (order: PaymentOrder) => order.status === "canceled" || order.status === "adjusted" || order.status === "paid" && (order.credited || order.environment === "sandbox");
 
 async function request<T>(url: string, body?: unknown): Promise<T> {
-  const response = await fetch(url, { cache: "no-store", ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }) });
-  const data = await response.json() as T & { error?: { message?: string } };
-  if (!response.ok) throw new Error(data.error?.message || "We could not confirm this payment. Check the existing order before trying again.");
-  return data;
+  const controller = new AbortController();
+  const deadline = body === undefined ? 20_000 : 35_000;
+  let timer: number;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = window.setTimeout(() => {
+      // Aborting the browser request does not cancel a server-side payment.
+      reject(new Error(body === undefined ? "Payment status took too long to respond. Your saved order is unchanged. Check it again or resume the same checkout." : "Checkout confirmation took too long. Your payment request is saved. Resume this same checkout to continue."));
+      controller.abort();
+    }, deadline);
+  });
+  try {
+    return await Promise.race([timeout, (async () => {
+      const response = await fetch(url, { cache: "no-store", signal: controller.signal, ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }) });
+      const data = await response.json() as T & { error?: { message?: string } };
+      if (!response.ok) throw new Error(data.error?.message || "We could not confirm this payment. Check the existing order before trying again.");
+      return data;
+    })()]);
+  } finally { window.clearTimeout(timer!); }
 }
 
 export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userId: string; email: string; onCreditConfirmed: () => void }) {
@@ -26,6 +40,7 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
   const [order, setOrder] = useState<PaymentOrder | null>(null);
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [pollCycle, setPollCycle] = useState(0);
   const [message, setMessage] = useState("");
   const [company, setCompany] = useState("");
   const [amount, setAmount] = useState("100");
@@ -61,18 +76,19 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
     else if (value.status === "outcome_unknown" || value.status === "creating") setMessage("We are confirming this order. Keep this page or return later; do not create another payment for the same purchase.");
   }, [remember]);
 
-  const checkOrder = useCallback(async (orderId: string) => {
+  const checkOrder = useCallback(async (orderId: string, manual = false) => {
     if (paymentRead.current) return;
-    paymentRead.current = true; setChecking(true);
+    paymentRead.current = true;
+    if (manual) setChecking(true);
     const current = epoch.current;
     try {
       const result = await request<PaymentResponse>(`/api/billing/paddle/orders/${encodeURIComponent(orderId)}`);
       if (current === epoch.current && currentPending.current?.orderId === orderId) acceptOrder(result.order);
     } catch (error) {
-      if (current === epoch.current) setMessage(error instanceof Error ? error.message : "Order status is unavailable. Keep your order reference and check again.");
+      if (current === epoch.current && currentPending.current?.orderId === orderId) setMessage(error instanceof Error ? error.message : "Order status is unavailable. Keep your order reference and check again.");
     } finally {
       paymentRead.current = false;
-      if (current === epoch.current) setChecking(false);
+      if (manual && current === epoch.current) setChecking(false);
     }
   }, [acceptOrder]);
 
@@ -100,11 +116,14 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
     Promise.resolve().then(() => { if (!disposed) void checkOrder(orderId); });
     const timer = window.setInterval(() => {
       attempts++;
-      if (attempts >= 20) window.clearInterval(timer);
+      if (attempts >= 30) {
+        window.clearInterval(timer);
+        if (currentPending.current?.orderId === orderId) setMessage("Payment is not yet confirmed. Your order is saved; check its status again or resume the same checkout.");
+      }
       if (document.visibilityState === "visible") void checkOrder(orderId);
     }, 3_000);
     return () => { disposed = true; window.clearInterval(timer); };
-  }, [pending?.orderId, checkOrder]);
+  }, [pending?.orderId, checkOrder, pollCycle]);
 
   useEffect(() => subscribeToPaddle(event => {
     const active = currentOrder.current;
@@ -112,13 +131,13 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
     if (event.data?.transaction_id && event.data.transaction_id !== active.transactionId) return;
     if (event.name === "checkout.completed") {
       setMessage("Paddle checkout completed. Waiting for payment confirmation before adding API usage balance.");
-      void checkOrder(active.id);
+      setPollCycle(value => value + 1);
     } else if (event.name === "checkout.closed") {
       setMessage("Checkout closed. We will check the order before you continue. You can resume this same checkout below.");
-      void checkOrder(active.id);
+      setPollCycle(value => value + 1);
     } else if (event.name === "checkout.error") {
       setMessage("Checkout could not finish. Check the order status, then resume the same checkout if needed.");
-      void checkOrder(active.id);
+      setPollCycle(value => value + 1);
     }
   }), [checkOrder]);
 
@@ -144,18 +163,22 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
         ? await request<PaymentResponse>(`/api/billing/paddle/orders/${encodeURIComponent(attempt.orderId)}`)
         : await request<PaymentResponse>("/api/billing/paddle/checkout", { requestId: attempt.requestId, packageId: attempt.packageId });
       if (current !== epoch.current) return;
+      if (attempt.orderId && currentPending.current?.orderId !== attempt.orderId) return;
       remember({ ...attempt, orderId: result.order.id }); acceptOrder(result.order);
       if (result.order.status === "checkout_ready" && result.order.transactionId) {
         setMessage("Complete your payment in Paddle. Your API usage balance updates after payment confirmation.");
-        await openPaddleCheckout({ environment: config.environment, clientToken: config.clientToken, transactionId: result.order.transactionId, isCurrent: () => current === epoch.current });
+        await openPaddleCheckout({ environment: config.environment, clientToken: config.clientToken, transactionId: result.order.transactionId, isCurrent: () => current === epoch.current && currentPending.current?.orderId === result.order.id });
       }
     } catch (error) {
-      if (current === epoch.current) setMessage(error instanceof Error ? error.message : "Checkout could not be confirmed. Continue the same order below.");
+      // A late SDK failure must not replace an already verified receipt.
+      if (current === epoch.current && currentPending.current) setMessage(error instanceof Error ? error.message : "Checkout could not be confirmed. Continue the same order below.");
     } finally { inFlight.current = false; if (current === epoch.current) setBusy(false); }
   }
 
   const packages = config?.packages.length ? config.packages : proposedPackages;
   const canPay = !!config?.enabled && !!config.clientToken;
+  const pendingPackageId = pending ? pending.packageId || (order ? String(order.amountUsd) : null) : null;
+  const pendingAmount = packages.find(item => item.id === pendingPackageId)?.amountUsd;
   const validTransfer = !!company.trim() && /^\d+(?:\.\d{1,2})?$/.test(amount) && Number(amount) > 0 && Number(amount) <= 1_000_000;
   const transferMail = `mailto:yt.feng@foxmail.com?${new URLSearchParams({ subject: "tokvilo enterprise transfer request", body: `Hello tokvilo,\n\nPlease send enterprise payment instructions.\n\nAccount email: ${email}\nCompany: ${company.trim()}\nRequested API service amount: USD ${amount}\n\nPlease confirm the invoice, payment reference and beneficiary details before I transfer funds.\n` }).toString()}`;
 
@@ -164,11 +187,17 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
       <div className="wallet-section-heading"><div><span className="wallet-eyebrow">ONLINE PAYMENT</span><h2 id="paddle-payment-title">tokvilo API service packages</h2></div><span className="wallet-method-badge">Paddle</span></div>
       <p>One-time packages for API requests and Playground generation on tokvilo. Usage is deducted from your USD-denominated service balance at the <a href="/en/pricing">published rates</a>.</p>
       {!config ? <p className="wallet-status" role="status">{configError ? "Online payment is unavailable right now. You can request enterprise transfer instructions below." : "Checking online payment availability…"}</p> : !canPay ? <p className="wallet-status" role="status">Paddle payments are not available yet. Enterprise transfers are available by arrangement below.</p> : config.environment === "sandbox" ? <p className="wallet-status" role="status">Test checkout: this uses Paddle sandbox. No real payment is collected.</p> : null}
-      <div className="wallet-packages paddle-packages">{packages.map(item => <article key={item.id}><span>API service package</span><h3>{dollars(item.amountUsd)}</h3><p>{dollars(item.creditMicrousd / 1_000_000)} of tokvilo API usage</p><small>One-time purchase · no subscription</small><button className="console-button console-button-primary" type="button" onClick={() => void checkout(item.id)} disabled={!canPay || busy || !!pending}>{!canPay ? "Not available yet" : busy ? "Preparing checkout…" : "Pay with Paddle"}</button></article>)}</div>
+      {message ? <p className="wallet-status" role="status" aria-live="polite">{message}</p> : null}
+      {pending ? <p className="wallet-status"><strong>{pendingAmount ? `Your ${dollars(pendingAmount)} checkout is saved.` : "You have a saved checkout."}</strong>{" "}Continue that payment below. Other packages are unavailable until this payment is completed or resolved. <a href="#paddle-current-payment">View payment status</a></p> : null}
+      <div className="wallet-packages paddle-packages">{packages.map(item => {
+        const currentPackage = !!pending && pendingPackageId === item.id;
+        const otherPackage = !!pending && !currentPackage;
+        const awaitingOrder = currentPackage && (order?.status === "creating" || order?.status === "outcome_unknown");
+        return <article key={item.id}><span>{currentPackage ? "Your saved checkout" : "API service package"}</span><h3>{dollars(item.amountUsd)}</h3><p>{dollars(item.creditMicrousd / 1_000_000)} of tokvilo API usage</p><small>One-time purchase · no subscription</small><button className="console-button console-button-primary" type="button" onClick={() => void checkout(item.id)} disabled={!canPay || busy || otherPackage} aria-busy={busy && currentPackage}>{!canPay ? "Not available yet" : otherPackage ? "Finish existing checkout first" : busy ? "Preparing checkout…" : awaitingOrder ? "Check existing payment" : currentPackage ? "Resume Paddle checkout" : "Pay with Paddle"}</button></article>;
+      })}</div>
       <p className="wallet-fineprint">For tokvilo API services only. Packages cannot be transferred, withdrawn as cash, or used to buy third-party subscriptions or digital goods. Applicable taxes and the final total are shown in checkout.</p>
       <div className="wallet-payment-links"><a href="/en/billing">How billing works</a><a href="/en/terms">Terms</a><a href="/en/refunds">Refund policy</a><a href="/en/privacy">Privacy</a></div>
-      {message ? <p className="wallet-status" role="status" aria-live="polite">{message}</p> : null}
-      {pending ? <div className="wallet-payment-order"><h3>Continue your payment</h3><p>{order ? `Order ${order.id}` : `Request ${pending.requestId}`}</p><p>{order?.status === "checkout_ready" ? "Resume this checkout or check whether payment has already been confirmed." : "This purchase is still being confirmed. Your request is saved so returning here will continue the same order."}</p><div className="wallet-payment-actions">{!order || order.status === "checkout_ready" ? <button className="console-button console-button-primary" type="button" disabled={busy || !canPay} onClick={() => void checkout(pending.packageId || "")}>{busy ? "Preparing checkout…" : "Resume Paddle checkout"}</button> : null}{pending.orderId ? <button className="console-button" type="button" disabled={checking || busy} onClick={() => void checkOrder(pending.orderId!)}>{checking ? "Checking payment…" : "Check payment status"}</button> : null}</div><p className="wallet-fineprint">Closing checkout or returning to this page does not confirm payment. Your balance updates only after payment is verified.</p></div> : null}
+      {pending ? <div className="wallet-payment-order" id="paddle-current-payment"><h3>Continue your payment</h3><p>{order ? `Order ${order.id}` : `Request ${pending.requestId}`}</p><p>{order?.status === "checkout_ready" ? "Resume this checkout or check whether payment has already been confirmed." : "This purchase is still being confirmed. Your request is saved so returning here will continue the same order."}</p><div className="wallet-payment-actions">{!order || order.status === "checkout_ready" ? <button className="console-button console-button-primary" type="button" disabled={busy || !canPay} aria-busy={busy} onClick={() => void checkout(pending.packageId || "")}>{busy ? "Preparing checkout…" : "Resume Paddle checkout"}</button> : null}{pending.orderId ? <button className="console-button" type="button" disabled={checking || busy} aria-busy={checking} onClick={() => { setPollCycle(value => value + 1); void checkOrder(pending.orderId!, true); }}>{checking ? "Checking payment…" : "Check payment status"}</button> : null}</div><p className="wallet-fineprint">Closing checkout or returning to this page does not confirm payment. Your balance updates only after payment is verified.</p></div> : null}
     </section>
     <section className="console-panel wallet-section" aria-labelledby="enterprise-payment-title">
       <div className="wallet-section-heading"><div><span className="wallet-eyebrow">ENTERPRISE PAYMENT</span><h2 id="enterprise-payment-title">Pay by bank transfer</h2></div><span className="wallet-method-badge">By arrangement</span></div>

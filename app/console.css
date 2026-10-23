@@ -31,7 +31,8 @@ html[data-theme="light"] .dashboard-shell {
 .dashboard-shell a { text-decoration: none; }
 .dashboard-shell button, .dashboard-shell input, .dashboard-shell select { font: inherit; }
 .dashboard-shell button { cursor: pointer; }
-.dashboard-shell button:disabled { cursor: wait; opacity: .5; }
+.dashboard-shell button:disabled { cursor: not-allowed; opacity: .5; }
+.dashboard-shell button[aria-busy="true"] { cursor: progress; }
 .dashboard-shell button:focus-visible, .dashboard-shell a:focus-visible, .dashboard-shell input:focus-visible, .dashboard-shell select:focus-visible { outline: 2px solid var(--console-muted); outline-offset: 3px; }
 .dashboard-shell .console-sidebar { width: 242px; padding: 20px 12px 12px; position: fixed; inset: 0 auto 0 0; overflow-y: auto; display: flex; flex-direction: column; z-index: 20; background: var(--console-bg); }
 .console-brand-row { display: flex; align-items: center; min-height: 28px; justify-content: space-between; padding: 0 2px 0 8px; margin-bottom: 12px; }

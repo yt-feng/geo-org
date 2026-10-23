@@ -64,6 +64,34 @@ successful unpaid checkout described above.
 
 The IDs above are catalogue references, not credentials.
 
+## Saved-checkout usability repair (2026-10-23)
+
+A customer reported that **Pay with Paddle** appeared to spin indefinitely. Live
+Chrome inspection found a saved, unpaid checkout: all three package buttons were
+disabled, while the only resume action was below the visible cards. The console
+stylesheet assigned `cursor: wait` to every disabled button. Resuming the existing
+order did open the correct production checkout; no duplicate order was needed.
+
+The saved package now has an enabled **Resume Paddle checkout** button directly on
+its card, with a saved-order notice above the packages. Other packages explain why
+the current order must be resolved first. Disabled controls use `not-allowed`;
+only an explicitly busy action uses the progress cursor.
+
+Browser API requests have bounded waits covering both response headers and body:
+20 seconds for reads and 35 seconds for checkout creation. A timeout preserves the
+same request/order reference. Background confirmation checks do not block the
+manual controls, and a completed or closed checkout starts a fresh bounded
+confirmation window. Checkout readiness also has a separate watchdog so a stalled
+Paddle window can be closed and the same order resumed.
+
+Validation: 569 tests, production build, scoped ESLint, TypeScript and whitespace
+checks passed. Production version `0aa5fd43-0a5f-482f-acfb-d7cbab47bfdf` receives
+100% traffic. In the signed-in Chrome session, refreshing the wallet showed an
+enabled top-card resume action. Clicking it displayed the complete production
+Paddle form for the same USD 20 transaction in approximately five seconds.
+Remote readback still showed one order, zero applied credit and zero Paddle
+ledger entries. No customer/payment details were entered and no charge was made.
+
 ## Product scope and customer promise
 
 The Paddle product is **Tokvilo API service usage**: access to Tokvilo's API and

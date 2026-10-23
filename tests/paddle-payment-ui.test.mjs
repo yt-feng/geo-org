@@ -19,8 +19,8 @@ const paid = { ...ready, status: "paid", creditedMicrousd: 20_000_000, credited:
 const storageKey = "tokvilo:paddle:pending:buyer";
 
 async function fixture({ responder, storage = new Map(), userId = "buyer", brokenStorage = false, url = "https://tokvilo.com/dashboard/wallet?lang=en" } = {}) {
-  let cursor = 0, tree, callback, confirmed = 0;
-  const hooks = [], effects = [], calls = [], checkouts = [], timers = new Map();
+  let cursor = 0, tree, callback, confirmed = 0, nextTimer = 1;
+  const hooks = [], effects = [], calls = [], checkouts = [], timers = new Map(), deadlines = new Map();
   const same = (a, b) => a && b && a.length === b.length && a.every((value, index) => Object.is(value, b[index]));
   const react = {
     useState(initial) { const id = cursor++; hooks[id] ||= { value: initial }; return [hooks[id].value, next => { hooks[id].value = typeof next === "function" ? next(hooks[id].value) : next; }]; },
@@ -30,8 +30,8 @@ async function fixture({ responder, storage = new Map(), userId = "buyer", broke
   };
   const compiledModule = { exports: {} };
   vm.runInNewContext(source, {
-    module: compiledModule, exports: compiledModule.exports, crypto: webcrypto, URLSearchParams, URL,
-    window: { location: { href: url }, setInterval(fn) { const id = timers.size + 1; timers.set(id, fn); return id; }, clearInterval(id) { timers.delete(id); } },
+    module: compiledModule, exports: compiledModule.exports, crypto: webcrypto, URLSearchParams, URL, AbortController,
+    window: { location: { href: url }, setInterval(fn) { const id = nextTimer++; timers.set(id, fn); return id; }, clearInterval(id) { timers.delete(id); }, setTimeout(fn, delay) { const id = nextTimer++; deadlines.set(id, { fn, delay }); return id; }, clearTimeout(id) { deadlines.delete(id); } },
     document: { visibilityState: "visible" },
     localStorage: { getItem(key) { return storage.get(key) ?? null; }, setItem(key, value) { if (brokenStorage) throw Error("Storage disabled"); storage.set(key, value); }, removeItem(key) { storage.delete(key); } },
     require(path) {
@@ -48,7 +48,7 @@ async function fixture({ responder, storage = new Map(), userId = "buyer", broke
   async function click(label) { const button = find(tree, node => node.type === "button" && text(node) === label); assert.ok(button, `Missing ${label}`); assert.equal(!!button.props.disabled, false, `Disabled ${label}`); await button.props.onClick(); await settle(); }
   function change(id, value) { const input = find(tree, node => node.props.id === id); assert.ok(input); input.props.onChange({ target: { value } }); render(); }
   render(); await settle();
-  return { tree: () => tree, calls, storage, checkouts, confirmed: () => confirmed, settle, render, click, change, event: event => callback?.(event), tick: async () => { for (const timer of timers.values()) timer(); await settle(); } };
+  return { tree: () => tree, calls, storage, checkouts, confirmed: () => confirmed, settle, render, click, change, event: event => callback?.(event), tick: async () => { for (const timer of [...timers.values()]) timer(); await settle(); }, expireRequests: async (milliseconds = 35_000) => { for (const [id, timer] of [...deadlines]) if (timer.delay <= milliseconds) { deadlines.delete(id); timer.fn(); } await settle(); }, pollCount: () => timers.size };
 }
 
 test("unapproved or unavailable Paddle never opens checkout and offers honest enterprise instructions", async () => {
@@ -162,4 +162,104 @@ test("a new payment after completion stays recoverable if its create response is
   assert.equal(pending.orderId, undefined);
   assert.ok(find(f.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout"));
   assert.doesNotMatch(text(f.tree()), new RegExp(`Order ${ready.id}`));
+});
+
+test("a saved unpaid package has an actionable top-card resume while other packages explain the existing checkout", async () => {
+  const storage = new Map([[storageKey, JSON.stringify({ requestId: "saved-checkout-request-123", packageId: "20", orderId: ready.id })]]);
+  const f = await fixture({ storage });
+  const packages = find(f.tree(), node => node.props.className === "wallet-packages paddle-packages");
+  const cards = packages.props.children;
+  const first = find(cards[0], node => node.type === "button");
+  assert.equal(text(first), "Resume Paddle checkout"); assert.equal(first.props.disabled, false);
+  for (const card of cards.slice(1)) {
+    const button = find(card, node => node.type === "button");
+    assert.equal(button.props.disabled, true); assert.equal(text(button), "Finish existing checkout first");
+    assert.equal(button.props["aria-busy"], false);
+  }
+  assert.ok(text(f.tree()).indexOf("Your $20.00 checkout is saved") < text(f.tree()).indexOf("Your saved checkout"));
+  await first.props.onClick(); await f.settle();
+  assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+  assert.equal(f.checkouts[0].transactionId, ready.transactionId);
+});
+
+test("a hanging create request times out, releases the action, and retries only its saved idempotency key", async () => {
+  let hanging = true;
+  const f = await fixture({ responder: async (url, init) => {
+    if (init?.method === "POST" && hanging) return new Promise(() => {});
+    return Response.json(url.endsWith("config") ? config : { order: ready });
+  } });
+  await f.click("Pay with Paddle");
+  const post = f.calls.find(call => call.init?.method === "POST"), saved = f.storage.get(storageKey);
+  assert.ok(find(f.tree(), node => node.type === "button" && text(node) === "Preparing checkout…").props["aria-busy"]);
+  await f.expireRequests();
+  assert.equal(post.init.signal.aborted, true);
+  assert.equal(f.storage.get(storageKey), saved);
+  assert.match(text(f.tree()), /Checkout confirmation took too long/);
+  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout").props.disabled, false);
+  hanging = false;
+  await f.click("Resume Paddle checkout");
+  const posts = f.calls.filter(call => call.init?.method === "POST");
+  assert.equal(posts.length, 2); assert.equal(posts[1].init.body, post.init.body);
+  assert.equal(f.checkouts.length, 1);
+});
+
+test("request deadline includes a stalled response body and config stops showing an endless loading state", async () => {
+  const f = await fixture({ responder: async () => ({ ok: true, json: () => new Promise(() => {}) }) });
+  assert.match(text(f.tree()), /Checking online payment availability/);
+  await f.expireRequests(20_000);
+  assert.doesNotMatch(text(f.tree()), /Checking online payment availability/);
+  assert.match(text(f.tree()), /Online payment is unavailable right now/);
+  assert.equal(f.calls[0].init.signal.aborted, true);
+});
+
+test("stalled background status reads do not display a blocking spinner and their deadlines permit later recovery", async () => {
+  let hanging = true;
+  const storage = new Map([[storageKey, JSON.stringify({ requestId: "saved-checkout-request-456", packageId: "20", orderId: ready.id })]]);
+  const f = await fixture({ storage, responder: async url => {
+    if (url.includes("/orders/") && hanging) return new Promise(() => {});
+    return Response.json(url.endsWith("config") ? config : { order: ready });
+  } });
+  assert.doesNotMatch(text(f.tree()), /Checking payment…/);
+  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Resume Paddle checkout").props.disabled, false);
+  await f.expireRequests(20_000);
+  assert.match(text(f.tree()), /Payment status took too long/);
+  assert.equal(JSON.parse(f.storage.get(storageKey)).orderId, ready.id);
+  hanging = false;
+  await f.tick();
+  await f.click("Resume Paddle checkout");
+  assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+  assert.equal(f.checkouts.length, 1);
+});
+
+test("checkout completion after the initial polling window restarts confirmation until the delayed server receipt arrives", async () => {
+  let serverOrder = ready;
+  const f = await fixture({ responder: async url => Response.json(url.endsWith("config") ? config : { order: serverOrder }) });
+  await f.click("Pay with Paddle");
+  for (let index = 0; index < 30; index++) await f.tick();
+  assert.equal(f.pollCount(), 0); assert.equal(f.confirmed(), 0);
+  f.event({ name: "checkout.completed", data: { transaction_id: ready.transactionId } }); await f.settle();
+  assert.equal(f.pollCount(), 1); assert.equal(f.confirmed(), 0);
+  assert.match(text(f.tree()), /Waiting for payment confirmation/);
+  serverOrder = paid;
+  await f.tick();
+  assert.equal(f.confirmed(), 1); assert.equal(f.pollCount(), 0);
+  assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 1);
+});
+
+for (const lateFailure of ["network error", "deadline"]) test(`a stale background ${lateFailure} cannot overwrite a payment verified by a concurrent resume read`, async () => {
+  let reads = 0, rejectBackground;
+  const storage = new Map([[storageKey, JSON.stringify({ requestId: "saved-checkout-request-789", packageId: "20", orderId: ready.id })]]);
+  const f = await fixture({ storage, responder: async url => {
+    if (url.endsWith("config")) return Response.json(config);
+    if (++reads === 1) return new Promise((_, reject) => { rejectBackground = reject; });
+    return Response.json({ order: paid });
+  } });
+  await f.click("Resume Paddle checkout");
+  assert.equal(f.confirmed(), 1); assert.equal(f.storage.has(storageKey), false);
+  assert.match(text(f.tree()), /Payment confirmed\. \$20\.00 has been added/);
+  if (lateFailure === "deadline") await f.expireRequests(20_000);
+  else { rejectBackground(Error("Old background request failed")); await f.settle(); }
+  assert.match(text(f.tree()), /Payment confirmed\. \$20\.00 has been added/);
+  assert.doesNotMatch(text(f.tree()), /Old background request failed|Payment status took too long/);
+  assert.equal(f.confirmed(), 1); assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
 });
