@@ -184,7 +184,7 @@ export function SelectedPlayground({ initialModel }: { initialModel?: string }) 
           {error ? <div className="playground-inline-error" role="alert"><p>{messageCopy(error)}</p></div> : null}
           <button className="playground-run" type="button" disabled={loading || busy || !executable || statusError === "login_required" || (!!currentQuote && generationBlocked)} onClick={currentQuote ? generate : prepareQuote}>{busy ? t("处理中…", "Processing…") : currentQuote ? t(`确认预留 ${money(currentQuote.reservedMicrousd)} 并生成`, `Reserve ${money(currentQuote.reservedMicrousd)} & generate`) : t("获取准确报价", "Get exact quote")}</button>
           {currentQuote ? <button type="button" disabled={busy} onClick={prepareQuote}>{t("刷新报价", "Refresh quote")}</button> : null}
-          <Link href={href("/dashboard/wallet")}>{t("查看余额与充值", "View wallet & top up")}</Link>
+          <a href={href("/dashboard/wallet")}>{t("查看余额与充值", "View wallet & top up")}</a>
         </div>
       </section>
       <section className="playground-workspace" aria-label={t("精选请求结果", "Select request results")}>

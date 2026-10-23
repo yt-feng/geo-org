@@ -6,6 +6,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "vars": {
+    "PADDLE_ENVIRONMENT": "production",
+    "PADDLE_SALES_ENABLED": "false",
+    "PADDLE_PRICE_20_ID": "pri_01m5m3axm9ph27nmy42422rjca",
+    "PADDLE_PRICE_50_ID": "pri_01m5m3cpgs6f9nhqjh6g1y5ewx",
+    "PADDLE_PRICE_100_ID": "pri_01m5m3eg4xq179jp1khn9tc257",
     "PRODUCT_INQUIRY_FROM": "orders@tokvilo.com",
     "PRODUCT_INQUIRY_EMAIL_ENABLED": "true",
     "USD_CNY": "7.2",

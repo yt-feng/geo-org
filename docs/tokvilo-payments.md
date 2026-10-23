@@ -1,5 +1,10 @@
 # Tokvilo wallet and Liandong delivery
 
+For English Paddle service usage packs, domain approval, payment callbacks and
+enterprise bank-transfer administration, see
+[Tokvilo Paddle payments](./tokvilo-paddle-payments.md). This document describes
+the separate Chinese Liandong redemption flow and the shared wallet mechanics.
+
 Tokvilo uses an independent wallet denominated in integer USD micro-units.
 Liandong sells CNY 30 / 90 / 300 offers and delivers one-time `TK-…` codes.
 The code's USD credit is fixed when issued. `USD_CNY=7.2` is a fixed recharge

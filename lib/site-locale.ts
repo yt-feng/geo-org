@@ -1,5 +1,5 @@
 export type SiteLocale = "zh" | "en";
-const publicPaths = new Set(["/", "/models", "/pricing", "/products"]);
+const publicPaths = new Set(["/", "/models", "/pricing", "/products", "/billing", "/terms", "/privacy", "/refunds"]);
 export function localizedHref(path: string, locale: SiteLocale): string {
   if (!path.startsWith("/") || path.startsWith("//")) return path;
   const url = new URL(path, "https://tokvilo.com");

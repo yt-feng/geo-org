@@ -75,3 +75,34 @@ test("ordinary login and untrusted next destinations retain the dashboard fallba
   assert.equal(await login("//example.invalid/playground", true), "/dashboard?lang=en");
   assert.equal(await login("/api/gateway/v1/chat/completions"), "/dashboard");
 });
+
+test("payment sign-in preserves only the exact wallet route, English, and a public UUID order", async () => {
+  const order = "5b1aa5c8-1195-4c64-9e32-0c879f30ee4d";
+  const expected = `/dashboard/wallet?lang=en&paddle_order=${order}`;
+  assert.equal(returnPaths.safeAuthReturnPath(`/dashboard/wallet?lang=en&paddle_order=${order}&_ptxn=txn_private&access_token=secret&email=private#refresh_token=secret`), expected);
+  const returned = new URL(await login(`/dashboard/wallet?paddle_order=${order}&_ptxn=txn_untrusted&password=private`, true), "https://tokvilo.com");
+  assert.equal(returned.pathname, "/dashboard/wallet");
+  assert.deepEqual(Object.fromEntries(returned.searchParams), { paddle_order: order, lang: "en" });
+  assert.equal(returned.hash, "");
+  assert.equal(returnPaths.safeAuthReturnPath("/dashboard/wallet?lang=en&lang=zh&paddle_order=not-a-uuid&token=secret"), "/dashboard/wallet");
+  assert.equal(returnPaths.safeAuthReturnPath(`/dashboard/wallet?paddle_order=${order}&paddle_order=${order}`), "/dashboard/wallet");
+  for (const value of ["/dashboard/wallet/extra", "/dashboard/wallet/../orders", "//evil.example/dashboard/wallet", "/dashboard/wallet\\\\evil.example", "/dashboard/orders"]) assert.equal(returnPaths.safeAuthReturnPath(value), null, value);
+});
+
+test("wallet page forwards a sanitized payment return path to the sign-in guard", async () => {
+  const calls = [];
+  const page = await load("../app/dashboard/wallet/page.tsx", {
+    "react/jsx-runtime": jsx,
+    "@/components/DashboardShell": { DashboardShell: "DashboardShell" },
+    "@/components/WalletPanel": { WalletPanel: "WalletPanel" },
+    "@/components/LocaleProvider": { LocaleProvider: "LocaleProvider" },
+    "@/lib/auth": { requirePortalUser: async (...args) => { calls.push(args); return { id: "buyer", email: "buyer@example.invalid", isAdmin: false }; } },
+    "@/lib/auth-return-path": returnPaths,
+    "../../wallet.css": {},
+  });
+  const order = "5b1aa5c8-1195-4c64-9e32-0c879f30ee4d";
+  await page.default({ searchParams: Promise.resolve({ lang: "en", paddle_order: order, _ptxn: "txn_untrusted", access_token: "secret" }) });
+  assert.deepEqual(calls[0], ["en", `/dashboard/wallet?lang=en&paddle_order=${order}`]);
+  await page.default({ searchParams: Promise.resolve({ lang: "en", paddle_order: [order, order] }) });
+  assert.deepEqual(calls[1], ["en", "/dashboard/wallet?lang=en"]);
+});

@@ -35,6 +35,7 @@ async function fixture(name, props, responder, locale = "en") {
       if (path === "react") return react;
       if (path === "react/jsx-runtime") return jsx;
       if (path === "next/link") return { default: "a" };
+      if (path === "./PaddlePaymentPanel") return { PaddlePaymentPanel: "PaddlePaymentPanel" };
       if (path === "./LocaleProvider") return { useSiteLocale: () => ({ locale, isEnglish: locale === "en", t: (zh, en) => locale === "en" ? en : zh, href: path => locale === "en" ? `/en${path}` : path }) };
       if (modules[path]) return modules[path];
       throw Error(`Unexpected ${path}`);
@@ -49,14 +50,35 @@ async function fixture(name, props, responder, locale = "en") {
 const wallet = { balanceMicrousd: 10000000, reservedMicrousd: 2000000, ledger: [{ id: "entry", kind: "redemption", amount_microusd: 10000000, created_at: "2026-10-23 08:00:00", description: "链动小铺 Tokvilo 兑换码，面值 ¥30" }] };
 const billing = { enabled: true, redemptionEnabled: true, issuanceEnabled: true, usdCny: 7.3, packages: [{ id: "30", amountCny: 30, creditMicrousd: 4109589, purchaseUrl: "https://shop.example/product" }] };
 
-test("English wallet preserves code confirmation, purchase destination, amounts and redemption payload", async () => {
-  const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async url => url.endsWith("redeem") ? Response.json({ wallet, alreadyRedeemed: true, redemption: { credit_microusd: 4109589 } }) : Response.json({ wallet, billing }));
+test("English customers see only the Paddle and enterprise payment panel, with no Liandong checkout or redemption", async () => {
+  const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet, billing }));
   assert.match(text(f.tree()), /Available balance\$10\.00/);
   assert.match(text(f.tree()), /Reserved for pending requests\$2\.00/);
-  assert.match(text(f.tree()), /fixed top-up conversion of USD 1 = ¥7\.3/);
-  assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
+  assert.doesNotMatch(text(f.tree()), /Buy through Liandong|Redeem a code|Redemption code inventory|fixed top-up conversion/);
+  assert.equal(find(f.tree(), node => node.props.id === "redeem-code"), null);
+  assert.equal(find(f.tree(), node => node.props.href === "https://shop.example/product"), null);
+  const panel = find(f.tree(), node => node.type === "PaddlePaymentPanel");
+  assert.equal(panel.props.email, "buyer@example.com");
+  assert.equal(panel.props.userId, "buyer");
+  await panel.props.onCreditConfirmed();
+  assert.equal(f.calls.filter(call => call.url === "/api/wallet").length, 2);
+});
+
+test("English administrators retain inventory tools with revocation confirmation", async () => {
+  const f = await fixture("WalletPanel", { userId: "admin", email: "admin@example.com", isAdmin: true }, async url => url.includes("redemption-batches") ? Response.json({ batches: [] }) : Response.json({ wallet, billing }));
+  assert.match(text(f.tree()), /Redemption code inventory/);
+  const revoke = find(f.tree(), node => node.type === "button" && text(node) === "Disable code");
+  assert.equal(revoke.props.disabled, true);
+  const form = find(f.tree(), node => node.type === "form" && find(node, child => child === revoke));
+  await form.props.onSubmit({ preventDefault() {} });
+  assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
+});
+
+test("Chinese checkout and redemption preserve their destination, confirmation, and exact code", async () => {
+  const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async url => url.endsWith("redeem") ? Response.json({ wallet, alreadyRedeemed: true, redemption: { credit_microusd: 4109589 } }) : Response.json({ wallet, billing }), "zh");
+  assert.equal(find(f.tree(), node => node.type === "PaddlePaymentPanel"), null);
   assert.equal(find(f.tree(), node => node.type === "a").props.href, "https://shop.example/product");
-  const button = () => find(f.tree(), node => node.type === "button" && text(node) === "Confirm redemption");
+  const button = () => find(f.tree(), node => node.type === "button" && text(node) === "确认兑换");
   assert.equal(button().props.disabled, true);
   f.change(node => node.props.id === "redeem-code", "TK-TEST-CODE");
   const form = () => find(f.tree(), node => node.type === "form" && find(node, child => child.props.id === "redeem-code"));
@@ -68,29 +90,8 @@ test("English wallet preserves code confirmation, purchase destination, amounts 
   const post = f.calls.filter(call => call.init?.method === "POST");
   assert.equal(post.length, 1); assert.equal(post[0].url, "/api/wallet/redeem");
   assert.deepEqual(JSON.parse(post[0].init.body), { code: "TK-TEST-CODE" });
-  assert.match(text(f.tree()), /already redeemed.*No duplicate credit/s);
+  assert.match(text(f.tree()), /本次没有重复入账/);
   assert.equal(find(f.tree(), node => node.props.id === "redeem-code").props.value, "");
-  assert.equal(button().props.disabled, true);
-});
-
-test("English wallet keeps unavailable redemption and revocation confirmations intact", async () => {
-  const f = await fixture("WalletPanel", { userId: "admin", email: "admin@example.com", isAdmin: true }, async url => url.includes("redemption-batches") ? Response.json({ batches: [] }) : Response.json({ wallet, billing: { ...billing, redemptionEnabled: false } }));
-  assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
-  const revoke = find(f.tree(), node => node.type === "button" && text(node) === "Disable code");
-  assert.equal(revoke.props.disabled, true);
-  const form = find(f.tree(), node => node.type === "form" && find(node, child => child === revoke));
-  await form.props.onSubmit({ preventDefault() {} });
-  assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
-  assert.equal(find(f.tree(), node => node.type === "button" && text(node) === "Confirm redemption").props.disabled, true);
-});
-
-test("English redemption failures retain actionable server meaning", async () => {
-  const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async (url) => url.endsWith("redeem") ? Response.json({ error: { message: "此码暂不可兑换，请核对是否已使用、过期或停用。" } }, { status: 400 }) : Response.json({ wallet, billing }));
-  f.change(node => node.props.id === "redeem-code", "TK-TEST-CODE");
-  f.change(node => node.type === "input" && node.props.type === "checkbox", undefined, true);
-  await find(f.tree(), node => node.type === "form").props.onSubmit({ preventDefault() {} }); f.render();
-  assert.match(text(f.tree()), /already used, expired or disabled/);
-  assert.equal(find(f.tree(), node => node.props.id === "redeem-code").props.value, "TK-TEST-CODE");
 });
 
 const order = { id: "order-1", product_name: "ChatGPT Plus · 菲律宾区", user_id: "buyer", retail_cents: 16200, charge_microusd: 22191781, status: "pending", delivery: "", created_at: "2026-10-23 08:00:00" };
@@ -122,7 +123,7 @@ test("wallet and orders pages preserve English at server render and sign-in redi
   for (const path of ["wallet", "orders"]) {
     const page = await readFile(new URL(`../app/dashboard/${path}/page.tsx`, import.meta.url), "utf8");
     assert.match(page, /\(await searchParams\)\?\.lang === "en"/);
-    assert.match(page, /requirePortalUser\(locale\)/);
+    assert.match(page, /requirePortalUser\(locale(?:, next)?\)/);
     assert.match(page, /<LocaleProvider locale=\{locale\}>/);
     assert.match(page, /generateMetadata/);
   }

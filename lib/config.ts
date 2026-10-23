@@ -47,6 +47,16 @@ export type RuntimeEnv = {
   LIANDONG_PRODUCT_30_URL?: string;
   LIANDONG_PRODUCT_90_URL?: string;
   LIANDONG_PRODUCT_300_URL?: string;
+  PADDLE_ENVIRONMENT?: string;
+  PADDLE_SALES_ENABLED?: string;
+  PADDLE_APPROVED_DOMAIN?: string;
+  PADDLE_APPROVED_PRODUCT_SCOPE?: string;
+  PADDLE_CLIENT_TOKEN?: string;
+  PADDLE_API_KEY?: string;
+  PADDLE_WEBHOOK_SECRET?: string;
+  PADDLE_PRICE_20_ID?: string;
+  PADDLE_PRICE_50_ID?: string;
+  PADDLE_PRICE_100_ID?: string;
 };
 
 export function runtimeEnv(): RuntimeEnv {

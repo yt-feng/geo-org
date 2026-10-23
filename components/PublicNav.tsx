@@ -20,6 +20,7 @@ export function PublicNav() {
         <Link href={href("/models")} aria-current={pathname === "/models" ? "page" : undefined} onClick={() => setOpen(false)}>{t("模型市场", "Models")}</Link>
         <Link href={href("/products")} aria-current={pathname === "/products" ? "page" : undefined} onClick={() => setOpen(false)}>{t("数字商品", "Digital goods")}</Link>
         <Link href={href("/pricing")} aria-current={pathname === "/pricing" ? "page" : undefined} onClick={() => setOpen(false)}>{t("价格", "Pricing")}</Link>
+        <Link href={href("/billing")} aria-current={["/billing", "/terms", "/refunds", "/privacy"].includes(pathname) ? "page" : undefined} onClick={() => setOpen(false)}>{t("支付方式", "Payments")}</Link>
         <Link href={href("/dashboard/docs")} onClick={() => setOpen(false)}>{t("API 文档", "API docs")}</Link>
         <Link href={href("/#integration")} onClick={() => setOpen(false)}>{t("接入指南", "Get started")}</Link>
         <Link href={href("/#faq")} onClick={() => setOpen(false)}>{t("帮助", "Help")}</Link>

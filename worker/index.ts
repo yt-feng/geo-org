@@ -24,6 +24,28 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+const BASE_CONTENT_SECURITY_POLICY = "default-src 'self'; img-src 'self' data: https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai https://cdn.apimart.ai; media-src 'self' https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai https://cdn.apimart.ai; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+
+function contentSecurityPolicy(url: URL, env: Env): string {
+  // Payment navigation loads a new document, so only the English wallet needs
+  // these origins. Normal pages keep the original policy byte-for-byte.
+  if (url.pathname !== "/dashboard/wallet" || url.searchParams.get("lang") !== "en" || url.searchParams.getAll("lang").length !== 1) return BASE_CONTENT_SECURITY_POLICY;
+  const sandbox = env.PADDLE_ENVIRONMENT === "sandbox";
+  const cdn = sandbox ? "https://sandbox-cdn.paddle.com" : "https://cdn.paddle.com";
+  const api = sandbox ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";
+  const checkout = sandbox ? "https://sandbox-buy.paddle.com" : "https://buy.paddle.com";
+  // CDN URL: https://developer.paddle.com/paddle-js/about/include-paddlejs/
+  // Runtime checkout/CSS/error-frame origins verified in the official SDK:
+  // https://cdn.paddle.com/paddle/v2/paddle.js (2.10.2, 2026-10-23).
+  // Checkout providers inside Paddle's cross-origin frame use Paddle's policy.
+  return BASE_CONTENT_SECURITY_POLICY
+    .replace("img-src 'self' data:", `img-src 'self' data: ${cdn}`)
+    .replace("style-src 'self' 'unsafe-inline'", `style-src 'self' 'unsafe-inline' ${cdn}`)
+    .replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https://cdn.paddle.com")
+    .replace("connect-src 'self'", `connect-src 'self' ${api}`)
+    + `; frame-src 'self' ${checkout} ${cdn}`;
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -73,7 +95,7 @@ const worker = {
     if ((headers.get("content-type") || "").includes("text/html")) {
       headers.set(
         "content-security-policy",
-        "default-src 'self'; img-src 'self' data: https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai https://cdn.apimart.ai; media-src 'self' https://ark-acg-ap-southeast-1.tos-ap-southeast-1.volces.com https://upload.apimart.ai https://cdn.apimart.ai; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        contentSecurityPolicy(url, env),
       );
       headers.set("cache-control", "private, no-store");
     }
