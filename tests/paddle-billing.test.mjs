@@ -10,18 +10,20 @@ const schema = (await Promise.all((await readdir(new URL("../drizzle/", import.m
 const ALICE = { id: "alice", email: "alice@example.com", displayName: "Alice", isAdmin: false };
 const BOB = { id: "bob", email: "bob@example.com", displayName: "Bob", isAdmin: false };
 const paddleId = (prefix, n) => `${prefix}_${String(n).padStart(26, "0")}`;
-async function load(file, mocks, fetch) {
+async function load(file, mocks, fetch, diagnostics = []) {
   const filename = new URL(file, import.meta.url).pathname;
   const { outputText } = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
   const compiled = { exports: {} };
-  vm.runInNewContext(outputText, { module: compiled, exports: compiled.exports, require: name => { if (name in mocks) return mocks[name]; throw new Error(`Unmocked ${name}`); }, crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array, URL, Request, Response, Headers, AbortSignal, fetch }, { filename });
+  vm.runInNewContext(outputText, { module: compiled, exports: compiled.exports, require: name => { if (name in mocks) return mocks[name]; throw new Error(`Unmocked ${name}`); }, console: { error: value => diagnostics.push(value) }, crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array, URL, Request, Response, Headers, AbortSignal, fetch }, { filename });
   return compiled.exports;
 }
 async function fixture(t) {
   const sql = new DatabaseSync(":memory:"); sql.exec(schema); t.after(() => sql.close());
   for (const user of [ALICE, BOB]) sql.prepare("INSERT INTO users(id,email,status) VALUES(?,?,'active')").run(user.id, user.email);
+  let databaseFailure = false;
   const db = {
     prepare(query) {
+      if (databaseFailure && query.startsWith("SELECT * FROM paddle_orders")) throw new Error("D1_ERROR: no such table: private_customer_table alice@example.com");
       const statement = sql.prepare(query);
       function executable(args = []) { return {
         bind(...values) { assert.ok(values.length <= 100); return executable(values); },
@@ -38,13 +40,18 @@ async function fixture(t) {
     },
   };
   const env = { DB: db, PUBLIC_BASE_URL: "https://tokvilo.com", PADDLE_ENVIRONMENT: "production", PADDLE_SALES_ENABLED: "true", PADDLE_APPROVED_DOMAIN: "tokvilo.com", PADDLE_APPROVED_PRODUCT_SCOPE: "tokvilo_api_usage", PADDLE_API_KEY: "secret-api-key", PADDLE_WEBHOOK_SECRET: "secret-webhook", PADDLE_CLIENT_TOKEN: "live_public-token", PADDLE_PRICE_20_ID: paddleId("pri", 20), PADDLE_PRICE_50_ID: paddleId("pri", 50), PADDLE_PRICE_100_ID: paddleId("pri", 100) };
-  let user = ALICE, postCount = 0, failPost = false, requestNo = 0, eventNo = 0, invalidPrice = false, apiUnavailable = false;
-  const transactions = new Map(), adjustments = new Map(), apiCalls = [];
+  let user = ALICE, postCount = 0, failPost = false, requestNo = 0, eventNo = 0, invalidPrice = false, apiUnavailable = false, providerFailure = null, redirectStatus = null;
+  const transactions = new Map(), adjustments = new Map(), apiCalls = [], diagnostics = [];
   function price(amount) { return { id: paddleId("pri", amount), status: "active", billing_cycle: null, trial_period: null, tax_mode: "external", unit_price: { amount: String(amount * 100), currency_code: "USD" }, unit_price_overrides: [] }; }
   const fetch = async (input, init) => {
     const url = new URL(input); apiCalls.push({ url: url.href, method: init.method });
+    // Mirror Workers: redirect:error throws before making an HTTP request.
+    if (init.redirect === "error") throw new TypeError("Unsupported redirect mode: error");
+    assert.equal(init.redirect, "manual", "Paddle requests must not forward Authorization across redirects");
     assert.ok(["api.paddle.com", "sandbox-api.paddle.com"].includes(url.hostname));
     assert.equal(init.headers.Authorization, "Bearer secret-api-key");
+    if (providerFailure) throw providerFailure;
+    if (redirectStatus) return new Response(null, { status: redirectStatus, headers: { location: "https://different-origin.example/collect" } });
     if (apiUnavailable) throw new Error("network unavailable");
     if (url.pathname.startsWith("/prices/")) { const amount = Number(url.pathname.split("_").at(-1)); return Response.json({ data: { ...price(amount), ...(invalidPrice ? { billing_cycle: { interval: "month", frequency: 1 } } : {}) } }); }
     if (url.pathname === "/transactions" && init.method === "POST") {
@@ -63,7 +70,7 @@ async function fixture(t) {
   };
   const config = { getD1: () => db, runtimeEnv: () => env };
   const wallet = await load("../lib/wallet.ts", { "./config": config }, fetch);
-  const paddle = await load("../lib/paddle.ts", { "./config": config, "./wallet": wallet, "./auth": { getPortalUser: async () => user }, "./store": { ensureUser: async () => {} } }, fetch);
+  const paddle = await load("../lib/paddle.ts", { "./config": config, "./wallet": wallet, "./auth": { getPortalUser: async () => user }, "./store": { ensureUser: async () => {} } }, fetch, diagnostics);
   async function checkout(payload = {}, owner = ALICE, origin = "https://tokvilo.com") {
     user = owner;
     const response = await paddle.handlePaddleRequest(new Request("https://tokvilo.com/api/billing/paddle/checkout", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify({ packageId: "20", requestId: `test-request-${++requestNo}`, ...payload }) }), "checkout");
@@ -81,12 +88,48 @@ async function fixture(t) {
     return { status: response.status, data: await response.json() };
   }
   const balance = (owner = ALICE.id) => sql.prepare("SELECT balance_microusd FROM wallet_accounts WHERE user_id=?").get(owner)?.balance_microusd || 0;
-  return { sql, env, paddle, wallet, transactions, adjustments, apiCalls, checkout, get, event, signature, balance,
+  return { sql, env, paddle, wallet, transactions, adjustments, apiCalls, checkout, get, event, signature, balance, diagnostics,
     failNextPost() { failPost = true; }, invalidatePrice() { invalidPrice = true; }, unavailable() { apiUnavailable = true; }, posts: () => postCount,
+    failProvider(error) { providerFailure = error; }, failDatabase() { databaseFailure = true; }, redirectProvider(status) { redirectStatus = status; },
     complete(id) { transactions.get(id).status = "completed"; },
     age(id) { sql.prepare("UPDATE paddle_orders SET created_at=?,last_checked_at=0 WHERE id=?").run(new Date(Date.now() - 30_000).toISOString(), id); },
   };
 }
+
+test("secret formatting is normalized before constructing the Paddle Authorization header", async t => {
+  const f = await fixture(t); f.env.PADDLE_API_KEY = "  secret-api-key\n";
+  const result = await f.checkout();
+  assert.equal(result.status, 201); assert.equal(result.data.order.status, "checkout_ready"); assert.equal(f.posts(), 1);
+  assert.equal(f.diagnostics.length, 0);
+});
+
+test("Workers-compatible manual redirect mode rejects all redirects without following or creating an order", async t => {
+  const f = await fixture(t);
+  for (const status of [301, 302, 303, 307, 308]) {
+    const before = f.apiCalls.length; f.redirectProvider(status);
+    const result = await f.checkout();
+    assert.equal(result.status, 503); assert.equal(result.data.error.code, "paddle_unavailable");
+    assert.equal(f.apiCalls.length, before + 1); assert.equal(f.posts(), 0);
+    assert.equal(f.sql.prepare("SELECT COUNT(*) n FROM paddle_orders").get().n, 0);
+    assert.equal(f.balance(), 0);
+  }
+  assert.ok(f.apiCalls.every(call => new URL(call.url).origin === "https://api.paddle.com"));
+});
+
+test("unexpected pre-intent failures identify their stage without logging customer data, payloads or secrets", async t => {
+  const f = await fixture(t);
+  f.failProvider(new TypeError("fetch failed: secret-api-key alice@example.com private request body"));
+  const result = await f.checkout();
+  assert.equal(result.status, 503); assert.equal(f.posts(), 0);
+  assert.equal(f.sql.prepare("SELECT COUNT(*) n FROM paddle_orders").get().n, 0);
+  assert.deepEqual(JSON.parse(f.diagnostics[0]), { component: "paddle", stage: "checkout.read_price", errorType: "TypeError", category: "unexpected" });
+  assert.ok(!JSON.stringify(f.diagnostics).includes("secret-api-key")); assert.ok(!JSON.stringify(f.diagnostics).includes("alice"));
+  assert.ok(!JSON.stringify(result).includes("private request body"));
+  f.failDatabase();
+  await f.checkout();
+  assert.deepEqual(JSON.parse(f.diagnostics[1]), { component: "paddle", stage: "checkout.lookup_order", errorType: "Error", category: "database_schema" });
+  assert.ok(!JSON.stringify(f.diagnostics).includes("private_customer_table"));
+});
 
 test("production checkout requires explicit domain/scope approval and exposes no secret or price IDs", async t => {
   const f = await fixture(t), config = f.paddle.getPaddleConfig();

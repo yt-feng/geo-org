@@ -30,6 +30,26 @@ const equal = (a: string, b: string) => {
   return difference === 0;
 };
 
+/** Log only fixed stage/category labels: never request data, SQL, tokens or raw errors. */
+async function atPaddleStage<T>(stage: string, operation: () => Promise<T>): Promise<T> {
+  try { return await operation(); }
+  catch (cause) {
+    if (!(cause instanceof WalletError)) {
+      const error = cause as { name?: unknown; message?: unknown } | null;
+      const rawName = typeof error?.name === "string" ? error.name : "";
+      const errorType = ["Error", "TypeError", "SyntaxError", "RangeError", "AbortError", "TimeoutError"].includes(rawName) ? rawName : "UnknownError";
+      const message = typeof error?.message === "string" ? error.message : "";
+      const category = /no such (table|column)/i.test(message) ? "database_schema"
+        : /D1_TYPE_ERROR|D1_ERROR|SQLITE_|bind.*parameter|binding.*parameter/i.test(message) ? "database"
+        : /invalid.*header|header.*invalid|header.*newline/i.test(message) ? "header_format"
+        : /body.*(locked|used)|stream.*locked/i.test(message) ? "request_body"
+        : ["AbortError", "TimeoutError"].includes(errorType) ? "timeout" : "unexpected";
+      console.error(JSON.stringify({ component: "paddle", stage, errorType, category }));
+    }
+    throw cause;
+  }
+}
+
 export function getPaddleConfig(env: PaddleEnv = currentEnv()) {
   const environment = env.PADDLE_ENVIRONMENT === "sandbox" ? "sandbox" as const : "production" as const;
   const token = env.PADDLE_CLIENT_TOKEN?.trim() || "";
@@ -61,13 +81,16 @@ async function readBody(request: Request, maximum: number): Promise<string> {
 }
 
 async function paddleApi(path: string, env: PaddleEnv, body?: unknown): Promise<PaddleEnvelope> {
-  if (!env.PADDLE_API_KEY?.trim()) return fail("Payment verification is unavailable.", 503, "paddle_unavailable");
+  const apiKey = env.PADDLE_API_KEY?.trim();
+  if (!apiKey) return fail("Payment verification is unavailable.", 503, "paddle_unavailable");
   const base = apiBase(env.PADDLE_ENVIRONMENT || "production"), url = new URL(path, base);
   if (url.origin !== base) return fail("Invalid payment service response.", 503, "paddle_unavailable");
   const response = await fetch(url, { method: body === undefined ? "GET" : "POST", headers: {
-    Authorization: `Bearer ${env.PADDLE_API_KEY}`, "Paddle-Version": "1", "content-type": "application/json",
-  }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(15_000), redirect: "error" });
+    Authorization: `Bearer ${apiKey}`, "Paddle-Version": "1", "content-type": "application/json",
+  }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(15_000), redirect: "manual" });
   // Never surface the provider's payload or credentials to the customer.
+  // Workers does not implement redirect:'error'. Manual mode plus !ok rejects
+  // 3xx without forwarding Authorization to a redirect destination.
   if (!response.ok) return fail("The payment service is temporarily unavailable.", 503, "paddle_unavailable");
   const result = await response.json() as PaddleEnvelope;
   if (!result || !("data" in result)) return fail("Invalid payment service response.", 503, "paddle_unavailable");
@@ -167,27 +190,27 @@ async function reconcile(order: Order, env: PaddleEnv, event?: { id: string; typ
 async function createCheckout(request: Request, user: PortalUser) {
   const env = currentEnv(), config = getPaddleConfig(env);
   if (!request.headers.get("content-type")?.startsWith("application/json")) return fail("Submit JSON.", 415);
-  const input = object(JSON.parse(await readBody(request, 4000))), packageId = input.packageId, requestId = input.requestId;
+  const input = await atPaddleStage("checkout.parse_request", async () => object(JSON.parse(await readBody(request, 4000)))), packageId = input.packageId, requestId = input.requestId;
   const pack = config.packages.find(value => value.id === packageId);
   if (!pack || typeof requestId !== "string" || !/^[a-zA-Z0-9_-]{12,80}$/.test(requestId)) return fail("Choose a service package and a valid order reference.");
   const db = getD1();
-  const existing = await db.prepare("SELECT * FROM paddle_orders WHERE user_id=? AND request_id=?").bind(user.id, requestId).first<Order>();
+  const existing = await atPaddleStage("checkout.lookup_order", () => db.prepare("SELECT * FROM paddle_orders WHERE user_id=? AND request_id=?").bind(user.id, requestId).first<Order>());
   if (existing) {
     if (existing.package_id !== packageId || existing.environment !== config.environment) return fail("This order reference belongs to a different purchase.", 409, "paddle_order_conflict");
     return reply({ order: publicOrder(existing), reused: true });
   }
   if (!config.enabled) return fail(config.reason || "Paddle checkout is not available.", 503, "paddle_unavailable");
-  const recent = await db.prepare("SELECT COUNT(*) AS count FROM paddle_orders WHERE user_id=? AND created_at>?").bind(user.id, new Date(Date.now() - 3600_000).toISOString()).first<{count: number}>();
+  const recent = await atPaddleStage("checkout.count_orders", () => db.prepare("SELECT COUNT(*) AS count FROM paddle_orders WHERE user_id=? AND created_at>?").bind(user.id, new Date(Date.now() - 3600_000).toISOString()).first<{count: number}>());
   if ((recent?.count || 0) >= 20) return fail("Too many checkout requests. Please use your existing order.", 429, "paddle_rate_limited");
   const priceId = env[`PADDLE_PRICE_${pack.id as "20" | "50" | "100"}_ID`]!;
-  const price = object((await paddleApi(`/prices/${priceId}`, env)).data), unit = object(price.unit_price);
+  const price = object((await atPaddleStage("checkout.read_price", () => paddleApi(`/prices/${priceId}`, env))).data), unit = object(price.unit_price);
   if (price.id !== priceId || price.status !== "active" || price.billing_cycle !== null || price.trial_period !== null || price.tax_mode !== "external"
     || unit.currency_code !== "USD" || minorUnits(unit.amount) !== pack.amountUsd * 100
     || (Array.isArray(price.unit_price_overrides) && price.unit_price_overrides.length > 0))
     return fail("The service package is not configured correctly. Please contact support.", 503, "paddle_price_unavailable");
   const id = crypto.randomUUID(), at = new Date().toISOString(), binding = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-  const inserted = await db.prepare(`INSERT INTO paddle_orders(id,user_id,request_id,package_id,environment,price_id,amount_cents,credit_microusd,binding_secret,created_at,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,request_id) DO NOTHING RETURNING id`).bind(id, user.id, requestId, pack.id, config.environment, priceId, pack.amountUsd * 100, pack.creditMicrousd, binding, at, at).first();
+  const inserted = await atPaddleStage("checkout.insert_intent", () => db.prepare(`INSERT INTO paddle_orders(id,user_id,request_id,package_id,environment,price_id,amount_cents,credit_microusd,binding_secret,created_at,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,request_id) DO NOTHING RETURNING id`).bind(id, user.id, requestId, pack.id, config.environment, priceId, pack.amountUsd * 100, pack.creditMicrousd, binding, at, at).first());
   if (!inserted) {
     const repeated = await db.prepare("SELECT * FROM paddle_orders WHERE user_id=? AND request_id=?").bind(user.id, requestId).first<Order>();
     if (!repeated || repeated.package_id !== pack.id || repeated.environment !== config.environment) return fail("Order reference conflict.", 409, "paddle_order_conflict");
@@ -196,11 +219,11 @@ async function createCheckout(request: Request, user: PortalUser) {
   // Persist the intent BEFORE the only external POST. An ambiguous response is
   // never retried as a new transaction. GET recovery and webhooks reconcile it.
   try {
-    const transaction = object((await paddleApi("/transactions", env, {
+    const transaction = object((await atPaddleStage("checkout.create_transaction", () => paddleApi("/transactions", env, {
       items: [{ price_id: priceId, quantity: 1 }], currency_code: "USD", collection_mode: "automatic",
       custom_data: { tokvilo_order_id: id, tokvilo_user_id: user.id, tokvilo_binding: binding, tokvilo_scope: "api_usage" },
       checkout: { url: `${(env.PUBLIC_BASE_URL || "https://tokvilo.com").replace(/\/+$/, "")}/dashboard/wallet?lang=en&paddle_order=${id}` },
-    })).data);
+    }))).data);
     validateTransaction(transaction, (await findOrder(id))!);
     await db.prepare("UPDATE paddle_orders SET transaction_id=?,status='checkout_ready',updated_at=? WHERE id=? AND transaction_id IS NULL AND status='creating'").bind(transaction.id, new Date().toISOString(), id).run();
   } catch {
@@ -273,11 +296,11 @@ function errorResponse(cause: unknown) {
 
 export async function handlePaddleRequest(request: Request, action: "checkout" | "order", orderId?: string): Promise<Response> {
   try {
-    const user = await getPortalUser();
+    const user = await atPaddleStage("request.authenticate", () => getPortalUser());
     if (!user) return fail("Please sign in to continue.", 401, "login_required");
     if (request.method !== "GET" && request.headers.get("origin") !== new URL(request.url).origin) return fail("Please submit this request from Tokvilo.", 403, "origin_invalid");
-    await ensureUser(user);
-    const account = await getD1().prepare("SELECT status FROM users WHERE id=?").bind(user.id).first<{status: string}>();
+    await atPaddleStage("request.ensure_account", () => ensureUser(user));
+    const account = await atPaddleStage("request.read_account", () => getD1().prepare("SELECT status FROM users WHERE id=?").bind(user.id).first<{status: string}>());
     if (account?.status !== "active") return fail("This account is disabled.", 403, "account_disabled");
     if (action === "checkout" && request.method === "POST") return await createCheckout(request, user);
     if (action === "order" && request.method === "GET" && orderId) return await getOrder(orderId, user);

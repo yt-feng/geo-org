@@ -1,14 +1,15 @@
 # Tokvilo English payments: Paddle and enterprise bank transfer
 
-This document describes the implementation and its activation procedure. It is
-not evidence that Paddle approved Tokvilo or that a live customer payment passed.
+This document records approval, implementation and configuration separately. It
+does not establish that a live customer payment and its service grant succeeded.
 
-At the implementation checkpoint, the operator verified the existing live **BO**
-Paddle account, seller **342323**, through the signed-in Chrome session. Tokvilo
-was submitted for domain review and the dashboard reads **In review**. Production checkout therefore
-starts with `PADDLE_SALES_ENABLED=false`. Record the actual domain review outcome
-and product-scope confirmation before changing that flag. Creating products,
-prices, credentials or a webhook destination does not establish approval.
+The operator verified the existing live **BO** Paddle account, seller **342323**,
+through the signed-in Chrome session. The live dashboard now shows `tokvilo.com`
+as **Checkout approved** and **Apple Pay approved**. The deployment configuration
+sets `PADDLE_SALES_ENABLED=true`, `PADDLE_APPROVED_DOMAIN=tokvilo.com` and
+`PADDLE_APPROVED_PRODUCT_SCOPE=tokvilo_api_usage`. Runtime checkout still requires
+the correct live credentials and destination signing secret. These domain statuses
+do not claim that every model output has been reviewed or technically moderated.
 
 Remote setup verified during this implementation:
 
@@ -17,22 +18,51 @@ Remote setup verified during this implementation:
 - USD 50 price: `pri_01m5m3cpgs6f9nhqjh6g1y5ewx`.
 - USD 100 price: `pri_01m5m3eg4xq179jp1khn9tc257`.
 - All three prices are one-time USD prices, tax-exclusive, quantity one.
+- A dedicated live Tokvilo API key was created with `price.read`,
+  `transaction.read`, `transaction.write` and `adjustment.read` permissions.
+  The dashboard displays its expiry as **January 21, 2027, 10:06 AM**; the displayed
+  timezone was not recorded. Rotate it before that expiry and verify the new key
+  against the live API before retiring the old one.
+- A new live client-side token was created for Tokvilo. Credential values are
+  deliberately excluded from this document and the repository.
+- The live notification destination `https://tokvilo.com/api/billing/paddle/webhook`
+  is active with Platform and Simulation usage. It subscribes to
+  `transaction.completed`, `adjustment.created` and `adjustment.updated`.
 - D1 migrations `0020_paddle_billing.sql` and
   `0021_manual_wallet_adjustments.sql` were applied remotely and verified.
-- Worker version `e6d71ff2-6ea2-48a6-b9ae-24c16548a6cc` deployed the payment
-  routes, manual-credit administration, public policies and three price IDs,
-  with new Paddle sales disabled.
-- Public billing, terms, refund and privacy pages returned HTTP 200. The signed-in
-  English wallet showed Paddle packages disabled and the enterprise-transfer
-  request form, with no Chinese redemption purchase controls.
-- The current local suite passed 550 tests; build, lint, TypeScript checks and
-  whitespace validation passed. No live Paddle charge or webhook receipt has
-  been verified yet.
+- Production Worker version `a72374d7-1857-4c0f-bd30-60173870d85d`
+  receives 100% of production traffic, with new Paddle sales enabled and all three
+  credentials installed as encrypted production secrets.
+- Public billing, terms, refund and privacy pages returned HTTP 200. The public
+  Paddle configuration returned `enabled:true`, production mode and the three
+  correct packs. Unauthenticated checkout and unsigned webhook requests returned
+  HTTP 401.
+- An official Paddle simulation delivered a correctly signed request and received
+  HTTP 200 with `{"received":true,"ignored":true}`. It used `transaction.created`
+  to verify delivery and HMAC without granting credit. That event was temporarily
+  subscribed for this check, then removed; the destination has the three required
+  events listed above. Simulation ID: `ntfsim_01m5m5kcskce22md9d26782vg4`.
+- The signed-in English wallet opened the real production Paddle checkout for a
+  USD 20 package. The checkout showed the correct Tokvilo product and one-time
+  price. It was closed without entering customer/payment details or paying.
+  Remote D1 readback found one `checkout_ready` order, a Paddle transaction ID,
+  zero applied service credit and zero Paddle ledger entries. The existing
+  wallet balance was unchanged. English checkout and enterprise inquiry controls
+  were present without Chinese redemption purchase controls.
+- The current suite passed 553 tests; production build, scoped lint, TypeScript
+  and whitespace validation passed. A real paid transaction and resulting
+  service grant have **not** been exercised.
 
-At this checkpoint, `tokvilo.com` has been submitted and is **In review**. A
-Tokvilo API key has been prepared but not saved, pending the required action-time
-confirmation for creating access credentials. Credentials and live activation remain outstanding.
-The IDs above are catalogue references, not credentials or proof of approval.
+The first production checkout attempt exposed a Cloudflare Workers compatibility
+issue: `fetch` with `redirect:"error"` threw before reading the Paddle price. No
+order or transaction was created by that attempt. Paddle requests now use
+`redirect:"manual"` and reject non-success responses without following redirects
+or forwarding credentials. Regression tests model the Workers restriction and
+reject 301/302/303/307/308 responses. Safe diagnostics emit fixed stage, error-type
+and category labels only. Resuming the same request after deployment opened the
+successful unpaid checkout described above.
+
+The IDs above are catalogue references, not credentials.
 
 ## Product scope and customer promise
 
@@ -117,7 +147,7 @@ and [transaction creation reference](https://developer.paddle.com/api-reference/
 | --- | --- |
 | `PUBLIC_BASE_URL` | `https://tokvilo.com` |
 | `PADDLE_ENVIRONMENT` | `production`, or `sandbox` for an isolated test deployment |
-| `PADDLE_SALES_ENABLED` | Keep `false` until the remaining checks below are complete |
+| `PADDLE_SALES_ENABLED` | Current deployment configuration: `true`; configuration and approval gates still apply |
 | `PADDLE_APPROVED_DOMAIN` | `tokvilo.com`, only after actual domain approval |
 | `PADDLE_APPROVED_PRODUCT_SCOPE` | `tokvilo_api_usage`, only after the actual offered scope is accepted |
 | `PADDLE_CLIENT_TOKEN` | Live `live_…` or sandbox `test_…` token matching the environment |
