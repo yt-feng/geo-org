@@ -129,6 +129,7 @@ export function PublicLanding() {
       <p className="landing-catalog-note">{t('每个系列的模型、规格与可用状态，以模型市场展示为准。', 'See the model market for each family’s models, specifications and current availability.')}<Link href={href("/models?category=audio")}>{t('寻找音频模型', 'Explore audio models')} <Icon name="arrow-right" size={12} /></Link></p>
     </section>
 
+    <section className="landing-section"><div className="landing-selection-panel"><div><span className="landing-eyebrow">TOKVILO / FIND YOUR FIT</span><h2>{t("先说任务，让选择简单一点。", "Start with the task. Make the choice easier.")}</h2><p>{t("回答四个问题，聊聊具体要求。比较能力、不同代际与官方价格，再打开工作台。", "Answer four questions and share your requirements. Compare capabilities, generations and official prices before trying a model.")}</p></div><div><Link className="button button-secondary" href={href("/compare")}>{t("比较模型", "Compare models")}</Link><Link className="button button-primary" href={href("/advisor")}>{t("帮我选模型 →", "Help me choose →")}</Link></div></div></section>
     <section className="landing-section landing-journey">
       <div className="landing-section-heading"><div><span className="landing-eyebrow">FROM EXPLORATION TO CREATION</span><h2>{t('从发现，到真正用起来。', 'From discovery to your first request.')}</h2><p>{t('先选适合任务的模型，再决定如何使用。', 'Choose a model for your task, then make it part of your workflow.')}</p></div></div>
       <div className="landing-journey-grid">{[

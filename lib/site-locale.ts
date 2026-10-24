@@ -1,5 +1,5 @@
 export type SiteLocale = "zh" | "en";
-export const PUBLIC_SITE_PATHS = ["/", "/models", "/pricing", "/products", "/billing", "/blog", "/terms", "/privacy", "/refunds"] as const;
+export const PUBLIC_SITE_PATHS = ["/", "/models", "/pricing", "/products", "/billing", "/compare", "/advisor", "/blog", "/terms", "/privacy", "/refunds"] as const;
 const publicPaths = new Set<string>(PUBLIC_SITE_PATHS);
 export function isLocalizedPublicPath(path: string): boolean {
   return publicPaths.has(path) || /^\/blog\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(path);

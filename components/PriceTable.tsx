@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSiteLocale } from "./LocaleProvider";
 import { englishPriceText } from "@/lib/price-copy";
+import { OfficialPriceComparison } from "./OfficialPriceComparison";
 import { ProviderLogo } from "./ProviderLogo";
 import { groupModels, modelProvider, providerIdentity } from "@/lib/model-identity";
 import { modelRequestKind, modelWorkbenchUrl, type ModelCategory } from "@/lib/model-catalog";
@@ -85,6 +86,7 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
   const priceCard = (item: ModelPrice) => <section className="price-model" key={`${item.provider}:${item.model}`}>
     <div className="price-model-heading"><div><small>{serviceName(item.provider)}</small><h3>{copy(item.name || item.model)}</h3><code>{item.model}</code></div><Link href={href(modelWorkbenchUrl({ id: item.model, category: priceCategory(item.model, item.kind), upstream: item.provider === "tokenhub" || item.provider === "selected" ? item.provider : "apimart" }))}>{t("打开工作台 ↗", "Open playground ↗")}</Link></div>
     {item.billingReady === false ? <p className="price-caption">{item.provider === "selected" ? t("价格已列示 · 服务待开通", "Pricing listed · Activation pending") : t("价格已列示 · 接口暂未开放", "Pricing listed · Interface unavailable")}</p> : null}
+    {item.kind === "chat" ? <OfficialPriceComparison price={item} /> : null}
     {item.capabilitiesNotes?.map(note => <p className="price-caption" key={note}>{copy(note)}</p>)}
     <details className="price-rate-detail" open={!!model}>
       <summary>{t("查看完整费率", "View full rates")} <span>{item.rates.length} {t("个计费项", "rate items")}</span></summary>

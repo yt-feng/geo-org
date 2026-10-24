@@ -16,6 +16,7 @@ const modelIds=await load('../lib/model-id.ts');
 const requestKinds=await load('../lib/model-request-kind.ts');
 const modelIdentity=await load('../lib/model-identity.ts');
 const catalog=await load('../lib/model-catalog.ts',{'./tokenhub-model-reference':refs,'./model-directory-snapshot.json':{default:snapshot},'./model-id':modelIds,'./model-request-kind':requestKinds,'./model-identity':modelIdentity});
+const modelSelection=await load('../lib/model-selection-ui.ts',{'./model-catalog':catalog});
 const input={success:true,data:{models:{llm:[{id:'glm-5',name:'GLM-5'}],image:[{id:'gpt-image-2',name:'GPT Image 2'},{id:'grok-imagine-1.5-apimart',name:'Grok APIMart'}],video:[{id:'veo3.1-fast',name:'Veo'}],audio:[{id:'suno',name:'Suno'}]}}};
 const selectedObservedAt='2026-10-01T08:00:00.000Z';
 async function directoryWith(pricing, selected = [], fetch = async()=>input) {
@@ -124,7 +125,7 @@ const all=(n,p)=>Array.isArray(n)?n.flatMap(x=>all(x,p)):!n?.props?[]:[...(p(n)?
 test('switching categories clears incompatible manufacturer filters and shows scoped options',async()=>{
  const hooks=[];let index=0,tree;
  const ui=await load('../components/ModelMarket.tsx',{
-  '@/lib/model-catalog':catalog,'@/lib/brand-display':brandDisplay,'@/lib/model-identity':modelIdentity,'react/jsx-runtime':jsx,'next/link':{default:'a'},'./Icon':{Icon:()=>null},'./PriceTable':{PriceTable:()=>null},'./ProviderLogo':{ProviderLogo:()=>null},'./LocaleProvider':{useSiteLocale:()=>({isEnglish:false,t:zh=>zh,href:path=>path})},
+  '@/lib/model-catalog':catalog,'@/lib/model-selection-ui':modelSelection,'@/lib/brand-display':brandDisplay,'@/lib/model-identity':modelIdentity,'react/jsx-runtime':jsx,'next/link':{default:'a'},'./Icon':{Icon:()=>null},'./PriceTable':{PriceTable:()=>null},'./ProviderLogo':{ProviderLogo:()=>null},'./LocaleProvider':{useSiteLocale:()=>({isEnglish:false,t:zh=>zh,href:path=>path})},
   react:{useState(initial){const i=index++;if(!(i in hooks))hooks[i]=initial;return [hooks[i],v=>{hooks[i]=v;}];},useEffect(){},useRef:()=>({current:null}),useMemo:f=>f()}
  });
  const render=()=>{index=0;tree=ui.ModelMarket({catalog:parser.parseModelDirectory(input),live:true,observedAt:'2026-10-21T00:00:00.000Z',sources:[{service:'selected',observedAt:selectedObservedAt,live:false}]});};render();

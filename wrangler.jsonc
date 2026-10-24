@@ -6,6 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "vars": {
+    "MODEL_ADVISOR_ENABLED": "true",
     "PADDLE_ENVIRONMENT": "production",
     "PADDLE_SALES_ENABLED": "true",
     "PADDLE_APPROVED_DOMAIN": "tokvilo.com",

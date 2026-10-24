@@ -1,6 +1,9 @@
-/** Login may return to a model selection or owned payment order, never bearer material. */
+/** Login may return to model guidance, a model selection or an owned payment order, never bearer material. */
 export function safeAuthReturnPath(value: unknown): string | null {
-  if (typeof value !== "string" || value.length > 2048 || (!value.startsWith("/playground") && !value.startsWith("/dashboard/wallet"))) return null;
+  if (typeof value !== "string" || value.length > 2048) return null;
+  const path = value.split(/[?#]/, 1)[0];
+  if (path === "/advisor" || path === "/en/advisor") return path;
+  if (!value.startsWith("/playground") && !value.startsWith("/dashboard/wallet")) return null;
   try {
     const url = new URL(value, "https://tokvilo.invalid");
     if (url.origin !== "https://tokvilo.invalid" || !["/playground", "/dashboard/wallet"].includes(url.pathname)) return null;

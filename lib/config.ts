@@ -39,6 +39,7 @@ export type RuntimeEnv = {
   DEFAULT_USER_DAILY_LIMIT?: string;
   MAX_ACTIVE_KEYS_PER_USER?: string;
   SERVICE_ENABLED?: string;
+  MODEL_ADVISOR_ENABLED?: string;
   USD_CNY?: string;
   LIANDONG_SALES_ENABLED?: string;
   REDEMPTION_ENABLED?: string;

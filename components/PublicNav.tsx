@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Brand } from "@/components/Brand";
 import { Icon } from "@/components/Icon";
 import { LanguageSwitcher, useSiteLocale } from "./LocaleProvider";
+import { AdvisorLauncher } from "./AdvisorLauncher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function PublicNav() {
@@ -13,7 +14,7 @@ export function PublicNav() {
   const pathname = (usePathname() || "/").replace(/^\/en(?=\/|$)/, "") || "/";
   const [open, setOpen] = useState(false);
   return (
-    <header className="public-header">
+    <><header className="public-header">
       <Link href={href("/")} className="public-brand" aria-label={t("tokvilo 首页", "tokvilo home")}><Brand /></Link>
       <button className="public-menu-toggle" type="button" aria-label={open ? t("关闭导航", "Close navigation") : t("打开导航", "Open navigation")} aria-expanded={open} onClick={() => setOpen(!open)}><Icon name={open ? "close" : "menu"} size={20} /></button>
       <nav className={`public-navigation${open ? " is-open" : ""}`} aria-label={t("主导航", "Main navigation")}>
@@ -23,10 +24,10 @@ export function PublicNav() {
         <Link href={href("/billing")} aria-current={["/billing", "/terms", "/refunds", "/privacy"].includes(pathname) ? "page" : undefined} onClick={() => setOpen(false)}>{t("支付方式", "Payments")}</Link>
         <Link href={href("/dashboard/docs")} onClick={() => setOpen(false)}>{t("API 文档", "API docs")}</Link>
         <Link href={href("/blog")} aria-current={pathname === "/blog" || pathname.startsWith("/blog/") ? "page" : undefined} onClick={() => setOpen(false)}>{t("博客", "Blog")}</Link>
-        <Link href={href("/#faq")} onClick={() => setOpen(false)}>{t("帮助", "Help")}</Link>
+        <Link href={href("/advisor")} aria-current={["/advisor", "/compare"].includes(pathname) ? "page" : undefined} onClick={() => setOpen(false)}>{t("选型助手", "Model advisor")}</Link>
         <LanguageSwitcher /><ThemeToggle />
         <Link href={href("/dashboard")} className="public-account-link"><span className="public-account-avatar">t</span> {t("控制台", "Console")} <Icon name="arrow-up-right" size={13} /></Link>
       </nav>
-    </header>
+    </header><AdvisorLauncher /></>
   );
 }

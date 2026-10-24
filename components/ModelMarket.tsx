@@ -5,6 +5,7 @@ import Link from "next/link";
 import { serviceLabel } from "@/lib/brand-display";
 import { allModelCatalog, modelCategories, modelWorkbenchUrl, type CatalogModel, type ModelCategory, type ModelDirectorySource } from "@/lib/model-catalog";
 import { groupModels, modelFamily, providerIdentity, type ModelFamily } from "@/lib/model-identity";
+import { isChatModel, modelSelectionKey } from "@/lib/model-selection-ui";
 import { ProviderLogo } from "./ProviderLogo";
 import { Icon } from "./Icon";
 import { PriceTable } from "./PriceTable";
@@ -150,6 +151,7 @@ export function ModelMarket({ catalog = allModelCatalog, live = false, observedA
         <div className="model-card-top"><span className="model-category-label">{categoryName(model.category)}</span><span className={`model-availability${model.available === true && model.upstream !== "tokenhub" ? " model-availability-ready" : ""}`}><i />{statusLabel(model)}</span></div>
         <h4><button type="button" onClick={() => setDetail(model)}>{modelName(model.name)}</button></h4>
         <code className="model-exact-id" title={model.id}>{model.id}</code>
+        {isChatModel(model) ? <Link className="market-compare-link" href={href(`/compare?models=${encodeURIComponent(modelSelectionKey(model))}`)}>{t("比较能力与版本 ↗", "Compare capabilities & versions ↗")}</Link> : null}
         <div className="model-card-tags">{model.capabilities.map(item => <span key={item}>{capabilityName(item)}</span>)}</div>
       </div>
       <div className="model-card-footer"><span>{serviceName(model.upstream || "apimart")}</span><button className="model-detail-button" type="button" aria-label={t(`查看 ${model.name} · ${serviceName(model.upstream || "apimart")} 的价格与详情`, `View pricing and details for ${modelName(model.name)} · ${serviceName(model.upstream || "apimart")}`)} onClick={() => setDetail(model)}>{t("价格与详情", "Pricing & details")}<Icon name="arrow-right" size={14} /></button><Link className="model-detail-button" href={href(modelWorkbenchUrl(model))} aria-label={t(`打开 ${model.name} · ${serviceName(model.upstream || "apimart")} 的 Playground`, `Open playground for ${modelName(model.name)} · ${serviceName(model.upstream || "apimart")}`)}>Playground<Icon name="arrow-up-right" size={14} /></Link></div>
@@ -157,6 +159,7 @@ export function ModelMarket({ catalog = allModelCatalog, live = false, observedA
   }
 
   return <section className="market-catalog" aria-label={t("模型目录", "Model catalogue")}>
+    <div className="selection-market-banner"><div><h2>{t("型号太多，不知道选哪个？", "Too many models to choose from?")}</h2><p>{t("按任务获取建议，或者并排比较不同代际的能力与官方价格。", "Get a task-based shortlist or compare generations, capabilities and official prices.")}</p></div><div><Link className="button button-secondary" href={href("/compare")}>{t("比较模型", "Compare models")}</Link><Link className="button button-primary" href={href("/advisor")}>{t("帮我选模型 →", "Help me choose →")}</Link></div></div>
     <div className="market-browser-layout">
       <aside className="market-sidebar" aria-label={t("厂商与系列导航", "Provider and family navigation")}>
         <button type="button" className="market-sidebar-toggle" aria-expanded={navigationOpen} aria-controls="market-sidebar-navigation" onClick={() => setNavigationOpen(!navigationOpen)}><span><Icon name="list" size={20} />{filters.provider ? providerName(filters.provider) : t("浏览厂商与系列", "Browse providers & families")}{selectedFamily ? ` / ${familyName(selectedFamily)}` : ""}</span><Icon name="chevron-down" size={18} /></button>

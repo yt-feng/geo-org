@@ -43,6 +43,8 @@ async function fixture(payload, locale = 'zh', props = {}) {
       if (name === "@/lib/model-identity") return identity;
       if (name === "@/lib/model-catalog") return catalog;
       if (name === "./ProviderLogo") return {ProviderLogo:()=>null};
+      // This suite exercises the parent table; the real comparison leaf has separate SSR tests.
+      if (name === "./OfficialPriceComparison") return { OfficialPriceComparison: () => null };
       if (name === "./LocaleProvider") return {useSiteLocale:()=>({isEnglish:locale === 'en',t:(zh,en)=>locale === 'en' ? en : zh,href:p=>p})};
       if (name === "@/lib/price-copy") return priceCopyModule.exports;
       if (name === "@/lib/brand-display") return brandDisplay;

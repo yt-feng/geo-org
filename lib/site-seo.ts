@@ -13,6 +13,8 @@ const descriptions: Record<string, Record<SiteLocale, string>> = {
   "/pricing": { zh: "查看 tokvilo AI 模型服务的用量价格和计费说明，按需使用统一账户余额。", en: "Review tokvilo AI model usage prices and billing details. Pay for API and playground usage from one account balance." },
   "/products": { zh: "浏览 tokvilo 数字商品与服务，提交需求表单，24 小时内获得邮件回复。", en: "Browse tokvilo digital products and services. Submit an inquiry and receive an email reply within 24 hours." },
   "/billing": { zh: "了解 tokvilo API 服务用量包、在线支付和企业银行转账安排。", en: "Learn about tokvilo API service usage packs, online payments and enterprise bank transfer arrangements." },
+  "/compare": { zh: "并排比较 AI 模型不同版本的代码、数学、写作、创意、推理能力与官方价格。查看来源与适用条件。", en: "Compare AI model versions for coding, math, writing, creativity, reasoning and official prices with sources and conditions." },
+  "/advisor": { zh: "通过 tokvilo 模型选型问卷与 AI 对话，按任务、预算、上下文和输入需求获得模型建议。", en: "Find models for your task, budget, context and inputs with the tokvilo questionnaire and AI model advisor." },
   "/blog": { zh: "阅读 tokvilo 的 AI 模型、API 接入、工作台使用和用量计费指南。", en: "Read practical tokvilo guides to AI models, API integration, the playground and usage billing." },
   "/terms": { zh: "阅读 tokvilo 服务条款，了解账户、服务使用和支付安排。", en: "Read the tokvilo terms of service, including accounts, service usage and payment arrangements." },
   "/privacy": { zh: "了解 tokvilo 如何处理账户、服务使用与支持相关的数据。", en: "Learn how tokvilo handles data related to your account, service usage and support." },

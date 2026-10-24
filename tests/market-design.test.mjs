@@ -18,6 +18,7 @@ const refs = await load('../lib/tokenhub-model-reference.ts');
 const ids = await load('../lib/model-id.ts');
 const kinds = await load('../lib/model-request-kind.ts');
 const catalog = await load('../lib/model-catalog.ts', { './tokenhub-model-reference': refs, './model-directory-snapshot.json': { default: snapshot }, './model-id': ids, './model-request-kind': kinds, './model-identity': identity });
+const modelSelection = await load('../lib/model-selection-ui.ts', { './model-catalog': catalog });
 const selected = JSON.parse(await readFile(new URL('../lib/rkapi-catalog-snapshot.json', import.meta.url), 'utf8')).models.map(row => ({ id: row.id, name: row.name, provider: row.manufacturer, category: row.category, upstream: 'selected', available: false, capabilities: [row.category === 'image' ? '图像生成' : '文本生成'], description: '', docs: '/dashboard/docs?provider=selected' }));
 const fullCatalog = [...catalog.allModelCatalog, ...selected];
 const nodes = (node, predicate) => Array.isArray(node) ? node.flatMap(child => nodes(child, predicate)) : !node?.props ? [] : [...(predicate(node) ? [node] : []), ...nodes(node.props.children, predicate)];
@@ -28,7 +29,7 @@ async function harness({ models = fullCatalog, url = 'https://tokvilo.com/models
   const effects = [], listeners = new Map(), history = [], scrollCalls = [], focusCalls = [];
   const window = { get location() { return location; }, dispatchEvent(event) { listeners.get(event.type)?.(event); }, history: { state: { preserved: true }, pushState(state, _, path) { history.push(['push', state, path]); location = new URL(path, location); }, replaceState(state, _, path) { history.push(['replace', state, path]); location = new URL(path, location); } }, addEventListener(name, fn) { listeners.set(name, fn); }, removeEventListener(name) { listeners.delete(name); } };
   const ui = await load('../components/ModelMarket.tsx', {
-    '@/lib/model-catalog': catalog, '@/lib/brand-display': brandDisplay, '@/lib/model-identity': identity,
+    '@/lib/model-catalog': catalog, '@/lib/brand-display': brandDisplay, '@/lib/model-identity': identity, '@/lib/model-selection-ui': modelSelection,
     'react/jsx-runtime': jsx, 'next/link': { default: 'a' }, './Icon': { Icon: () => null }, './PriceTable': { PriceTable: () => null }, './ProviderLogo': { ProviderLogo: () => null },
     './LocaleProvider': { useSiteLocale: () => ({ isEnglish: english, locale: english ? 'en' : 'zh', t: (zh, en) => english ? en : zh, href: path => english ? `${path}${path.includes('?') ? '&' : '?'}lang=en` : path }) },
     react: {

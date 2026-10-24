@@ -16,6 +16,7 @@ async function load(path, mocks = {}, globals = {}) {
   return compiledModule.exports;
 }
 const returnPaths = await load("../lib/auth-return-path.ts");
+const { localizedHref } = await load("../lib/site-locale.ts");
 
 test("login destinations retain exact catalogue selections and only public workspace parameters", () => {
   for (const model of catalog.allModelCatalog) {
@@ -40,6 +41,17 @@ test("redirect validation rejects external destinations and removes malformed or
   assert.equal(returnPaths.safeAuthReturnPath("/playground?model=tenant%2Fmodel%3Av2&service=selected&category=text&lang=en"), "/playground?service=selected&model=tenant%2Fmodel%3Av2&category=text&lang=en");
 });
 
+test("advisor sign-in destinations allow only exact bilingual routes and remove all query and fragment material", () => {
+  for (const path of ["/advisor", "/en/advisor"]) {
+    assert.equal(returnPaths.safeAuthReturnPath(path), path);
+    assert.equal(returnPaths.safeAuthReturnPath(`${path}?lang=en&next=https://example.invalid&access_token=secret&email=private#refresh_token=secret`), path);
+    assert.equal(returnPaths.safeAuthReturnPath(`${path}#access_token=secret`), path);
+  }
+  for (const path of ["/advisor/", "/advisor/extra", "/en/advisor/extra", "/advisory", "/advisor/../advisor", "/en/../advisor", "/advisor\\\\example.invalid", "/%61dvisor", "//example.invalid/advisor", "https://example.invalid/en/advisor", `/advisor?${"x".repeat(2048)}`]) {
+    assert.equal(returnPaths.safeAuthReturnPath(path), null, path);
+  }
+});
+
 async function login(destination, english = false) {
   const loginUrl = new URL("https://tokvilo.com/login");
   if (destination !== undefined) loginUrl.searchParams.set("next", destination);
@@ -50,7 +62,7 @@ async function login(destination, english = false) {
     "react/jsx-runtime": jsx, "next/link": { default: "a" }, "@/components/Icon": { Icon: () => null },
     "@/lib/auth-return-path": returnPaths,
     "./LocaleProvider": { useSiteLocale: () => ({ isEnglish: english, t: (zh, en) => english ? en : zh,
-      href: path => { if (!english) return path; const url = new URL(path, "https://tokvilo.com"); url.searchParams.set("lang", "en"); return url.pathname + url.search; } }) },
+      href: path => localizedHref(path, english ? "en" : "zh") }) },
   }, {
     window: { location: { href: loginUrl.href, assign: value => assigned.push(value) } },
     FormData: class { get(name) { return name === "email" ? "test@example.invalid" : "test-value"; } },
@@ -67,6 +79,14 @@ test("successful login returns to the selected model and service, retaining Engl
   assert.equal(await login("/playground?service=selected&model=gpt-image-2&category=image&access_token=secret#refresh_token=secret", true),
     "/playground?service=selected&model=gpt-image-2&category=image&lang=en");
   assert.equal(await login("/playground?service=studio&model=glm-5&category=text"), "/playground?service=studio&model=glm-5&category=text");
+});
+
+test("successful advisor login returns to the requested page in the active language", async () => {
+  assert.equal(await login("/advisor?access_token=secret#refresh_token=secret"), "/advisor");
+  assert.equal(await login("/en/advisor?next=https://example.invalid&email=private#access_token=secret", true), "/en/advisor");
+  assert.equal(await login("/advisor", true), "/en/advisor");
+  assert.equal(await login("/en/advisor"), "/advisor");
+  assert.equal(await login("/advisor/../advisor", true), "/dashboard?lang=en");
 });
 
 test("ordinary login and untrusted next destinations retain the dashboard fallback", async () => {
