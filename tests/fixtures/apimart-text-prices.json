@@ -1,0 +1,447 @@
+{
+  "source": "https://apimart.ai/api/pricing/models/all",
+  "observedAt": "2026-10-20",
+  "models": [
+    {
+      "id": "gpt-4o",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 2,
+          "cached_input": 1,
+          "output": 8
+        },
+        "tier_count": 1,
+        "limits": {
+          "max_input_tokens": 128000,
+          "max_output_tokens": 16000,
+          "supports_cache_read": true,
+          "supports_cache_write": false
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "gpt-4o-mini",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 0.12,
+          "output": 0.48
+        },
+        "tier_count": 1
+      }
+    },
+    {
+      "id": "claude-fable-5",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 8,
+          "cached_input": 0.8,
+          "cache_write_5m": 10,
+          "cache_write_1h": 16,
+          "output": 40
+        },
+        "tier_count": 1,
+        "limits": {
+          "max_input_tokens": 1000000,
+          "max_output_tokens": 128000,
+          "supports_cache_read": true,
+          "supports_cache_write": true
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "claude-haiku-5-5",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 0.08,
+          "cached_input": 0.008,
+          "cache_write_5m": 0.1,
+          "cache_write_1h": 0.16,
+          "output": 0.4
+        },
+        "tier_count": 2,
+        "tiers": [
+          {
+            "up_to_input_tokens": 100000,
+            "input": 0.1,
+            "cached_input": 0.01,
+            "cache_write_5m": 0.125,
+            "cache_write_1h": 0.2,
+            "output": 0.5
+          },
+          {
+            "input": 0.5,
+            "cached_input": 0.05,
+            "cache_write_5m": 0.625,
+            "cache_write_1h": 1,
+            "output": 2.5
+          }
+        ],
+        "limits": {
+          "max_input_tokens": 1000000,
+          "max_output_tokens": 128000,
+          "supports_cache_read": true,
+          "supports_cache_write": true
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "claude-opus-4-6",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 4,
+          "cached_input": 0.4,
+          "cache_write_5m": 5,
+          "output": 8
+        },
+        "tier_count": 1,
+        "limits": {
+          "max_input_tokens": 1000000,
+          "max_output_tokens": 1000000,
+          "supports_cache_read": true,
+          "supports_cache_write": true
+        },
+        "extras": {
+          "google_web_search": {
+            "unit": "usd_per_1000_queries",
+            "price": 0
+          },
+          "tools": {
+            "google_web_search": {
+              "unit": "usd_per_1000_queries",
+              "price": 0
+            }
+          }
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "claude-opus-5",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 4,
+          "cached_input": 0.4,
+          "cache_write": 0,
+          "cache_write_5m": 5,
+          "cache_write_1h": 8,
+          "output": 20
+        },
+        "tier_count": 1,
+        "limits": {
+          "max_input_tokens": 128000,
+          "max_output_tokens": 16000,
+          "supports_cache_read": true,
+          "supports_cache_write": true
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "time_pricing": {
+          "calendar": "calendar_1",
+          "timezone": "UTC",
+          "base_window": "peak",
+          "current_window": "peak",
+          "current_rate": 1,
+          "next_switch_at": 1792504800,
+          "windows": [
+            {
+              "name": "peak",
+              "label": "高峰",
+              "rate": 1,
+              "weekdays": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "ranges": [
+                "00:00-14:00"
+              ]
+            },
+            {
+              "name": "off_peak",
+              "label": "低峰",
+              "rate": 0.5
+            }
+          ]
+        },
+        "effective_rates": {
+          "input": 0.3428568,
+          "cached_input": 0.0342856,
+          "output": 1.0285712
+        },
+        "tier_count": 1,
+        "limits": {
+          "max_input_tokens": 1000000,
+          "max_output_tokens": 393216,
+          "supports_cache_read": true,
+          "supports_cache_write": false
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "gemini-3.6-flash",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 1.2,
+          "cached_input": 0.12,
+          "output": 6
+        },
+        "tier_count": 1,
+        "limits": {
+          "max_input_tokens": 1050000,
+          "max_output_tokens": 65536,
+          "supports_cache_read": true,
+          "supports_cache_write": false
+        },
+        "extras": {
+          "google_web_search": {
+            "unit": "usd_per_1000_queries",
+            "price": 14,
+            "precharge_queries": 1
+          },
+          "tools": {
+            "google_web_search": {
+              "unit": "usd_per_1000_queries",
+              "price": 14,
+              "precharge_queries": 1
+            }
+          },
+          "context_cache_storage": {
+            "unit": "usd_per_million_token_hours",
+            "price": 1,
+            "billed_on": "explicit_cache_create",
+            "formula": "tokens / 1000000 * ttl_seconds / 3600 * price",
+            "supported_ttl": [
+              {
+                "ttl": "5m",
+                "seconds": 300,
+                "price_per_million_tokens": 0.08333333
+              },
+              {
+                "ttl": "1h",
+                "seconds": 3600,
+                "price_per_million_tokens": 1
+              }
+            ]
+          }
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "gpt-5.4",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 2,
+          "cached_input": 0.2,
+          "output": 12
+        },
+        "tier_count": 2,
+        "tiers": [
+          {
+            "up_to_input_tokens": 272000,
+            "input": 2.5,
+            "cached_input": 0.25,
+            "output": 15
+          },
+          {
+            "input": 5,
+            "cached_input": 0.5,
+            "output": 22.5
+          }
+        ],
+        "limits": {
+          "max_input_tokens": 1000000,
+          "max_output_tokens": 12800,
+          "supports_cache_read": true,
+          "supports_cache_write": false
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 3.2,
+          "cached_input": 0.32,
+          "cache_write": 4,
+          "output": 16
+        },
+        "tier_count": 2,
+        "tiers": [
+          {
+            "up_to_input_tokens": 272000,
+            "input": 4,
+            "cached_input": 0.4,
+            "cache_write": 5,
+            "output": 20
+          },
+          {
+            "input": 8,
+            "cached_input": 0.8,
+            "cache_write": 10,
+            "output": 30
+          }
+        ],
+        "limits": {
+          "max_input_tokens": 922000,
+          "max_output_tokens": 12800,
+          "supports_cache_read": true,
+          "supports_cache_write": true
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    },
+    {
+      "id": "qwen3.8-max",
+      "pricing": {
+        "unit": "usd_per_million_tokens",
+        "pricing_mode": "standard",
+        "price_factor": 0.8,
+        "time_rate": 1,
+        "effective_rates": {
+          "input": 1.3714288,
+          "cached_input": 0.1714288,
+          "explicit_cached_input": 0.1142856,
+          "cache_write": 1.7142856,
+          "output": 4.1142856
+        },
+        "tier_count": 1,
+        "limits": {
+          "max_input_tokens": 983616,
+          "max_output_tokens": 131072,
+          "supports_cache_read": true,
+          "supports_cache_write": true
+        },
+        "extras": {
+          "tools": {
+            "code_interpreter": {
+              "unit": "usd_per_1000_queries",
+              "price": 0
+            },
+            "image_search": {
+              "unit": "usd_per_1000_queries",
+              "price": 6.857143
+            },
+            "web_extractor": {
+              "unit": "usd_per_1000_queries",
+              "price": 0
+            },
+            "web_search": {
+              "unit": "usd_per_1000_queries",
+              "price": 0.571429,
+              "precharge_queries": 1
+            },
+            "web_search_image": {
+              "unit": "usd_per_1000_queries",
+              "price": 3.428571
+            }
+          }
+        }
+      },
+      "token_pricing": {
+        "model": {
+          "tier_metric": "input_tokens",
+          "tier_mode": "full_request"
+        }
+      }
+    }
+  ]
+}

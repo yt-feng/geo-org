@@ -1,117 +1,166 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
-import { Brand } from "@/components/Brand";
 import { Icon } from "@/components/Icon";
 import { PublicNav } from "@/components/PublicNav";
+import { ProviderLogo } from "@/components/ProviderLogo";
+import { useSiteLocale } from "@/components/LocaleProvider";
+import { PublicFooter } from "@/components/PublicFooter";
+import { BlogCard } from "@/components/BlogCard";
+import { blogPosts } from "@/lib/blog";
 
-const categories = ["全部模型", "文本", "图像", "视频", "数据"];
-const models = [
-  { name: "GPT Image", vendor: "OPENAI", mark: "◎", category: "图像", description: "从文字描述到视觉创作，探索图像生成与编辑。", color: "mint" },
-  { name: "Nano Banana", vendor: "GOOGLE", mark: "✦", category: "图像", description: "多模态理解与图像创作，连接想法与表达。", color: "blue" },
-  { name: "Claude", vendor: "ANTHROPIC", mark: "✳", category: "文本", description: "语言、推理与代码，构建你的智能工作流。", color: "orange" },
-  { name: "Kling 2.6", vendor: "KLING AI", mark: "◉", category: "视频", description: "将创意转化为动态影像，探索视频生成。", color: "white" },
-  { name: "Veo 3.1", vendor: "GOOGLE", mark: "▷", category: "视频", description: "面向场景与叙事的生成式视频能力。", color: "blue" },
-  { name: "TikHub", vendor: "DATA API", mark: "↗", category: "数据", description: "统一访问已配置的数据接口与平台能力。", color: "pink" },
-];
+const families = [
+  { name: "GPT", provider: "OPENAI", vendor: "OpenAI", family: "gpt", category: "text", description: "从日常对话到推理与代码，在同一系列中比较不同代际。", tags: ["对话", "推理", "编程"] },
+  { name: "Claude", provider: "ANTHROPIC", vendor: "Anthropic", family: "claude", category: "text", description: "写作、分析与开发，按任务选择适合的模型规格。", tags: ["写作", "分析", "编程"] },
+  { name: "Gemini", provider: "GOOGLE", vendor: "Google", family: "gemini", category: "text", description: "从文本到多模态理解，集中浏览 Gemini 系列。", tags: ["多模态", "理解", "推理"] },
+  { name: "DeepSeek", provider: "DEEPSEEK", vendor: "DeepSeek", family: "deepseek", category: "text", description: "对话与推理模型，比较不同版本的能力和价格。", tags: ["对话", "推理", "代码"] },
+  { name: "Qwen", provider: "ALIBABA", vendor: "Alibaba", family: "qwen", category: "text", description: "通用对话、代码与多模态，探索通义千问模型家族。", tags: ["中文", "代码", "多模态"] },
+  { name: "GLM", provider: "ZHIPU", vendor: "Zhipu AI", family: "glm", category: "text", description: "中文表达与通用推理，在 GLM 系列中找到合适的选择。", tags: ["中文", "对话", "推理"] },
+  { name: "GPT Image", provider: "OPENAI", vendor: "OpenAI", family: "gpt-image", category: "image", description: "将文字描述转化为图像，探索生成与编辑能力。", tags: ["图像生成", "图像编辑"] },
+  { name: "Gemini Image", provider: "GOOGLE", vendor: "Google", family: "gemini-image", category: "image", description: "结合文字与参考图，寻找适合视觉创作的模型。", tags: ["图像生成", "多模态"] },
+  { name: "FLUX", provider: "BLACK FOREST LABS", vendor: "Black Forest Labs", family: "flux", category: "image", description: "集中比较 FLUX 系列的图像生成与编辑规格。", tags: ["图像生成", "图像编辑"] },
+  { name: "Sora", provider: "OPENAI", vendor: "OpenAI", family: "sora", category: "video", description: "从提示词与参考素材开始，探索动态画面的创作。", tags: ["视频生成", "视觉叙事"] },
+  { name: "Veo", provider: "GOOGLE", vendor: "Google", family: "veo", category: "video", description: "围绕场景与镜头表达，比较 Veo 系列的生成规格。", tags: ["视频生成", "场景创作"] },
+  { name: "Kling", provider: "KUAISHOU", vendor: "Kuaishou", family: "kling", category: "video", description: "从静态灵感到动态影像，浏览可灵的视频模型。", tags: ["视频生成", "图生视频"] },
+  { name: "Wan", provider: "ALIBABA", vendor: "Alibaba", family: "wan", category: "video", description: "将文字与图像转换为视频，查看万相系列各代产品。", tags: ["视频生成", "图生视频"] },
+] as const;
 
-function DashboardPreview() {
-  return (
-    <div className="landing-console-preview" aria-label="ECO-GEO 控制台界面预览，图表为示意">
-      <aside className="landing-preview-sidebar">
-        <Brand />
-        <div className="landing-preview-switch"><span>控制台</span><span>PLAYGROUND</span></div>
-        {[["grid", "控制台"], ["key", "API 密钥"], ["activity", "调用记录"], ["chart", "用量统计"], ["book", "API 文档"], ["settings", "服务设置"]].map(([icon, label], index) => <div className={`landing-preview-link${index === 0 ? " active" : ""}`} key={label}><Icon name={icon} size={15} />{label}</div>)}
-        <span className="landing-preview-caption">INTERFACE PREVIEW</span>
-      </aside>
-      <div className="landing-preview-content">
-        <div className="landing-preview-welcome"><div><h3>服务与支持</h3><p>模型、数据、API 文档与调用管理集中在同一个控制台。</p></div><span>API 文档</span></div>
-        <div className="landing-preview-period"><span className="active">今天</span><span>昨天</span><span>近 7 天</span><span>近 30 天</span><small>界面预览</small></div>
-        <div className="landing-preview-metrics">{["今日调用", "调用成功率", "剩余额度", "累计请求", "请求延迟", "已创建密钥"].map((label, i) => <div key={label}><span>{label}</span><strong>—</strong><svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d={i % 2 ? "M0 35 L12 32 L24 32 L36 25 L48 28 L60 20 L72 11 L84 15 L100 2" : "M0 35 L14 24 L28 28 L42 15 L56 20 L70 7 L84 12 L100 1"} /></svg></div>)}</div>
-        <div className="landing-preview-charts"><div className="landing-preview-chart"><h3>调用趋势</h3><p>统一查看你的 API 用量</p><div className="landing-preview-bars">{[18, 38, 26, 74, 53, 86, 64, 33].map((height, i) => <i style={{ height: `${height}%` }} key={i} />)}</div></div><div className="landing-preview-chart"><h3>服务分布</h3><p>多种能力，一个入口</p><div className="landing-preview-donut-row"><div className="landing-preview-donut"><span>API</span></div><div className="landing-preview-legend"><span>图像生成</span><span>语言模型</span><span>数据接口</span></div></div></div></div>
-        <div className="landing-preview-table"><h3>服务目录</h3><div><span>服务</span><span>协议</span><span>管理</span></div><div><span>APIMart</span><span>REST API</span><span>统一配置</span></div><div><span>TikHub</span><span>REST API</span><span>统一配置</span></div></div>
-      </div>
-    </div>
-  );
-}
-
+const descriptionEnglish: Record<typeof families[number]["name"], string> = {
+  "GPT": "Compare generations for everyday conversation, reasoning and code.",
+  "Claude": "Find the right model size for writing, analysis and development.",
+  "Gemini": "Explore the Gemini family, from text to multimodal understanding.",
+  "DeepSeek": "Compare versions for conversation and reasoning, with clear pricing.",
+  "Qwen": "Discover Qwen models for conversation, code and multimodal tasks.",
+  "GLM": "Explore GLM models for Chinese-language tasks and general reasoning.",
+  "GPT Image": "Turn descriptions into images and explore generation and editing.",
+  "Gemini Image": "Create with text and reference images using the Gemini image family.",
+  "FLUX": "Compare image generation and editing options across the FLUX family.",
+  "Sora": "Explore moving-image creation with prompts and reference material.",
+  "Veo": "Compare Veo models for scenes, shots and visual storytelling.",
+  "Kling": "Bring still ideas into motion with the Kling video family.",
+  "Wan": "Explore Wan generations for text-to-video and image-to-video creation."
+};
+const tagEnglish: Record<string, string> = {
+  "对话": "Chat",
+  "推理": "Reasoning",
+  "编程": "Coding",
+  "写作": "Writing",
+  "分析": "Analysis",
+  "多模态": "Multimodal",
+  "理解": "Understanding",
+  "代码": "Code",
+  "中文": "Chinese",
+  "图像生成": "Generation",
+  "图像编辑": "Editing",
+  "视频生成": "Video",
+  "视觉叙事": "Storytelling",
+  "场景创作": "Scenes",
+  "图生视频": "Image to video"
+};
+const categoryEnglish = { text: "Chat & reasoning", image: "Image creation", video: "Video generation" };
+const categories = [{ id: "text", name: "对话与推理", icon: "message" }, { id: "image", name: "图像创作", icon: "image" }, { id: "video", name: "视频生成", icon: "video" }] as const;
+const familyLogos: Record<string, string> = { claude: "claude", gemini: "gemini", "gemini-image": "gemini", qwen: "qwen", flux: "flux" };
+const featuredProviders = families.slice(0, 6);
+const familyHref = (family: typeof families[number]) => `/models?provider=${encodeURIComponent(family.provider)}&family=${family.family}&category=${family.category}`;
 const codeSamples = {
-  cURL: `curl "https://api.eco-geo.org/api/v1/ENDPOINT" \\
-  -H "Authorization: Bearer $ECO_GEO_API_KEY"`,
-  Python: `import os\nimport requests\n\nresponse = requests.get(\n    "https://api.eco-geo.org/api/v1/ENDPOINT",\n    headers={\n        "Authorization": f"Bearer {os.environ['ECO_GEO_API_KEY']}"\n    },\n)\nprint(response.json())`,
-  JavaScript: `const response = await fetch(\n  "https://api.eco-geo.org/api/v1/ENDPOINT",\n  {\n    headers: {\n      Authorization: \`Bearer \${process.env.ECO_GEO_API_KEY}\`,\n    },\n  },\n);\nconst data = await response.json();`,
+  cURL: `curl "https://tokvilo.com/api/model-catalog"`,
+  Python: `import requests\n\nresponse = requests.get(\n    "https://tokvilo.com/api/model-catalog",\n    timeout=30,\n)\nresponse.raise_for_status()\nmodels = response.json()["models"]`,
+  JavaScript: `const response = await fetch(\n  "https://tokvilo.com/api/model-catalog"\n);\nif (!response.ok) throw new Error("Model catalogue unavailable");\nconst { models } = await response.json();`,
 };
 
+function ModelExplorer() {
+  const { t, href } = useSiteLocale();
+  return <div className="landing-explorer" aria-label={t("按模型系列探索", "Explore model families")}>
+    <div className="landing-explorer-head"><span><Icon name="layers" size={16} /> {t('模型系列', 'Model families')}</span><span>DISCOVER</span></div>
+    {families.slice(0, 3).map(family => <Link href={href(familyHref(family))} className="landing-explorer-row" key={family.family}>
+      <span className="landing-logo-tile"><ProviderLogo provider={familyLogos[family.family] || family.provider} size={30} /></span>
+      <div><span className="landing-explorer-vendor">{family.vendor}</span><h2>{family.name}</h2><p>{family.tags.map(tag => t(tag, tagEnglish[tag])).join(" · ")}</p></div>
+      <span className="landing-explorer-arrow"><Icon name="arrow-up-right" size={20} /></span>
+    </Link>)}
+    <Link href={href("/models")} className="landing-explorer-foot"><span>{t('按系列比较代际、规格与价格', 'Compare generations, specifications and prices')}</span><Icon name="arrow-right" size={15} /></Link>
+  </div>;
+}
+
 export function PublicLanding() {
-  const [category, setCategory] = useState("全部模型");
+  const { t, href, locale } = useSiteLocale();
+  const [category, setCategory] = useState<typeof categories[number]["id"]>("text");
   const [language, setLanguage] = useState<keyof typeof codeSamples>("cURL");
   const [copied, setCopied] = useState(false);
-  const visibleModels = category === "全部模型" ? models : models.filter((model) => model.category === category);
+  const visibleFamilies = families.filter(family => family.category === category);
 
   async function copyCode() {
-    try { await navigator.clipboard.writeText(codeSamples[language]); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { setCopied(false); }
+    try {
+      await navigator.clipboard.writeText(codeSamples[language]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch { setCopied(false); }
   }
 
-  return (
-    <main className="public-site">
-      <PublicNav />
-      <div className="landing-hero-stage">
-        <section className="landing-hero">
-          <div className="landing-hero-copy">
-            <h1>一个 AI API<br />连接全球模型<br />与数据能力</h1>
-            <p>通过 ECO-GEO，将 AI 模型与数据接口集中到一个工作空间。统一管理上游配置、调用凭证与用量，让团队专注于把想法构建成产品。</p>
-            <div className="landing-hero-actions"><Link href="/dashboard" className="button button-primary">开始使用 <Icon name="arrow-right" size={16} /></Link><Link href="/dashboard/docs" className="button button-secondary">查看文档</Link><Link href="/playground" className="button button-secondary landing-tools-link">PLAYGROUND <span>NEW</span></Link></div>
-            <span className="landing-private-note"><Icon name="lock" size={12} />文档与调用凭证不对外公开</span>
-          </div>
-          <DashboardPreview />
-        </section>
-      </div>
-
-      <section className="landing-providers" aria-label="模型与数据生态"><span className="landing-provider-openai">◎ OpenAI</span><span className="landing-provider-anthropic">ANTHROPIC</span><span className="landing-provider-google">Google <b>✦</b></span><span className="landing-provider-deepseek">deepseek</span><span className="landing-provider-xai">𝕏 AI</span><span className="landing-provider-tikhub">TikHub <sup>↗</sup></span></section>
-
-      <section className="landing-section landing-platform">
-        <div className="landing-section-title"><span className="landing-eyebrow">ONE API. MORE POSSIBILITIES.</span><h2>定义你的 AI API 聚合层</h2><p>从模型探索到服务配置，在同一个工作空间里完成。</p></div>
-        <div className="landing-feature-grid">
-          <article className="landing-feature-card"><div className="landing-feature-visual landing-network"><div className="landing-network-center"><Brand compact /></div>{["GPT", "Claude", "Gemini", "Veo", "Sora", "TikHub"].map((name, i) => <span className={`landing-network-node node-${i}`} key={name}>{name}</span>)}</div><div className="landing-feature-copy"><span>01 / CONNECT</span><h3>一个入口，连接多种能力</h3><p>将 APIMart 与已有数据服务集中管理。模型探索、数据访问与文档，从这里开始。</p></div></article>
-          <article className="landing-feature-card"><div className="landing-feature-visual landing-key-visual"><span><Icon name="key" size={15} /> Production key <i /></span><div>eco_••••••••••••••••••••</div><small><Icon name="lock" size={12} /> 服务端加密存储上游凭证</small></div><div className="landing-feature-copy"><span>02 / CONTROL</span><h3>让每一次接入清晰可控</h3><p>在控制台管理 API 密钥与上游配置。权限与凭证各司其职，协作更简单。</p></div></article>
-          <article className="landing-feature-card"><div className="landing-feature-visual landing-observe-visual"><div><span>API USAGE</span><b>↗</b></div><svg viewBox="0 0 300 100" aria-hidden="true"><defs><linearGradient id="landingChartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".14" /><stop offset="100%" stopColor="currentColor" stopOpacity="0" /></linearGradient></defs><path d="M0 90 L30 75 L60 80 L90 52 L120 60 L150 32 L180 43 L210 17 L240 28 L270 5 L300 14 L300 100 L0 100Z" fill="url(#landingChartFill)" /><path d="M0 90 L30 75 L60 80 L90 52 L120 60 L150 32 L180 43 L210 17 L240 28 L270 5 L300 14" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg><small>请求 · 成功率 · 额度</small></div><div className="landing-feature-copy"><span>03 / OBSERVE</span><h3>调用发生什么，一目了然</h3><p>查看真实请求记录和用量趋势，掌握调用状态，让日常管理更直接。</p></div></article>
+  return <main className="public-site" lang={locale}>
+    <PublicNav />
+    <div className="landing-hero-stage">
+      <section className="landing-hero">
+        <div className="landing-hero-copy">
+          <span className="landing-eyebrow"><span className="landing-brand-dot" /> TOKVILO / AI MODEL WORKSPACE</span>
+          <h1>{t('选对模型，', 'Find your model.')}<br /><span>{t('让想法成形。', 'Create what’s next.')}</span></h1>
+          <p>{t('按厂商和系列探索 AI 模型，比较不同代际、能力与价格。选好后进入工作台试用，或接入你的应用。', 'Explore AI models by creator and family. Compare generations, capabilities and prices, then try a model in the workspace or connect it to your app.')}</p>
+          <div className="landing-hero-actions"><Link href={href("/models")} className="button button-primary">{t('探索模型', 'Explore models')} <Icon name="arrow-right" size={16} /></Link><Link href={href("/dashboard")} className="button button-secondary">{t('进入控制台', 'Open dashboard')} <Icon name="arrow-up-right" size={15} /></Link></div>
+          <div className="landing-hero-note"><span>{t('公开浏览价格', 'Public pricing')}</span><i /><span>{t('按量使用 API', 'Usage-based APIs')}</span><i /><span>{t('统一账户管理', 'One workspace')}</span></div>
         </div>
+        <ModelExplorer />
       </section>
+    </div>
 
-      <section className="landing-section landing-models" id="models">
-        <div className="landing-section-title"><span className="landing-eyebrow">EXPLORE THE POSSIBILITIES</span><h2>为下一个想法，找到合适的模型</h2><p>探索 APIMart 模型生态与已有数据服务。</p></div>
-        <div className="landing-model-toolbar"><div className="landing-tabs" aria-label="模型类型">{categories.map((item) => <button type="button" className={category === item ? "active" : ""} onClick={() => setCategory(item)} aria-pressed={category === item} key={item}>{item}</button>)}</div><Link href="/models">查看全部模型 <Icon name="arrow-up-right" size={15} /></Link></div>
-        <div className="landing-model-grid">{visibleModels.map((model) => <Link href="/models" className="landing-model-card" key={model.name}><div className="landing-model-art"><Image src={`/model-art/model-${String(models.indexOf(model) + 1).padStart(2, "0")}.webp`} alt="" width={828} height={828} unoptimized /><span>{model.category}</span></div><div className="landing-model-card-content"><div className="landing-model-top"><span className={`landing-model-mark ${model.color}`}>{model.mark}</span><span className="landing-model-vendor">{model.vendor}</span></div><h3>{model.name}</h3><p>{model.description}</p><span className="landing-model-directory">模型能力目录</span></div><div className="landing-model-bottom"><Icon name="arrow-right" size={14} /> 查看详情</div></Link>)}</div>
-        <p className="landing-catalog-note">以上为能力目录，具体可用模型以已配置上游为准。</p>
-      </section>
+    <section className="landing-providers" aria-label={t("按模型厂商浏览", "Browse model creators")}>
+      <p>{t('熟悉的模型家族，一个探索入口', 'The model families you know. One place to explore.')}</p>
+      <div>{featuredProviders.map(family => <Link key={family.provider} href={href(`/models?provider=${family.provider}`)}><ProviderLogo provider={familyLogos[family.family] || family.provider} size={27} /><span>{family.name === "GPT" ? "OpenAI" : family.name}</span></Link>)}</div>
+    </section>
 
-      <section className="landing-section landing-integration" id="integration">
-        <div className="landing-integration-copy"><span className="landing-eyebrow">BUILT FOR DEVELOPERS</span><h2>从第一行代码，<br />到第一次调用。</h2><p>熟悉的 HTTP 接口，清晰的接入路径。</p><ol><li><span>01</span><div><h3>创建账户</h3><p>登录你的 ECO-GEO 工作空间。</p></div></li><li><span>02</span><div><h3>生成 API 密钥</h3><p>进入控制台，创建并妥善保存调用凭证。</p></div></li><li><span>03</span><div><h3>查阅文档，发起请求</h3><p>将 ENDPOINT 替换为文档中已开通的接口路径。</p></div></li></ol><Link href="/dashboard/docs">阅读接入文档 <Icon name="arrow-right" size={16} /></Link></div>
-        <div className="landing-code-window"><div className="landing-code-title"><span><i /><i /><i /></span><small>your-first-request</small></div><div className="landing-code-toolbar"><div className="landing-code-tabs">{(Object.keys(codeSamples) as (keyof typeof codeSamples)[]).map((item) => <button key={item} type="button" className={language === item ? "active" : ""} onClick={() => setLanguage(item)}>{item}</button>)}</div><button type="button" onClick={copyCode} aria-label="复制代码"><Icon name={copied ? "check" : "copy"} size={15} />{copied ? "已复制" : "复制"}</button></div><pre><code>{codeSamples[language]}</code></pre><div className="landing-code-footer"><span><Icon name="terminal" size={13} /> HTTP / REST</span><span>使用你自己的 API Key</span></div></div>
-      </section>
+    <section className="landing-section landing-families" id="models">
+      <div className="landing-section-heading"><div><span className="landing-eyebrow">FIND YOUR MODEL</span><h2>{t('从熟悉的系列开始。', 'Start with a familiar family.')}</h2><p>{t('同一家族集中展示，不同代际并排比较。', 'Explore each family and compare its generations side by side.')}</p></div><Link className="landing-text-link" href={href("/models")}>{t('浏览全部模型', 'Browse all models')} <Icon name="arrow-up-right" size={16} /></Link></div>
+      <div className="landing-tabs" aria-label={t("模型用途", "Model capabilities")}>{categories.map(item => <button type="button" key={item.id} aria-pressed={category === item.id} className={category === item.id ? "active" : ""} onClick={() => setCategory(item.id)}><Icon name={item.icon} size={15} />{t(item.name, categoryEnglish[item.id])}</button>)}</div>
+      <div className="landing-family-grid">{visibleFamilies.map(family => <Link className="landing-family-card" href={href(familyHref(family))} key={`${family.provider}:${family.family}`}>
+        <div className="landing-family-top"><span className="landing-logo-tile"><ProviderLogo provider={familyLogos[family.family] || family.provider} size={30} /></span><span>{family.vendor}</span><Icon name="arrow-up-right" size={18} /></div>
+        <h3>{family.name}</h3><p>{t(family.description, descriptionEnglish[family.name])}</p>
+        <div className="landing-family-tags">{family.tags.map(tag => <span key={tag}>{t(tag, tagEnglish[tag])}</span>)}</div>
+        <div className="landing-family-bottom">{t('查看系列与各代模型', 'Explore this family')} <Icon name="arrow-right" size={15} /></div>
+      </Link>)}</div>
+      <p className="landing-catalog-note">{t('每个系列的模型、规格与可用状态，以模型市场展示为准。', 'See the model market for each family’s models, specifications and current availability.')}<Link href={href("/models?category=audio")}>{t('寻找音频模型', 'Explore audio models')} <Icon name="arrow-right" size={12} /></Link></p>
+    </section>
 
-      <section className="landing-section landing-benefits"><div className="landing-section-title"><span className="landing-eyebrow">YOUR WORKSPACE, SIMPLIFIED</span><h2>把复杂留给平台，<br />把时间留给创造。</h2></div><div className="landing-benefit-grid">{[
-        ["layers", "统一工作空间", "AI 模型与数据服务，在同一套 ECO-GEO 品牌与导航下管理。"],
-        ["key", "独立密钥管理", "为不同应用创建调用密钥，按需停用，清晰管理访问。"],
-        ["activity", "可追溯的调用", "查看请求路径、状态与响应耗时，快速了解调用情况。"],
-        ["sliders", "可配置的上游", "在后台填写 APIMart API Key，验证连接并读取模型目录。"],
-        ["chart", "透明的用量", "实际调用数据与每日额度集中展示，使用情况始终可见。"],
-        ["book", "专属接口文档", "登录后查看已开通的接口目录和参数，按文档直接接入。"],
-      ].map(([icon, title, body]) => <article key={title}><Icon name={icon} size={22} /><h3>{title}</h3><p>{body}</p></article>)}</div></section>
+    <section className="landing-section"><div className="landing-selection-panel"><div><span className="landing-eyebrow">TOKVILO / FIND YOUR FIT</span><h2>{t("先说任务，让选择简单一点。", "Start with the task. Make the choice easier.")}</h2><p>{t("回答四个问题，聊聊具体要求。比较能力、不同代际与官方价格，再打开工作台。", "Answer four questions and share your requirements. Compare capabilities, generations and official prices before trying a model.")}</p></div><div><Link className="button button-secondary" href={href("/compare")}>{t("比较模型", "Compare models")}</Link><Link className="button button-primary" href={href("/advisor")}>{t("帮我选模型 →", "Help me choose →")}</Link></div></div></section>
+    <section className="landing-section landing-journey">
+      <div className="landing-section-heading"><div><span className="landing-eyebrow">FROM EXPLORATION TO CREATION</span><h2>{t('从发现，到真正用起来。', 'From discovery to your first request.')}</h2><p>{t('先选适合任务的模型，再决定如何使用。', 'Choose a model for your task, then make it part of your workflow.')}</p></div></div>
+      <div className="landing-journey-grid">{[
+        { step: "01", icon: "layers", title: t("找到合适的模型", "Find your model"), text: t("按厂商、系列和用途浏览，在同一视图比较不同代际。", "Browse by creator, family and task. Compare generations in one view."), href: "/models", action: t("浏览模型", "Browse models") },
+        { step: "02", icon: "sliders", title: t("看价格，再试用", "Check prices, then try it"), text: t("查看模型售价与计费单位，进入对应工作台，确认金额后发起生成。", "Review the price and billing unit, open the model’s workspace, and confirm the quote before generating."), href: "/pricing", action: t("查看价格", "See pricing") },
+        { step: "03", icon: "code", title: t("接入自己的应用", "Connect your application"), text: t("创建 tokvilo API 密钥，按模型文档接入，在控制台查看调用与用量。", "Create a tokvilo API key, follow the model’s documentation and track requests in your dashboard."), href: "/dashboard/docs", action: t("阅读 API 文档", "Read API docs") },
+      ].map(item => <article key={item.step}><div className="landing-journey-top"><Icon name={item.icon} size={23} /><span>{item.step}</span></div><h3>{item.title}</h3><p>{item.text}</p><Link className="landing-text-link" href={href(item.href)}>{item.action}<Icon name="arrow-right" size={14} /></Link></article>)}</div>
+    </section>
 
-      <section className="landing-section landing-faq" id="faq"><div className="landing-section-title"><span className="landing-eyebrow">QUESTIONS, ANSWERED</span><h2>常见问题</h2></div><div className="landing-faq-list">{[
-        ["ECO-GEO 是什么？", "ECO-GEO 是你的统一 API 工作空间，用于管理已有数据服务、APIMart 上游配置、成员密钥和调用用量。"],
-        ["如何接入 APIMart？", "管理员登录后，在服务设置中填写 APIMart API Key。保存时会验证凭证，随后可测试连接和获取模型目录。实际模型执行以控制台展示的接入状态为准。"],
-        ["原来的 TikHub 数据接口还可以使用吗？", "可以。已有数据接口继续通过 ECO-GEO 的统一入口访问，具体路径、参数与可用权限请查看登录后的 API 文档。"],
-        ["如何开始使用 API？", "注册并登录账户，在 API 密钥页创建调用凭证，再按照接口文档提交请求。管理员可在后台查看上游配置和成员使用情况。"],
-        ["上游 API Key 会展示给其他成员吗？", "不会。上游凭证由管理员配置，在服务端加密保存；控制台只显示配置状态及部分掩码。成员使用各自的 ECO-GEO 调用密钥。"],
-      ].map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span><Icon name="plus" size={18} /></span></summary><p>{answer}</p></details>)}</div></section>
+    <section className="landing-section landing-integration" id="integration">
+      <div className="landing-integration-copy"><span className="landing-eyebrow">BUILT FOR DEVELOPERS</span><h2>{t('从一份模型目录，', 'Start with the catalogue.')}<br />{t('开始你的接入。', 'Build from there.')}</h2><p>{t('无需登录即可读取公开目录。找到需要的模型后，查看对应接口的参数、协议与调用示例。', 'Read the public catalogue without signing in. Once you find a model, check its API documentation for parameters, supported protocols and examples.')}</p><div className="landing-integration-links"><Link href={href("/dashboard/docs")} className="button button-primary">{t('查看 API 文档', 'Read API docs')} <Icon name="arrow-up-right" size={15} /></Link><Link href={href("/dashboard/keys")} className="landing-text-link">{t('管理 API 密钥', 'Manage API keys')} <Icon name="arrow-right" size={14} /></Link></div></div>
+      <div className="landing-code-window"><div className="landing-code-title"><span><Icon name="terminal" size={15} /> {t('读取公开模型目录', 'Read the public catalogue')}</span><small>{t('GET · 无需 API Key', 'GET · No API key needed')}</small></div><div className="landing-code-toolbar"><div className="landing-code-tabs" aria-label={t("示例语言", "Example language")}>{(Object.keys(codeSamples) as (keyof typeof codeSamples)[]).map(item => <button type="button" key={item} className={language === item ? "active" : ""} aria-pressed={language === item} onClick={() => { setLanguage(item); setCopied(false); }}>{item}</button>)}</div><button type="button" onClick={copyCode} aria-label={copied ? t("代码已复制", "Code copied") : t("复制代码", "Copy code")}><Icon name={copied ? "check" : "copy"} size={14} /><span aria-live="polite">{copied ? t("已复制", "Copied") : t("复制", "Copy")}</span></button></div><pre><code>{codeSamples[language]}</code></pre><div className="landing-code-footer"><Icon name="info" size={13} /> {t('目录查询不产生模型调用费用；生成请求需要登录并使用相应接口。', 'Catalogue requests are free. Generation requires an account and the appropriate model endpoint.')}</div></div>
+    </section>
 
-      <section className="landing-cta"><span className="landing-eyebrow">START BUILDING</span><h2>下一个想法，从这里开始。</h2><p>一个入口，连接你的模型、数据与工作流。</p><div><Link href="/dashboard" className="button button-primary">进入控制台 <Icon name="arrow-right" size={16} /></Link><Link href="/dashboard/docs" className="button button-secondary">查看 API 文档</Link></div></section>
+    <section className="landing-section landing-goods"><div className="landing-goods-panel"><span className="landing-goods-icon"><Icon name="store" size={30} /></span><div><span className="landing-eyebrow">BEYOND THE API</span><h2>{t('也在寻找 AI 工具与订阅？', 'Need AI tools or subscriptions, too?')}</h2><p>{t('数字商品单独选购。填写需求表单，我们将在 24 小时内通过邮件回复，确认适用条件与交付安排。', 'Looking for subscriptions or digital products? Send an inquiry and we will reply by email within 24 hours to confirm eligibility and delivery.')}</p></div><Link className="button button-secondary" href={href("/products")}>{t('浏览数字商品', 'Browse digital products')} <Icon name="arrow-up-right" size={15} /></Link></div></section>
 
-      <footer className="public-footer"><div className="public-footer-top"><div className="public-footer-brand"><Link href="/"><Brand /></Link><p>One API. More possibilities.<br />连接模型、数据与创造力。</p></div><div><h3>产品</h3><Link href="/models">模型市场</Link><Link href="/playground">Playground</Link><Link href="/dashboard">控制台</Link></div><div><h3>开发者</h3><Link href="/dashboard/docs">API 文档</Link><Link href="/#integration">快速开始</Link><Link href="/dashboard/keys">API 密钥</Link></div><div><h3>工作空间</h3><Link href="/dashboard/usage">调用记录</Link><Link href="/admin">服务设置</Link><Link href="/#faq">帮助与支持</Link></div><div><h3>账户</h3><Link href="/login">登录</Link><Link href="/register">创建账户</Link><a href="https://eco-geo.org">ECO-GEO <Icon name="arrow-up-right" size={12} /></a></div></div><div className="public-footer-bottom"><span>© {new Date().getFullYear()} ECO-GEO. All rights reserved.</span><span><i /> ECO-GEO API WORKSPACE</span><span>简体中文</span></div></footer>
-    </main>
-  );
+    <section className="landing-section landing-blog" aria-labelledby="landing-blog-title">
+      <div className="landing-section-heading"><div><span className="landing-eyebrow">TOKVILO / BLOG</span><h2 id="landing-blog-title">{t("让每一次调用，更有把握。", "Build with a clearer understanding.")}</h2><p>{t("模型选择、API 接入与用量计费，从实用指南开始。", "Practical guides to model selection, API integration and usage billing.")}</p></div><Link className="landing-text-link" href={href("/blog")}>{t("阅读 tokvilo 博客", "Read the tokvilo Blog")} <Icon name="arrow-up-right" size={16} /></Link></div>
+      <div className="landing-blog-grid">{blogPosts.slice(0, 3).map(post => <BlogCard key={post.slug} post={post} locale={locale} />)}</div>
+    </section>
+
+    <section className="landing-section landing-faq" id="faq"><div><span className="landing-eyebrow">GOOD TO KNOW</span><h2>{t('开始之前，', 'Before you begin,')}<br />{t('你可能想了解。', 'a few things to know.')}</h2><a className="landing-text-link" href="mailto:yt.feng@foxmail.com">{t('联系支持', 'Contact support')} <Icon name="arrow-up-right" size={14} /></a></div><div className="landing-faq-list">{[
+      [t("怎么选择适合的模型？", "How do I choose a model?"), t("先选择对话、图像、视频或音频用途，再按厂商和模型系列浏览。同系列的不同代际集中展示，可继续查看模型规格、价格与可用状态。", "Choose chat, image, video or audio, then browse by creator and model family. Generations within a family are grouped together so you can compare specifications, prices and availability.")],
+      [t("模型 API 如何收费？", "How are model API calls billed?"), t("价格页展示 tokvilo 最终售价与计费单位。调用前会预留额度，结果确认后结算，多余额度自动释放。具体金额以该次请求的报价和结算记录为准。", "The pricing page shows tokvilo’s final rates and billing units. Funds are reserved before a request and settled once the result is confirmed, with any excess released. Check each request’s quote and settlement for the exact amount.")],
+      [t("如何充值并开始使用？", "How do I pay and get started?"), t("注册登录后，在余额与充值页查看可用支付方式。英文版支持在线购买 tokvilo 服务用量包，或安排企业银行转账。选择已开放的模型，在工作台确认报价后发起请求。", "Create an account and sign in to see payment availability. The English site offers online payment for tokvilo usage packs or enterprise bank transfers. Choose an available model and confirm the quote before submitting a request.")],
+      [t("所有模型都使用相同的接口吗？", "Do all models use the same endpoint?"), t("不同模型的接口和参数可能不同。进入模型对应的工作台，或在 API 文档中查看支持的协议与请求示例后接入。", "Endpoints and parameters can vary between models. Use the model’s workspace, or check its API documentation for supported protocols and request examples.")],
+      [t("数字商品如何购买？", "How do I buy a digital product?"), t("在数字商品页查看参考售价并填写需求表单。我们会在 24 小时内通过邮件回复，确认库存、适用条件与交付安排。", "Review the indicative price on the Digital Products page and submit an inquiry. We will reply by email within 24 hours to confirm availability, eligibility and delivery.")],
+    ].map(([question, answer]) => <details key={question}><summary>{question}<Icon name="plus" size={17} /></summary><p>{answer}</p></details>)}</div></section>
+
+    <section className="landing-cta"><span className="landing-eyebrow">YOUR NEXT IDEA STARTS HERE</span><h2>{t('下一次创作，从选对模型开始。', 'Your next idea starts with the right model.')}</h2><p>{t('浏览模型家族，找到适合你的那一个。', 'Explore model families and find your fit.')}</p><div><Link className="button button-primary" href={href("/models")}>{t('探索模型', 'Explore models')} <Icon name="arrow-right" size={16} /></Link><Link className="button button-secondary" href={href("/register")}>{t('创建账户', 'Create an account')}</Link></div></section>
+
+    <PublicFooter />
+  </main>;
 }

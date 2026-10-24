@@ -5,11 +5,33 @@
   "compatibility_date": "2026-05-15",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
+  "vars": {
+    "MODEL_ADVISOR_ENABLED": "true",
+    "PADDLE_ENVIRONMENT": "production",
+    "PADDLE_SALES_ENABLED": "true",
+    "PADDLE_APPROVED_DOMAIN": "tokvilo.com",
+    "PADDLE_APPROVED_PRODUCT_SCOPE": "tokvilo_api_usage",
+    "PADDLE_PRICE_20_ID": "pri_01m5m3axm9ph27nmy42422rjca",
+    "PADDLE_PRICE_50_ID": "pri_01m5m3cpgs6f9nhqjh6g1y5ewx",
+    "PADDLE_PRICE_100_ID": "pri_01m5m3eg4xq179jp1khn9tc257",
+    "PRODUCT_INQUIRY_FROM": "orders@tokvilo.com",
+    "PRODUCT_INQUIRY_EMAIL_ENABLED": "true",
+    "USD_CNY": "7.2",
+    "REDEMPTION_ENABLED": "true",
+    "REDEMPTION_ISSUANCE_ENABLED": "true",
+    "LIANDONG_SALES_ENABLED": "true",
+    "LIANDONG_STORE_URL": "https://wzyp.cn/shop/EMSW320D",
+    "LIANDONG_PRODUCT_30_URL": "https://wzyp.cn/item/2i2q8j",
+    "LIANDONG_PRODUCT_90_URL": "https://wzyp.cn/item/nn19gc",
+    "LIANDONG_PRODUCT_300_URL": "https://wzyp.cn/item/mtzq1p"
+  },
   "routes": [
     {
-      "pattern": "api.eco-geo.org",
-      "custom_domain": true
-    }
+      "pattern": "tokvilo.com/*",
+      "zone_id": "72af5f199267d0dc4ebc07aea5e1a365"
+    },
+    { "pattern": "www.tokvilo.com", "custom_domain": true },
+    { "pattern": "api.eco-geo.org", "custom_domain": true }
   ],
   "no_bundle": true,
   "rules": [
@@ -31,6 +53,10 @@
     }
   ],
   "r2_buckets": [{ "binding": "AUDIT_MEDIA", "bucket_name": "eco-geo-audit-media" }],
+  "send_email": [
+    { "name": "PRODUCT_INQUIRY_EMAIL", "destination_address": "yt.feng@foxmail.com" },
+    { "name": "AUTH_EMAIL", "allowed_sender_addresses": ["auth@tokvilo.com"] }
+  ],
   "observability": {
     "enabled": true
   },

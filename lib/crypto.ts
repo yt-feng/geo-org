@@ -33,7 +33,7 @@ export async function createApiKey(): Promise<{
   hash: string;
 }> {
   const secret = bytesToBase64Url(crypto.getRandomValues(new Uint8Array(32)));
-  const key = `eco_live_${secret}`;
+  const key = `tk_live_${secret}`;
   return {
     id: randomId("key_"),
     key,

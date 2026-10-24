@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
+import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const require = createRequire(import.meta.url);
 async function load(path, mocks = {}, expose = "") {
@@ -15,8 +16,11 @@ async function load(path, mocks = {}, expose = "") {
   return compiled.exports;
 }
 const references = await load("../lib/tokenhub-model-reference.ts");
-const catalog = await load("../lib/model-catalog.ts", { "./tokenhub-model-reference": references });
-const workbench = await load("../components/TokenHubPlayground.tsx", { "next/link": { default: () => null }, "next/image": { default: () => null }, "./Icon": { Icon: () => null } }, "\nmodule.exports.helpers = { parseModels, modelMatches, modelLabel, selectionFromSearch, endpoint };" );
+const snapshot = JSON.parse(await readFile(new URL("../lib/model-directory-snapshot.json", import.meta.url), "utf8"));
+const modelIds = await load("../lib/model-id.ts");
+const requestKinds = await load("../lib/model-request-kind.ts");
+const catalog = await load("../lib/model-catalog.ts", { "./tokenhub-model-reference": references, "./model-directory-snapshot.json": { default: snapshot }, "./model-id": modelIds, "./model-request-kind": requestKinds });
+const workbench = await load("../components/TokenHubPlayground.tsx", { "./LocaleProvider": { useSiteLocale: () => ({ isEnglish: false, t: zh => zh, href: path => path }) }, "@/lib/brand-display": brandDisplay, "next/link": { default: () => null }, "next/image": { default: () => null }, "./Icon": { Icon: () => null } }, "\nmodule.exports.helpers = { parseModels, modelMatches, modelLabel, selectionFromSearch, endpoint };" );
 
 test("all nine TokenHub reference models select the correct gateway workbench and exact version", () => {
   assert.equal(catalog.tokenhubModelCatalog.length, 9);
@@ -27,13 +31,14 @@ test("all nine TokenHub reference models select the correct gateway workbench an
     assert.equal(entries.length, 1);
     const model = entries[0], url = new URL(catalog.modelWorkbenchUrl(model), "https://api.eco-geo.org");
     assert.equal(model.upstream, "tokenhub");
-    assert.equal(model.docs, "/dashboard/docs?provider=tokenhub");
-    assert.equal(url.pathname, "/tokenhub");
+    assert.equal(model.docs, "/dashboard/docs?provider=studio");
+    assert.equal(url.pathname, "/playground");
+    assert.equal(url.searchParams.get("service"), "studio");
     assert.equal(url.searchParams.get("model"), reference.id);
     const selection = workbench.helpers.selectionFromSearch(url.search);
     assert.equal(selection.model, reference.id);
     assert.equal(selection.mode, reference.kind);
-    assert.ok(workbench.helpers.endpoint[selection.mode].startsWith("/api/tokenhub/"));
+    assert.ok(workbench.helpers.endpoint[selection.mode].startsWith("/api/studio/"));
   }
   assert.equal(new URL(catalog.modelWorkbenchUrl(catalog.modelCatalog[0]), "https://api.eco-geo.org").pathname, "/playground");
 });

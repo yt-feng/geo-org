@@ -2,8 +2,8 @@ import type { RuntimeEnv } from "./config";
 
 const ORIGIN = "https://api.apimart.ai";
 const DEFAULT_CONTEXT = "eco-geo/provider/apimart/v1";
-const BALANCE_REQUIRED = "APIMart 返回余额不足（HTTP 402）；请补充余额后重新验证。";
-const SAVED_UNVERIFIED_WARNING = "密钥已加密保存，APIMart 返回余额不足（HTTP 402）；请补充余额后重新验证。";
+const BALANCE_REQUIRED = "tokvilo 模型服务 返回余额不足（HTTP 402）；请补充余额后重新验证。";
+const SAVED_UNVERIFIED_WARNING = "密钥已加密保存，tokvilo 模型服务 返回余额不足（HTTP 402）；请补充余额后重新验证。";
 type StoredProvider = {
   encrypted_key: string;
   key_hint: string;
@@ -51,7 +51,7 @@ export async function decryptProviderKey(value: string, secret: string | undefin
 }
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
-  if (!response.body) throw new ProviderError("APIMart 返回了无效响应，请稍后重试。", 502);
+  if (!response.body) throw new ProviderError("tokvilo 模型服务 返回了无效响应，请稍后重试。", 502);
   const reader = response.body.getReader(), chunks: Uint8Array[] = [];
   let length = 0;
   try {
@@ -67,7 +67,7 @@ async function readJson(response: Response): Promise<Record<string, unknown>> {
     const data = JSON.parse(new TextDecoder().decode(bytes));
     if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
     return data;
-  } catch { throw new ProviderError("APIMart 返回了无效响应，请稍后重试。", 502); }
+  } catch { throw new ProviderError("tokvilo 模型服务 返回了无效响应，请稍后重试。", 502); }
   finally { reader.releaseLock(); }
 }
 
@@ -87,31 +87,32 @@ export function createProviderSettings(env: RuntimeEnv, fetcher: typeof fetch = 
   async function credential() {
     const row = await stored();
     const key = row ? await decryptProviderKey(row.encrypted_key, env.ADMIN_SESSION_SECRET) : env.APIMART_API_KEY?.trim();
-    if (!key) throw new ProviderError("请先填写并保存 APIMart API Key。", 409);
+    if (!key) throw new ProviderError("请先填写并保存 tokvilo 模型服务 API Key。", 409);
     return { key, row };
   }
   async function upstream(path: "/v1/balance" | "/v1/models?expand=category", key: string) {
     let response: Response;
     try {
       response = await fetcher(ORIGIN + path, { method: "GET", headers: { Authorization: `Bearer ${key}`, Accept: "application/json" }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(10_000) });
-    } catch { throw new ProviderError("暂时无法连接 APIMart，请稍后重试。", 502); }
-    if (response.status === 401 || response.status === 403) throw new ProviderError("APIMart 密钥无效或没有访问权限，请检查后重试。", 422);
+    } catch { throw new ProviderError("暂时无法连接 tokvilo 模型服务，请稍后重试。", 502); }
+    if (response.status === 401 || response.status === 403) throw new ProviderError("tokvilo 模型服务 密钥无效或没有访问权限，请检查后重试。", 422);
     if (response.status === 402) throw new ProviderError(BALANCE_REQUIRED, 402);
-    if (response.status === 429) throw new ProviderError("APIMart 请求频率已达上限，请稍后重试。", 429);
-    if (!response.ok) throw new ProviderError("APIMart 服务暂不可用，请稍后重试。", 502);
+    if (response.status === 429) throw new ProviderError("tokvilo 模型服务 请求频率已达上限，请稍后重试。", 429);
+    if (!response.ok) throw new ProviderError("tokvilo 模型服务 服务暂不可用，请稍后重试。", 502);
     const data = await readJson(response);
-    if (data.success === false || data.error) throw new ProviderError("APIMart 未通过验证，请检查密钥及其权限。", 422);
+    if (data.success === false || data.error) throw new ProviderError("tokvilo 模型服务 未通过验证，请检查密钥及其权限。", 422);
     return data;
   }
   async function balance(key: string): Promise<ProviderQuota> {
     const data = await upstream("/v1/balance", key);
-    if (data.success !== true || typeof data.unlimited_quota !== "boolean" || typeof data.remain_balance !== "number" || !Number.isFinite(data.remain_balance) || (!data.unlimited_quota && data.remain_balance < 0)) throw new ProviderError("APIMart 余额响应不完整，配置尚未验证。", 502);
+    if (data.success !== true || typeof data.unlimited_quota !== "boolean" || typeof data.remain_balance !== "number" || !Number.isFinite(data.remain_balance) || (!data.unlimited_quota && data.remain_balance < 0)) throw new ProviderError("tokvilo 模型服务 余额响应不完整，配置尚未验证。", 502);
     return { remaining: data.unlimited_quota ? null : data.remain_balance, unlimited: data.unlimited_quota };
   }
   return {
+    async credential() { return (await credential()).key; },
     async status() { return { upstream: { configured: !!(env.UPSTREAM_BASE_URL?.trim() && env.UPSTREAM_API_TOKEN?.trim()) }, apimart: fromRow(await stored()) }; },
     async save(value: unknown) {
-      if (typeof value !== "string" || !/^[\x21-\x7e]{12,512}$/.test(value.trim())) throw new ProviderError("请输入完整的 APIMart API Key（12–512 位，不含空白）。", 400);
+      if (typeof value !== "string" || !/^[\x21-\x7e]{12,512}$/.test(value.trim())) throw new ProviderError("请输入完整的 tokvilo 模型服务 API Key（12–512 位，不含空白）。", 400);
       const key = value.trim();
       // Check encryption availability before any upstream call. Only the explicit
       // insufficient-balance response permits saving without verification.
@@ -135,8 +136,8 @@ export function createProviderSettings(env: RuntimeEnv, fetcher: typeof fetch = 
     },
     async models() {
       const { key } = await credential(), data = await upstream("/v1/models?expand=category", key);
-      if (!Array.isArray(data.data)) throw new ProviderError("APIMart 模型列表格式不正确，请稍后重试。", 502);
-      const models = data.data.filter((m): m is Record<string, unknown> => !!m && typeof m === "object" && typeof m.id === "string").map(m => ({ id: String(m.id).slice(0, 200), provider: typeof m.owned_by === "string" ? m.owned_by.slice(0, 100) : "", category: (Array.isArray(m.category) ? m.category : typeof m.category === "string" ? [m.category] : []).filter((c): c is string => typeof c === "string").map(c => c.slice(0, 80)) }));
+      if (!Array.isArray(data.data)) throw new ProviderError("tokvilo 模型服务 模型列表格式不正确，请稍后重试。", 502);
+      const models = data.data.filter((m): m is Record<string, unknown> => !!m && typeof m === "object" && typeof m.id === "string").map(m => ({ id: String(m.id).slice(0, 200), provider: typeof m.owned_by === "string" ? m.owned_by.slice(0, 100).replace(/\btoken\s*hub\b/gi, "tokvilo 多模态").replace(/\bapi[\s-]*mart\b/gi, "tokvilo 模型服务") : "", category: (Array.isArray(m.category) ? m.category : typeof m.category === "string" ? [m.category] : []).filter((c): c is string => typeof c === "string").map(c => c.slice(0, 80)) }));
       return { ok: true, models };
     },
   };
