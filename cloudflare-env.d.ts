@@ -30,6 +30,14 @@ declare module "cloudflare:workers" {
   export const env: Record<string, unknown>;
 }
 
+declare module "cloudflare:email" {
+  export class EmailMessage {
+    constructor(from: string, to: string, raw: string | ReadableStream<Uint8Array>);
+    readonly from: string;
+    readonly to: string;
+  }
+}
+
 /** Narrow R2 interface used by private audit artifacts. */
 interface AuditMediaBucket {
   put(key: string, value: Uint8Array, options?: { httpMetadata?: { contentType: string }; customMetadata?: Record<string, string> }): Promise<unknown>;

@@ -7,7 +7,10 @@ export type TokenHubModel = {
 type Json = Record<string, unknown>;
 function object(value: unknown): value is Json { return !!value && typeof value === "object" && !Array.isArray(value); }
 function strings(value: unknown): string[] { return (Array.isArray(value) ? value : [value]).filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= 80).slice(0, 32); }
-function text(value: unknown, fallback = "") { return typeof value === "string" ? value.slice(0, 200) : fallback; }
+function text(value: unknown, fallback = "") {
+  return (typeof value === "string" ? value.slice(0, 200) : fallback)
+    .replace(/\btoken\s*hub\b/gi, "tokvilo 多模态").replace(/\bapi[\s-]*mart\b/gi, "tokvilo 模型服务");
+}
 
 export function validTokenHubCatalog(value: unknown, source: "models_api" | "pricing"): value is Json & { data: unknown[] } {
   return object(value) && !value.error && value.success !== false && Array.isArray(value.data) &&
@@ -36,14 +39,14 @@ export function mergeTokenHubCatalog(models: unknown, pricing: unknown): TokenHu
     const isChat = /chat|text|language|llm|completion/.test(types) || providers.includes("openai") && rates.some(rate => object(rate.input) && object(rate.output));
     const modelType = isVideo ? "video" : isImage ? "image" : isChat ? "chat" : "unknown";
     const supported = modelType === "chat" || modelType === "video" && /^(?:dreamina|doubao)-seedance-2-(?:0(?:-fast|-mini)?|5)(?:-\d{6})?$/.test(id) || modelType === "image" && /^dola-seedream-5-0-pro-\d{6}$/.test(id);
-    const endpoint = !supported ? null : modelType === "chat" ? "/api/tokenhub/v1/chat/completions" : modelType === "image" ? "/api/tokenhub/v3/images/generations" : "/api/tokenhub/v3/contents/generations/tasks";
+    const endpoint = !supported ? null : modelType === "chat" ? "/api/studio/v1/chat/completions" : modelType === "image" ? "/api/studio/v3/images/generations" : "/api/studio/v3/contents/generations/tasks";
     return {
       id, name: text(raw.name, text(raw.label, id)), provider: text(raw.provider, text(raw.owned_by, text(raw.providerName))),
       category: Array.from(new Set([...(modelType === "unknown" ? [] : [modelType]), ...strings(raw.modelType), ...strings(raw.capabilities)])),
       capabilities: supported ? modelType === "chat" ? ["chat_completions"] : modelType === "image" ? ["image_generation"] : ["video_generation", "video_task_polling", "video_task_cancellation"] : strings(raw.capabilities),
       modelType, sources, accountAccess: sources.includes("models_api") ? "listed_by_authenticated_model_api" : "unverified_public_catalog",
       integrationStatus: supported ? "ready" : "catalog_only", endpoint,
-      taskEndpoint: supported && modelType === "video" ? "/api/tokenhub/v3/contents/generations/tasks/{task_id}" : null,
+      taskEndpoint: supported && modelType === "video" ? "/api/studio/v3/contents/generations/tasks/{task_id}" : null,
       limitations: supported ? ["non_streaming_json_only", ...(modelType === "video" ? ["eco_geo_owned_tasks_only", "idempotency_key_required"] : [])] : ["adapter_not_verified"],
     } satisfies TokenHubModel;
   });

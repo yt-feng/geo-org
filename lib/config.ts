@@ -1,17 +1,30 @@
 import { env } from "cloudflare:workers";
 
+export type AuthEmailMessage = {
+  to: string;
+  from: { email: string; name: string };
+  subject: string;
+  text: string;
+};
+
 export type RuntimeEnv = {
   DB?: D1Database;
   AUDIT_MEDIA?: AuditMediaBucket;
+  PRODUCT_INQUIRY_EMAIL?: { send(message: import("cloudflare:email").EmailMessage): Promise<unknown> };
+  PRODUCT_INQUIRY_FROM?: string;
+  PRODUCT_INQUIRY_EMAIL_ENABLED?: string;
   PUBLIC_BASE_URL?: string;
   PUBLIC_BRAND_NAME?: string;
   AUTH_BASE_URL?: string;
   AUTH_ANON_KEY?: string;
+  AUTH_EMAIL_HOOK_SECRET?: string;
+  AUTH_EMAIL?: { send(message: AuthEmailMessage): Promise<{ messageId: string }> };
   ADMIN_EMAIL?: string;
   ADMIN_USERNAME?: string;
   ADMIN_PASSWORD?: string;
   ADMIN_SESSION_SECRET?: string;
   APIMART_API_KEY?: string;
+  RKAPI_ROUTES_JSON?: string;
   TOKENHUB_API_KEY?: string;
   UPSTREAM_BASE_URL?: string;
   UPSTREAM_OPENAPI_URL?: string;
@@ -26,6 +39,25 @@ export type RuntimeEnv = {
   DEFAULT_USER_DAILY_LIMIT?: string;
   MAX_ACTIVE_KEYS_PER_USER?: string;
   SERVICE_ENABLED?: string;
+  MODEL_ADVISOR_ENABLED?: string;
+  USD_CNY?: string;
+  LIANDONG_SALES_ENABLED?: string;
+  REDEMPTION_ENABLED?: string;
+  REDEMPTION_ISSUANCE_ENABLED?: string;
+  LIANDONG_STORE_URL?: string;
+  LIANDONG_PRODUCT_30_URL?: string;
+  LIANDONG_PRODUCT_90_URL?: string;
+  LIANDONG_PRODUCT_300_URL?: string;
+  PADDLE_ENVIRONMENT?: string;
+  PADDLE_SALES_ENABLED?: string;
+  PADDLE_APPROVED_DOMAIN?: string;
+  PADDLE_APPROVED_PRODUCT_SCOPE?: string;
+  PADDLE_CLIENT_TOKEN?: string;
+  PADDLE_API_KEY?: string;
+  PADDLE_WEBHOOK_SECRET?: string;
+  PADDLE_PRICE_20_ID?: string;
+  PADDLE_PRICE_50_ID?: string;
+  PADDLE_PRICE_100_ID?: string;
 };
 
 export function runtimeEnv(): RuntimeEnv {
@@ -63,14 +95,14 @@ export function decimalEnv(
 }
 
 export function publicBaseUrl(): string {
-  return (runtimeEnv().PUBLIC_BASE_URL || "https://api.eco-geo.org").replace(
+  return (runtimeEnv().PUBLIC_BASE_URL || "https://tokvilo.com").replace(
     /\/+$/,
     "",
   );
 }
 
 export function publicBrandName(): string {
-  return runtimeEnv().PUBLIC_BRAND_NAME?.trim() || "Eco Geo API";
+  return runtimeEnv().PUBLIC_BRAND_NAME?.trim() || "tokvilo";
 }
 
 export function isServiceEnabled(): boolean {

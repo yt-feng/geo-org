@@ -1,5 +1,7 @@
 "use client";
 
+import { displayServiceText, serviceLabel } from "@/lib/brand-display";
+
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { TokenHubSettingsCard } from "./TokenHubSettingsCard";
 
@@ -117,7 +119,7 @@ export function ProviderSettingsPanel() {
       setQuery("");
       setCategory("all");
       setNotice(result.apimart.verifiedAt
-        ? { kind: "success", text: "APIMart API Key 已验证并保存。你可以继续测试连接或读取模型目录。" }
+        ? { kind: "success", text: "tokvilo 模型服务 API Key 已验证并保存。你可以继续测试连接或读取模型目录。" }
         : { kind: "warning", text: result.warning || "密钥已加密保存，尚未完成验证。请稍后测试已保存连接。" });
     } catch (error) {
       setNotice({ kind: "error", text: error instanceof Error ? error.message : "API Key 保存失败。" });
@@ -179,7 +181,7 @@ export function ProviderSettingsPanel() {
 
       {loadError ? (
         <div className="provider-load-error" role="alert">
-          <span>{loadError}</span>
+          <span>{displayServiceText(loadError)}</span>
           <button className="button button-ghost" onClick={() => {
             setLoadError("");
             setLoadAttempt((value) => value + 1);
@@ -190,23 +192,23 @@ export function ProviderSettingsPanel() {
       <div className="provider-grid">
         <article className="provider-card provider-existing">
           <div className="provider-card-heading">
-            <span className="provider-monogram" aria-hidden="true">T</span>
-            <div><h3>TikHub</h3><p>社交平台数据</p></div>
+            <span className="provider-monogram" aria-hidden="true">t</span>
+            <div><h3>tokvilo 数据接口</h3><p>社交平台数据</p></div>
             <StatusBadge configured={providers?.upstream.configured} />
           </div>
-          <p className="provider-description">已有的社交数据 API 上游，供 Eco-GEO 数据接口使用。</p>
+          <p className="provider-description">为 tokvilo 数据接口提供社交平台数据能力。</p>
           <div className="provider-existing-note">
             <span className="section-kicker">CURRENT PROVIDER</span>
             <strong>由部署环境管理</strong>
             <p>此处展示配置状态；现有接口与平台调用统计继续使用该服务。</p>
           </div>
-          <div className="provider-endpoint"><span>ECO-GEO 数据接口</span><code>/api/v1/*</code><span>调用凭证与接口文档可在左侧导航中管理。</span></div>
+          <div className="provider-endpoint"><span>tokvilo 数据接口</span><code>/api/v1/*</code><span>调用凭证与接口文档可在左侧导航中管理。</span></div>
         </article>
 
         <article className="provider-card provider-apimart">
           <div className="provider-card-heading">
-            <span className="provider-monogram apimart" aria-hidden="true">A</span>
-            <div><h3>APIMart</h3><p>AI 模型服务</p></div>
+            <span className="provider-monogram apimart" aria-hidden="true">t</span>
+            <div><h3>tokvilo 模型服务</h3><p>AI 模型服务</p></div>
             <StatusBadge configured={apimart?.configured} verifiedAt={apimart?.verifiedAt} verificationRequired saved={apimart?.source === "saved"} />
           </div>
           <p className="provider-description">填写 API Key，验证连接并浏览可用模型目录。</p>
@@ -219,7 +221,7 @@ export function ProviderSettingsPanel() {
           ) : null}
 
           <form className="provider-key-form" onSubmit={saveKey}>
-            <label htmlFor="apimart-api-key">{apimart?.configured ? "更换 API Key" : "APIMart API Key"}</label>
+            <label htmlFor="apimart-api-key">{apimart?.configured ? "更换 API Key" : "tokvilo 模型服务 API Key"}</label>
             <input
               aria-describedby="apimart-key-help"
               autoCapitalize="none"
@@ -229,7 +231,7 @@ export function ProviderSettingsPanel() {
               maxLength={512}
               name="apimart-api-key"
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder={apimart?.configured ? "填写新的 API Key" : "粘贴你的 APIMart API Key"}
+              placeholder={apimart?.configured ? "填写新的 API Key" : "粘贴你的 tokvilo 模型服务 API Key"}
               spellCheck={false}
               type="password"
               value={apiKey}
@@ -239,8 +241,8 @@ export function ProviderSettingsPanel() {
               <button className="button button-primary" disabled={disabled || !apiKey.trim()} type="submit">
                 {pending === "save" ? "保存并尝试验证中…" : "保存并尝试验证"}
               </button>
-              <a className="provider-key-link" href="https://apimart.ai/keys" rel="noopener noreferrer" target="_blank">
-                获取 API Key <span aria-hidden="true">↗</span>
+              <a className="provider-key-link" href="/dashboard/docs?provider=gateway" rel="noopener noreferrer" target="_blank">
+                接入文档 <span aria-hidden="true">↗</span>
               </a>
             </div>
           </form>
@@ -255,7 +257,7 @@ export function ProviderSettingsPanel() {
               </button>
             </div>
             {apimart?.configured ? (
-              <p className="provider-field-help">{apimart.verifiedAt ? `最近验证：${displayTime(apimart.verifiedAt)}（北京时间）` : "当前密钥尚未通过验证。若 APIMart 返回余额不足，请补充余额后测试已保存连接。"}</p>
+              <p className="provider-field-help">{apimart.verifiedAt ? `最近验证：${displayTime(apimart.verifiedAt)}（北京时间）` : "当前密钥尚未通过验证。若 tokvilo 模型服务 返回余额不足，请补充余额后测试已保存连接。"}</p>
             ) : null}
             {quota ? (
               <div className="provider-quota"><span>当前 API Key 剩余额度</span><strong>{quota.unlimited ? "未设置额度上限" : quota.remaining === null ? "暂无额度信息" : quota.remaining.toLocaleString("zh-CN", { maximumFractionDigits: 6 })}</strong></div>
@@ -265,12 +267,12 @@ export function ProviderSettingsPanel() {
         <TokenHubSettingsCard />
       </div>
 
-      {notice ? <p className={`provider-notice ${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>{notice.text}</p> : null}
+      {notice ? <p className={`provider-notice ${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>{displayServiceText(notice.text)}</p> : null}
 
       {models ? (
         <div className="provider-models">
           <div className="panel-header">
-            <div><span className="section-kicker">APIMART MODEL CATALOG</span><h3>模型目录</h3></div>
+            <div><span className="section-kicker">TOKVILO MODEL CATALOG</span><h3>模型目录</h3></div>
             <span className="record-count">{filteredModels.length.toLocaleString()} / {models.length.toLocaleString()} 个模型</span>
           </div>
           <div className="provider-model-controls">
@@ -284,16 +286,16 @@ export function ProviderSettingsPanel() {
             <ul className="provider-model-list">
               {filteredModels.map((model, index) => (
                 <li key={`${model.provider}:${model.id}:${index}`}>
-                  <div><code>{model.id}</code><span>{model.provider || "未标注提供方"}</span></div>
+                  <div><code>{model.id}</code><span>{serviceLabel(model.provider) || "未标注提供方"}</span></div>
                   <div className="provider-model-tags">{model.category.map((item) => <span key={item}>{item}</span>)}</div>
                 </li>
               ))}
             </ul>
-          ) : <p className="empty-state">{models.length ? "没有符合筛选条件的模型。" : "APIMart 暂未返回可用模型。"}</p>}
+          ) : <p className="empty-state">{models.length ? "没有符合筛选条件的模型。" : "tokvilo 模型服务 暂未返回可用模型。"}</p>}
         </div>
       ) : null}
 
-      <p className="provider-scope-note">TokenHub 已提供模型调用工作台。APIMart 支持密钥配置、连接验证、模型目录查询与请求预览。</p>
+      <p className="provider-scope-note">tokvilo 统一管理数据、文本、图像与视频服务。已开通的模型可在工作台报价并调用。</p>
     </section>
   );
 }

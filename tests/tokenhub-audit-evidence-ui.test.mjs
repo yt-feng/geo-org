@@ -6,11 +6,13 @@ import * as React from "react";
 import * as jsx from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
+import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const filename = new URL("../components/TokenHubAuditEvidence.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const compiled = { exports: {} };
 vm.runInNewContext(code, { module: compiled, exports: compiled.exports, Date, URLSearchParams, require(name) {
+  if (name === "@/lib/brand-display") return brandDisplay;
   if (name === "react") return React;
   if (name === "react/jsx-runtime") return jsx;
   if (name === "./Icon") return { Icon: props => React.createElement("svg", { "data-icon": props.name }) };
@@ -49,7 +51,7 @@ test("failed image call exposes prompt and exact error with no invented image", 
 test("saved video uses authenticated archive with controls; embedded image is not called temporary", () => {
   const url = `/api/admin/tokenhub-audit/media?asset=${"a".repeat(64)}`;
   const html = render({ kind: "video", request: { content: [{ type: "text", text: "One continuous static camera shot" }], duration: 4 }, response: { content: { video_url: "https://media.example/original.mp4" } }, grading: { status: "manual_review_pending" } }, [{ kind: "video", url, label: "生成视频", sourcePath: "response.content.video_url", storage: "archived", archive: { state: "archived", archivedAt: campaign.startedAt } }]);
-  assert.match(html, /<video controls=""/); assert.ok(html.includes(url)); assert.match(html, /已归档到 ECO-GEO/); assert.doesNotMatch(html, /autoplay/i);
+  assert.match(html, /<video controls=""/); assert.ok(html.includes(url)); assert.match(html, /已归档到 tokvilo/); assert.doesNotMatch(html, /autoplay/i);
   const image = render({ kind: "image" }, [{ kind: "image", url: "data:image/png;base64,iVBORw0KGgo=", storage: "embedded", label: "生成图片", sourcePath: "response.data[0].b64_json" }]);
   assert.match(image, /<img/); assert.match(image, /图片内容已随底稿保存/); assert.doesNotMatch(image, /当前显示上游临时文件/);
 });

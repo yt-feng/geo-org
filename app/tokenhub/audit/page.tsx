@@ -5,7 +5,7 @@ import { TokenHubAuditDashboard } from "@/components/TokenHubAuditDashboard";
 import { requireAdminUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "TokenHub 每日核验" };
+export const metadata: Metadata = { title: "tokvilo 多模态 每日核验" };
 
 export default async function TokenHubAuditPage() {
   const user = await requireAdminUser();

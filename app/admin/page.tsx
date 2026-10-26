@@ -25,7 +25,7 @@ export default async function AdminPage() {
         </div>
         <span className="private-badge"><Icon name="shield" size={12} /> 管理员工作空间</span>
       </header>
-      <nav className="admin-tabs" aria-label="管理分区"><a href="#provider-settings-title">服务连接</a><a href="#platform-usage">平台用量</a><a href="#members">成员账户</a></nav>
+      <nav className="admin-tabs" aria-label="管理分区"><a href="#provider-settings-title">服务连接</a><a href="#platform-usage">平台用量</a><a href="#members">成员账户</a><a href="/dashboard/wallet">充值码管理</a><a href="/admin/orders">商品订单</a></nav>
       <ProviderSettingsPanel />
       <div className="admin-quotas" id="platform-usage">
       <section className="panel admin-quota">

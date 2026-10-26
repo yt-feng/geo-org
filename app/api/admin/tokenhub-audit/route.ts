@@ -16,7 +16,7 @@ async function handle(request: Request) {
     if (!user.isAdmin) return reply({ error: "仅管理员可以查看和运行核验。" }, 403);
     if (request.method === "GET") {
       const evidence = new URL(request.url).searchParams.get("evidence") === "1";
-      return reply(await getAuditStatus(runtimeEnv(), evidence), 200, evidence ? { "content-disposition": 'attachment; filename="eco-geo-tokenhub-audit-evidence.json"' } : undefined);
+      return reply(await getAuditStatus(runtimeEnv(), evidence), 200, evidence ? { "content-disposition": 'attachment; filename="tokvilo-audit-evidence.json"' } : undefined);
     }
     if (request.headers.get("Origin") !== new URL(request.url).origin) return reply({ error: "请从本站核验后台提交操作。" }, 403);
     if (!request.headers.get("Content-Type")?.toLowerCase().split(";")[0].trim().match(/^application\/json$/)) return reply({ error: "请提交 JSON 格式的请求。" }, 415);
@@ -39,7 +39,7 @@ async function handle(request: Request) {
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) return reply({ error: "请求格式不正确。" }, 400);
     const body = payload as Record<string, unknown>;
     if (!["start", "tick", "pause", "observe"].includes(String(body.action)) || Object.keys(body).some(key => key !== "action" && !(body.action === "start" && key === "apiKey"))) return reply({ error: "请求参数不正确。" }, 400);
-    if (body.action === "start" && (typeof body.apiKey !== "string" || !body.apiKey.trim() || body.apiKey.length > 1024)) return reply({ error: "请输入审计专用 TokenHub API Key。" }, 400);
+    if (body.action === "start" && (typeof body.apiKey !== "string" || !body.apiKey.trim() || body.apiKey.length > 1024)) return reply({ error: "请输入多模态审计专用 API Key。" }, 400);
     const id = "tokenhub-audit:" + await sha256Hex(user.id), now = new Date().toISOString(), expires = new Date(Date.now() + 60_000).toISOString();
     const allowed = await getD1().prepare(`INSERT INTO login_rate_limits (id, attempts, expires_at, updated_at) VALUES (?, 1, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(id) DO UPDATE SET attempts=CASE WHEN expires_at <= ? THEN 1 ELSE attempts+1 END,

@@ -21,6 +21,13 @@ const OMITTED_KEYS = new Set([
   "license",
   "operationId",
   "termsOfService",
+  "upstreamMicrousd",
+  "upstreamRates",
+  "upstreamPrice",
+  "sourcePrice",
+  "sourceUrl",
+  "markupPercent",
+  "markup_percent",
 ]);
 
 const EXTERNAL_FINGERPRINT_URL =

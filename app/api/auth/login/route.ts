@@ -1,110 +1,32 @@
-import {
-  ACCESS_COOKIE,
-  REFRESH_COOKIE,
-  authBaseUrl,
-  authRequestHeaders,
-  createAdminSession,
-} from "@/lib/auth";
+import { createAdminSession } from "@/lib/auth";
+import { authenticateLocalAccount, createLocalSession, hasLocalAccount } from "@/lib/local-auth";
+import { AuthInputError, readAuthPayload, sessionResponse, providerSessionResponse } from "@/lib/auth-http";
+import { AuthProviderError, authProviderRequest, authTokens } from "@/lib/auth-provider";
 import { consumeLoginAttempt } from "@/lib/login-rate-limit";
 
 export const dynamic = "force-dynamic";
-
-type TokenResponse = {
-  access_token?: string;
-  refresh_token?: string;
-  expires_in?: number;
-};
-
-function cookieHeader(
-  name: string,
-  value: string,
-  maxAge: number,
-  secure: boolean,
-): string {
-  return [
-    `${name}=${encodeURIComponent(value)}`,
-    "Path=/",
-    "HttpOnly",
-    "SameSite=Lax",
-    secure ? "Secure" : "",
-    `Max-Age=${Math.max(0, Math.floor(maxAge))}`,
-  ]
-    .filter(Boolean)
-    .join("; ");
-}
+const errorResponse = (error: string, status: number) => Response.json({ error }, { status, headers: { "cache-control": "no-store" } });
 
 export async function POST(request: Request): Promise<Response> {
-  const allowed = await consumeLoginAttempt(request).catch(() => false);
-  if (!allowed) {
-    return Response.json(
-      { error: "Too many sign-in attempts. Please try again later." },
-      { status: 429 },
-    );
-  }
-
-  let payload: { email?: string; password?: string };
   try {
-    payload = (await request.json()) as typeof payload;
-  } catch {
-    return Response.json({ error: "Invalid request." }, { status: 400 });
+    const payload = await readAuthPayload(request);
+    if (typeof payload.email !== "string" || typeof payload.password !== "string") throw new AuthInputError("请输入账号和密码。");
+    const email = payload.email.trim().toLowerCase(), password = payload.password;
+    if (!email || email.length > 254 || !password || password.length > 512) throw new AuthInputError("账号或密码格式不正确。");
+    if (!await consumeLoginAttempt(request)) return errorResponse("登录尝试过于频繁，请稍后重试。", 429);
+    const adminSession = await createAdminSession(email, password);
+    if (adminSession) return sessionResponse(request, adminSession, 60 * 60 * 12);
+    if (await hasLocalAccount(email)) {
+      const user = await authenticateLocalAccount(email, password);
+      if (!user) return errorResponse("账号或密码不正确，或账号已停用。", 401);
+      return sessionResponse(request, await createLocalSession(user.id), 7 * 24 * 60 * 60);
+    }
+    const result = await authProviderRequest("token?grant_type=password", { email, password });
+    const tokens = authTokens(result);
+    if (!tokens) return errorResponse("登录服务返回异常，请稍后重试。", 503);
+    return providerSessionResponse(request, tokens);
+  } catch (cause) {
+    const expected = cause instanceof AuthInputError || cause instanceof AuthProviderError;
+    return errorResponse(expected ? cause.message : "登录服务暂不可用，请稍后重试。", expected ? cause.status : 503);
   }
-
-  const email = payload.email?.trim().toLowerCase() || "";
-  const password = payload.password || "";
-  if (!email || !password) {
-    return Response.json({ error: "Email and password are required." }, { status: 400 });
-  }
-
-  const secure = new URL(request.url).protocol === "https:";
-  const adminSession = await createAdminSession(email, password);
-  if (adminSession) {
-    const headers = new Headers({ "content-type": "application/json" });
-    headers.append(
-      "set-cookie",
-      cookieHeader(ACCESS_COOKIE, adminSession, 60 * 60 * 12, secure),
-    );
-    headers.append("set-cookie", cookieHeader(REFRESH_COOKIE, "", 0, secure));
-    return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
-  }
-
-  let authResponse: Response;
-  try {
-    authResponse = await fetch(`${authBaseUrl()}/auth/v1/token?grant_type=password`, {
-      method: "POST",
-      headers: authRequestHeaders(),
-      body: JSON.stringify({ email, password }),
-    });
-  } catch {
-    return Response.json(
-      { error: "Sign-in is temporarily unavailable." },
-      { status: 503 },
-    );
-  }
-  if (!authResponse.ok) {
-    return Response.json(
-      { error: "Email or password is incorrect, or the email is not verified." },
-      { status: 401 },
-    );
-  }
-
-  const tokens = (await authResponse.json()) as TokenResponse;
-  if (!tokens.access_token || !tokens.refresh_token) {
-    return Response.json({ error: "Sign-in failed." }, { status: 502 });
-  }
-
-  const headers = new Headers({ "content-type": "application/json" });
-  headers.append(
-    "set-cookie",
-    cookieHeader(
-      ACCESS_COOKIE,
-      tokens.access_token,
-      Math.max(60, Number(tokens.expires_in || 3600)),
-      secure,
-    ),
-  );
-  headers.append(
-    "set-cookie",
-    cookieHeader(REFRESH_COOKIE, tokens.refresh_token, 60 * 60 * 24 * 30, secure),
-  );
-  return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
