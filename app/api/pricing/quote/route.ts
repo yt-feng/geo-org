@@ -2,7 +2,8 @@ import { getPortalUser } from "@/lib/auth";
 import { getD1 } from "@/lib/config";
 import { getTokenHubPricing, quoteTokenHubRequest, PricingError, publicPriceRates } from "@/lib/pricing";
 import { getApimartPricing, quoteApimartRequest } from "@/lib/apimart-pricing";
-import { quoteRkapiRequest } from "@/lib/rkapi-pricing";
+import { prepareRkapiRequest } from "@/lib/rkapi-pricing";
+import { quoteFingerprint } from "@/lib/quote-fingerprint";
 
 import { APIMART_PATHS, type ApimartKind } from "@/lib/apimart-request";
 import { publicModelId } from "@/lib/model-id";
@@ -45,19 +46,19 @@ export async function POST(request: Request) {
     if (!allowed) return Response.json({ error: "报价请求较频繁，请一分钟后重试。" }, { status: 429, headers });
     if (input.provider === "selected") {
       if (mode !== "chat" && mode !== "image") throw new PricingError("tokvilo 精选暂未开放此接口。", 422);
-      const quote = await quoteRkapiRequest(body);
+      const { quote, basis } = await prepareRkapiRequest(body);
       if (quote.kind !== mode) throw new PricingError("模型与所选接口不匹配。", 400);
-      return Response.json({ provider: "selected", model: quote.model, mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.reservedMicrousd,
+      return Response.json({ provider: "selected", model: quote.model, mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.reservedMicrousd, quoteFingerprint: await quoteFingerprint({ quote, basis }),
         rates: quote.rates.map(({ dimension, unit, retailMicrousd, label, condition }) => ({ dimension, unit, retailMicrousd, label, condition })) }, { headers });
     }
     if (input.provider === "tokenhub") {
       if (mode === "audio") throw new PricingError("此接口尚未开通音乐生成。", 422);
       const quote = quoteTokenHubRequest(await getTokenHubPricing(), mode, body);
-      return Response.json({ provider: "tokenhub", model: quote.model, mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.reservedMicrousd, rates: publicPriceRates(quote.rates), dimension: quote.dimension }, { headers });
+      return Response.json({ provider: "tokenhub", model: quote.model, mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.reservedMicrousd, quoteFingerprint: await quoteFingerprint(quote), rates: publicPriceRates(quote.rates), dimension: quote.dimension }, { headers });
     }
     const catalog = await getApimartPricing();
     const quote = quoteApimartRequest(body, APIMART_PATHS[mode], catalog);
-    return Response.json({ provider: "apimart", model: publicModelId(quote.model), mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.amountMicrousd, rates: publicPriceRates(catalog.models.find(model => model.model === quote.model)?.rates || []) }, { headers });
+    return Response.json({ provider: "apimart", model: publicModelId(quote.model), mode, currency: "USD", observedAt: quote.observedAt, reservedMicrousd: quote.amountMicrousd, quoteFingerprint: await quoteFingerprint(quote), rates: publicPriceRates(catalog.models.find(model => model.model === quote.model)?.rates || []) }, { headers });
   } catch (cause) {
     return Response.json({ error: cause instanceof PricingError ? cause.message : "报价暂不可用，请稍后重试。" }, { status: cause instanceof PricingError ? cause.status : 503, headers });
   }

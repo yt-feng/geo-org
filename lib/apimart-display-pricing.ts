@@ -1,6 +1,7 @@
 import { fetchApimartPricingPayload, parseApimartPricing } from "./apimart-pricing";
 import { publicModelId } from "./model-id";
 import { retailUsdMicrousd, PricingError, publicServiceText } from "./pricing";
+import { valueRetailMicrousd } from "./value-pricing";
 
 type Json = Record<string, unknown>;
 export type DisplayPriceUnit = "1M_tokens" | "image" | "second" | "call" | "1000_queries" | "1M_token_hours";
@@ -169,6 +170,11 @@ export function parseApimartDisplayPricing(payload: unknown, observedAt = new Da
       catch { notes.push("部分附加功能价格尚未明确，调用前需另行确认。"); }
       if (!rates.length) unavailable.push({ model, reason: "此模型暂未取得明确报价。" });
       const kind = category === "llm" ? "chat" : category as "image" | "video" | "audio";
+      if (kind === "chat" && !(object(item.pricing) && item.pricing.time_pricing)) {
+        for (const rate of rates) if (rate.scope === "generation" && rate.unit === "1M_tokens") {
+          rate.retailMicrousd = valueRetailMicrousd(item.id, rate);
+        }
+      }
       models.push({ provider: "apimart", model, name: name(publicModelId(name(item.name, item.id)), model), kind, rates,
         available: rates.length > 0, billingReady: executable.has(item.id), notes: [...new Set(notes)],
         capabilitiesNotes: capabilitiesNotes(item, category, executable.has(item.id)) });

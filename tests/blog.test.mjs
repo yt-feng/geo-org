@@ -22,7 +22,8 @@ async function load(relative, mocks = {}) {
   }, { filename });
   return compiled.exports;
 }
-const blog = await load("../lib/blog.ts");
+const credits = await load("../lib/credits.ts");
+const blog = await load("../lib/blog.ts", { "./credits": credits });
 const card = await load("../components/BlogCard.tsx", { "@/lib/blog": blog });
 const shared = {
   "@/lib/blog": blog, "./BlogCard": card,
@@ -73,12 +74,12 @@ test("the billing guide preserves USD equivalents and the same reservation arith
   for (const locale of ["zh", "en"]) {
     const sections = post.content[locale].sections;
     const purchase = sections.find(section => section.id === "purchase-and-usage").paragraphs.join(" ");
-    assert.match(purchase, locale === "en" ? /USD 1 = 1,000 API credits/ : /USD 1 = 1,000 API 积分/);
+    assert.match(purchase, locale === "en" ? /\$1 = 35 credits/ : /\$1 = 35 积分/);
     const example = sections.find(section => section.id === "reservation-and-settlement").paragraphs.join(" ");
-    const pairs = [...example.matchAll(/(\d+) API (?:积分|credits)[（( ]+\$(\d+\.\d+)[）)]/g)].map(match => [Number(match[1]), Number(match[2])]);
-    assert.deepEqual(pairs, [[100, 0.10], [60, 0.06], [40, 0.04]]);
-    for (const [credits, dollars] of pairs) assert.equal(credits, Math.round(dollars * 1_000_000) / 1_000);
-    assert.equal(pairs[0][0] - pairs[1][0], pairs[2][0]);
+    const pairs = [...example.matchAll(/(\d+(?:\.\d+)?) (?:积分|credits)[（( ]+\$(\d+\.\d+)[）)]/g)].map(match => [Number(match[1]), Number(match[2])]);
+    assert.deepEqual(pairs, [[3.5, 0.10], [2.1, 0.06], [1.4, 0.04]]);
+    for (const [credits, dollars] of pairs) assert.equal(Math.round(credits * 1_000_000), Math.round(dollars * 1_000_000) * 35);
+    assert.equal(Math.round(pairs[0][0] * 1_000_000) - Math.round(pairs[1][0] * 1_000_000), Math.round(pairs[2][0] * 1_000_000));
   }
 });
 

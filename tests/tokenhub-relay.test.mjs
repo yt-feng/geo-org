@@ -13,7 +13,7 @@ async function loadModule(path, mocks = {}, globals = {}) {
   vm.runInNewContext(outputText, {
     module: compiledModule, exports: compiledModule.exports,
     require(specifier) { if (Object.hasOwn(mocks, specifier)) return mocks[specifier]; throw new Error(`Unexpected dependency ${specifier}`); },
-    crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, URL, Request, Response, Headers, AbortSignal,
+    crypto: webcrypto, structuredClone, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, URL, Request, Response, Headers, AbortSignal,
     fetch() { throw new Error("Unexpected network request in TokenHub relay test"); }, ...globals,
   }, { filename });
   return compiledModule.exports;
@@ -26,7 +26,9 @@ const ADMIN = { id: "admin", email: "admin@example.com", displayName: "Admin", i
 const VIDEO = { model: "doubao-seedance-2-0", content: [{ type: "text", text: "A still life" }], duration: 4 };
 const hash = value => createHash("sha256").update(value).digest("hex");
 const { ProviderError } = await loadModule("../lib/provider-settings.ts");
-const pricing = await loadModule("../lib/pricing.ts", { "./model-id": await loadModule("../lib/model-id.ts") });
+const valuePricing = { valueRetailMicrousd: (_model, rate) => rate.retailMicrousd, VALUE_PRICING_VERSION: "test-floor-only" };
+const pricing = await loadModule("../lib/pricing.ts", { "./model-id": await loadModule("../lib/model-id.ts"), "./value-pricing": valuePricing });
+const fingerprints = await loadModule("../lib/quote-fingerprint.ts");
 const amount = (value, unit = "1M tokens") => ({ amount: { currencyCode: "USD", unitsMicros: value, exactUnits: String(value / 1e6) }, display: `USD ${value / 1e6} / ${unit}` });
 const PRICE_CATALOG = pricing.normalizeTokenHubPricing({ currencyCode: "USD", data: [
   { id: VIDEO.model, deployments: [{ enabled: true, pricing: { video: { withoutVideo480p: amount(7e6), withoutVideo720p: amount(7e6) } } }] },
@@ -66,6 +68,7 @@ async function fixture(t, options = {}) {
     sqlite.prepare("INSERT INTO api_keys (id,user_id,key_prefix,key_hash,revoked_at) VALUES (?,?,?,?,?)").run(`key-${user.id}`, user.id, key.slice(0, 12), hash(key), revoked ? new Date().toISOString() : null);
   }
   const { handleTokenHubRelay, reconcileTokenHubTasks } = await loadModule("../lib/tokenhub-relay.ts", {
+    "./quote-fingerprint": fingerprints,
     "./auth": { getPortalUser: async () => { options.onSession?.(); return currentUser; }, isAdminEmail: email => email === "delegated-admin@example.com" },
     "./config": { runtimeEnv: () => env, getD1: () => DB },
     "./crypto": { sha256Hex: async value => hash(value) },
@@ -185,6 +188,25 @@ test("reserve ceiling headers reject malformed integers before credential lookup
     assert.equal(f.calls.length, 0);
     assert.equal(f.sqlite.prepare("SELECT count(*) AS n FROM wallet_reservations").get().n, 0);
   }
+});
+
+test("changed studio cache rates require reconfirmation at an identical reserve, without retaining a request claim", async t => {
+  const oldQuote = pricing.quoteTokenHubRequest(PRICE_CATALOG, "chat", CHAT), changed = structuredClone(PRICE_CATALOG);
+  changed.models.find(model => model.model === "chat").rates.find(rate => rate.dimension === "cacheRead").retailMicrousd *= 2;
+  const fresh = pricing.quoteTokenHubRequest(changed, "chat", CHAT);
+  assert.equal(fresh.reservedMicrousd, oldQuote.reservedMicrousd);
+  const f = await fixture(t, { user: MEMBER, pricing: changed, fetcher: async () => Response.json({ usage: { prompt_tokens: 10, completion_tokens: 1 } }) }); f.credit(MEMBER);
+  const submit = fingerprint => request("/v1/chat/completions", { body: JSON.stringify(CHAT), headers: { "X-Tokvilo-Max-Reserve-Microusd": String(oldQuote.reservedMicrousd), "X-Tokvilo-Quote-Fingerprint": fingerprint } });
+  const refused = await (await expectStatus(f.handle, submit(await fingerprints.quoteFingerprint(oldQuote)), 409)).json();
+  assert.equal(refused.error.code, "quote_changed"); assert.equal(f.calls.length, 0);
+  for (const table of ["wallet_reservations", "wallet_ledger", "tokenhub_requests", "tokenhub_billing"]) assert.equal(f.sqlite.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n, 0, table);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 100_000_000);
+  const first = await (await expectStatus(f.handle, submit(await fingerprints.quoteFingerprint(fresh)), 200)).json();
+  const replay = await (await expectStatus(f.handle, submit("not-a-fingerprint"), 200)).json();
+  assert.deepEqual(replay.usage, first.usage);
+  assert.equal(replay.tokvilo_billing.chargedMicrousd, first.tokvilo_billing.chargedMicrousd);
+  assert.equal(replay.tokvilo_billing.status, "settled");
+  assert.equal(f.calls.length, 1, "accepted receipt bypasses current-price checks");
 });
 test("member image and video billing settles only evidenced output, refunds confirmed failures, and preserves unknown outcomes", async t => {
   const image = await fixture(t, { user: MEMBER, fetcher: async () => Response.json({ data: [{ url: "https://media.example/image.png" }] }) }); image.credit(MEMBER);

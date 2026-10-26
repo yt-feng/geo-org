@@ -1,5 +1,7 @@
 "use client";
 
+import { CREDIT_EXCHANGE_LABEL } from "@/lib/credits";
+
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
@@ -153,7 +155,7 @@ export function PublicLanding() {
 
     <section className="landing-section landing-faq" id="faq"><div><span className="landing-eyebrow">GOOD TO KNOW</span><h2>{t('开始之前，', 'Before you begin,')}<br />{t('你可能想了解。', 'a few things to know.')}</h2><a className="landing-text-link" href="mailto:yt.feng@foxmail.com">{t('联系支持', 'Contact support')} <Icon name="arrow-up-right" size={14} /></a></div><div className="landing-faq-list">{[
       [t("怎么选择适合的模型？", "How do I choose a model?"), t("先选择对话、图像、视频或音频用途，再按厂商和模型系列浏览。同系列的不同代际集中展示，可继续查看模型规格、价格与可用状态。", "Choose chat, image, video or audio, then browse by creator and model family. Generations within a family are grouped together so you can compare specifications, prices and availability.")],
-      [t("模型 API 如何收费？", "How are model API calls billed?"), t("固定 USD 1 = 1,000 API 积分；积分与美元等值对应同一笔服务余额。价格页同时展示积分售价、美元等值和计费单位。调用前预留积分，确认实际用量后结算并释放差额，具体以该次请求的报价和结算记录为准。", "At a fixed USD 1 = 1,000 API credits, credits and their USD equivalent represent the same service balance. Prices show both alongside the billing unit. Credits are reserved before a request, settled against confirmed usage, and any excess released. Check the request’s quote and settlement for the exact amount.")],
+      [t("模型 API 如何收费？", "How are model API calls billed?"), t(`固定 ${CREDIT_EXCHANGE_LABEL.zh}；积分与美元等值对应同一笔服务余额。价格页同时展示积分售价、美元等值和计费单位。调用前预留积分，确认实际用量后结算并释放差额，具体以该次请求的报价和结算记录为准。`, `At a fixed ${CREDIT_EXCHANGE_LABEL.en}, credits and their USD equivalent represent the same service balance. Prices show both alongside the billing unit. Credits are reserved before a request, settled against confirmed usage, and any excess released. Check the request’s quote and settlement for the exact amount.`)],
       [t("如何充值并开始使用？", "How do I pay and get started?"), t("注册登录后，在 API 积分与充值页查看可用支付方式。英文版支持在线购买 tokvilo 服务用量包，或安排企业银行转账。选择已开放的模型，在工作台确认报价后发起请求。", "Create an account and open API credits & billing to see payment availability. The English site offers online payment for tokvilo usage packs or enterprise bank transfers. Choose an available model and confirm the quote before submitting a request.")],
       [t("所有模型都使用相同的接口吗？", "Do all models use the same endpoint?"), t("不同模型的接口和参数可能不同。进入模型对应的工作台，或在 API 文档中查看支持的协议与请求示例后接入。", "Endpoints and parameters can vary between models. Use the model’s workspace, or check its API documentation for supported protocols and request examples.")],
       [t("数字商品如何购买？", "How do I buy a digital product?"), t("在数字商品页查看参考售价并填写需求表单。我们会在 24 小时内通过邮件回复，确认库存、适用条件与交付安排。", "Review the indicative price on the Digital Products page and submit an inquiry. We will reply by email within 24 hours to confirm availability, eligibility and delivery.")],

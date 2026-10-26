@@ -115,3 +115,17 @@
 .official-price-details h4 { margin: 18px 0 8px; font-size: 15px; font-weight: 500; }
 .wallet-summary small.wallet-usd-equivalent { font-size: 16px; }
 @media(max-width:760px) { .credit-budget { padding: 20px; } .credit-budget-controls,.credit-budget-result { grid-template-columns: 1fr; } .credit-budget h2 { font-size: 24px; } }
+
+/* Public task samples in the API budget planner. */
+.credit-budget-scenarios { border: 0; padding: 0; margin: 24px 0 16px; min-width: 0; }
+.credit-budget-scenarios legend { padding: 0; margin-bottom: 12px; font-size: 17px; font-weight: 500; }
+.credit-budget-scenarios > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.credit-budget-scenarios label { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; min-width: 0; }
+.credit-budget-scenarios label.is-selected { border-color: currentColor; }
+.credit-budget-scenarios label:focus-within { outline: 2px solid currentColor; outline-offset: 3px; }
+.credit-budget-scenarios input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 4px; accent-color: currentColor; }
+.credit-budget-scenarios strong { display: block; font-size: 17px; line-height: 1.5; font-weight: 500; }
+.credit-budget-scenarios label span span { display: block; margin-top: 7px; color: var(--muted); font-size: 16px; line-height: 1.6; }
+.credit-budget .credit-budget-assumptions { padding: 14px 16px; border-left: 2px solid var(--line); font-size: 16px; }
+.credit-budget-result.credit-budget-scenario-result { grid-template-columns: repeat(2,minmax(0,1fr)); }
+@media(max-width:760px) { .credit-budget-scenarios > div,.credit-budget-result.credit-budget-scenario-result { grid-template-columns: 1fr; } }

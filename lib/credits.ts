@@ -1,11 +1,14 @@
 /** Display unit only. The USD ledger and actual token usage remain authoritative. */
-export const CREDITS_PER_USD = 1_000;
-export const MICROS_PER_CREDIT = 1_000;
+export const CREDITS_PER_USD = 35;
 type Locale = "zh" | "en";
+export const CREDIT_EXCHANGE_LABEL = {
+  zh: `$1 = ${CREDITS_PER_USD.toLocaleString("en-US")} 积分`,
+  en: `$1 = ${CREDITS_PER_USD.toLocaleString("en-US")} credits`,
+} as const;
 
-function scaledAmount(microusd: number, digits: number): string | null {
+function scaledAmount(microusd: number, digits: number, multiplier = 1): string | null {
   if (!Number.isSafeInteger(microusd)) return null;
-  const amount = BigInt(microusd), absolute = amount < BigInt(0) ? -amount : amount;
+  const amount = BigInt(microusd) * BigInt(multiplier), absolute = amount < BigInt(0) ? -amount : amount;
   const divisor = BigInt(10) ** BigInt(digits);
   const fraction = (absolute % divisor).toString().padStart(digits, "0").replace(/0+$/, "");
   return `${amount < BigInt(0) ? "-" : ""}${(absolute / divisor).toLocaleString("en-US")}${fraction ? `.${fraction}` : ""}`;
@@ -17,7 +20,7 @@ export function formatCreditUsd(microusd: number): string {
 }
 
 export function formatCreditAmount(microusd: number, locale: Locale): string {
-  const amount = scaledAmount(microusd, 3);
+  const amount = scaledAmount(microusd, 6, CREDITS_PER_USD);
   return amount === null ? "—" : `${amount} ${locale === "zh" ? "积分" : "credits"}`;
 }
 

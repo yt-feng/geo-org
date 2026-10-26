@@ -15,7 +15,8 @@ async function load(path, mocks = {}) {
 }
 const internal = await load("../lib/products.ts");
 const published = await load("../lib/public-products.ts");
-const pricing = await load("../lib/pricing.ts", { "./model-id": await load("../lib/model-id.ts") });
+const valuePricing = await load("../lib/value-pricing.ts", { "./official-pricing": await load("../lib/official-pricing.ts") });
+const pricing = await load("../lib/pricing.ts", { "./model-id": await load("../lib/model-id.ts"), "./value-pricing": valuePricing });
 
 test("client catalogue contains only final prices and stays synchronized with internal settlement products", () => {
   assert.equal(published.digitalProducts.length, internal.digitalProducts.length);

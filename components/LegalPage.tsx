@@ -1,5 +1,7 @@
 "use client";
 
+import { CREDIT_EXCHANGE_LABEL } from "@/lib/credits";
+
 import Link from "next/link";
 import { PublicNav } from "./PublicNav";
 import { PublicFooter } from "./PublicFooter";
@@ -18,7 +20,7 @@ const sections: Record<LegalDocument, Section[]> = {
       ["不得利用本服务实施违法活动、欺诈、侵犯他人知识产权或隐私，或绕过服务限制。不得生成或传播未经授权的身份冒充、换脸、深度伪造、声音模仿或其他违反适用法律与模型服务规则的内容。", "Do not use the service for unlawful activity, fraud, intellectual property or privacy violations, or to circumvent service restrictions. Do not generate or distribute unauthorized impersonations, face swaps, deepfakes, voice imitations, or other content that violates applicable law or model service rules."],
     ] },
     { id: "payment", title: ["3. 价格、购买与用量", "3. Pricing, purchases & usage"], paragraphs: [
-      ["API 积分是同一美元服务余额的显示单位：USD 1 = 1,000 积分。积分不改变所选模型的真实费率或 token 用量；页面与确认报价同时提供美元等值。数字商品独立计价。", "API credits are a display unit for the same USD service balance: USD 1 = 1,000 credits. Credits do not change the selected model’s actual rates or token usage; pages and confirmed quotes also provide the USD equivalent. Digital goods are priced separately."],
+      [`API 积分是同一美元服务余额的显示单位：${CREDIT_EXCHANGE_LABEL.zh}。积分不改变所选模型的真实费率或 token 用量；页面与确认报价同时提供美元等值。数字商品独立计价。`, `API credits are a display unit for the same USD service balance: ${CREDIT_EXCHANGE_LABEL.en}. Credits do not change the selected model’s actual rates or token usage; pages and confirmed quotes also provide the USD equivalent. Digital goods are priced separately.`],
       ["模型页与报价展示 tokvilo 当前售价和计费单位。API 服务用量包为一次性购买，不自动续费。USD 20、50、100 用量包分别包含同等金额的 tokvilo 服务用量；适用税费另在收银台显示，不计入服务用量。", "Model pages and quotes show current tokvilo rates and billing units. API usage packs are one-time purchases without automatic renewal. USD 20, 50 and 100 packs include the corresponding amount of tokvilo service usage. Applicable taxes are shown separately at checkout and do not add usage."],
       ["Paddle 支付仅在本网站完成审核与配置后开放；经 Paddle 处理的购买同时适用收银台展示的 Paddle 买方条款。企业银行转账按邮件确认的服务和付款说明办理，核实实际到账后人工入账。", "Paddle payments become available after this website completes review and configuration. Purchases processed through Paddle are also subject to the Paddle buyer terms presented at checkout. Enterprise transfers follow the service and payment instructions confirmed by email, with usage added after receipt is verified."],
       ["服务用量仅用于购买账户的 tokvilo API 与 Playground，不可转赠、提现或用于第三方商品支付。第三方账户、会员订阅和代充商品不属于 API 用量包。退款按退款政策与适用法律办理。", "Usage is exclusively for the purchasing account's tokvilo APIs and Playground. It is non-transferable, cannot be cashed out and cannot pay for third-party goods. Third-party accounts, memberships and subscription top-ups are outside the API usage packs. Refunds are handled under our refund policy and applicable law."],
@@ -81,7 +83,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
   const { t, href, locale } = useSiteLocale();
   const titles: Record<LegalDocument, [string, string]> = { terms: ["服务条款", "Terms of service"], refunds: ["退款政策", "Refund policy"], privacy: ["隐私政策", "Privacy policy"] };
   return <div className="market-page" lang={locale}><PublicNav /><main className="billing-main legal-main">
-    <header className="billing-intro"><span className="landing-eyebrow">TOKVILO / {document.toUpperCase()}</span><h1>{t(...titles[document])}</h1><p>{t("更新日期：2026 年 10 月 23 日", "Updated October 23, 2026")}</p></header>
+    <header className="billing-intro"><span className="landing-eyebrow">TOKVILO / {document.toUpperCase()}</span><h1>{t(...titles[document])}</h1><p>{t("更新日期：2026 年 10 月 26 日", "Updated October 26, 2026")}</p></header>
     <div className="legal-layout"><aside className="legal-contents"><span>{t("本页内容", "On this page")}</span><nav aria-label={t("本页目录", "Page contents")}>{sections[document].map(section => <a href={`#${section.id}`} key={section.id}>{t(...section.title)}</a>)}</nav><Link href={href("/billing")}>{t("← 支付方式", "← Payment options")}</Link></aside><article className="legal-copy">{sections[document].map(section => <section id={section.id} key={section.id}><h2>{t(...section.title)}</h2>{section.paragraphs.map((paragraph, index) => <p key={index}>{t(...paragraph)}</p>)}{document === "refunds" && section.id === "paddle" ? <p className="legal-source-links"><a href="https://www.paddle.com/legal/refund-policy" target="_blank" rel="noreferrer">{t("支付服务商退款政策", "Payment provider refund policy")} ↗</a><a href="https://paddle.net" target="_blank" rel="noreferrer">{t("支付服务商买方支持", "Payment provider buyer support")} ↗</a></p> : null}{document === "terms" && section.id === "payment" ? <p><Link href={href("/refunds")}>{t("查看退款政策", "Read the refund policy")} ↗</Link></p> : null}</section>)}</article></div>
   </main><PublicFooter /></div>;
 }

@@ -11,8 +11,10 @@ vm.runInNewContext(idsCode, { module: ids, exports: ids.exports });
 const { outputText } = ts.transpileModule(await readFile(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
 const compiled = { exports: {} };
 vm.runInNewContext(outputText, { module: compiled, exports: compiled.exports, require(name) {
-  if (name === "./model-id") return ids.exports; throw Error(name);
-}, TextEncoder, TextDecoder, Uint8Array, AbortSignal, Response });
+  if (name === "./model-id") return ids.exports;
+  if (name === "./value-pricing") return { valueRetailMicrousd: (_model, rate) => rate.retailMicrousd, VALUE_PRICING_VERSION: "test-floor-only" };
+  throw Error(name);
+}, TextEncoder, TextDecoder, Uint8Array, AbortSignal, Response, structuredClone });
 const { markupMicrousd, tokenCostMicrousd, normalizeTokenHubPricing, quoteTokenHubRequest, tokenHubActualCost, getTokenHubPricing } = compiled.exports;
 const amount = (micros, unit = "1M tokens") => ({ amount: { currencyCode: "USD", unitsMicros: micros, exactUnits: String(micros / 1e6) }, display: `USD ${micros / 1e6} / ${unit}` });
 function source() { return { currencyCode: "USD", data: [

@@ -7,6 +7,8 @@ import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
 import { credits, billingSummary } from "./helpers/credit-display.mjs";
 
+const quoteFingerprint = "a".repeat(64);
+
 const filename = new URL("../components/SelectedPlayground.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const text = node => typeof node === "string" || typeof node === "number" ? String(node) : Array.isArray(node) ? node.map(text).join("") : node?.props ? text(node.props.children) : "";
@@ -35,7 +37,7 @@ async function fixture(options = {}) {
         { provider: "apimart", model, name: "Other service model", kind, billingReady: true },
         { provider: "selected", model, name: "Selected model", kind, billingReady: options.ready !== false },
       ] });
-      if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ provider: "selected", model, mode: kind, currency: "USD", reservedMicrousd: 12000 });
+      if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ quoteFingerprint, provider: "selected", model, mode: kind, currency: "USD", reservedMicrousd: 12000 });
       if (url === "/api/selected/v1/requests") return options.history ? options.history(url, init) : Response.json({ data: [] });
       if (url.startsWith("/api/selected/v1/requests/")) return options.receipt ? options.receipt(url, init) : Response.json({ choices: [{ message: { content: "Recovered result" } }], tokvilo_billing: { status: "settled", chargedMicrousd: 3000 } });
       return options.generate ? options.generate(url, init) : Response.json({ choices: [{ message: { content: "Finished" } }], tokvilo_billing: { status: "settled", chargedMicrousd: 3000 } });
@@ -54,7 +56,7 @@ for (const kind of ["chat", "image"]) test(`selected ${kind} displays quote then
   assert.doesNotMatch(text(f.tree()), /Other service model|rkapi|源价|加价/i);
   assert.equal(f.primary().props.disabled, false);
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), /确认预留 12 积分 \(\$0\.012\)/);
+  assert.match(text(f.primary()), /确认预留 0\.42 积分 \(\$0\.012\)/);
   assert.equal(f.calls.filter(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST").length, 0);
   await f.primary().props.onClick(); f.render();
   const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
@@ -63,6 +65,7 @@ for (const kind of ["chat", "image"]) test(`selected ${kind} displays quote then
   assert.equal(sent.url, kind === "chat" ? "/api/selected/v1/chat/completions" : "/api/selected/v1/images/generations");
   assert.deepEqual(JSON.parse(sent.init.body), quoted.body);
   assert.equal(sent.init.headers["X-Tokvilo-Max-Reserve-Microusd"], "12000");
+  assert.equal(sent.init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
   assert.ok(sent.init.headers["Idempotency-Key"]);
   if (kind === "image") assert.deepEqual(quoted.body, { model: "same-model", prompt: "Explain this model", size: "1024x1024", n: 1 });
   else assert.equal(quoted.body.max_tokens, 1024);
@@ -86,7 +89,7 @@ test("changing the request or receiving a stale quote cannot submit using an old
   const delayed = await fixture({ quote: () => new Promise(done => { resolve = done; }) });
   const request = delayed.primary().props.onClick();
   delayed.prompt("Changed during quote");
-  resolve(Response.json({ provider: "selected", model: "same-model", mode: "chat", currency: "USD", reservedMicrousd: 12000 }));
+  resolve(Response.json({ quoteFingerprint, provider: "selected", model: "same-model", mode: "chat", currency: "USD", reservedMicrousd: 12000 }));
   await request; delayed.render();
   assert.equal(text(delayed.primary()), "获取准确报价");
   assert.equal(delayed.calls.filter(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST").length, 0);
@@ -110,6 +113,33 @@ test("a selected reserve increase invalidates confirmation before another paid r
   assert.equal(text(f.primary()), "获取准确报价");
   await f.primary().props.onClick(); f.render();
   assert.equal(f.calls.filter(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST").length, 1);
+});
+
+test("selected rejects absent or invalid quote fingerprints without any generation", async () => {
+  for (const invalid of [undefined, null, "", "a".repeat(63), "g".repeat(64), 123]) {
+    const f = await fixture({ quote: () => Response.json({ provider: "selected", model: "same-model", mode: "chat", currency: "USD", reservedMicrousd: 12000, quoteFingerprint: invalid }) });
+    await f.primary().props.onClick(); f.render();
+    assert.equal(text(f.primary()), "获取准确报价");
+    await f.primary().props.onClick(); f.render();
+    assert.equal(f.calls.filter(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST").length, 0);
+  }
+});
+
+test("selected replaces a changed quote fingerprint and requires reconfirmation at an unchanged total", async () => {
+  let quotes = 0, attempts = 0;
+  const f = await fixture({
+    quote: () => Response.json({ provider: "selected", model: "same-model", mode: "chat", currency: "USD", reservedMicrousd: 12000, quoteFingerprint: ++quotes === 1 ? quoteFingerprint : "b".repeat(64) }),
+    generate: () => ++attempts === 1 ? Response.json({ error: { code: "quote_changed", message: "价格已更新，请重新获取报价。" } }, { status: 409 }) : Response.json({ choices: [{ message: { content: "New quote confirmed" } }], tokvilo_billing: { status: "settled", chargedMicrousd: 3000 } }),
+  });
+  await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); f.render();
+  assert.equal(text(f.primary()), "获取准确报价");
+  await f.primary().props.onClick(); f.render(); assert.equal(attempts, 1);
+  await f.primary().props.onClick(); f.render();
+  const paid = f.calls.filter(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST");
+  assert.equal(paid.length, 2);
+  assert.equal(paid[0].init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
+  assert.equal(paid[1].init.headers["X-Tokvilo-Quote-Fingerprint"], "b".repeat(64));
+  assert.equal(paid[0].init.body, paid[1].init.body);
 });
 
 test("an in-flight request exposes its ID and an HTTP error preserves billing plus GET-only recovery", async () => {
@@ -193,7 +223,7 @@ test("English selected playground keeps generated content and request identity u
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
   f.prompt("不翻译这段用户提示词");
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), /Reserve 12 credits \(\$0\.012\) & generate/);
+  assert.match(text(f.primary()), /Reserve 0\.42 credits \(\$0\.012\) & generate/);
   await f.primary().props.onClick(); f.render();
   const paid = f.calls.find(call => call.url === "/api/selected/v1/chat/completions");
   const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
@@ -213,7 +243,7 @@ test("zero balance permits a quote but prevents generation, then refreshing fund
   assert.equal(f.primary().props.disabled, false, "a quote does not charge an empty wallet");
   await f.primary().props.onClick(); f.render();
   assert.equal(f.primary().props.disabled, true);
-  assert.match(text(f.tree()), /还需充值 12 积分 \(\$0\.012\)/);
+  assert.match(text(f.tree()), /还需充值 0\.42 积分 \(\$0\.012\)/);
   await f.primary().props.onClick();
   assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).length, 0);
   balance = 50_000;
@@ -269,18 +299,19 @@ test("quote failure is displayed beside the action button", async () => {
 for (const english of [false, true]) test(`Select credits preserve exact one-microdollar amounts and token counts (${english ? "en" : "zh"})`, async () => {
   const receipt = { choices: [{ message: { content: "Exact reply" } }], usage: { prompt_tokens: 900, completion_tokens: 11, total_tokens: 911 }, tokvilo_billing: { currency: "USD", status: "settled", reservedMicrousd: 1, chargedMicrousd: 1 } };
   const original = JSON.stringify(receipt);
-  const f = await fixture({ english, quote: () => Response.json({ provider: "selected", model: "same-model", mode: "chat", currency: "USD", reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
-  assert.match(text(f.tree()), english ? /\$1 = 1,000 credits/ : /\$1 = 1,000 积分/);
-  assert.match(text(f.tree()), english ? /1,000 credits \(\$1\)/ : /1,000 积分 \(\$1\)/);
+  const f = await fixture({ english, quote: () => Response.json({ quoteFingerprint, provider: "selected", model: "same-model", mode: "chat", currency: "USD", reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
+  assert.match(text(f.tree()), english ? /\$1 = 35 credits/ : /\$1 = 35 积分/);
+  assert.match(text(f.tree()), english ? /35 credits \(\$1\)/ : /35 积分 \(\$1\)/);
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), english ? /0\.001 credits \(\$0\.000001\)/ : /0\.001 积分 \(\$0\.000001\)/);
+  assert.match(text(f.primary()), english ? /0\.000035 credits \(\$0\.000001\)/ : /0\.000035 积分 \(\$0\.000001\)/);
   await f.primary().props.onClick(); f.render();
   const sent = f.calls.find(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST");
   assert.equal(sent.init.headers["X-Tokvilo-Max-Reserve-Microusd"], "1");
+  assert.equal(sent.init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
   assert.deepEqual(JSON.parse(sent.init.body), JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body);
   const summary = find(f.tree(), node => node.type === billingSummary.PlaygroundBillingSummary);
   assert.ok(summary); assert.equal(summary.props.locale, english ? "en" : "zh");
-  assert.match(text(summary.type(summary.props)), english ? /Actual charge0\.001 credits \(\$0\.000001\)/ : /实际费用0\.001 积分 \(\$0\.000001\)/);
+  assert.match(text(summary.type(summary.props)), english ? /Actual charge0\.000035 credits \(\$0\.000001\)/ : /实际费用0\.000035 积分 \(\$0\.000001\)/);
   assert.match(text(f.tree()), /"total_tokens": 911/);
   assert.equal(JSON.stringify(receipt), original);
 });

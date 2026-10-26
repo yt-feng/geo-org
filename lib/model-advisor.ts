@@ -134,16 +134,20 @@ export async function loadAdvisorContext(env: AdvisorEnv, fetcher: typeof fetch 
         if (model.kind !== "chat" || modelRequestKind(model.model, "text") !== "chat" || !ids.has(model.model) || !model.textPrice) continue;
         context.models.push(publicModel(model.model, model.name, "gateway", model.textPrice.maxInputTokens));
         if (!model.textPrice.time) for (const tier of model.textPrice.tiers) {
+          const retail = tier.retailUsdRates || tier.usdRates, factor = tier.retailUsdRates ? 1 : 1.2;
           context.priceTiers!.push({ modelId: publicModelId(model.model), service: "gateway", maxInputTokens: tier.upToInputTokens,
-            inputUsdPerMillion: Number(tier.usdRates.input.n) / Number(tier.usdRates.input.d) * 1.2,
-            outputUsdPerMillion: Number(tier.usdRates.output.n) / Number(tier.usdRates.output.d) * 1.2 });
+            inputUsdPerMillion: Number(retail.input.n) / Number(retail.input.d) * factor,
+            outputUsdPerMillion: Number(retail.output.n) / Number(retail.output.d) * factor });
         }
         // Multi-tier/time-window prices cannot be ranked as a single fixed fee.
         if (model.textPrice.tiers.length !== 1 || model.textPrice.time) continue;
         const rates = model.textPrice.tiers[0].usdRates;
         const amount = (dimension: string) => rates[dimension] ? Number(rates[dimension].n) / Number(rates[dimension].d) : NaN;
         const input = amount("input"), output = amount("output");
-        context.prices.push({ modelId: publicModelId(model.model), service: "gateway", inputUsdPerMillion: input * 1.2, outputUsdPerMillion: output * 1.2 });
+        const retail = model.textPrice.tiers[0].retailUsdRates;
+        context.prices.push({ modelId: publicModelId(model.model), service: "gateway",
+          inputUsdPerMillion: retail ? Number(retail.input.n) / Number(retail.input.d) : input * 1.2,
+          outputUsdPerMillion: retail ? Number(retail.output.n) / Number(retail.output.d) : output * 1.2 });
         context.candidates.push({ service: "gateway", model: model.model, apiKey, endpoint: "https://api.apimart.ai/api/v1/chat/completions", inputUsdPerMillion: input, outputUsdPerMillion: output,
           maximumInputUsdPerMillion: Math.max(input, ...Object.keys(rates).filter(key => key !== "output").map(amount)), maxInputTokens: model.textPrice.maxInputTokens,
           maxOutputTokens: model.textPrice.maxOutputTokens, authenticatedModelListed: true, observedAt: catalog.observedAt });

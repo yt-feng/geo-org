@@ -69,10 +69,10 @@ test("usage packs keep their exact dollar payment, disclose tax, and show equiva
     const packages = find(f.tree(), node => node.props.className === "wallet-packages paddle-packages");
     const card = packages.props.children.find(node => text(find(node, child => child.type === "h3")) === `$${amountUsd}.00`);
     assert.ok(card);
-    assert.match(text(card), new RegExp(`${amountUsd},000 credits \\(\\$${amountUsd}\\)`));
+    assert.match(text(card), new RegExp(`${(amountUsd * 35).toLocaleString("en-US")} credits \\(\\$${amountUsd}\\)`));
     assert.match(text(card), /One-time payment \(USD, before tax\)/);
     assert.match(text(card), /taxes do not add credits/);
-    assert.match(text(f.tree()), /fixed \$1 USD = 1,000 tokvilo credits/);
+    assert.match(text(f.tree()), /fixed \$1 = 35 credits/);
     assert.match(text(f.tree()), /cannot be transferred, withdrawn as cash, or used to buy third-party subscriptions or digital goods/);
     await find(card, node => node.type === "button").props.onClick(); await f.settle();
     const payload = JSON.parse(f.calls.find(call => call.init?.method === "POST").init.body);
@@ -97,7 +97,7 @@ test("client checkout completion cannot credit a wallet; verified order completi
   assert.equal(f.confirmed(), 0); assert.match(text(f.tree()), /Waiting for payment confirmation/);
   serverOrder = paid;
   await f.click("Check payment status");
-  assert.equal(f.confirmed(), 1); assert.match(text(f.tree()), /Payment confirmed.*20,000 credits \(\$20\)/s);
+  assert.equal(f.confirmed(), 1); assert.match(text(f.tree()), /Payment confirmed.*700 credits \(\$20\)/s);
   assert.equal(f.storage.has(storageKey), false);
   f.event({ name: "checkout.completed", data: { transaction_id: ready.transactionId } }); await f.settle();
   assert.equal(f.confirmed(), 1);
@@ -153,7 +153,7 @@ test("enterprise email contains the signed-in account and entered company and am
   assert.equal(url.pathname, "yt.feng@foxmail.com");
   const body = url.searchParams.get("body");
   assert.match(body, /Account email: buyer@example\.com/); assert.match(body, /Company: Example & Co/); assert.match(body, /USD 250\.50/);
-  assert.match(text(f.tree()), /Requested usage: 250,500 credits \(\$250\.5\)/);
+  assert.match(text(f.tree()), /Requested usage: 8,767\.5 credits \(\$250\.5\)/);
   assert.match(text(f.tree()), /This is a request, not credited balance/);
   assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
   f.change("enterprise-amount", "-1");
@@ -280,10 +280,10 @@ for (const lateFailure of ["network error", "deadline"]) test(`a stale backgroun
   } });
   await f.click("Continue payment");
   assert.equal(f.confirmed(), 1); assert.equal(f.storage.has(storageKey), false);
-  assert.match(text(f.tree()), /Payment confirmed\. 20,000 credits \(\$20\) has been added/);
+  assert.match(text(f.tree()), /Payment confirmed\. 700 credits \(\$20\) has been added/);
   if (lateFailure === "deadline") await f.expireRequests(20_000);
   else { rejectBackground(Error("Old background request failed")); await f.settle(); }
-  assert.match(text(f.tree()), /Payment confirmed\. 20,000 credits \(\$20\) has been added/);
+  assert.match(text(f.tree()), /Payment confirmed\. 700 credits \(\$20\) has been added/);
   assert.doesNotMatch(text(f.tree()), /Old background request failed|Payment status took too long/);
   assert.equal(f.confirmed(), 1); assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
 });

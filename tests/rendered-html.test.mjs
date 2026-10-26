@@ -193,8 +193,8 @@ test("homepage renders native Chinese and English content with working localized
   const visible = html => html.replace(/<[^>]+>/g, "");
   assert.match(visible(zh), /选对模型.*让想法成形/s);
   assert.match(visible(en), /Find your model.*Create what/);
-  assert.match(visible(zh), /USD 1 = 1,000 API 积分.*同一笔服务余额/);
-  assert.match(visible(en), /USD 1 = 1,000 API credits.*same service balance/);
+  assert.match(visible(zh), /\$1 = 35 积分.*同一笔服务余额/);
+  assert.match(visible(en), /\$1 = 35 credits.*same service balance/);
   assert.match(en, /href="\/en\/models\?provider=OPENAI&amp;family=gpt&amp;category=text"/);
   assert.match(en, /href="\/en\/products"/);
   assert.match(en, /href="\/dashboard\/docs\?lang=en"/);

@@ -11,11 +11,13 @@ async function load(path, mocks = {}, globals = {}) {
   vm.runInNewContext(code, { module: compiledModule, exports: compiledModule.exports, URL, URLSearchParams, Intl, Date, Error, AbortController, require(name) {
     if (name === 'react/jsx-runtime') return jsx;
     if (name === 'next/link') return { default: 'a' };
+    if (name === '@/lib/credits') return credits;
     if (name in mocks) return mocks[name];
     throw Error(`Unexpected dependency: ${name}`);
   }, ...globals });
   return compiledModule.exports;
 }
+const credits = await load('lib/credits.ts');
 const site = await load('lib/site-locale.ts');
 const apiDocCopy = await load('lib/api-doc-copy.ts');
 const locale = { useSiteLocale: () => ({ locale: 'en', isEnglish: true, t: (zh, en) => en, href: path => site.localizedHref(path, 'en') }), LanguageSwitcher: 'language-switch', LocaleProvider: 'locale-provider' };
@@ -43,7 +45,7 @@ test('both pricing pages explain the fixed credit unit and retain their localize
       '@/components/PublicFooter': { PublicFooter: 'footer' }, '@/components/PublicNav': { PublicNav: 'nav' }, '@/components/PriceTable': { PriceTable: 'price-table' },
     });
     const tree = pageModule.default();
-    assert.match(text(tree), lang === 'en' ? /USD 1 = 1,000 API credits/ : /USD 1 = 1,000 API 积分/);
+    assert.match(text(tree), lang === 'en' ? /\$1 = 35 credits/ : /\$1 = 35 积分/);
     assert.match(text(tree), lang === 'en' ? /same service balance/ : /同一笔余额/);
     assert.ok(findAll(tree, node => node.type === 'a').some(node => node.props.href === `/dashboard/wallet${lang === 'en' ? '?lang=en' : ''}`));
   }

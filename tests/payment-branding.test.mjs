@@ -48,11 +48,11 @@ test("billing packs show a fixed credit conversion alongside unchanged one-time 
     for (const [index, amount] of [20, 50, 100].entries()) {
       const copy = visible(packs[index]);
       assert.match(copy, new RegExp(`\\$${amount}USD`));
-      assert.match(copy, new RegExp(`${amount},000 ${locale === "en" ? "credits" : "积分"} \\(\\$${amount}\\)`));
+      assert.match(copy, new RegExp(`${(amount * 35).toLocaleString("en-US")} ${locale === "en" ? "credits" : "积分"} \\(\\$${amount}\\)`));
       assert.match(copy, locale === "en" ? /One-time payment · before tax/ : /一次性付款 · 未含税/);
     }
     assert.match(visible(html), locale === "en" ? /taxes do not add credits/ : /税费不增加积分/);
-    assert.match(visible(html), locale === "en" ? /Every pack uses the same \$1 = 1,000 credits conversion/ : /所有用量包均按 \$1 = 1,000 积分换算/);
+    assert.match(visible(html), locale === "en" ? /Every pack uses the same \$1 = 35 credits conversion/ : /所有用量包均按 \$1 = 35 积分换算/);
     assert.match(visible(html), locale === "en" ? /They are not model tokens/ : /与模型的 token 数不同/);
     assert.match(visible(html), locale === "en" ? /Digital goods do not use API credits/ : /数字商品不使用 API 积分/);
   }

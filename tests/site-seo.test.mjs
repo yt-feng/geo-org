@@ -19,7 +19,8 @@ function compile(text, dependencies = {}) {
   return mod.exports;
 }
 const locale = compile(await source("lib/site-locale.ts"));
-const blog = compile(await source("lib/blog.ts"));
+const credits = compile(await source("lib/credits.ts"));
+const blog = compile(await source("lib/blog.ts"), { "./credits": credits });
 const seo = compile(await source("lib/site-seo.ts"), { "./site-locale": locale, "./blog": blog });
 const rootSource = await source("app/layout.tsx");
 const rootDependencies = Object.fromEntries([...rootSource.matchAll(/import "(.+\.css)"/g)].map(match => [match[1], {}]));

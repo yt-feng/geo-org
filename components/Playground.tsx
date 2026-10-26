@@ -1,7 +1,7 @@
 "use client";
 
 import { useSiteLocale } from "./LocaleProvider";
-import { formatCreditsWithUsd } from "@/lib/credits";
+import { CREDIT_EXCHANGE_LABEL, formatCreditsWithUsd } from "@/lib/credits";
 import { PlaygroundBillingSummary } from "./PlaygroundBillingSummary";
 
 import { englishPriceText } from "@/lib/price-copy";
@@ -70,7 +70,7 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
   const [serviceStatus, setServiceStatus] = useState<PlaygroundStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
   const [statusError, setStatusError] = useState(false);
-  const [quote, setQuote] = useState<{ signature: string; reservedMicrousd: number; observedAt: string } | null>(null);
+  const [quote, setQuote] = useState<{ signature: string; reservedMicrousd: number; observedAt: string; quoteFingerprint: string } | null>(null);
   const [requestError, setRequestError] = useState("");
   const [pendingId, setPendingId] = useState("");
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
@@ -219,8 +219,8 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
       const response = await fetch("/api/pricing/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider: "apimart", mode: category === "text" ? "chat" : category, body: payload }) });
       const data = await response.json();
       if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : data.error?.message || "报价暂不可用，请稍后重试。");
-      if (data.provider !== "apimart" || data.model !== model || data.currency !== "USD" || !Number.isSafeInteger(data.reservedMicrousd) || data.reservedMicrousd < 1 || data.reservedMicrousd > 1_000_000_000_000) throw new Error("报价内容不完整，请重新获取。");
-      setQuote({ signature, reservedMicrousd: data.reservedMicrousd, observedAt: typeof data.observedAt === "string" ? data.observedAt : "" });
+      if (data.provider !== "apimart" || data.model !== model || data.currency !== "USD" || !Number.isSafeInteger(data.reservedMicrousd) || data.reservedMicrousd < 1 || data.reservedMicrousd > 1_000_000_000_000 || typeof data.quoteFingerprint !== "string" || !/^[a-f0-9]{64}$/.test(data.quoteFingerprint)) throw new Error("报价内容不完整，请重新获取。");
+      setQuote({ signature, reservedMicrousd: data.reservedMicrousd, observedAt: typeof data.observedAt === "string" ? data.observedAt : "", quoteFingerprint: data.quoteFingerprint });
     } catch (cause) { setRequestError(cause instanceof Error ? cause.message : "报价暂不可用，请稍后重试。"); }
     finally { await statusRefresh; setBusy(false); setPhase(null); inFlight.current = false; }
   }
@@ -231,13 +231,14 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
     pendingRequest.current = { signature, id: crypto.randomUUID(), model };
     setPendingId(pendingRequest.current.id);
     try {
-      const response = await fetch(`/api/gateway${endpoints[category]}`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pendingRequest.current.id, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd) }, body: json });
+      const response = await fetch(`/api/gateway${endpoints[category]}`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pendingRequest.current.id, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd), "X-Tokvilo-Quote-Fingerprint": currentQuote.quoteFingerprint }, body: json });
       const data = await response.json();
       if (!response.ok) {
         const serviceBalanceUnavailable = data.error?.code === "service_balance_unavailable";
         const confirmedRefund = serviceBalanceUnavailable && data.tokvilo_billing?.status === "refunded" && data.tokvilo_billing.chargedMicrousd === 0;
         if (confirmedRefund) { clearPendingRequest(); setQuote(null); }
-        if (data.error?.code === "reservation_limit_exceeded") { clearPendingRequest(); setQuote(null); }
+        if (data.error?.code === "reservation_limit_exceeded" || data.error?.code === "quote_changed") { clearPendingRequest(); setQuote(null); }
+        if (data.error?.code === "quote_changed") throw new Error(t("费率或计费条件已更新，请重新获取报价后确认。尚未发送生成请求或预留金额。", "Rates or billing conditions changed. Get a new quote before confirming. No generation request or reservation was made."));
         if (response.status < 500 && response.status !== 409) clearPendingRequest();
         if (serviceBalanceUnavailable) throw new Error(confirmedRefund
           ? t("生成服务暂时不可用，本次未扣费。请稍后重试或联系支持。", "Service temporarily unavailable. You were not charged. Try later or contact support.")
@@ -315,7 +316,7 @@ export function Playground({ initialModel, initialCategory, isAdmin }: { initial
         <div className="playground-field"><button type="button" onClick={() => { automaticSelection.current.allowed = false; setAdvanced(advanced === null ? json : null); }}>{advanced === null ? t("编辑完整 JSON 参数", "Edit full JSON parameters") : t("返回基础参数", "Back to basic parameters")}</button>{advanced !== null ? <><textarea aria-label={t("完整 JSON 参数", "Full JSON parameters")} value={advanced} onChange={event => setAdvanced(event.target.value)} rows={12} spellCheck={false} /><small>{t("完整 JSON 为本次报价与生成的唯一请求内容。", "The full JSON is the exact request used for quoting and generation.")}</small></> : null}{payloadError ? <p role="alert">{messageCopy(payloadError)}</p> : null}</div>
       </div>
       <div className="playground-run-area">
-        <p className="playground-code-note">{t("$1 = 1,000 积分。积分用于计价，tokens 表示实际模型用量。预留金额不是最终费用。", "$1 = 1,000 credits. Credits express prices; tokens track actual model usage. A reservation is not the final charge.")}</p>
+        <p className="playground-code-note">{t(`${CREDIT_EXCHANGE_LABEL.zh}。积分用于计价，tokens 表示实际模型用量。预留金额不是最终费用。`, `${CREDIT_EXCHANGE_LABEL.en}. Credits express prices; tokens track actual model usage. A reservation is not the final charge.`)}</p>
         <p className="playground-generation-steps">{t("1. 查看价格 → 2. 确认生成", "1. Check price → 2. Confirm generation")}</p>
         {serviceStatus?.authenticated && typeof serviceStatus.balanceMicrousd === "number" ? <div className="playground-wallet-status"><span>{t("可用余额", "Available balance")}</span><strong>{formatCreditsWithUsd(serviceStatus.balanceMicrousd, locale)}</strong><a href={href("/dashboard/wallet")}>{t("充值", "Top up")}</a></div> : null}
         {statusNotice ? <p className="playground-action-notice" role="status">{statusNotice}</p> : null}

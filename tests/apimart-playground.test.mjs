@@ -8,6 +8,8 @@ import ts from "typescript";
 import { credits, billingSummary } from "./helpers/credit-display.mjs";
 import { brandDisplay } from "./helpers/brand-display.mjs";
 
+const quoteFingerprint = "a".repeat(64);
+
 const optionsSource = ts.transpileModule(await readFile(new URL("../lib/apimart-video-options.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 const optionsModule = { exports: {} }; vm.runInNewContext(optionsSource, { module: optionsModule, exports: optionsModule.exports });
 const requestKindSource = ts.transpileModule(await readFile(new URL("../lib/model-request-kind.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
@@ -69,7 +71,7 @@ async function fixture(options = {}) {
       if (url === "/api/gateway/v1/tasks") return Response.json({ data: options.tasks || [] });
       if (url.startsWith("/api/gateway/v1/tasks/") && options.taskResult) return options.taskResult(url, init);
       if (url.startsWith("/api/gateway/v1/requests/") && options.recover) return options.recover(url, init);
-      if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ provider: "apimart", model: "gpt-image-2", mode: "image", currency: "USD", reservedMicrousd: 18000, observedAt: "2026-10-20T00:00:00Z" });
+      if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ quoteFingerprint, provider: "apimart", model: "gpt-image-2", mode: "image", currency: "USD", reservedMicrousd: 18000, observedAt: "2026-10-20T00:00:00Z" });
       return options.generate ? options.generate(url, init) : Response.json({ data: [{ task_id: "new_task", status: "submitted" }] });
     },
   }, { filename });
@@ -91,14 +93,15 @@ test("APIMart requires a displayed exact quote before confirming a paid request 
   assert.equal(text(f.primary()), "获取准确报价");
   await f.primary().props.onClick(); f.render();
   assert.equal(f.calls.filter(call => call.url.includes("images/generations")).length, 0);
-  assert.match(text(f.tree()), /本次预留 18 积分 \(\$0\.018\)/);
+  assert.match(text(f.tree()), /本次预留 0\.63 积分 \(\$0\.018\)/);
   assert.doesNotMatch(text(f.tree()), /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
-  assert.match(text(f.primary()), /确认预留 18 积分 \(\$0\.018\) 并生成/);
+  assert.match(text(f.primary()), /确认预留 0\.63 积分 \(\$0\.018\) 并生成/);
   await f.primary().props.onClick(); f.render();
   const quote = f.calls.find(call => call.url === "/api/pricing/quote");
   const paid = f.calls.find(call => call.url.includes("images/generations"));
   assert.deepEqual(JSON.parse(paid.init.body), JSON.parse(quote.init.body).body);
   assert.equal(paid.init.headers["X-Tokvilo-Max-Reserve-Microusd"], "18000");
+  assert.equal(paid.init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
   assert.ok(paid.init.headers["Idempotency-Key"]);
   assert.equal(text(f.primary()), "获取准确报价");
 });
@@ -119,7 +122,7 @@ test("an asynchronously returned quote cannot confirm a body edited while pricin
   const f = await fixture({ quote: async () => new Promise(done => { resolve = done; }) });
   const pending = f.primary().props.onClick();
   f.prompt("Edited while waiting");
-  resolve(Response.json({ provider: "apimart", model: "gpt-image-2", currency: "USD", reservedMicrousd: 18000 }));
+  resolve(Response.json({ quoteFingerprint, provider: "apimart", model: "gpt-image-2", currency: "USD", reservedMicrousd: 18000 }));
   await pending; f.render();
   assert.equal(text(f.primary()), "获取准确报价");
   assert.equal(f.calls.filter(call => call.url.includes("images/generations")).length, 0);
@@ -136,12 +139,40 @@ test("a server price increase clears the confirmation and requires a fresh quote
   assert.equal(f.calls.filter(call => call.url === "/api/pricing/quote").length, 2);
 });
 
+test("gateway refuses incomplete or invalid quote fingerprints before any generation", async () => {
+  for (const invalid of [undefined, null, "", "a".repeat(63), "g".repeat(64), 123]) {
+    const f = await fixture({ quote: () => Response.json({ provider: "apimart", model: "gpt-image-2", currency: "USD", reservedMicrousd: 18000, quoteFingerprint: invalid }) });
+    await f.primary().props.onClick(); f.render();
+    assert.equal(text(f.primary()), "获取准确报价");
+    await f.primary().props.onClick(); f.render();
+    assert.equal(f.calls.filter(call => call.url.includes("images/generations")).length, 0);
+  }
+});
+
+test("a changed gateway rate requires a new fingerprint even when the reservation total is unchanged", async () => {
+  let quotes = 0, attempts = 0;
+  const f = await fixture({
+    quote: () => Response.json({ provider: "apimart", model: "gpt-image-2", currency: "USD", reservedMicrousd: 18000, quoteFingerprint: ++quotes === 1 ? quoteFingerprint : "b".repeat(64) }),
+    generate: () => ++attempts === 1 ? Response.json({ error: { code: "quote_changed", message: "价格已更新，请重新获取报价。" } }, { status: 409 }) : Response.json({ data: [{ task_id: "current-price", status: "submitted" }] }),
+  });
+  await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); f.render();
+  assert.equal(text(f.primary()), "获取准确报价");
+  await f.primary().props.onClick(); f.render();
+  assert.equal(attempts, 1);
+  await f.primary().props.onClick(); f.render();
+  const paid = f.calls.filter(call => call.url.includes("images/generations"));
+  assert.equal(paid.length, 2);
+  assert.equal(paid[0].init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
+  assert.equal(paid[1].init.headers["X-Tokvilo-Quote-Fingerprint"], "b".repeat(64));
+  assert.equal(paid[0].init.body, paid[1].init.body);
+});
+
 for (const mode of ["video", "audio"]) test(`dynamic ${mode} models preserve exact parameters through quote then confirmation`, async () => {
   const id = mode === "video" ? "veo3.1-fast" : "flowmusic";
   const f = await fixture({ props: { initialModel: id, initialCategory: mode },
     models: [{ id, name: "Dynamic model", provider: "MODEL", category: mode, upstream: "apimart" }],
     prices: [{ provider: "apimart", model: id, kind: mode, billingReady: true, rates: [{ dimension: "default", unit: mode === "video" ? "second" : "call", retailMicrousd: 12000 }] }],
-    quote: async (_url, init) => { const input = JSON.parse(init.body); assert.equal(input.mode, mode); return Response.json({ provider: "apimart", model: id, currency: "USD", reservedMicrousd: 96000 }); },
+    quote: async (_url, init) => { const input = JSON.parse(init.body); assert.equal(input.mode, mode); return Response.json({ quoteFingerprint, provider: "apimart", model: id, currency: "USD", reservedMicrousd: 96000 }); },
   });
   assert.equal(f.primary().props.disabled, false);
   assert.ok(find(f.tree(), node => node.type === "option" && node.props.value === id));
@@ -221,7 +252,7 @@ test("English model playground translates controls without rewriting the prompt,
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
   f.prompt("原样保留中文提示词");
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), /Reserve 18 credits \(\$0\.018\) & generate/);
+  assert.match(text(f.primary()), /Reserve 0\.63 credits \(\$0\.018\) & generate/);
   await f.primary().props.onClick(); f.render();
   const quote = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
   const paid = f.calls.find(call => call.url.includes("images/generations"));
@@ -425,18 +456,19 @@ test("a missing original request allows requoting while a confirmed refunded rec
 for (const english of [false, true]) test(`gateway credit display preserves a one-microdollar quote, charge and real usage (${english ? "en" : "zh"})`, async () => {
   const receipt = { choices: [{ message: { content: "Exact result" } }], usage: { prompt_tokens: 300, completion_tokens: 14, total_tokens: 314 }, tokvilo_billing: { currency: "USD", status: "settled", reservedMicrousd: 1, chargedMicrousd: 1 } };
   const original = JSON.stringify(receipt);
-  const f = await fixture({ english, quote: () => Response.json({ provider: "apimart", model: "gpt-image-2", currency: "USD", reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
-  assert.match(text(f.tree()), english ? /\$1 = 1,000 credits/ : /\$1 = 1,000 积分/);
-  assert.match(text(f.tree()), english ? /10,000 credits \(\$10\)/ : /10,000 积分 \(\$10\)/);
+  const f = await fixture({ english, quote: () => Response.json({ quoteFingerprint, provider: "apimart", model: "gpt-image-2", currency: "USD", reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
+  assert.match(text(f.tree()), english ? /\$1 = 35 credits/ : /\$1 = 35 积分/);
+  assert.match(text(f.tree()), english ? /350 credits \(\$10\)/ : /350 积分 \(\$10\)/);
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), english ? /0\.001 credits \(\$0\.000001\)/ : /0\.001 积分 \(\$0\.000001\)/);
+  assert.match(text(f.primary()), english ? /0\.000035 credits \(\$0\.000001\)/ : /0\.000035 积分 \(\$0\.000001\)/);
   await f.primary().props.onClick(); f.render();
   const sent = f.calls.find(call => call.url.includes("images/generations"));
   assert.equal(sent.init.headers["X-Tokvilo-Max-Reserve-Microusd"], "1");
+  assert.equal(sent.init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
   assert.deepEqual(JSON.parse(sent.init.body), JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body);
   const summary = find(f.tree(), node => node.type === billingSummary.PlaygroundBillingSummary);
   assert.ok(summary); assert.equal(summary.props.locale, english ? "en" : "zh");
-  assert.match(text(summary.type(summary.props)), english ? /Actual charge0\.001 credits \(\$0\.000001\)/ : /实际费用0\.001 积分 \(\$0\.000001\)/);
+  assert.match(text(summary.type(summary.props)), english ? /Actual charge0\.000035 credits \(\$0\.000001\)/ : /实际费用0\.000035 积分 \(\$0\.000001\)/);
   assert.match(text(summary.type(summary.props)), english ? /Input tokens300Output tokens14Total tokens314/ : /输入 tokens300输出 tokens14总 tokens314/);
   assert.match(text(f.tree()), /"total_tokens": 314/);
   assert.equal(JSON.stringify(receipt), original);

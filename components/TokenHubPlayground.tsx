@@ -1,7 +1,7 @@
 "use client";
 
 import { useSiteLocale } from "./LocaleProvider";
-import { formatCreditsWithUsd } from "@/lib/credits";
+import { CREDIT_EXCHANGE_LABEL, formatCreditsWithUsd } from "@/lib/credits";
 import { PlaygroundBillingSummary } from "./PlaygroundBillingSummary";
 
 
@@ -43,12 +43,13 @@ function selectionFromSearch(search: string): { model: string; mode?: Mode } {
   return { model: id.length <= 200 ? id : "", mode: modes.find(item => item.id === (category === "text" ? "chat" : category))?.id };
 }
 
+class RequestError extends Error { constructor(message: string, public code: string) { super(message); } }
 async function request(path: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(path, { ...init, credentials: "same-origin", cache: "no-store" });
   const result = await response.json().catch(() => null);
   if (!response.ok || !result) {
     const root = record(result), detail = record(root.error);
-    throw new Error(text(root.message) || text(detail.message) || text(root.error) || `请求未完成（${response.status}）。请检查任务列表后再重试。`);
+    throw new RequestError(text(root.message) || text(detail.message) || text(root.error) || `请求未完成（${response.status}）。请检查任务列表后再重试。`, text(detail.code));
   }
   return result;
 }
@@ -106,7 +107,7 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
   const [tab, setTab] = useState<"result" | "request" | "tasks">("result");
   const [pending, setPending] = useState(false);
   const [quoting, setQuoting] = useState(false);
-  const [quote, setQuote] = useState<{ body: string; mode: Mode; reservedMicrousd: number } | null>(null);
+  const [quote, setQuote] = useState<{ body: string; mode: Mode; reservedMicrousd: number; quoteFingerprint: string } | null>(null);
   const [error, setError] = useState("");
   const [result, setResult] = useState<unknown>(null);
   const [resultMode, setResultMode] = useState<Mode>("video");
@@ -253,8 +254,8 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
     try {
       const body: unknown = JSON.parse(json);
       const value = record(await request("/api/pricing/quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider: "tokenhub", mode, body }) }));
-      if (!Number.isSafeInteger(value.reservedMicrousd) || Number(value.reservedMicrousd) <= 0) throw new Error("暂时无法取得该请求的预留金额。");
-      setQuote({ body: json, mode, reservedMicrousd: Number(value.reservedMicrousd) });
+      if (!Number.isSafeInteger(value.reservedMicrousd) || Number(value.reservedMicrousd) <= 0 || typeof value.quoteFingerprint !== "string" || !/^[a-f0-9]{64}$/.test(value.quoteFingerprint)) throw new Error("报价内容不完整，请重新获取。");
+      setQuote({ body: json, mode, reservedMicrousd: Number(value.reservedMicrousd), quoteFingerprint: value.quoteFingerprint });
     } catch (error) { setError(error instanceof SyntaxError ? "JSON 格式有误，请检查后重新报价。" : error instanceof Error ? error.message : "报价暂不可用。"); }
     finally { setQuoting(false); }
   }
@@ -279,7 +280,7 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
     const serialized = JSON.stringify(body);
     if (submission.current?.body !== serialized || submission.current.mode !== mode) submission.current = { body: serialized, mode, key: crypto.randomUUID() };
     try {
-      const value = await request(endpoint[mode], { method: "POST", headers: { "content-type": "application/json", "Idempotency-Key": submission.current!.key, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd) }, body: serialized });
+      const value = await request(endpoint[mode], { method: "POST", headers: { "content-type": "application/json", "Idempotency-Key": submission.current!.key, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd), "X-Tokvilo-Quote-Fingerprint": currentQuote.quoteFingerprint }, body: serialized });
       if (selection.current !== version) return;
       setResult(value); setResultMode(mode); setTaskId(""); setPollCount(0); setQuote(null);
       if (mode !== "video") submission.current = null;
@@ -289,7 +290,13 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
         if (id) { setTaskId(id); setQueryId(id); setPolling(!terminal.has(text(payloadOf(value).status).toLowerCase())); submission.current = null; }
         else setError("请求已返回，但未找到任务 ID。请查看原始响应与任务记录，勿重复提交。");
       }
-    } catch (error) { setQuote(null); setError(error instanceof Error ? error.message : "请求未完成。请先检查任务记录。"); }
+    } catch (error) {
+      setQuote(null);
+      if (error instanceof RequestError && ["quote_changed", "reservation_limit_exceeded"].includes(error.code)) submission.current = null;
+      setError(error instanceof RequestError && error.code === "quote_changed"
+        ? t("费率或计费条件已更新，请重新获取报价后确认。尚未发送生成请求或预留金额。", "Rates or billing conditions changed. Get a new quote before confirming. No generation request or reservation was made.")
+        : error instanceof Error ? error.message : "请求未完成。请先检查任务记录。");
+    }
     finally { inFlight.current = false; setPending(false); void refreshStatus(); }
   }
 
@@ -338,7 +345,7 @@ export function TokenHubPlayground({ isAdmin = false }: { isAdmin?: boolean }) {
       </div>
       <div className="playground-run-area">
         {submission.current ? <div className="playground-action-notice"><p>{t("原请求编号：", "Original request ID: ")}<code>{submission.current.key}</code></p><button type="button" disabled={pending || refreshing} onClick={recoverRequest}>{refreshing ? t("查询中…", "Checking…") : t("查询原请求（不重新生成）", "Check original request (no new generation)")}</button></div> : null}
-        <p className="playground-code-note">{t("$1 = 1,000 积分。积分用于计价，tokens 表示实际模型用量。预留金额不是最终费用。", "$1 = 1,000 credits. Credits express prices; tokens track actual model usage. A reservation is not the final charge.")}</p>
+        <p className="playground-code-note">{t(`${CREDIT_EXCHANGE_LABEL.zh}。积分用于计价，tokens 表示实际模型用量。预留金额不是最终费用。`, `${CREDIT_EXCHANGE_LABEL.en}. Credits express prices; tokens track actual model usage. A reservation is not the final charge.`)}</p>
         <p className="playground-flow-steps">{t("1. 查看报价（不扣费） → 2. 确认生成", "1. Check quote (free) → 2. Confirm generation")}</p>
         <div className="playground-account-state"><span>{t("可用余额", "Available balance")}</span><strong>{readiness ? formatCreditsWithUsd(readiness.balanceMicrousd, locale) : "—"}</strong><a href={href("/dashboard/wallet")}>{t("充值", "Top up")}</a></div>
         {blockedMessage ? <p className="playground-action-notice" role="status">{blockedMessage}</p> : null}

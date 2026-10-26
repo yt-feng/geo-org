@@ -1,4 +1,5 @@
 import { publicModelId } from "./model-id";
+import { valueRetailMicrousd, VALUE_PRICING_VERSION } from "./value-pricing";
 
 // Monetary values are integer micro-USD. Display and settlement use the same
 // marked-up rates; the final request total is rounded up only once.
@@ -59,6 +60,7 @@ export type TokenHubQuote = {
   provider: "tokenhub"; model: string; kind: ModelPrice["kind"];
   observedAt: string; rates: PriceRate[]; reservedMicrousd: number;
   dimension?: string;
+  retailPolicyVersion?: string;
 };
 type Json = Record<string, unknown>;
 function object(value: unknown): value is Json { return !!value && typeof value === "object" && !Array.isArray(value); }
@@ -133,7 +135,9 @@ export function normalizeTokenHubPricing(snapshot: unknown, observedAt = new Dat
         return { kind: "chat" as const, rates: ["input", "output", "cacheRead", "cacheWrite"].map(name => parseRate(p[name], name, "1M_tokens")) };
       });
       if (new Set(variants.map(value => JSON.stringify(value))).size !== 1) throw new PricingError("模型的多个上游部署价格不同，等待确认。");
-      models.push({ provider: "tokenhub", model: item.id, name: publicServiceText(typeof item.label === "string" ? item.label.slice(0, 200) : item.id), ...variants[0], available: true });
+      const variant = variants[0];
+      if (variant.kind === "chat") variant.rates = variant.rates.map(rate => ({ ...rate, retailMicrousd: valueRetailMicrousd(item.id as string, rate) }));
+      models.push({ provider: "tokenhub", model: item.id, name: publicServiceText(typeof item.label === "string" ? item.label.slice(0, 200) : item.id), ...variant, available: true });
     } catch (cause) { unavailable.push({ model: item.id, reason: cause instanceof PricingError ? cause.message : "价格暂不可用。" }); }
   }
   return { currency: "USD", markupPercent: 20, observedAt, models, unavailable };
@@ -168,7 +172,7 @@ function rate(quote: Pick<TokenHubQuote, "rates">, dimension: string) {
 export function quoteTokenHubRequest(catalog: PriceCatalog, kind: ModelPrice["kind"], body: Json): TokenHubQuote {
   const model = catalog.models.find(item => item.model === body.model && item.kind === kind);
   if (!model) throw new PricingError("所选模型没有可用的实时价格。", 409);
-  const quote: TokenHubQuote = { provider: "tokenhub", model: model.model, kind, observedAt: catalog.observedAt, rates: model.rates, reservedMicrousd: 0 };
+  const quote: TokenHubQuote = { provider: "tokenhub", model: model.model, kind, observedAt: catalog.observedAt, rates: structuredClone(model.rates), reservedMicrousd: 0, retailPolicyVersion: VALUE_PRICING_VERSION };
   if (kind === "chat") {
     const messages = body.messages;
     if (!Array.isArray(messages) || !messages.every(message => object(message) && (typeof message.content === "string" || message.content === null || Array.isArray(message.content) && message.content.every(part => object(part) && part.type === "text" && typeof part.text === "string")))) throw new PricingError("当前计费对话支持文本消息；其他输入等待价格适配。", 400);

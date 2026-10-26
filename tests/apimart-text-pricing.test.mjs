@@ -17,7 +17,8 @@ async function load(path, mocks = {}, globals = {}) {
 const kinds = await load("lib/model-request-kind.ts");
 let timestamp = Date.parse("2026-10-20T13:00:00Z");
 class FixedDate extends Date { static now() { return timestamp; } }
-const text = await load("lib/apimart-text-pricing.ts", { "./pricing": { PricingError }, "./model-request-kind": kinds }, { Date: FixedDate });
+const text = await load("lib/apimart-text-pricing.ts", { "./pricing": { PricingError }, "./model-request-kind": kinds,
+  "./value-pricing": { valueRetailMicrousd: (_model, rate) => rate.retailMicrousd, VALUE_PRICING_VERSION: "test-floor-only" } }, { Date: FixedDate });
 const fixtures = JSON.parse(await readFile(new URL("./fixtures/apimart-text-prices.json", import.meta.url), "utf8")).models;
 const item = id => structuredClone(fixtures.find(m => m.id === id));
 const price = id => { const parsed = text.parseTextPrice(item(id)); assert.ok(parsed, id); return parsed; };

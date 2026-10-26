@@ -21,13 +21,15 @@ async function load(path, mocks = {}, globals = {}) {
 const { ProviderError } = await load("../lib/provider-settings.ts");
 const modelIds = await load("../lib/model-id.ts");
 const kinds = await load("../lib/model-request-kind.ts");
-const pricing = await load("../lib/pricing.ts", { "./model-id": modelIds });
+const valuePricing = { valueRetailMicrousd: (_model, rate) => rate.retailMicrousd, VALUE_PRICING_VERSION: "test-floor-only" };
+const pricing = await load("../lib/pricing.ts", { "./model-id": modelIds, "./value-pricing": valuePricing });
+const fingerprints = await load("../lib/quote-fingerprint.ts");
 const imageOptions = await load("../lib/apimart-image-options.ts");
 const midjourney = await load("../lib/apimart-midjourney.ts", { "./pricing": pricing });
 const videoOptions = await load("../lib/apimart-video-options.ts");
 const videoRequest = await load("../lib/apimart-video-request.ts", { "./pricing": pricing, "./apimart-video-options": videoOptions });
 const requestTools = await load("../lib/apimart-request.ts", { "./pricing": pricing, "./model-id": modelIds, "./model-request-kind": kinds, "./apimart-video-options": videoOptions, "./apimart-video-request": videoRequest, "./apimart-midjourney": midjourney, "./apimart-image-options": imageOptions });
-const textPricing = await load("../lib/apimart-text-pricing.ts", { "./pricing": pricing, "./model-request-kind": kinds });
+const textPricing = await load("../lib/apimart-text-pricing.ts", { "./pricing": pricing, "./model-request-kind": kinds, "./value-pricing": valuePricing });
 const apimart = await load("../lib/apimart-pricing.ts", { "./pricing": pricing, "./apimart-request": requestTools, "./apimart-text-pricing": textPricing, "./apimart-midjourney": midjourney });
 const SOURCE = { success: true, data: { models: {
   llm: [{ id: "gpt-5", name: "GPT 5", pricing: { unit: "usd_per_million_tokens", pricing_mode: "standard", tier_count: 1, effective_rates: { input: 1, cached_input: 0.1, output: 8 } } }],
@@ -67,6 +69,7 @@ async function fixture(t, options = {}) {
   let credentialReads = 0, pricingReads = 0;
   const env = { DB, SERVICE_ENABLED: "true", ...options.env };
   const { handleApimartRelay, reconcileApimartTasks } = await load("../lib/apimart-relay.ts", {
+    "./quote-fingerprint": fingerprints,
     "./auth": { getPortalUser: async () => currentUser },
     "./config": { runtimeEnv: () => env, getD1: () => DB },
     "./crypto": { sha256Hex: async value => hash(value) },
@@ -418,6 +421,24 @@ test("a higher recalculated reservation is rejected before creating receipts, ho
   assert.equal(f.sqlite.prepare("SELECT COUNT(*) AS n FROM apimart_requests").get().n, 0);
   assert.equal(f.sqlite.prepare("SELECT COUNT(*) AS n FROM wallet_reservations").get().n, 0);
   assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1_000_000);
+});
+
+test("changed gateway cache rates require reconfirmation even when the maximum reserve is unchanged", async t => {
+  const oldQuote = apimart.quoteApimartRequest(CHAT, CHAT_PATH, CATALOG), changed = structuredClone(CATALOG);
+  const model = changed.models.find(model => model.kind === "chat");
+  model.textPrice.tiers[0].retailUsdRates.cached_input.n = String(BigInt(model.textPrice.tiers[0].retailUsdRates.cached_input.n) * 2n);
+  model.rates.find(rate => rate.dimension === "cached_input").retailMicrousd *= 2;
+  const fresh = apimart.quoteApimartRequest(CHAT, CHAT_PATH, changed);
+  assert.equal(fresh.amountMicrousd, oldQuote.amountMicrousd);
+  const f = await fixture(t, { pricingCatalog: changed });
+  const submit = fingerprint => request(CHAT_PATH, { headers: { "X-Tokvilo-Max-Reserve-Microusd": String(oldQuote.amountMicrousd), "X-Tokvilo-Quote-Fingerprint": fingerprint } });
+  const refused = await expect(f, submit(await fingerprints.quoteFingerprint(oldQuote)), 409);
+  assert.equal(refused.error.code, "quote_changed"); assert.equal(f.calls.length, 0);
+  for (const table of ["wallet_reservations", "wallet_ledger", "apimart_requests"]) assert.equal(f.sqlite.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n, 0, table);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1_000_000);
+  const first = await expect(f, submit(await fingerprints.quoteFingerprint(fresh)), 200);
+  const replay = await expect(f, submit("not-a-fingerprint"), 200);
+  assert.deepEqual(replay, first); assert.equal(f.calls.length, 1);
 });
 
 test("reservation caps accept exact ceilings, retain original receipts and reject malformed amounts", async t => {

@@ -8,7 +8,7 @@ import { useSiteLocale } from "./LocaleProvider";
 import { englishPriceText } from "@/lib/price-copy";
 import { OfficialPriceComparison } from "./OfficialPriceComparison";
 import { CreditBudgetPlanner } from "./CreditBudgetPlanner";
-import { formatCreditsWithUsd } from "@/lib/credits";
+import { CREDIT_EXCHANGE_LABEL, formatCreditsWithUsd } from "@/lib/credits";
 import { ProviderLogo } from "./ProviderLogo";
 import { groupModels, modelProvider, providerIdentity } from "@/lib/model-identity";
 import { modelRequestKind, modelWorkbenchUrl, type ModelCategory } from "@/lib/model-catalog";
@@ -99,7 +99,7 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
 
   </section>;
   return <div className="tokvilo-prices">
-    <p className="credit-conversion-note">{t("$1 = 1,000 API 积分。每项价格同时显示美元等值；积分换算不改变售价，数字商品单独计价。", "$1 = 1,000 API credits. Each rate includes its USD equivalent; conversion does not change the price. Digital goods are priced separately.")}</p>
+    <p className="credit-conversion-note">{t(`${CREDIT_EXCHANGE_LABEL.zh}。每项价格同时显示美元等值；积分换算不改变售价，数字商品单独计价。`, `${CREDIT_EXCHANGE_LABEL.en}. Each rate includes its USD equivalent; conversion does not change the price. Digital goods are priced separately.`)}</p>
     {error ? <p role="status">{t(displayServiceText(error), "Pricing is temporarily unavailable. Please refresh this page.")}</p> : !data ? <p role="status">{t("正在读取价格…", "Loading prices…")}</p> : <>
       {!model ? <CreditBudgetPlanner prices={data.models} /> : null}
       <div className={model ? "price-detail-layout" : "price-browser"}>

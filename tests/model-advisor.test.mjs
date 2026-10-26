@@ -227,7 +227,10 @@ test("global daily request cap applies even when existing requests made no paid 
 test("discovery intersects real authenticated model IDs and uses live tariffs without exposing keys in public facts", async t => {
   const durations = [], timeout = AbortSignal.timeout.bind(AbortSignal);
   t.mock.method(AbortSignal, "timeout", milliseconds => { durations.push(milliseconds); return timeout(milliseconds); });
-  const textPrice = { tiers: [{ upToInputTokens: null, usdRates: { input: { n: "1", d: "100" }, output: { n: "4", d: "100" } } }], maxInputTokens: 100000, maxOutputTokens: 1000 };
+  const textPrice = { retailPolicyVersion: "reference-70-v1-20261026", tiers: [{ upToInputTokens: null,
+    usdRates: { input: { n: "1", d: "100" }, output: { n: "4", d: "100" } },
+    retailUsdRates: { input: { n: "7", d: "100" }, output: { n: "28", d: "100" } },
+  }], maxInputTokens: 100000, maxOutputTokens: 1000 };
   const mod = exportsWith({ "./apimart-pricing": { getApimartPricing: async () => ({ observedAt: new Date(clock).toISOString(), models: [
     { kind: "chat", model: "qwen3.7-flash", name: "Qwen", textPrice }, { kind: "chat", model: "text-embedding-3-small", name: "Embedding", textPrice }, { kind: "chat", model: "unlisted", name: "Unlisted", textPrice },
   ] }) }, "./pricing": { getTokenHubPricing: async () => ({ observedAt: new Date(clock).toISOString(), models: [] }) } });
@@ -239,4 +242,9 @@ test("discovery intersects real authenticated model IDs and uses live tariffs wi
   assert.equal(seen.length, 2); assert.deepEqual(Array.from(context.candidates, c => c.model), ["qwen3.7-flash"]);
   assert.ok(durations.length >= 2 && durations.every(value => value === 8000));
   assert.deepEqual(Array.from(context.models, m => m.id), ["qwen3.7-flash"]); assert.doesNotMatch(JSON.stringify(context.models), /gateway-key|studio-key|apimart|tokenhub/);
+  assert.equal(context.prices[0].inputUsdPerMillion, .07);
+  assert.equal(context.prices[0].outputUsdPerMillion, .28);
+  assert.equal(context.priceTiers[0].inputUsdPerMillion, .07);
+  assert.equal(context.candidates[0].inputUsdPerMillion, .01, "the free assistant's engine budget still uses procurement cost");
+  assert.equal(context.candidates[0].outputUsdPerMillion, .04);
 });

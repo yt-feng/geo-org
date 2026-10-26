@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatCreditsWithUsd } from "@/lib/credits";
+import { CREDIT_EXCHANGE_LABEL, formatCreditsWithUsd } from "@/lib/credits";
 import { openPaddleCheckout, subscribeToPaddle } from "./paddle-checkout-client";
 
 type UsagePackage = { id: string; amountUsd: number; creditMicrousd: number };
@@ -193,7 +193,7 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
   return <>
     <section className="console-panel wallet-section paddle-payment" aria-labelledby="paddle-payment-title">
       <div className="wallet-section-heading"><div><span className="wallet-eyebrow">ONLINE PAYMENT</span><h2 id="paddle-payment-title">tokvilo API credit packs</h2></div><span className="wallet-method-badge">Secure checkout</span></div>
-      <p>One-time packages for API requests and Playground generation on tokvilo. A fixed $1 USD = 1,000 tokvilo credits. Credits are a unit of service usage, with their dollar value always shown, and are deducted at the <a href="/en/pricing">published rates</a>.</p>
+      <p>One-time packages for API requests and Playground generation on tokvilo. A fixed {CREDIT_EXCHANGE_LABEL.en}. Credits are a unit of service usage, with their dollar value always shown, and are deducted at the <a href="/en/pricing">published rates</a>.</p>
       {!config ? <p className="wallet-status" role="status">{configError ? "Online payment is unavailable right now. You can request enterprise transfer instructions below." : "Checking online payment availability…"}</p> : !canPay ? <p className="wallet-status" role="status">Online payments are not available yet. Enterprise transfers are available by arrangement below.</p> : config.environment === "sandbox" ? <p className="wallet-status" role="status">Test checkout: no real payment is collected and no spendable API balance is added.</p> : null}
       {message ? <p className="wallet-status" role="status" aria-live="polite">{message}</p> : null}
       {pending ? <p className="wallet-status"><strong>{pendingAmount ? `Your ${dollars(pendingAmount)} checkout is saved.` : "You have a saved checkout."}</strong>{" "}Continue that payment below. Other packages are unavailable until this payment is completed or resolved. <a href="#paddle-current-payment">View payment status</a></p> : null}
@@ -209,7 +209,7 @@ export function PaddlePaymentPanel({ userId, email, onCreditConfirmed }: { userI
     </section>
     <section className="console-panel wallet-section" aria-labelledby="enterprise-payment-title">
       <div className="wallet-section-heading"><div><span className="wallet-eyebrow">ENTERPRISE PAYMENT</span><h2 id="enterprise-payment-title">Pay by bank transfer</h2></div><span className="wallet-method-badge">By arrangement</span></div>
-      <p>Request an invoice and bank transfer instructions for your company. We reply within 24 hours and add the agreed API service amount after the transfer has been received and verified. The confirmed USD usage value is displayed at $1 = 1,000 tokvilo credits.</p>
+      <p>Request an invoice and bank transfer instructions for your company. We reply within 24 hours and add the agreed API service amount after the transfer has been received and verified. The confirmed USD usage value is displayed at {CREDIT_EXCHANGE_LABEL.en}.</p>
       <div className="wallet-form"><label>Account email<input type="email" value={email} readOnly /></label><div className="wallet-fields"><label htmlFor="enterprise-company">Company name<input id="enterprise-company" value={company} onChange={event => setCompany(event.target.value)} autoComplete="organization" maxLength={200} required /></label><label htmlFor="enterprise-amount">Requested amount (USD)<input id="enterprise-amount" type="number" min="0.01" max="1000000" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} required /></label></div>{/^\d+(?:\.\d{1,2})?$/.test(amount) && Number(amount) > 0 && Number(amount) <= 1_000_000 ? <p className="wallet-transfer-preview">Requested usage: {formatCreditsWithUsd(Math.round(Number(amount) * 1_000_000), "en")}. This is a request, not credited balance; payment and any taxes are confirmed by email.</p> : null}{validTransfer ? <a className="console-button console-button-primary" href={transferMail}>Request transfer instructions</a> : <button className="console-button" disabled>Enter your company and amount</button>}<p className="wallet-fineprint">This opens your email app. Send the message to <a href="mailto:yt.feng@foxmail.com">yt.feng@foxmail.com</a> to request instructions. Creating an email does not place an order or change your balance.</p></div>
     </section>
   </>;

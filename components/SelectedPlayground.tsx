@@ -1,7 +1,7 @@
 "use client";
 
 import { useSiteLocale } from "./LocaleProvider";
-import { formatCreditsWithUsd } from "@/lib/credits";
+import { CREDIT_EXCHANGE_LABEL, formatCreditsWithUsd } from "@/lib/credits";
 import { PlaygroundBillingSummary } from "./PlaygroundBillingSummary";
 
 
@@ -11,7 +11,7 @@ import { PriceTable } from "./PriceTable";
 import type { PlaygroundStatus } from "@/lib/playground-status";
 
 type SelectedModel = { provider: string; model: string; name: string; kind: "chat" | "image"; billingReady: boolean };
-type Quote = { signature: string; reservedMicrousd: number };
+type Quote = { signature: string; reservedMicrousd: number; quoteFingerprint: string };
 type RecentRequest = { id: string; model: string; state: string; created_at: string };
 const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 const requestState = (state: string) => ({ completed: "已完成", failed: "未完成", pending: "处理中", unknown: "等待核对" })[state] || "等待核对";
@@ -111,8 +111,8 @@ export function SelectedPlayground({ initialModel }: { initialModel?: string }) 
       const data = await response.json();
       if (response.status === 401) setStatusError("login_required");
       if (!response.ok) throw Error(typeof data.error === "string" ? data.error : data.error?.message || "报价暂不可用。");
-      if (data.provider !== "selected" || data.model !== model || data.mode !== kind || data.currency !== "USD" || !Number.isSafeInteger(data.reservedMicrousd) || data.reservedMicrousd < 1 || data.reservedMicrousd > 1_000_000_000_000) throw Error("报价内容不完整，请重新获取。");
-      setQuote({ signature, reservedMicrousd: data.reservedMicrousd });
+      if (data.provider !== "selected" || data.model !== model || data.mode !== kind || data.currency !== "USD" || !Number.isSafeInteger(data.reservedMicrousd) || data.reservedMicrousd < 1 || data.reservedMicrousd > 1_000_000_000_000 || typeof data.quoteFingerprint !== "string" || !/^[a-f0-9]{64}$/.test(data.quoteFingerprint)) throw Error("报价内容不完整，请重新获取。");
+      setQuote({ signature, reservedMicrousd: data.reservedMicrousd, quoteFingerprint: data.quoteFingerprint });
     } catch (cause) { setError(cause instanceof Error ? cause.message : "报价暂不可用。"); }
     finally { inFlight.current = false; setBusy(false); }
   }
@@ -122,12 +122,13 @@ export function SelectedPlayground({ initialModel }: { initialModel?: string }) 
     if (pending.current?.signature !== signature) pending.current = { signature, id: crypto.randomUUID() };
     setRequestId(pending.current.id);
     try {
-      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pending.current.id, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd) }, body: json });
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pending.current.id, "X-Tokvilo-Max-Reserve-Microusd": String(currentQuote.reservedMicrousd), "X-Tokvilo-Quote-Fingerprint": currentQuote.quoteFingerprint }, body: json });
       const data = await response.json();
       if (response.status === 401) setStatusError("login_required");
       setResult(data);
       if (!response.ok) {
-        if (data.error?.code === "reservation_limit_exceeded") setQuote(null);
+        if (data.error?.code === "reservation_limit_exceeded" || data.error?.code === "quote_changed") { setQuote(null); pending.current = null; setRequestId(""); setResult(null); }
+        if (data.error?.code === "quote_changed") throw Error(t("费率或计费条件已更新，请重新获取报价后确认。尚未发送生成请求或预留金额。", "Rates or billing conditions changed. Get a new quote before confirming. No generation request or reservation was made."));
         throw Error(typeof data.error === "string" ? data.error : data.error?.message || "请求尚未完成，请保留原参数重试。");
       }
       setQuote(null);
@@ -177,7 +178,7 @@ export function SelectedPlayground({ initialModel }: { initialModel?: string }) 
           <p>{selected?.billingReady ? t("此模型支持报价。确认生成前会检查服务配置与可用余额。", "Quotes are supported for this model. Service configuration and available funds are checked before generation.") : t("价格已列示，服务待开通；可查看参数，当前不能提交生成请求。", "Pricing is listed; activation is pending. You can view parameters, but generation is not available yet.")}</p>
         </div>
         <div className="playground-run-area">
-          <p className="playground-code-note">{t("$1 = 1,000 积分。积分用于计价，tokens 表示实际模型用量。预留金额不是最终费用。", "$1 = 1,000 credits. Credits express prices; tokens track actual model usage. A reservation is not the final charge.")}</p>
+          <p className="playground-code-note">{t(`${CREDIT_EXCHANGE_LABEL.zh}。积分用于计价，tokens 表示实际模型用量。预留金额不是最终费用。`, `${CREDIT_EXCHANGE_LABEL.en}. Credits express prices; tokens track actual model usage. A reservation is not the final charge.`)}</p>
           <p className="playground-flow-steps">{t("1 获取准确报价 → 2 确认金额并生成", "1 Get exact quote → 2 Confirm & generate")}</p>
           <div className="playground-account-state" role="status">
             {accountStatus ? <strong>{t("可用余额 ", "Available balance ")}{money(accountStatus.balanceMicrousd)}</strong> : null}

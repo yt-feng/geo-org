@@ -1,14 +1,18 @@
 import assert from "node:assert/strict";
+import { webcrypto } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 async function load(file, mocks = {}) {
-  mocks = { "@/lib/rkapi-pricing": { getRkapiDisplayPricing: async () => { throw Error("Unavailable"); }, quoteRkapiRequest: async () => { throw Error("Unexpected quote"); } }, ...mocks };
+  mocks = { "@/lib/rkapi-pricing": { getRkapiDisplayPricing: async () => { throw Error("Unavailable"); }, prepareRkapiRequest: async () => { throw Error("Unexpected quote"); } },
+    "./value-pricing": { valueRetailMicrousd: (_model, rate) => rate.retailMicrousd, VALUE_PRICING_VERSION: "test-floor-only" },
+    ...mocks };
+  if (file.endsWith("/quote/route.ts")) mocks["@/lib/quote-fingerprint"] = await load("../lib/quote-fingerprint.ts");
   const source = await readFile(new URL(file, import.meta.url), "utf8");
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
   const m = { exports: {} };
-  vm.runInNewContext(outputText, { module: m, exports: m.exports, require(name) { if (name in mocks) return mocks[name]; throw new Error(name); }, Request, Response, URL, TextDecoder, TextEncoder, Uint8Array, structuredClone });
+  vm.runInNewContext(outputText, { module: m, exports: m.exports, require(name) { if (name in mocks) return mocks[name]; throw new Error(name); }, crypto: webcrypto, Request, Response, URL, TextDecoder, TextEncoder, Uint8Array, structuredClone });
   return m.exports;
 }
 const ids = await load("../lib/model-id.ts");
@@ -40,6 +44,8 @@ test("quote endpoint returns the same reservation and rates as generation pricin
   assert.equal(response.headers.get("cache-control"), "private, no-store");
   assert.equal(quote.reservedMicrousd, pricing.quoteTokenHubRequest(catalog, "chat", BODY.body).reservedMicrousd);
   assert.equal(quote.rates[0].retailMicrousd, 1200000);
+  const fingerprints = await load("../lib/quote-fingerprint.ts");
+  assert.equal(quote.quoteFingerprint, await fingerprints.quoteFingerprint(pricing.quoteTokenHubRequest(catalog, "chat", BODY.body)));
   assert.doesNotMatch(JSON.stringify(quote), /upstreamMicrousd|markupPercent|sourceUrl|upstreamRates/);
   assert.equal(f.requests(), 1);
 });
@@ -159,10 +165,11 @@ test("selected quote routes separately, returns retail fields only and refuses i
     "@/lib/auth": { getPortalUser: async () => ({ id: "member" }) },
     "@/lib/config": { getD1: () => ({ prepare: () => ({ bind: () => ({ first: async () => ({}) }) }) }) },
     "@/lib/pricing": pricing, "@/lib/apimart-pricing": {},
-    "@/lib/rkapi-pricing": { quoteRkapiRequest: async body => { calls++; return { provider: "selected", model: body.model, kind: "chat", currency: "USD", observedAt: "2026-10-21", reservedMicrousd: 2000, privateCost: 1000, rates: [{ dimension: "input", unit: "1M_tokens", retailMicrousd: 600000, upstreamMicrousd: 500000 }] }; } },
+    "@/lib/rkapi-pricing": { prepareRkapiRequest: async body => { calls++; return { quote: { provider: "selected", model: body.model, kind: "chat", currency: "USD", observedAt: "2026-10-21", reservedMicrousd: 2000, privateCost: 1000, rates: [{ dimension: "input", unit: "1M_tokens", retailMicrousd: 600000, upstreamMicrousd: 500000 }] }, basis: { retail: { version: "test", tiers: [] } }, route: { apiKey: "private-key" } }; } },
   });
   const response = await route.POST(request({ ...BODY, provider: "selected" })), value = await response.json();
   assert.equal(response.status, 200); assert.equal(value.provider, "selected"); assert.equal(value.reservedMicrousd, 2000);
+  assert.match(value.quoteFingerprint, /^[a-f0-9]{64}$/);
   assert.doesNotMatch(JSON.stringify(value), /private|upstream|rkapi|markup/i);
   assert.equal((await route.POST(request({ provider: "selected", mode: "video", body: { model: "chat" } }))).status, 422);
   assert.equal(calls, 1);

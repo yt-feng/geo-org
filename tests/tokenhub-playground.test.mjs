@@ -8,6 +8,8 @@ import ts from "typescript";
 import { credits, billingSummary } from "./helpers/credit-display.mjs";
 import { brandDisplay } from "./helpers/brand-display.mjs";
 
+const quoteFingerprint = "a".repeat(64);
+
 const filename = new URL("../components/TokenHubPlayground.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const content = value => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(content).join("") : value?.props ? content(value.props.children) : "";
@@ -50,7 +52,7 @@ async function fixture(options = {}) {
         { id: "chat-model", modelType: "chat", category: ["chat"] },
       ], catalog: { complete: true } });
       if (url.startsWith("/api/studio/v1/requests/")) return options.receipt ? options.receipt() : Response.json({ choices: [{ message: { content: "Recovered" } }], tokvilo_billing: { status: "settled" } });
-      if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ reservedMicrousd: 2_000_000 });
+      if (url === "/api/pricing/quote") return options.quote ? options.quote(url, init) : Response.json({ quoteFingerprint, reservedMicrousd: 2_000_000 });
       if (init?.method === "POST") return options.generate ? options.generate(url, init) : Response.json(url.includes("/images/") ? { data: [{ url: "https://media.example/image.png" }] } : { id: "video-created", status: "queued" });
       throw new Error(`Unexpected request ${url}`);
     },
@@ -68,13 +70,14 @@ test("TokenHub separates quoting from confirmation and sends the exact confirmed
   const f = await fixture();
   assert.equal(content(f.primary()), "查看预留金额");
   await f.primary().props.onClick(); f.render();
-  assert.equal(f.paid().length, 0); assert.match(content(f.tree()), /本次最多预留 2,000 积分 \(\$2\)/);
+  assert.equal(f.paid().length, 0); assert.match(content(f.tree()), /本次最多预留 70 积分 \(\$2\)/);
   assert.doesNotMatch(content(f.tree()), /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
   assert.equal(content(f.primary()), "确认并生成");
   await f.primary().props.onClick(); f.render();
   const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
   assert.deepEqual(JSON.parse(f.paid()[0].init.body), quoted.body);
   assert.equal(f.paid()[0].init.headers["X-Tokvilo-Max-Reserve-Microusd"], "2000000");
+  assert.equal(f.paid()[0].init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
   assert.ok(f.paid()[0].init.headers["Idempotency-Key"]);
   assert.equal(content(f.primary()), "查看预留金额");
 });
@@ -93,7 +96,7 @@ test("a quote returned after a body edit cannot authorize the edited body", asyn
   const f = await fixture({ quote: async () => new Promise(resolve => { finish = resolve; }) });
   const pending = f.primary().props.onClick();
   f.prompt("Changed while quote was pending");
-  finish(Response.json({ reservedMicrousd: 2_000_000 }));
+  finish(Response.json({ quoteFingerprint, reservedMicrousd: 2_000_000 }));
   await pending; f.render();
   assert.equal(content(f.primary()), "查看预留金额");
   assert.doesNotMatch(content(f.tree()), /本次最多预留/); assert.equal(f.paid().length, 0);
@@ -110,7 +113,7 @@ test("two confirmation events while generation is in flight send only one paid r
 test("repricing clears confirmation and retains the idempotency key for the same request", async () => {
   let attempts = 0, quotes = 0;
   const f = await fixture({
-    quote: async () => Response.json({ reservedMicrousd: ++quotes * 2_000_000 }),
+    quote: async () => Response.json({ quoteFingerprint, reservedMicrousd: ++quotes * 2_000_000 }),
     generate: async () => ++attempts === 1 ? Response.json({ error: { message: "请重新获取报价后提交。" } }, { status: 409 }) : Response.json({ id: "repriced", status: "queued" }),
   });
   await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); f.render();
@@ -119,6 +122,31 @@ test("repricing clears confirmation and retains the idempotency key for the same
   await f.primary().props.onClick(); f.render();
   assert.equal(f.paid()[0].init.headers["Idempotency-Key"], f.paid()[1].init.headers["Idempotency-Key"]);
   assert.equal(f.paid()[1].init.headers["X-Tokvilo-Max-Reserve-Microusd"], "4000000");
+  assert.equal(f.paid()[1].init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
+});
+test("multimodal rejects missing or malformed quote fingerprints without generation", async () => {
+  for (const invalid of [undefined, null, "", "a".repeat(63), "g".repeat(64), 123]) {
+    const f = await fixture({ quote: () => Response.json({ reservedMicrousd: 2000000, quoteFingerprint: invalid }) });
+    await f.primary().props.onClick(); f.render();
+    assert.equal(content(f.primary()), "查看预留金额");
+    await f.primary().props.onClick(); f.render();
+    assert.equal(f.paid().length, 0);
+  }
+});
+test("changed multimodal rates need fresh confirmation and the returned fingerprint at the same total", async () => {
+  let quotes = 0, attempts = 0;
+  const f = await fixture({
+    quote: () => Response.json({ reservedMicrousd: 2000000, quoteFingerprint: ++quotes === 1 ? quoteFingerprint : "b".repeat(64) }),
+    generate: () => ++attempts === 1 ? Response.json({ error: { code: "quote_changed", message: "价格已更新，请重新获取报价。" } }, { status: 409 }) : Response.json({ id: "current-price", status: "queued" }),
+  });
+  await f.primary().props.onClick(); f.render(); await f.primary().props.onClick(); f.render();
+  assert.equal(content(f.primary()), "查看预留金额");
+  await f.primary().props.onClick(); f.render(); assert.equal(f.paid().length, 1);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.paid().length, 2);
+  assert.equal(f.paid()[0].init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
+  assert.equal(f.paid()[1].init.headers["X-Tokvilo-Quote-Fingerprint"], "b".repeat(64));
+  assert.equal(f.paid()[0].init.body, f.paid()[1].init.body);
 });
 test("changing interface mode creates a different idempotency identity even for identical advanced JSON", async () => {
   const f = await fixture({ generate: async () => Response.json({ error: { message: "结果暂未确认" } }, { status: 502 }) });
@@ -192,18 +220,19 @@ test("an interrupted multimodal request can recover by GET after its balance was
 for (const english of [false, true]) test(`multimodal credits do not change a tiny quote, request cap or actual tokens (${english ? "en" : "zh"})`, async () => {
   const receipt = { choices: [{ message: { content: "Exact response" } }], usage: { prompt_tokens: 200, completion_tokens: 12, total_tokens: 212 }, tokvilo_billing: { currency: "USD", status: "settled", reservedMicrousd: 1, chargedMicrousd: 1 } };
   const original = JSON.stringify(receipt);
-  const f = await fixture({ english, quote: () => Response.json({ reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
+  const f = await fixture({ english, quote: () => Response.json({ quoteFingerprint, reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
   f.mode("chat"); f.prompt("Keep the exact prompt");
-  assert.match(content(f.tree()), english ? /\$1 = 1,000 credits/ : /\$1 = 1,000 积分/);
-  assert.match(content(f.tree()), english ? /10,000 credits \(\$10\)/ : /10,000 积分 \(\$10\)/);
+  assert.match(content(f.tree()), english ? /\$1 = 35 credits/ : /\$1 = 35 积分/);
+  assert.match(content(f.tree()), english ? /350 credits \(\$10\)/ : /350 积分 \(\$10\)/);
   await f.primary().props.onClick(); f.render();
-  assert.match(content(f.tree()), english ? /0\.001 credits \(\$0\.000001\)/ : /0\.001 积分 \(\$0\.000001\)/);
+  assert.match(content(f.tree()), english ? /0\.000035 credits \(\$0\.000001\)/ : /0\.000035 积分 \(\$0\.000001\)/);
   await f.primary().props.onClick(); f.render();
   assert.equal(f.paid()[0].init.headers["X-Tokvilo-Max-Reserve-Microusd"], "1");
+  assert.equal(f.paid()[0].init.headers["X-Tokvilo-Quote-Fingerprint"], quoteFingerprint);
   assert.deepEqual(JSON.parse(f.paid()[0].init.body), JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body);
   const summary = find(f.tree(), node => node.type === billingSummary.PlaygroundBillingSummary);
   assert.ok(summary); assert.equal(summary.props.locale, english ? "en" : "zh");
-  assert.match(content(summary.type(summary.props)), english ? /Actual charge0\.001 credits \(\$0\.000001\)/ : /实际费用0\.001 积分 \(\$0\.000001\)/);
+  assert.match(content(summary.type(summary.props)), english ? /Actual charge0\.000035 credits \(\$0\.000001\)/ : /实际费用0\.000035 积分 \(\$0\.000001\)/);
   assert.match(content(f.tree()), /"total_tokens": 212/);
   assert.equal(JSON.stringify(receipt), original);
 });

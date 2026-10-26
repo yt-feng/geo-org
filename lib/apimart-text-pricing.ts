@@ -1,9 +1,10 @@
 import { PricingError } from "./pricing";
 import { modelRequestKind } from "./model-request-kind";
+import { valueRetailMicrousd, VALUE_PRICING_VERSION } from "./value-pricing";
 
 type Json = Record<string, unknown>;
 type Exact = { n: string; d: string };
-type Tier = { upToInputTokens: number | null; usdRates: Record<string, Exact> };
+type Tier = { upToInputTokens: number | null; usdRates: Record<string, Exact>; retailUsdRates?: Record<string, Exact> };
 export type TextPrice = {
   model: string;
   rates: Array<{ dimension: string; unit: "1M_tokens"; upstreamMicrousd: number; retailMicrousd: number }>;
@@ -11,6 +12,7 @@ export type TextPrice = {
   maxInputTokens: number | null;
   maxOutputTokens: number | null;
   time?: { currentRate: Exact; maximumRate: Exact; nextSwitchAt: number };
+  retailPolicyVersion?: string;
 };
 export type TextQuote = {
   model: string;
@@ -129,21 +131,36 @@ export function parseTextPrice(item: unknown): TextPrice | null {
       }, currentRate);
       time = { currentRate, maximumRate, nextSwitchAt: window.next_switch_at };
     }
+    // Persist exact customer rates in the quote. Unchanged floors retain their
+    // decimal precision, rather than rounding each token dimension prematurely.
+    for (const [index, tier] of tiers.entries()) tier.retailUsdRates = Object.fromEntries(Object.entries(tier.usdRates).map(([dimension, value]) => {
+      const floor = multiply(value, MARKUP), floorMicrousd = ceiling(multiply(floor, unit(1_000_000)));
+      const retail = time ? floorMicrousd : valueRetailMicrousd(item.id as string, {
+        dimension: tiers.length > 1 ? `tier${index + 1}:${dimension}` : dimension, unit: "1M_tokens", retailMicrousd: floorMicrousd,
+        ...(tiers.length > 1 ? { tierMinInputTokens: index === 0 ? 0 : tiers[index - 1].upToInputTokens!, tierMaxInputTokens: tier.upToInputTokens } : {}),
+      });
+      return [dimension, retail > floorMicrousd ? { n: String(retail), d: "1000000" } : floor];
+    }));
     const rates = tiers.flatMap((tier, index) => Object.entries(tier.usdRates).map(([dimension, value]) => ({
       dimension: tiers.length === 1 ? dimension : `${dimension} [${index === 0 ? "0" : Number(tiers[index - 1].upToInputTokens) + 1}–${tier.upToInputTokens ?? "∞"} input tokens]`,
       unit: "1M_tokens" as const,
       // Display projection only; quote/settlement use the exact decimal rational.
       upstreamMicrousd: ceiling(multiply(value, unit(1_000_000))),
-      retailMicrousd: ceiling(multiply(multiply(value, MARKUP), unit(1_000_000))),
+      retailMicrousd: ceiling(multiply(tier.retailUsdRates![dimension], unit(1_000_000))),
     })));
-    return { model: item.id, rates, tiers, maxInputTokens, maxOutputTokens, ...(time ? { time } : {}) };
+    return { model: item.id, rates, tiers, maxInputTokens, maxOutputTokens, retailPolicyVersion: VALUE_PRICING_VERSION, ...(time ? { time } : {}) };
   } catch (cause) { if (cause instanceof PricingError) return null; throw cause; }
 }
 
-function total(terms: Array<[number, Exact]>): number {
+function total(terms: Array<[number, Exact]>, retail = false): number {
   // USD per million × tokens × micro-USD per USD: the two million factors cancel.
   // All dimensions are added exactly before the single final micro-USD rounding.
-  return ceiling(multiply(terms.reduce((sum, [count, rate]) => add(sum, multiply(unit(count), rate)), ZERO), MARKUP));
+  return ceiling(multiply(terms.reduce((sum, [count, rate]) => add(sum, multiply(unit(count), rate)), ZERO), retail ? ONE : MARKUP));
+}
+function billableRates(price: TextPrice, tier: Tier): Record<string, Exact> {
+  if (!price.retailPolicyVersion) return tier.usdRates; // Pre-policy persisted quotes keep their original 6/5 calculation.
+  if (!tier.retailUsdRates || Object.keys(tier.usdRates).some(key => !tier.retailUsdRates![key])) fail();
+  return tier.retailUsdRates;
 }
 export function quoteText(body: Json, parsed: TextPrice): TextQuote {
   const allowed = ["model", "messages", "stream", "max_tokens", "max_completion_tokens", "temperature", "top_p"];
@@ -168,13 +185,13 @@ export function quoteText(body: Json, parsed: TextPrice): TextQuote {
   }
   const factor = parsed.time ? divide(parsed.time.maximumRate, parsed.time.currentRate) : ONE;
   let input = ZERO, output = ZERO;
-  for (const tier of candidates) for (const [dimension, value] of Object.entries(tier.usdRates)) {
+  for (const tier of candidates) for (const [dimension, value] of Object.entries(billableRates(parsed, tier))) {
     const rate = multiply(value, factor);
     if (dimension === "output") { if (compare(rate, output) > 0) output = rate; }
     else if (compare(rate, input) > 0) input = rate;
   }
   return {
-    model: parsed.model, amountMicrousd: total([[inputTokenLimit, input], [outputTokenLimit, output]]),
+    model: parsed.model, amountMicrousd: total([[inputTokenLimit, input], [outputTokenLimit, output]], !!parsed.retailPolicyVersion),
     inputTokenLimit, outputTokenLimit, quotedAt, price: structuredClone(parsed),
     // APIMart's Claude cache guide explicitly processes string content as regular
     // input. This request contract cannot carry the array-block cache marker.
@@ -211,8 +228,9 @@ export function settleText(quote: TextQuote, response: Json): number {
     if (!integer(created) || created < quote.quotedAt - 60 || created > now + 5 ||
       created >= quote.price.time.nextSwitchAt || now >= quote.price.time.nextSwitchAt) fail("请求跨越计价时段或缺少时间凭证，预留金额等待核对。");
   }
-  const rates = quote.price.tiers.find(t => t.upToInputTokens === null || prompt <= t.upToInputTokens)?.usdRates;
-  if (!rates) fail();
+  const tier = quote.price.tiers.find(t => t.upToInputTokens === null || prompt <= t.upToInputTokens);
+  if (!tier) fail();
+  const rates = billableRates(quote.price, tier);
   const details = object(usage.prompt_tokens_details) ? usage.prompt_tokens_details : {};
   const cached = usageCount(details.cached_tokens ?? 0);
   const explicit = usageCount(details.explicit_cached_tokens ?? 0);
@@ -243,7 +261,7 @@ export function settleText(quote: TextQuote, response: Json): number {
   }
   chargeWrite(write5m, "cache_write_5m");
   chargeWrite(write1h, "cache_write_1h");
-  const amount = total(terms);
+  const amount = total(terms, !!quote.price.retailPolicyVersion);
   if (amount > quote.amountMicrousd) fail("实际费用超出已确认预留，等待核对。");
   return amount;
 }

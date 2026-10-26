@@ -8,6 +8,7 @@ import { apimartChatCharge, apimartTaskCharge, getApimartPricing, quoteApimartRe
 import { normalizeApimartRequest, APIMART_PATHS, isMusicModel } from "./apimart-request";
 import { publicModelId, upstreamModelId } from "./model-id";
 import { reserveWallet, settleWallet, refundWallet, WalletError } from "./wallet";
+import { assertQuoteFingerprint, QuoteChangedError } from "./quote-fingerprint";
 
 const BASE = "/api/gateway";
 const COMPAT_BASE = "/api/apimart";
@@ -261,6 +262,7 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
     if (rawMaximum !== null && (!/^\d{1,13}$/.test(rawMaximum) || !Number.isSafeInteger(maximum) || Number(maximum) < 1 || Number(maximum) > 1_000_000_000_000)) return error("预留金额上限必须为有效的正整数 micro-USD。", 400);
     const [pricing, key] = await Promise.all([getApimartPricing(), service.credential()]);
     const quote = quoteApimartRequest(body, path, pricing), walletId = `apimart:${id}`;
+    await assertQuoteFingerprint(request, quote);
     if (maximum !== null && quote.amountMicrousd > maximum) return reply({ error: { message: "最新预留金额高于已确认报价，请重新获取报价后确认。", code: "reservation_limit_exceeded", requiredReserveMicrousd: quote.amountMicrousd }, reservedMicrousd: quote.amountMicrousd }, 409);
     const inserted = await db.prepare("INSERT INTO apimart_requests(user_id,idempotency_key,request_hash,wallet_request_id,quote_json) VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING RETURNING user_id")
       .bind(who.userId, id, hash, walletId, JSON.stringify(quote)).first();
@@ -300,6 +302,7 @@ export async function handleApimartRelay(request: Request): Promise<Response> {
       if (reserved) await refundWallet({ userId: claimed.userId, requestId: claimed.walletId }).catch(() => undefined);
       else await getD1().prepare("DELETE FROM apimart_requests WHERE user_id=? AND idempotency_key=?").bind(claimed.userId, claimed.id).run().catch(() => undefined);
     }
+    if (cause instanceof QuoteChangedError) return error(cause.message, cause.status, cause.code);
     const known = cause instanceof ProviderError || cause instanceof PricingError || cause instanceof WalletError;
     return error(known ? cause.message : "tokvilo 模型服务 服务暂不可用，请稍后重试。", known ? cause.status : 503, cause instanceof WalletError ? cause.code : undefined);
   }

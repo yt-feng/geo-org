@@ -8,6 +8,7 @@ import { WalletError, reserveWallet, settleWallet, refundWallet } from "./wallet
 import { RKAPI_ORIGIN } from "./rkapi-settings";
 import { RKAPI_PATHS, normalizeRkapiRequest } from "./rkapi-request";
 import { getRkapiDisplayPricing, prepareRkapiRequest, settleRkapiResponse } from "./rkapi-pricing";
+import { assertQuoteFingerprint, QuoteChangedError } from "./quote-fingerprint";
 
 const BASE = "/api/selected";
 const HEADERS = { "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
@@ -129,6 +130,7 @@ export async function handleRkapiRelay(request: Request): Promise<Response> {
     const maximum = request.headers.get("X-Tokvilo-Max-Reserve-Microusd");
     if (maximum !== null && (!/^\d{1,13}$/.test(maximum) || !Number.isSafeInteger(Number(maximum)) || Number(maximum) < 1 || Number(maximum) > 1_000_000_000_000)) return failure("预留金额上限必须为有效的正整数 micro-USD。", 400);
     const prepared = await prepareRkapiRequest(body, env), { quote, basis, route } = prepared, walletId = `selected:${id}`;
+    await assertQuoteFingerprint(request, { quote, basis });
     if (maximum !== null && quote.reservedMicrousd > Number(maximum)) return reply({ error: { message: "最新预留金额高于已确认报价，请重新获取报价后确认。", code: "reservation_limit_exceeded" }, reservedMicrousd: quote.reservedMicrousd }, 409);
     const inserted = await db.prepare("INSERT INTO rkapi_requests(user_id,idempotency_key,request_hash,wallet_request_id,model,quote_json,state) VALUES(?,?,?,?,?,?,'pending') ON CONFLICT DO NOTHING RETURNING user_id")
       .bind(who.userId, id, hash, walletId, body.model, JSON.stringify({ quote, basis })).first();
@@ -198,6 +200,7 @@ export async function handleRkapiRelay(request: Request): Promise<Response> {
       if (who) await usage(who, path, status, started).catch(() => undefined);
       return reply(output, status);
     }
+    if (cause instanceof QuoteChangedError) return reply({ error: { code: cause.code, message: cause.message } }, cause.status);
     const known = cause instanceof ProviderError || cause instanceof PricingError || cause instanceof WalletError;
     return failure(known ? cause.message : "tokvilo 精选服务暂不可用，请稍后重试。", known ? cause.status : 503);
   }

@@ -15,7 +15,8 @@ async function load(path, mocks = {}, globals = {}) {
   return m.exports;
 }
 const schema = (await Promise.all((await readdir(new URL("../drizzle/", import.meta.url))).filter(n => n.endsWith(".sql")).sort().map(n => readFile(new URL(`../drizzle/${n}`, import.meta.url), "utf8")))).join("\n");
-const pricing = await load("../lib/pricing.ts", { "./model-id": await load("../lib/model-id.ts") });
+const valuePricing = await load("../lib/value-pricing.ts", { "./official-pricing": await load("../lib/official-pricing.ts") });
+const pricing = await load("../lib/pricing.ts", { "./model-id": await load("../lib/model-id.ts"), "./value-pricing": valuePricing });
 const KEY = "tk_live_012345678901234567890123456789";
 const FIXED = "/api/v1/twitter/web/fetch_tweet_detail";
 async function fixture(t, opts = {}) {

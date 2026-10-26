@@ -15,9 +15,11 @@ async function load(path, mocks = {}, globals = {}) {
 }
 const snapshot = JSON.parse(await readFile(new URL("../lib/rkapi-catalog-snapshot.json", import.meta.url), "utf8"));
 const modelIds = await load("../lib/model-id.ts");
-const common = await load("../lib/pricing.ts", { "./model-id": modelIds });
+const valuePricing = { valueRetailMicrousd: (_model, rate) => rate.retailMicrousd, VALUE_PRICING_VERSION: "test-floor-only" };
+const common = await load("../lib/pricing.ts", { "./model-id": modelIds, "./value-pricing": valuePricing });
 const provider = await load("../lib/provider-settings.ts");
-const dependencies = { "./pricing": common, "./rkapi-catalog-snapshot.json": { default: snapshot } };
+const fingerprints = await load("../lib/quote-fingerprint.ts");
+const dependencies = { "./pricing": common, "./rkapi-catalog-snapshot.json": { default: snapshot }, "./value-pricing": valuePricing };
 const requestTools = await load("../lib/rkapi-request.ts", dependencies);
 const conversion = { cnyPerQuota: 0.2, cnyPerUsd: 7.3, observedAt: snapshot.observedAt };
 const KEY = "sk-rkapi-test-secret-only";
@@ -95,10 +97,11 @@ async function fixture(t, options = {}) {
   const wallet = await load("../lib/wallet.ts", { "./config": { getD1: () => DB } });
   const env = { DB, SERVICE_ENABLED: "true" }; let currentUser = options.anonymous ? null : MEMBER; const calls = [];
   const relay = await load("../lib/rkapi-relay.ts", {
+    "./quote-fingerprint": fingerprints,
     "./auth": { getPortalUser: async () => currentUser }, "./config": { getD1: () => DB, runtimeEnv: () => env }, "./crypto": { sha256Hex: async value => hash(value) },
     "./store": { ensureUser: async value => user(value) }, "./provider-settings": provider, "./pricing": common, "./wallet": wallet,
     "./rkapi-settings": { RKAPI_ORIGIN: "https://rkapi.com" }, "./rkapi-request": requestTools,
-    "./rkapi-pricing": { ...math, prepareRkapiRequest: async value => ({ body: requestTools.normalizeRkapiRequest(value), route, ...quote() }) },
+    "./rkapi-pricing": { ...math, prepareRkapiRequest: async value => ({ body: requestTools.normalizeRkapiRequest(value), route, ...(options.prepared || quote()) }) },
   }, { fetch: async (url, init) => { calls.push({ url, init }); return options.fetcher ? options.fetcher(url, init) : Response.json(response({ cost: 123, source_price: 456 })); } });
   return { ...relay, calls, sqlite, wallet, user, setUser: value => { currentUser = value; } };
 }
@@ -133,6 +136,22 @@ test("known rejected requests refund once; auth, ownership, low balance and quot
   await expect(f, request(), 200);
   const other = { ...MEMBER, id: "other", email: "other@example.invalid" }; f.user(other); f.setUser(other);
   await expect(f, request("/v1/requests/selected-test-001", { method: "GET" }), 404); assert.equal(f.calls.length, 1);
+});
+
+test("changed selected retail basis requires reconfirmation before any receipt, reservation or paid call", async t => {
+  const original = quote(), changed = structuredClone(original);
+  changed.basis.retail.tiers[0].ratesUsdPerMillion.cached_input.n = String(BigInt(changed.basis.retail.tiers[0].ratesUsdPerMillion.cached_input.n) * 2n);
+  changed.quote.rates.find(rate => rate.dimension === "cached_input:standard").retailMicrousd *= 2;
+  assert.equal(changed.quote.reservedMicrousd, original.quote.reservedMicrousd);
+  const f = await fixture(t, { prepared: changed });
+  const submit = fingerprint => request("/v1/chat/completions", { headers: { "X-Tokvilo-Max-Reserve-Microusd": String(original.quote.reservedMicrousd), "X-Tokvilo-Quote-Fingerprint": fingerprint } });
+  const refused = await expect(f, submit(await fingerprints.quoteFingerprint(original)), 409);
+  assert.equal(refused.error.code, "quote_changed"); assert.equal(f.calls.length, 0);
+  for (const table of ["wallet_reservations", "wallet_ledger", "rkapi_requests"]) assert.equal(f.sqlite.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n, 0, table);
+  assert.equal((await f.wallet.getWallet(MEMBER.id)).balanceMicrousd, 1_000_000);
+  const first = await expect(f, submit(await fingerprints.quoteFingerprint(changed)), 200);
+  const replay = await expect(f, submit("not-a-fingerprint"), 200);
+  assert.deepEqual(replay, first); assert.equal(f.calls.length, 1);
 });
 test("a committed reservation followed by a read failure is refunded without losing its receipt", async t => {
   const f = await fixture(t, { failReservationRead: true });

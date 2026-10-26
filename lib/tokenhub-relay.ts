@@ -6,6 +6,7 @@ import { ProviderError } from "./provider-settings";
 import { createTokenHubSettings, TOKENHUB_ORIGIN } from "./tokenhub-settings";
 import { getTokenHubPricing, quoteTokenHubRequest, tokenHubActualCost, PricingError, publicServiceText, publicRelayResponse, type TokenHubQuote } from "./pricing";
 import { reserveWallet, settleWallet, refundWallet, WalletError } from "./wallet";
+import { assertQuoteFingerprint, QuoteChangedError } from "./quote-fingerprint";
 
 const BASE = "/api/studio";
 const COMPAT_BASE = "/api/tokenhub";
@@ -185,6 +186,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
       {
         const kind = path === TASKS ? "video" : path === "/v3/images/generations" ? "image" : "chat";
         const quote = quoteTokenHubRequest(await getTokenHubPricing(), kind, body!);
+        await assertQuoteFingerprint(request, quote);
         if (maxReserveMicrousd !== null && quote.reservedMicrousd > maxReserveMicrousd) throw new RepricingRequired(quote.reservedMicrousd);
         const requestId = `tokenhub:${id}`;
         const held = await reserveWallet({ userId: who.userId, requestId, amountMicrousd: quote.reservedMicrousd, description: `tokvilo 多模态 ${quote.model}`, metadata: { model: quote.model, kind, requestHash: hash } });
@@ -256,6 +258,7 @@ export async function handleTokenHubRelay(request: Request): Promise<Response> {
       await getD1().prepare("DELETE FROM tokenhub_billing WHERE user_id=? AND idempotency_key=?").bind(reservation.userId, reservation.id).run().catch(() => undefined);
     }
     if (cause instanceof RepricingRequired) return reply({ error: { code: "reservation_limit_exceeded", message: cause.message, requiredReserveMicrousd: cause.requiredReserveMicrousd } }, 409);
+    if (cause instanceof QuoteChangedError) return reply({ error: { code: cause.code, message: cause.message } }, cause.status);
     const known = cause instanceof ProviderError || cause instanceof PricingError || cause instanceof WalletError;
     return error(known ? cause.message : "tokvilo 多模态 服务暂不可用，请稍后重试。", known ? cause.status : 503);
   }
