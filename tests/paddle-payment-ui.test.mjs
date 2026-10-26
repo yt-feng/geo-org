@@ -6,6 +6,8 @@ import test from "node:test";
 import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
 
+const creditsModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(await readFile(new URL("../lib/credits.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { module: creditsModule, exports: creditsModule.exports });
 const source = ts.transpileModule(await readFile(new URL("../components/PaddlePaymentPanel.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const text = value => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(text).join("") : value?.props ? text(value.props.children) : "";
 function find(node, predicate) {
@@ -35,6 +37,7 @@ async function fixture({ responder, storage = new Map(), userId = "buyer", broke
     document: { visibilityState: "visible" },
     localStorage: { getItem(key) { return storage.get(key) ?? null; }, setItem(key, value) { if (brokenStorage) throw Error("Storage disabled"); storage.set(key, value); }, removeItem(key) { storage.delete(key); } },
     require(path) {
+      if (path === "@/lib/credits") return creditsModule.exports;
       if (path === "react") return react;
       if (path === "react/jsx-runtime") return jsx;
       if (path === "./paddle-checkout-client") return { openPaddleCheckout: async input => { checkouts.push(input); }, subscribeToPaddle: listener => { callback = listener; return () => { callback = null; }; } };
@@ -60,6 +63,25 @@ test("unapproved or unavailable Paddle never opens checkout and offers honest en
   assert.equal(f.checkouts.length, 0);
 });
 
+test("usage packs keep their exact dollar payment, disclose tax, and show equivalent credits without changing checkout payloads", async () => {
+  for (const amountUsd of [20, 50, 100]) {
+    const f = await fixture();
+    const packages = find(f.tree(), node => node.props.className === "wallet-packages paddle-packages");
+    const card = packages.props.children.find(node => text(find(node, child => child.type === "h3")) === `$${amountUsd}.00`);
+    assert.ok(card);
+    assert.match(text(card), new RegExp(`${amountUsd},000 credits \\(\\$${amountUsd}\\)`));
+    assert.match(text(card), /One-time payment \(USD, before tax\)/);
+    assert.match(text(card), /taxes do not add credits/);
+    assert.match(text(f.tree()), /fixed \$1 USD = 1,000 tokvilo credits/);
+    assert.match(text(f.tree()), /cannot be transferred, withdrawn as cash, or used to buy third-party subscriptions or digital goods/);
+    await find(card, node => node.type === "button").props.onClick(); await f.settle();
+    const payload = JSON.parse(f.calls.find(call => call.init?.method === "POST").init.body);
+    assert.deepEqual(Object.keys(payload).sort(), ["packageId", "requestId"]);
+    assert.equal(payload.packageId, String(amountUsd));
+    assert.equal(f.checkouts[0].transactionId, ready.transactionId);
+  }
+});
+
 test("client checkout completion cannot credit a wallet; verified order completion refreshes it once", async () => {
   let serverOrder = ready;
   const f = await fixture({ responder: async url => Response.json(url.endsWith("config") ? config : { order: serverOrder }) });
@@ -75,7 +97,7 @@ test("client checkout completion cannot credit a wallet; verified order completi
   assert.equal(f.confirmed(), 0); assert.match(text(f.tree()), /Waiting for payment confirmation/);
   serverOrder = paid;
   await f.click("Check payment status");
-  assert.equal(f.confirmed(), 1); assert.match(text(f.tree()), /Payment confirmed.*\$20\.00/s);
+  assert.equal(f.confirmed(), 1); assert.match(text(f.tree()), /Payment confirmed.*20,000 credits \(\$20\)/s);
   assert.equal(f.storage.has(storageKey), false);
   f.event({ name: "checkout.completed", data: { transaction_id: ready.transactionId } }); await f.settle();
   assert.equal(f.confirmed(), 1);
@@ -131,6 +153,8 @@ test("enterprise email contains the signed-in account and entered company and am
   assert.equal(url.pathname, "yt.feng@foxmail.com");
   const body = url.searchParams.get("body");
   assert.match(body, /Account email: buyer@example\.com/); assert.match(body, /Company: Example & Co/); assert.match(body, /USD 250\.50/);
+  assert.match(text(f.tree()), /Requested usage: 250,500 credits \(\$250\.5\)/);
+  assert.match(text(f.tree()), /This is a request, not credited balance/);
   assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
   f.change("enterprise-amount", "-1");
   assert.equal(find(f.tree(), node => node.type === "a" && text(node) === "Request transfer instructions"), null);
@@ -256,10 +280,10 @@ for (const lateFailure of ["network error", "deadline"]) test(`a stale backgroun
   } });
   await f.click("Continue payment");
   assert.equal(f.confirmed(), 1); assert.equal(f.storage.has(storageKey), false);
-  assert.match(text(f.tree()), /Payment confirmed\. \$20\.00 has been added/);
+  assert.match(text(f.tree()), /Payment confirmed\. 20,000 credits \(\$20\) has been added/);
   if (lateFailure === "deadline") await f.expireRequests(20_000);
   else { rejectBackground(Error("Old background request failed")); await f.settle(); }
-  assert.match(text(f.tree()), /Payment confirmed\. \$20\.00 has been added/);
+  assert.match(text(f.tree()), /Payment confirmed\. 20,000 credits \(\$20\) has been added/);
   assert.doesNotMatch(text(f.tree()), /Old background request failed|Payment status took too long/);
   assert.equal(f.confirmed(), 1); assert.equal(f.calls.filter(call => call.init?.method === "POST").length, 0);
 });
@@ -269,7 +293,7 @@ test("customer payment controls and lifecycle notices keep tokvilo branding", as
   for (const paymentConfig of [config, { ...config, enabled: false, clientToken: null }, { ...config, environment: "sandbox" }]) {
     const f = await fixture({ responder: async url => Response.json(url.endsWith("config") ? paymentConfig : { order: { ...ready, environment: paymentConfig.environment } }) });
     assert.doesNotMatch(text(f.tree()), /paddle/i);
-    assert.match(text(f.tree()), /tokvilo API service packages/);
+    assert.match(text(f.tree()), /tokvilo API credit packs/);
     if (!paymentConfig.enabled) continue;
     await f.click("Pay securely");
     assert.doesNotMatch(text(f.tree()), /paddle/i);

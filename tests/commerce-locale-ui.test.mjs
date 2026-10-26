@@ -7,7 +7,7 @@ import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
 const compile = source => ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const modules = {};
-for (const name of ["public-products", "product-copy", "brand-display"]) {
+for (const name of ["public-products", "product-copy", "brand-display", "credits"]) {
   const compiledModule = { exports: {} };
   vm.runInNewContext(compile(await readFile(new URL(`../lib/${name}.ts`, import.meta.url), "utf8")), { module: compiledModule, exports: compiledModule.exports });
   modules[`@/lib/${name}`] = compiledModule.exports;
@@ -52,8 +52,8 @@ const billing = { enabled: true, redemptionEnabled: true, issuanceEnabled: true,
 
 test("English customers see only the Paddle and enterprise payment panel, with no Liandong checkout or redemption", async () => {
   const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet, billing }));
-  assert.match(text(f.tree()), /Available balance\$10\.00/);
-  assert.match(text(f.tree()), /Reserved for pending requests\$2\.00/);
+  assert.match(text(f.tree()), /Available credits10,000 credits\$10\.00 USD/);
+  assert.match(text(f.tree()), /Reserved for pending requests2,000 credits\$2\.00 USD/);
   assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农|Redeem a code|Redemption code inventory|fixed top-up conversion/i);
   assert.equal(find(f.tree(), node => node.props.id === "redeem-code"), null);
   assert.equal(find(f.tree(), node => node.props.href === "https://shop.example/product"), null);
@@ -79,6 +79,9 @@ test("Chinese checkout and redemption preserve their destination, confirmation, 
   const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async url => url.endsWith("redeem") ? Response.json({ wallet, alreadyRedeemed: true, redemption: { credit_microusd: 4109589 } }) : Response.json({ wallet, billing }), "zh");
   assert.equal(find(f.tree(), node => node.type === "PaddlePaymentPanel"), null);
   assert.match(text(f.tree()), /tokvilo 用量包/);
+  assert.match(text(f.tree()), /一次性付款（人民币）¥30获得 4,109\.589 积分 \(\$4\.109589\)/);
+  assert.match(text(f.tree()), /最终付款金额及适用税费以收银台确认为准/);
+  assert.match(text(f.tree()), /税费不增加积分/);
   assert.match(text(f.tree()), /购买用量/);
   assert.match(text(f.tree()), /不支持其他平台的兑换码/);
   assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农/i);
@@ -103,7 +106,8 @@ const order = { id: "order-1", product_name: "ChatGPT Plus · 菲律宾区", use
 test("English orders translate current product labels while preserving cancellation payload and settlement values", async () => {
   const f = await fixture("OrdersPanel", {}, async (url, init) => Response.json(init?.method === "PATCH" ? { order } : { orders: [order] }));
   assert.match(text(f.tree()), /ChatGPT Plus · Philippines region/);
-  assert.match(text(f.tree()), /¥162\.00 \/ \$22\.191781/);
+  assert.match(text(f.tree()), /Product price: ¥162\.00/);
+  assert.match(text(f.tree()), /Wallet reservation: \$22\.191781/);
   assert.match(text(f.tree()), /Awaiting processing · Funds reserved/);
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
   assert.equal(find(f.tree(), node => node.props.href).props.href, "/en/products");
@@ -141,9 +145,37 @@ test("historical redemption entries display tokvilo labels without changing reco
     const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet, billing }), locale);
     assert.match(text(f.tree()), locale === "en" ? /tokvilo code, face value ¥30/ : /tokvilo 兑换码，面值 ¥30/);
     assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农/i);
-    assert.match(text(f.tree()), /\+\$10\.00/);
+    assert.match(text(f.tree()), locale === "en" ? /\+10,000 credits \(\$10\)/ : /\+10,000 积分 \(\$10\)/);
   }
   assert.equal(JSON.stringify(wallet), original);
+});
+
+test("wallet balances and debits retain micro-dollar precision in both display units and languages", async () => {
+  const tiny = { balanceMicrousd: 1, reservedMicrousd: 999, ledger: [{ ...wallet.ledger[0], reference_id: "request-1", amount_microusd: -1, description: "API request reservation" }] };
+  for (const locale of ["en", "zh"]) {
+    const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet: tiny, billing }), locale);
+    const summary = find(f.tree(), node => node.props.className === "wallet-summary");
+    assert.match(text(summary), locale === "en" ? /0\.001 credits\$0\.000001 USD/ : /0\.001 积分\$0\.000001 USD/);
+    assert.match(text(summary), locale === "en" ? /0\.999 credits\$0\.000999 USD/ : /0\.999 积分\$0\.000999 USD/);
+    const debit = find(f.tree(), node => node.props.className === "wallet-debit");
+    assert.equal(text(debit), locale === "en" ? "-0.001 credits (-$0.000001)" : "-0.001 积分 (-$0.000001)");
+  }
+  assert.equal(tiny.ledger[0].amount_microusd, -1);
+  const largest = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet: { ...tiny, balanceMicrousd: Number.MAX_SAFE_INTEGER }, billing }));
+  assert.match(text(find(largest.tree(), node => node.props.className === "wallet-summary")), /9,007,199,254,740\.991 credits\$9,007,199,254\.740991 USD/);
+});
+
+test("historical digital goods ledger entries retain dollar amounts without becoming API credits", async () => {
+  const historical = { ...wallet, ledger: [{ ...wallet.ledger[0], reference_id: "order:legacy-product", amount_microusd: -22_191_781, description: "数字商品订单：ChatGPT Plus · 菲律宾区" }] };
+  const original = JSON.stringify(historical);
+  for (const locale of ["en", "zh"]) {
+    const f = await fixture("WalletPanel", { userId: "buyer", email: "buyer@example.com", isAdmin: false }, async () => Response.json({ wallet: historical, billing }), locale);
+    const table = find(f.tree(), node => node.type === "table");
+    assert.match(text(table), locale === "en" ? /Historical digital goods record/ : /历史数字商品记录/);
+    assert.equal(text(find(table, node => node.props.className === "wallet-debit")), "-$22.191781");
+    assert.doesNotMatch(text(find(table, node => node.type === "tbody")), /22,191\.781|credits|积分/);
+  }
+  assert.equal(JSON.stringify(historical), original);
 });
 
 test("administrator revocation copy uses the payment provider label and preserves exact code and note", async () => {
@@ -163,5 +195,19 @@ test("administrator revocation copy uses the payment provider label and preserve
     assert.deepEqual(JSON.parse(post.init.body), { code: "TK-EXACT-ADMIN-CODE", note: "  Buyer refund confirmed  " });
     assert.doesNotMatch(text(f.tree()), /Liandong|链动|JiaNong|佳农/i);
     assert.match(text(f.tree()), locale === "en" ? /Code disabled.*payment provider/s : /兑换码已停用.*支付服务商/s);
+  }
+});
+
+
+test("historical orders preserve CNY and exact USD amounts without creating API credit prices", async () => {
+  for (const locale of ["zh", "en"]) for (const status of ["pending", "completed", "cancelled"]) {
+    const row = { ...order, status, charge_microusd: 1 };
+    const original = JSON.stringify(row);
+    const f = await fixture("OrdersPanel", {}, async () => Response.json({ orders: [row] }), locale);
+    assert.match(text(f.tree()), /¥162\.00/);
+    assert.match(text(f.tree()), /\$0\.000001/);
+    assert.doesNotMatch(text(f.tree()), /(?:162,000|0\.001) (?:credits|积分)/);
+    assert.doesNotMatch(text(f.tree()), /\$1 = 1,000/);
+    assert.equal(JSON.stringify(row), original);
   }
 });

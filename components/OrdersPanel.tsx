@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cny, digitalProducts } from "@/lib/public-products";
 import { productCopy } from "@/lib/product-copy";
 import { useSiteLocale } from "./LocaleProvider";
+import { formatCreditUsd } from "@/lib/credits";
 type Order = { id: string; product_name: string; user_id: string; retail_cents: number; charge_microusd: number; status: string; delivery: string; created_at: string };
 const states: Record<string, [string, string]> = { pending: ["待人工处理 · 额度已预留", "Awaiting processing · Funds reserved"], processing: ["人工处理中 · 额度已预留", "Processing · Funds reserved"], completed: ["已交付 · 已结算", "Delivered · Settled"], cancelled: ["已取消 · 预留已释放", "Cancelled · Reservation released"] };
 const englishErrors: Record<string, string> = {
@@ -44,10 +45,11 @@ export function OrdersPanel({ admin = false }: { admin?: boolean }) {
     return product ? `${product.name} · ${productCopy(product, locale).variant}` : name;
   }
   return <section>
-    <div className="console-page-heading"><div><h1>{admin ? t("商品订单管理", "Manage product orders") : t("商品订单", "Product orders")}</h1><p>{t("订单交付、处理状态与余额结算记录。", "Track delivery, processing and balance settlements. ")}{admin ? t("先开始处理，再采购及交付；开始处理后用户不能自行取消。", "Start processing before procurement and delivery. Customers cannot cancel once processing starts.") : t("人工处理开始前，可取消订单并释放预留。", "You can cancel an order and release its reserved funds before processing starts.")}</p></div><Link className="button button-secondary" href={href("/products")}>{t("浏览商品", "Browse products")} ↗</Link></div>
+    <div className="console-page-heading"><div><h1>{admin ? t("历史商品订单管理", "Manage historical product orders") : t("历史商品订单", "Historical product orders")}</h1><p>{t("订单交付、处理状态与余额结算记录。", "Track delivery, processing and balance settlements. ")}{admin ? t("先开始处理，再采购及交付；开始处理后用户不能自行取消。", "Start processing before procurement and delivery. Customers cannot cancel once processing starts.") : t("人工处理开始前，可取消订单并释放预留。", "You can cancel an order and release its reserved funds before processing starts.")}</p></div><Link className="button button-secondary" href={href("/products")}>{t("浏览商品", "Browse products")} ↗</Link></div>
+    <p className="price-caption">{t("历史数字商品订单不属于 API 积分。这里分别保留商品人民币售价与美元账务金额；待处理预留不是最终费用，取消后释放预留。", "Historical digital-goods orders are separate from API credits. Original CNY product prices and USD accounting amounts remain visible; pending reservations are not final charges and are released on cancellation.")}</p>
     {message ? <p role="status" className="commerce-message">{orderMessage(message, isEnglish)}</p> : null}
     {!orders.length ? <p className="price-caption">{t("暂无商品订单。", "No product orders yet.")}</p> : orders.map(order => <article className="order-card" key={order.id}>
-      <small>{order.created_at} UTC · {order.id}</small><h3>{productName(order.product_name)}</h3><p>{cny(order.retail_cents)} / ${(order.charge_microusd / 1_000_000).toFixed(6)} · {states[order.status] ? t(...states[order.status]) : order.status}</p>
+      <small>{order.created_at} UTC · {order.id}</small><h3>{productName(order.product_name)}</h3><p>{t("商品售价：", "Product price: ")}{cny(order.retail_cents)}</p><p>{order.status === "completed" ? t("已结算：", "Settled: ") : order.status === "cancelled" ? t("已释放预留：", "Released reservation: ") : t("钱包预留：", "Wallet reservation: ")}{formatCreditUsd(order.charge_microusd)} · {states[order.status] ? t(...states[order.status]) : order.status}</p>
       {admin ? <p>{t("账户：", "Account: ")}{order.user_id}</p> : null}
       {order.delivery ? <pre>{order.delivery}</pre> : null}
       {order.status === "pending" || (admin && order.status === "processing") ? <>

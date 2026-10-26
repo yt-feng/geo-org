@@ -1,6 +1,7 @@
 "use client";
 
 import { displayServiceText } from "@/lib/brand-display";
+import { formatCreditAmount, formatCreditUsd, formatCreditsWithUsd } from "@/lib/credits";
 import { useSiteLocale } from "./LocaleProvider";
 import { PaddlePaymentPanel } from "./PaddlePaymentPanel";
 import { digitalProducts } from "@/lib/public-products";
@@ -13,7 +14,12 @@ import type { WalletSnapshot } from "@/lib/wallet";
 type Batch = { id: string; amount_cny: number; credit_microusd: number; count: number; issued_count: number; redeemed_count: number; revoked_count: number };
 type WalletResponse = { wallet: WalletSnapshot; billing: BillingConfig };
 type ErrorResponse = { error?: { message?: string } };
-const money = (micros: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(micros / 1_000_000);
+const money = (micros: number) => {
+  const value = formatCreditUsd(micros);
+  if (value === "—") return value;
+  const [amount, fraction = ""] = value.split(".");
+  return `${amount}.${fraction.padEnd(2, "0")}`;
+};
 const timestamp = (value: string, english = false) => new Intl.DateTimeFormat(english ? "en-GB" : "zh-CN", { timeZone: "Asia/Shanghai", dateStyle: "short", timeStyle: "short" }).format(new Date(value.includes("T") ? value : value.replace(" ", "T") + "Z"));
 
 const walletEnglish: Record<string, string> = {
@@ -56,6 +62,9 @@ function walletNotice(value: string, english: boolean) {
   if (match) return `${match[1].startsWith("此码此前") ? "This code was already disabled. Total credit reversed:" : "Code disabled. Credit reversed:"} ${match[2]}. Handle any cash refund through the payment provider for the corresponding order.`;
   return /[\u4e00-\u9fff]/.test(clean) ? "The operation could not be confirmed. Refresh your account and retry with the same details if needed." : clean;
 }
+function isHistoricalProductEntry(row: WalletSnapshot["ledger"][number]) {
+  return row.reference_id?.startsWith("order:") || /^数字商品(?:订单|已交付)/.test(row.description);
+}
 function ledgerText(value: string, english: boolean) {
   const clean = displayServiceText(value).replaceAll("链动小铺 Tokvilo 兑换码，面值", "tokvilo 兑换码，面值").replaceAll("Liandong tokvilo code", "tokvilo code");
   if (!english) return clean;
@@ -88,6 +97,7 @@ export function WalletPanel({ userId, email, isAdmin }: { userId: string; email:
 
 function WalletAccountPanel({ userId, email, isAdmin }: { userId: string; email: string; isAdmin: boolean }) {
   const { t, isEnglish } = useSiteLocale();
+  const locale = isEnglish ? "en" : "zh";
   const [data, setData] = useState<WalletResponse | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState("");
@@ -136,7 +146,7 @@ function WalletAccountPanel({ userId, email, isAdmin }: { userId: string; email:
       if (current !== epoch.current) return;
       setData(value => value ? { ...value, wallet: updated.wallet } : value);
       setCode(""); setConfirmed(false);
-      setMessage(updated.alreadyRedeemed ? "此码已兑换到本账号，本次没有重复入账。" : `兑换成功，${money(updated.redemption.credit_microusd)} 已加入可用余额。`);
+      setMessage(updated.alreadyRedeemed ? "此码已兑换到本账号，本次没有重复入账。" : `兑换成功，${formatCreditsWithUsd(updated.redemption.credit_microusd, locale)} 已加入可用余额。`);
     } catch (error) { if (current === epoch.current) setMessage(error instanceof Error ? error.message : "兑换未完成。"); }
     finally { if (current === epoch.current) setBusy(""); }
   }
@@ -162,7 +172,7 @@ function WalletAccountPanel({ userId, email, isAdmin }: { userId: string; email:
       const result = await api<{ creditReversedMicrousd: number; alreadyRevoked: boolean }>("/api/admin/redemption-codes/revoke", { code: revokeCode, note: revokeNote });
       if (current !== epoch.current) return;
       setRevokeCode(""); setRevokeNote(""); setRevokeConfirmed(false);
-      setMessage(`${result.alreadyRevoked ? "此码此前已停用，累计撤回" : "兑换码已停用，撤回"} ${money(result.creditReversedMicrousd)}。如需现金退款，请在支付服务商处理对应订单。`);
+      setMessage(`${result.alreadyRevoked ? "此码此前已停用，累计撤回" : "兑换码已停用，撤回"} ${formatCreditsWithUsd(result.creditReversedMicrousd, locale)}。如需现金退款，请在支付服务商处理对应订单。`);
       const list = await api<{ batches: Batch[] }>("/api/admin/redemption-batches");
       if (current === epoch.current) setBatches(list.batches);
       const updated = await api<WalletResponse>("/api/wallet");
@@ -172,21 +182,21 @@ function WalletAccountPanel({ userId, email, isAdmin }: { userId: string; email:
   }
 
   return <div className="wallet-page">
-    <header className="console-page-heading"><div><h1>{t("余额与充值", "API usage & billing")}</h1><p>{t("按量使用，余额以美元计价，模型用量按页面价格扣费。", "Your USD-denominated balance pays for tokvilo API and Playground usage at the displayed rates.")}</p></div><button className="console-button" type="button" disabled={!!busy} onClick={refresh}>{busy === "refresh" ? t("刷新中…", "Refreshing…") : t("刷新余额", "Refresh balance")}</button></header>
+    <header className="console-page-heading"><div><h1>{t("积分与充值", "API credits & billing")}</h1><p>{t("固定 $1 USD = 1,000 tokvilo 积分，美元金额同时显示。积分是 API 与 Playground 用量的计量单位，按模型页面售价扣减，不用于数字商品。", "A fixed $1 USD = 1,000 tokvilo credits, with dollar amounts always shown. Credits measure API and Playground usage at the published model rates; they do not pay for digital goods.")}</p></div><button className="console-button" type="button" disabled={!!busy} onClick={refresh}>{busy === "refresh" ? t("刷新中…", "Refreshing…") : t("刷新余额", "Refresh balance")}</button></header>
     {message ? <p className="console-notice" role="status">{walletNotice(message, isEnglish)}</p> : null}
-    <section className="wallet-summary"><div><span>{t("可用余额", "Available balance")}</span><strong>{data ? money(data.wallet.balanceMicrousd) : "—"}</strong><small>{email}</small></div><div><span>{t("处理中预留", "Reserved for pending requests")}</span><strong>{data ? money(data.wallet.reservedMicrousd) : "—"}</strong><small>{t("完成后按用量结算，多余预留退回可用余额。", "Settled after completion. Any excess reservation returns to your available balance.")}</small></div></section>
+    <section className="wallet-summary"><div><span>{t("可用积分", "Available credits")}</span><strong>{data ? formatCreditAmount(data.wallet.balanceMicrousd, locale) : "—"}</strong><small className="wallet-usd-equivalent">{data ? money(data.wallet.balanceMicrousd) : "—"} USD</small><small>{email}</small></div><div><span>{t("处理中预留", "Reserved for pending requests")}</span><strong>{data ? formatCreditAmount(data.wallet.reservedMicrousd, locale) : "—"}</strong><small className="wallet-usd-equivalent">{data ? money(data.wallet.reservedMicrousd) : "—"} USD</small><small>{t("预留部分暂不可使用；完成后按用量结算，多余部分退回可用积分。", "Reserved credits are temporarily unavailable. Usage is settled after completion; any excess returns to available credits.")}</small></div></section>
     {isEnglish ? <PaddlePaymentPanel userId={userId} email={email} onCreditConfirmed={refresh} /> : <>
     <section className="console-panel wallet-section"><h2>{t("tokvilo 用量包", "tokvilo usage packs")}</h2><p>{t("在安全收银台完成付款后获取一次性兑换码，回到下方兑换到当前账号。", "Complete payment in secure checkout, then return with your single-use code to add the usage to this account.")}</p>
       {!data?.billing.enabled ? <p className="wallet-status">{t("Tokvilo 专属商品正在准备中，当前购买入口暂未开放。已取得的 Tokvilo 兑换码可在兑换服务开启时使用。", "tokvilo top-ups are being prepared and purchases are not yet available. Keep any codes you already have until redemption opens.")}</p> : null}
-      <div className="wallet-packages">{(data?.billing.packages || []).map(item => <article key={item.id}><span>{t("Tokvilo API 余额", "tokvilo API credit")}</span><h3>¥{item.amountCny}</h3><p>{item.creditMicrousd === null ? t("充值汇率待配置", "Top-up conversion not configured") : t(`到账 ${money(item.creditMicrousd)}`, `${money(item.creditMicrousd)} credit`)}</p>{data?.billing.enabled && item.purchaseUrl ? <a className="console-button console-button-primary" href={item.purchaseUrl} target="_blank" rel="noopener noreferrer">{t("购买用量 ↗", "Buy usage ↗")}</a> : <button className="console-button" disabled>{t("暂未开放", "Not available yet")}</button>}</article>)}</div>
-      <p className="wallet-fineprint">{data?.billing.usdCny ? t(`当前新发行兑换码按固定充值换算率 1 USD = ¥${data.billing.usdCny} 换算，这不是实时外汇报价。`, `New codes use a fixed top-up conversion of USD 1 = ¥${data.billing.usdCny}. This is not a live exchange rate. `) : ""}{t("每个兑换码的到账额度在发行时固定，以商品页及兑换记录为准。模型用量按页面价格扣费。", "Each code’s credit is fixed at issuance; see the product page and redemption record. Model usage is billed at the displayed rates.")}</p>
+      <div className="wallet-packages">{(data?.billing.packages || []).map(item => <article key={item.id}><span>{t("一次性付款（人民币）", "One-time payment (CNY)")}</span><h3>¥{item.amountCny}</h3><p>{item.creditMicrousd === null ? t("充值汇率待配置", "Top-up conversion not configured") : t(`获得 ${formatCreditsWithUsd(item.creditMicrousd, locale)}`, `Receive ${formatCreditsWithUsd(item.creditMicrousd, locale)}`)}</p><small>{t("不自动续费；最终付款金额及适用税费以收银台确认为准。", "No automatic renewal. Confirm the final payment and applicable taxes at checkout.")}</small>{data?.billing.enabled && item.purchaseUrl ? <a className="console-button console-button-primary" href={item.purchaseUrl} target="_blank" rel="noopener noreferrer">{t("购买用量 ↗", "Buy usage ↗")}</a> : <button className="console-button" disabled>{t("暂未开放", "Not available yet")}</button>}</article>)}</div>
+      <p className="wallet-fineprint">{data?.billing.usdCny ? t(`当前新发行兑换码按固定充值换算率 1 USD = ¥${data.billing.usdCny} 换算，这不是实时外汇报价。`, `New codes use a fixed top-up conversion of USD 1 = ¥${data.billing.usdCny}. This is not a live exchange rate. `) : ""}{t("每个兑换码的到账额度在发行时固定，以商品页及兑换记录为准。美元额度按 $1 = 1,000 积分显示，税费不增加积分。模型用量按页面价格扣费。", "Each code’s usage value is fixed at issuance; see the product page and redemption record. USD usage is displayed at $1 = 1,000 credits; taxes do not add credits. Model usage is billed at the displayed rates.")}</p>
     </section>
     <section className="console-panel wallet-section"><h2>{t("兑换到账", "Redeem a code")}</h2><form className="wallet-form" onSubmit={redeem}><label htmlFor="redeem-code">{t("Tokvilo 兑换码", "tokvilo redemption code")}</label><input id="redeem-code" value={code} onChange={event => setCode(event.target.value)} autoComplete="off" spellCheck={false} placeholder="TK-XXXX-XXXX-…" maxLength={128} required /><label className="wallet-checkbox"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />{t(`我确认将余额兑换到当前账号 ${email}`, `I confirm that this credit will be added to ${email}`)}</label><button className="console-button console-button-primary" disabled={!!busy || !confirmed || !data?.billing.redemptionEnabled}>{busy === "redeem" ? t("兑换中…", "Redeeming…") : t("确认兑换", "Confirm redemption")}</button><p className="wallet-fineprint">{t("仅支持以 TK 开头的 tokvilo 专属兑换码，不支持其他平台的兑换码。付款完成或返回本站不会自动增加余额。", "Only tokvilo codes beginning with TK are accepted here. Codes from other platforms are not supported. Payment or returning to this site does not add balance automatically.")}</p></form></section>
     </>}
-    <section className="console-panel wallet-section"><h2>{t("最近账务记录", "Recent transactions")}</h2><div className="console-table-wrap"><table className="console-table"><thead><tr><th>{t("时间（北京时间）", "Time (UTC+8)")}</th><th>{t("说明", "Description")}</th><th>{t("余额变动", "Balance change")}</th></tr></thead><tbody>{data?.wallet.ledger.length ? data.wallet.ledger.map(row => <tr key={row.id}><td>{timestamp(row.created_at, isEnglish)}</td><td>{ledgerText(row.description, isEnglish)}</td><td className={row.amount_microusd < 0 ? "wallet-debit" : "wallet-credit"}>{row.amount_microusd > 0 ? "+" : ""}{money(row.amount_microusd)}</td></tr>) : <tr><td colSpan={3}>{data ? t("暂无账务记录。", "No transactions yet.") : t("正在读取账务记录…", "Loading transactions…")}</td></tr>}</tbody></table></div></section>
+    <section className="console-panel wallet-section"><h2>{t("最近账务记录", "Recent transactions")}</h2><div className="console-table-wrap"><table className="console-table"><thead><tr><th>{t("时间（北京时间）", "Time (UTC+8)")}</th><th>{t("说明", "Description")}</th><th>{t("积分与美元变动", "Credits & USD change")}</th></tr></thead><tbody>{data?.wallet.ledger.length ? data.wallet.ledger.map(row => <tr key={row.id}><td>{timestamp(row.created_at, isEnglish)}</td><td>{ledgerText(row.description, isEnglish)}{isHistoricalProductEntry(row) ? t(" · 历史数字商品记录", " · Historical digital goods record") : ""}</td><td className={row.amount_microusd < 0 ? "wallet-debit" : "wallet-credit"}>{row.amount_microusd > 0 ? "+" : ""}{isHistoricalProductEntry(row) ? money(row.amount_microusd) : formatCreditsWithUsd(row.amount_microusd, locale)}</td></tr>) : <tr><td colSpan={3}>{data ? t("暂无账务记录。", "No transactions yet.") : t("正在读取账务记录…", "Loading transactions…")}</td></tr>}</tbody></table></div></section>
     {isAdmin ? <section className="console-panel wallet-section"><h2>{t("兑换码库存管理", "Redemption code inventory")}</h2><p>{t("生成 tokvilo 专属库存，再下载导入销售渠道的对应商品。明文只在首次发行响应中显示。", "Generate tokvilo codes, then download and import them into the matching product on your sales channel. Plaintext codes are shown only in the first issuance response.")}</p><form className="wallet-form" onSubmit={issue}><div className="wallet-fields"><label>{t("充值面值", "Top-up denomination")}<select value={pack} onChange={event => setPack(event.target.value)}>{[30, 90, 300].map(n => <option key={n} value={String(n)}>¥{n}</option>)}</select></label><label>{t("数量", "Quantity")}<input type="number" min={1} max={1000} value={count} onChange={event => setCount(Number(event.target.value))} required /></label></div><label>{t("发行备注", "Issuance note")}<input value={note} onChange={event => setNote(event.target.value)} minLength={2} maxLength={500} placeholder={t("例如：tokvilo 首批商品库存", "Example: first tokvilo product inventory")} required /></label><button className="console-button console-button-primary" disabled={!!busy || !data?.billing.issuanceEnabled}>{busy === "issue" ? t("生成中…", "Generating…") : t("生成库存", "Generate codes")}</button></form>
       {exportCodes.length ? <div className="wallet-export"><button className="console-button console-button-primary" type="button" onClick={downloadCodes}>{t(`下载 ${exportCodes.length} 个兑换码`, `Download ${exportCodes.length} codes`)}</button><button className="console-button" onClick={() => { setExportCodes([]); setExportId(""); issueRequest.current = null; }} type="button">{t("已保存，清除明文", "Saved — clear plaintext")}</button><textarea readOnly value={exportCodes.join("\n")} aria-label={t("新发行的兑换码", "Newly issued codes")} rows={6} /></div> : null}
-      <div className="console-table-wrap"><table className="console-table"><thead><tr><th>{t("批次", "Batch")}</th><th>{t("面值 / 到账", "Price / Credit")}</th><th>{t("发行 / 已兑换 / 停用", "Issued / Redeemed / Disabled")}</th></tr></thead><tbody>{batches.map(batch => <tr key={batch.id}><td><code>{batch.id.slice(0, 8)}</code></td><td>¥{batch.amount_cny} / {money(batch.credit_microusd)}</td><td>{batch.issued_count} / {batch.redeemed_count} / {batch.revoked_count}</td></tr>)}</tbody></table></div>
+      <div className="console-table-wrap"><table className="console-table"><thead><tr><th>{t("批次", "Batch")}</th><th>{t("面值 / 到账", "Price / Credit")}</th><th>{t("发行 / 已兑换 / 停用", "Issued / Redeemed / Disabled")}</th></tr></thead><tbody>{batches.map(batch => <tr key={batch.id}><td><code>{batch.id.slice(0, 8)}</code></td><td>¥{batch.amount_cny} / {formatCreditsWithUsd(batch.credit_microusd, locale)}</td><td>{batch.issued_count} / {batch.redeemed_count} / {batch.revoked_count}</td></tr>)}</tbody></table></div>
       <details className="wallet-revoke"><summary>{t("停用兑换码并撤回对应余额", "Disable a code and reverse its credit")}</summary><form className="wallet-form" onSubmit={revoke}><label>{t("完整兑换码", "Full redemption code")}<input value={revokeCode} onChange={event => setRevokeCode(event.target.value)} autoComplete="off" maxLength={128} required /></label><label>{t("撤销备注", "Revocation note")}<input value={revokeNote} onChange={event => setRevokeNote(event.target.value)} minLength={2} maxLength={500} required /></label><label className="wallet-checkbox"><input type="checkbox" checked={revokeConfirmed} onChange={event => setRevokeConfirmed(event.target.checked)} />{t("确认停用此码并撤回已兑换的完整额度；现金退款另通过支付服务商处理。", "I confirm this code will be disabled and its full redeemed credit reversed. Any cash refund must be handled separately through the payment provider.")}</label><button className="console-button" disabled={!!busy || !revokeConfirmed}>{busy === "revoke" ? t("处理中…", "Processing…") : t("停用此码", "Disable code")}</button></form></details>
     </section> : null}
   </div>;

@@ -5,6 +5,7 @@ import test from "node:test";
 import vm from "node:vm";
 import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
+import { credits, billingSummary } from "./helpers/credit-display.mjs";
 import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const optionsSource = ts.transpileModule(await readFile(new URL("../lib/apimart-video-options.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
@@ -44,10 +45,12 @@ async function fixture(options = {}) {
     module: compiled, exports: compiled.exports, crypto: webcrypto, URL, AbortController,
     setTimeout: (callback, ms) => { const id = ++timerId; timers.set(id, { callback, ms }); return id; }, clearTimeout: id => timers.delete(id),
     require(name) {
+      if (name === "@/lib/credits") return credits;
+      if (name === "./PlaygroundBillingSummary") return billingSummary;
       if (name === "@/lib/apimart-video-options") return optionsModule.exports;
       if (name === "@/lib/model-request-kind") return requestKindModule.exports;
       if (name === "@/lib/brand-display") return brandDisplay;
-      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) };
+      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ locale: options.english ? "en" : "zh", isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) };
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
@@ -88,9 +91,9 @@ test("APIMart requires a displayed exact quote before confirming a paid request 
   assert.equal(text(f.primary()), "获取准确报价");
   await f.primary().props.onClick(); f.render();
   assert.equal(f.calls.filter(call => call.url.includes("images/generations")).length, 0);
-  assert.match(text(f.tree()), /本次预留 \$0\.018000/);
+  assert.match(text(f.tree()), /本次预留 18 积分 \(\$0\.018\)/);
   assert.doesNotMatch(text(f.tree()), /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
-  assert.match(text(f.primary()), /确认预留 \$0\.018000 并生成/);
+  assert.match(text(f.primary()), /确认预留 18 积分 \(\$0\.018\) 并生成/);
   await f.primary().props.onClick(); f.render();
   const quote = f.calls.find(call => call.url === "/api/pricing/quote");
   const paid = f.calls.find(call => call.url.includes("images/generations"));
@@ -218,7 +221,7 @@ test("English model playground translates controls without rewriting the prompt,
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
   f.prompt("原样保留中文提示词");
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), /Reserve \$0\.018000 & generate/);
+  assert.match(text(f.primary()), /Reserve 18 credits \(\$0\.018\) & generate/);
   await f.primary().props.onClick(); f.render();
   const quote = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
   const paid = f.calls.find(call => call.url.includes("images/generations"));
@@ -338,7 +341,7 @@ test("dedicated endpoint models cannot be sent through chat even if a catalogue 
 test("getting a quote refreshes a previously empty wallet before allowing confirmation", async () => {
   let checks = 0;
   const f = await fixture({ status: async () => Response.json(statusBody({ balanceMicrousd: ++checks === 1 ? 0 : 20000 })) });
-  assert.match(text(f.tree()), /当前钱包余额为 \$0/);
+  assert.match(text(f.tree()), /当前可用余额为 0 积分 \(\$0\)/);
   await f.primary().props.onClick(); f.render();
   assert.equal(checks, 2);
   assert.equal(f.primary().props.disabled, false);
@@ -417,4 +420,24 @@ test("a missing original request allows requoting while a confirmed refunded rec
     assert.match(text(f.tree()), missing ? /No record was found for this request/ : /You were not charged/);
     assert.equal(f.calls.filter(call => call.url.includes("/images/generations")).length, 1);
   }
+});
+
+for (const english of [false, true]) test(`gateway credit display preserves a one-microdollar quote, charge and real usage (${english ? "en" : "zh"})`, async () => {
+  const receipt = { choices: [{ message: { content: "Exact result" } }], usage: { prompt_tokens: 300, completion_tokens: 14, total_tokens: 314 }, tokvilo_billing: { currency: "USD", status: "settled", reservedMicrousd: 1, chargedMicrousd: 1 } };
+  const original = JSON.stringify(receipt);
+  const f = await fixture({ english, quote: () => Response.json({ provider: "apimart", model: "gpt-image-2", currency: "USD", reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
+  assert.match(text(f.tree()), english ? /\$1 = 1,000 credits/ : /\$1 = 1,000 积分/);
+  assert.match(text(f.tree()), english ? /10,000 credits \(\$10\)/ : /10,000 积分 \(\$10\)/);
+  await f.primary().props.onClick(); f.render();
+  assert.match(text(f.primary()), english ? /0\.001 credits \(\$0\.000001\)/ : /0\.001 积分 \(\$0\.000001\)/);
+  await f.primary().props.onClick(); f.render();
+  const sent = f.calls.find(call => call.url.includes("images/generations"));
+  assert.equal(sent.init.headers["X-Tokvilo-Max-Reserve-Microusd"], "1");
+  assert.deepEqual(JSON.parse(sent.init.body), JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body);
+  const summary = find(f.tree(), node => node.type === billingSummary.PlaygroundBillingSummary);
+  assert.ok(summary); assert.equal(summary.props.locale, english ? "en" : "zh");
+  assert.match(text(summary.type(summary.props)), english ? /Actual charge0\.001 credits \(\$0\.000001\)/ : /实际费用0\.001 积分 \(\$0\.000001\)/);
+  assert.match(text(summary.type(summary.props)), english ? /Input tokens300Output tokens14Total tokens314/ : /输入 tokens300输出 tokens14总 tokens314/);
+  assert.match(text(f.tree()), /"total_tokens": 314/);
+  assert.equal(JSON.stringify(receipt), original);
 });

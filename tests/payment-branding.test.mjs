@@ -9,12 +9,15 @@ import ts from "typescript";
 
 const require = createRequire(import.meta.url);
 const visible = html => html.replace(/<[^>]*>/g, "");
+const creditsModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(await readFile(new URL("../lib/credits.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { module: creditsModule, exports: creditsModule.exports });
 
 async function render(name, locale, props) {
   const source = await readFile(new URL(`../components/${name}.tsx`, import.meta.url), "utf8");
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   const compiledModule = { exports: {} };
   const dependencies = {
+    "@/lib/credits": creditsModule.exports,
     "next/link": { default: ({ children, ...attributes }) => React.createElement("a", attributes, children) },
     "./PublicNav": { PublicNav: () => React.createElement("nav", {}, "tokvilo") },
     "./PublicFooter": { PublicFooter: () => React.createElement("footer", { "data-public-footer": "true" }, "tokvilo") },
@@ -34,6 +37,24 @@ test("billing pages use tokvilo payment branding in both languages and keep avai
       assert.match(html, /<\/main><footer data-public-footer="true">/);
       assert.match(visible(html), /enterprise bank transfer|企业银行转账/i);
     }
+  }
+});
+
+test("billing packs show a fixed credit conversion alongside unchanged one-time USD prices in both languages", async () => {
+  for (const locale of ["en", "zh"]) {
+    const html = await render("BillingInformation", locale, { checkoutAvailable: true });
+    const packs = html.match(/<article class="billing-pack">[\s\S]*?<\/article>/g);
+    assert.equal(packs.length, 3);
+    for (const [index, amount] of [20, 50, 100].entries()) {
+      const copy = visible(packs[index]);
+      assert.match(copy, new RegExp(`\\$${amount}USD`));
+      assert.match(copy, new RegExp(`${amount},000 ${locale === "en" ? "credits" : "积分"} \\(\\$${amount}\\)`));
+      assert.match(copy, locale === "en" ? /One-time payment · before tax/ : /一次性付款 · 未含税/);
+    }
+    assert.match(visible(html), locale === "en" ? /taxes do not add credits/ : /税费不增加积分/);
+    assert.match(visible(html), locale === "en" ? /Every pack uses the same \$1 = 1,000 credits conversion/ : /所有用量包均按 \$1 = 1,000 积分换算/);
+    assert.match(visible(html), locale === "en" ? /They are not model tokens/ : /与模型的 token 数不同/);
+    assert.match(visible(html), locale === "en" ? /Digital goods do not use API credits/ : /数字商品不使用 API 积分/);
   }
 });
 

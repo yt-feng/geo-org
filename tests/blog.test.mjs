@@ -68,6 +68,20 @@ test("every original guide has paired substantial content and matching section a
   }
 });
 
+test("the billing guide preserves USD equivalents and the same reservation arithmetic in both languages", () => {
+  const post = blog.getBlogPost("understanding-api-usage-and-billing");
+  for (const locale of ["zh", "en"]) {
+    const sections = post.content[locale].sections;
+    const purchase = sections.find(section => section.id === "purchase-and-usage").paragraphs.join(" ");
+    assert.match(purchase, locale === "en" ? /USD 1 = 1,000 API credits/ : /USD 1 = 1,000 API 积分/);
+    const example = sections.find(section => section.id === "reservation-and-settlement").paragraphs.join(" ");
+    const pairs = [...example.matchAll(/(\d+) API (?:积分|credits)[（( ]+\$(\d+\.\d+)[）)]/g)].map(match => [Number(match[1]), Number(match[2])]);
+    assert.deepEqual(pairs, [[100, 0.10], [60, 0.06], [40, 0.04]]);
+    for (const [credits, dollars] of pairs) assert.equal(credits, Math.round(dollars * 1_000_000) / 1_000);
+    assert.equal(pairs[0][0] - pairs[1][0], pairs[2][0]);
+  }
+});
+
 test("article metadata and structured data use the matching canonical language and original author", async () => {
   for (const locale of ["zh", "en"]) {
     for (const post of blog.blogPosts) {

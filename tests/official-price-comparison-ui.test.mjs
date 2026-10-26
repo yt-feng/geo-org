@@ -20,6 +20,7 @@ async function load(path, dependencies = {}) {
   } });
   return compiledModule.exports;
 }
+const credits = await load("../lib/credits.ts");
 const official = await load("../lib/official-pricing.ts");
 const selection = await load("../lib/model-selection-ui.ts", { "./model-catalog": catalog });
 const priceCopy = await load("../lib/price-copy.ts");
@@ -28,6 +29,7 @@ for (const locale of ["zh", "en"]) {
   components[locale] = (await load("../components/OfficialPriceComparison.tsx", {
     "react/jsx-runtime": jsx,
     "@/lib/official-pricing": official,
+    "@/lib/credits": credits,
     "@/lib/model-selection-ui": selection,
     "@/lib/price-copy": priceCopy,
     "./LocaleProvider": { useSiteLocale: () => ({ isEnglish: locale === "en", t: (zh, en) => locale === "en" ? en : zh }) },
@@ -45,7 +47,7 @@ test("real official comparisons render lower, equal and higher retail prices in 
     assert.match(cheaper, /class="price-saving"/);
     assert.match(cheaper, /href="https:\/\/developers\.openai\.com\/api\/docs\/models\/gpt-4\.1"/);
     assert.match(cheaper, /2026-10-24/);
-    assert.match(cheaper, /<details>/);
+    assert.match(cheaper, /<details class="official-price-details">/);
     assert.match(cheaper, /Standard on-demand text tokens/);
     const equal = render(price("gpt-4.1", [rate(2_000_000)]), locale);
     assert.match(content(equal), locale === "en" ? /Same price/ : /价格相同/);
@@ -100,6 +102,7 @@ test("both adapter tier shapes render all input/output tiers with translated con
     const html = render(price("gpt-6.1-sol", withOutput));
     assert.equal((html.match(/<tbody>[\s\S]*?<\/tbody>/)?.[0].match(/<tr>/g) || []).length, 4, "both declared tiers of input and output must remain visible");
     assert.equal((html.match(/Save 50\.0%/g) || []).length, 4);
+    assert.match(html.split('<details')[0], /at least 50\.0% below official rates/);
     assert.match(html, /<td>\$2<\/td><td>\$1<\/td>/);
     assert.match(html, /<td>\$4<\/td><td>\$2<\/td>/);
     assert.match(html, /<td>\$10<\/td><td>\$5<\/td>/);
@@ -112,7 +115,52 @@ test("a comparable price never implies that an unconfigured service can be purch
   for (const locale of ["zh", "en"]) {
     const value = price("gpt-4.1", [rate(500_000)], { billingReady: false });
     const html = render(value, locale);
-    assert.match(content(html), locale === "en" ? /This service is not yet enabled; listed rates do not imply current purchasing or execution availability/ : /此服务尚未开通；以下报价不代表当前可购买或调用/);
+    assert.match(content(html), locale === "en" ? /This service is not yet enabled; listed rates do not imply current purchasing or execution availability/ : /此服务尚未开通；列示报价不代表当前可购买或调用/);
     assert.doesNotMatch(html, /<button|href="\/playground/);
+  }
+});
+
+
+test("all price positions use the same disclosure while compact cards show the real retail amount outside it", () => {
+  for (const retail of [500_000, 2_000_000, 3_000_000]) {
+    const html = renderToStaticMarkup(createElement(components.en, { price: price("gpt-4.1", [rate(retail)]), compact: true }));
+    const primary = html.split('<details class="official-price-details">')[0];
+    assert.ok(primary.includes(credits.formatCreditsWithUsd(retail, "en")));
+    assert.match(primary, /Per 1M tokens/);
+    assert.equal((html.match(/<details /g) || []).length, 1);
+    assert.doesNotMatch(html, /<details[^>]*open/);
+    assert.match(html, /Price comparison &amp; billing details/);
+  }
+});
+
+test("mixed tiers and missing evidence cannot earn an overall savings headline", () => {
+  for (const value of [
+    price("gpt-4.1", [rate(1_000_000), rate(10_000_000, "output")]),
+    price("gpt-4.1", [rate(1_000_000), rate(1_000_000, "output", { condition: "unverified condition" })]),
+    price("gpt-4.1", [rate(1_000_000)], { billingReady: false }),
+  ]) {
+    const html = render(value);
+    assert.doesNotMatch(html.split('<details')[0], /official-savings-summary/);
+  }
+  const html = render(price("gpt-4.1", [rate(1_000_000), rate(7_500_000, "output")]));
+  assert.match(html.split('<details')[0], /at least 6\.2% below official rates/);
+});
+
+test("missing input or output in any declared tier prevents an overall savings headline", () => {
+  const shortInput = rate(1_000_000, "tier1:input", { tierMinInputTokens: 0, tierMaxInputTokens: 272_000 });
+  const shortOutput = rate(5_000_000, "tier1:output", { tierMinInputTokens: 0, tierMaxInputTokens: 272_000 });
+  const longOutput = rate(7_500_000, "tier2:output", { tierMinInputTokens: 272_000, tierMaxInputTokens: null });
+  for (const locale of ["zh", "en"]) {
+    for (const value of [
+      price("gpt-4.1", [rate(500_000)]),
+      price("gpt-4.1", [rate(1_000_000, "output")]),
+      price("gpt-6.1-sol", [shortInput, shortOutput, longOutput]),
+      price("gpt-6.1-sol", [shortInput, longOutput]),
+      price("gpt-6.1-sol", [shortInput, { ...longOutput, dimension: "tier1:output" }]),
+    ]) {
+      const html = render(value, locale);
+      assert.doesNotMatch(html.split('<details')[0], /official-savings-summary/);
+      assert.match(html, /class="price-saving"/, "verified individual comparisons remain available in details");
+    }
   }
 });

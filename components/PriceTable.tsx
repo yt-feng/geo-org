@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useSiteLocale } from "./LocaleProvider";
 import { englishPriceText } from "@/lib/price-copy";
 import { OfficialPriceComparison } from "./OfficialPriceComparison";
+import { CreditBudgetPlanner } from "./CreditBudgetPlanner";
+import { formatCreditsWithUsd } from "@/lib/credits";
 import { ProviderLogo } from "./ProviderLogo";
 import { groupModels, modelProvider, providerIdentity } from "@/lib/model-identity";
 import { modelRequestKind, modelWorkbenchUrl, type ModelCategory } from "@/lib/model-catalog";
@@ -21,7 +23,6 @@ const priceCategory = (model: string, kind: string): ModelCategory => {
   const category = kind === "image" || kind === "video" ? kind : ["audio", "music", "speech", "transcription", "realtime"].includes(kind) ? "audio" : "text";
   return ["audio", "speech", "transcription", "realtime"].includes(modelRequestKind(model, category)) ? "audio" : category;
 };
-const money = (value: number) => `$${(value / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 6 })}`;
 const keyRates = (rates: Rate[]) => {
   const input = rates.find(rate => /^(?:.*:)?input$/.test(rate.dimension));
   const output = rates.find(rate => /^(?:.*:)?output$/.test(rate.dimension));
@@ -30,6 +31,7 @@ const keyRates = (rates: Rate[]) => {
 
 export function PriceTable({ provider, model }: { provider?: string; model?: string }) {
   const { t, isEnglish, href } = useSiteLocale();
+  const money = (value: number) => formatCreditsWithUsd(value, isEnglish ? "en" : "zh");
   const copy = (value: string) => isEnglish ? englishPriceText(displayServiceText(value)) : displayServiceText(value);
   const serviceName = (value: string) => isEnglish ? ({ tokenhub: "tokvilo Multimodal", apimart: "tokvilo Models", selected: "tokvilo Select" }[value] || displayServiceText(value)) : serviceLabel(value);
   const unit = (value: string) => isEnglish ? ({ "1M_tokens": "1M tokens", image: "image", second: "second", call: "request", "1000_queries": "1,000 queries", "1M_token_hours": "1M token-hours" }[value] || value) : units[value] || value;
@@ -86,6 +88,7 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
   const priceCard = (item: ModelPrice) => <section className="price-model" key={`${item.provider}:${item.model}`}>
     <div className="price-model-heading"><div><small>{serviceName(item.provider)}</small><h3>{copy(item.name || item.model)}</h3><code>{item.model}</code></div><Link href={href(modelWorkbenchUrl({ id: item.model, category: priceCategory(item.model, item.kind), upstream: item.provider === "tokenhub" || item.provider === "selected" ? item.provider : "apimart" }))}>{t("打开工作台 ↗", "Open playground ↗")}</Link></div>
     {item.billingReady === false ? <p className="price-caption">{item.provider === "selected" ? t("价格已列示 · 服务待开通", "Pricing listed · Activation pending") : t("价格已列示 · 接口暂未开放", "Pricing listed · Interface unavailable")}</p> : null}
+    <div className="price-preview" aria-label={t("主要费率", "Key rates")}>{keyRates(item.rates).map(rate => <div key={rate.dimension}><span>{copy(rate.label || labels[rate.dimension] || rate.dimension)}{rate.condition ? ` · ${copy(rate.condition)}` : ""}</span><strong>{money(rate.retailMicrousd)}<small> / {unit(rate.unit)}</small></strong></div>)}</div>
     {item.kind === "chat" ? <OfficialPriceComparison price={item} /> : null}
     {item.capabilitiesNotes?.map(note => <p className="price-caption" key={note}>{copy(note)}</p>)}
     <details className="price-rate-detail" open={!!model}>
@@ -93,10 +96,12 @@ export function PriceTable({ provider, model }: { provider?: string; model?: str
       {item.rates.length ? <div className="price-scroll"><table><thead><tr><th>{t("计费项", "Rate")}</th><th>{t("单位", "Unit")}</th><th>{t("tokvilo 价格", "tokvilo price")}</th></tr></thead><tbody>{item.rates.map(rate => <tr key={rate.dimension}><td>{copy(rate.label || labels[rate.dimension] || rate.dimension)}{rate.condition ? <small style={{ display: "block" }}>{copy(rate.condition)}</small> : null}</td><td>{unit(rate.unit)}</td><td><strong>{money(rate.retailMicrousd)}</strong></td></tr>)}</tbody></table></div> : <p>{t("报价暂不可用。", "Pricing unavailable.")}</p>}
       {item.notes?.map(note => <p className="price-caption" key={note}>{copy(note)}</p>)}
     </details>
-    {!model ? <div className="price-preview" aria-label={t("主要费率", "Key rates")}>{keyRates(item.rates).map(rate => <div key={rate.dimension}><span>{copy(rate.label || labels[rate.dimension] || rate.dimension)}{rate.condition ? ` · ${copy(rate.condition)}` : ""}</span><strong>{money(rate.retailMicrousd)}<small> / {unit(rate.unit)}</small></strong></div>)}</div> : null}
+
   </section>;
   return <div className="tokvilo-prices">
+    <p className="credit-conversion-note">{t("$1 = 1,000 API 积分。每项价格同时显示美元等值；积分换算不改变售价，数字商品单独计价。", "$1 = 1,000 API credits. Each rate includes its USD equivalent; conversion does not change the price. Digital goods are priced separately.")}</p>
     {error ? <p role="status">{t(displayServiceText(error), "Pricing is temporarily unavailable. Please refresh this page.")}</p> : !data ? <p role="status">{t("正在读取价格…", "Loading prices…")}</p> : <>
+      {!model ? <CreditBudgetPlanner prices={data.models} /> : null}
       <div className={model ? "price-detail-layout" : "price-browser"}>
         {!model ? <aside className="price-sidebar" aria-label={t("按厂商浏览价格", "Browse prices by provider")}>
           <div className="price-sidebar-title">{t("按厂商浏览", "Browse providers")}</div>

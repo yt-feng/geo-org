@@ -5,6 +5,7 @@ import test from "node:test";
 import vm from "node:vm";
 import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
+import { credits, billingSummary } from "./helpers/credit-display.mjs";
 
 const filename = new URL("../components/SelectedPlayground.tsx", import.meta.url).pathname;
 const code = ts.transpileModule(await readFile(filename, "utf8"), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
@@ -24,7 +25,9 @@ async function fixture(options = {}) {
   };
   const mod = { exports: {} };
   vm.runInNewContext(code, { module: mod, exports: mod.exports, crypto: webcrypto, URL,
-    require(name) { if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) }; if (name === "react") return react; if (name === "react/jsx-runtime") return jsx; if (name === "next/link") return { default: "a" }; if (name === "./PriceTable") return { PriceTable: () => null }; throw Error(name); },
+    require(name) {
+      if (name === "@/lib/credits") return credits;
+      if (name === "./PlaygroundBillingSummary") return billingSummary; if (name === "./LocaleProvider") return { useSiteLocale: () => ({ locale: options.english ? "en" : "zh", isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) }; if (name === "react") return react; if (name === "react/jsx-runtime") return jsx; if (name === "next/link") return { default: "a" }; if (name === "./PriceTable") return { PriceTable: () => null }; throw Error(name); },
     fetch: async (url, init) => {
       calls.push({ url, init });
       if (url === "/api/playground/status?service=selected") return options.status ? options.status(url, init) : Response.json({ service: "selected", authenticated: true, serviceEnabled: true, configured: true, accountActive: true, balanceMicrousd: 1_000_000, currency: "USD", code: "configuration_available", checks: "configuration_only" });
@@ -51,7 +54,7 @@ for (const kind of ["chat", "image"]) test(`selected ${kind} displays quote then
   assert.doesNotMatch(text(f.tree()), /Other service model|rkapi|源价|加价/i);
   assert.equal(f.primary().props.disabled, false);
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), /确认预留 \$0\.012000/);
+  assert.match(text(f.primary()), /确认预留 12 积分 \(\$0\.012\)/);
   assert.equal(f.calls.filter(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST").length, 0);
   await f.primary().props.onClick(); f.render();
   const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
@@ -190,7 +193,7 @@ test("English selected playground keeps generated content and request identity u
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]/);
   f.prompt("不翻译这段用户提示词");
   await f.primary().props.onClick(); f.render();
-  assert.match(text(f.primary()), /Reserve \$0\.012000 & generate/);
+  assert.match(text(f.primary()), /Reserve 12 credits \(\$0\.012\) & generate/);
   await f.primary().props.onClick(); f.render();
   const paid = f.calls.find(call => call.url === "/api/selected/v1/chat/completions");
   const quoted = JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body);
@@ -205,12 +208,12 @@ const accountStatus = overrides => ({ service: "selected", authenticated: true, 
 test("zero balance permits a quote but prevents generation, then refreshing funded balance restores confirmation", async () => {
   let balance = 0;
   const f = await fixture({ status: async () => Response.json(accountStatus({ balanceMicrousd: balance })) });
-  assert.match(text(f.tree()), /可用余额 \$0\.000000/);
+  assert.match(text(f.tree()), /可用余额 0 积分 \(\$0\)/);
   assert.match(text(f.tree()), /1 获取准确报价 → 2 确认金额并生成/);
   assert.equal(f.primary().props.disabled, false, "a quote does not charge an empty wallet");
   await f.primary().props.onClick(); f.render();
   assert.equal(f.primary().props.disabled, true);
-  assert.match(text(f.tree()), /还需充值 \$0\.012000/);
+  assert.match(text(f.tree()), /还需充值 12 积分 \(\$0\.012\)/);
   await f.primary().props.onClick();
   assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).length, 0);
   balance = 50_000;
@@ -261,4 +264,23 @@ test("quote failure is displayed beside the action button", async () => {
   assert.ok(alert);
   assert.match(text(alert), /报价暂不可用/);
   assert.equal(f.calls.filter(call => call.url.endsWith("/chat/completions")).length, 0);
+});
+
+for (const english of [false, true]) test(`Select credits preserve exact one-microdollar amounts and token counts (${english ? "en" : "zh"})`, async () => {
+  const receipt = { choices: [{ message: { content: "Exact reply" } }], usage: { prompt_tokens: 900, completion_tokens: 11, total_tokens: 911 }, tokvilo_billing: { currency: "USD", status: "settled", reservedMicrousd: 1, chargedMicrousd: 1 } };
+  const original = JSON.stringify(receipt);
+  const f = await fixture({ english, quote: () => Response.json({ provider: "selected", model: "same-model", mode: "chat", currency: "USD", reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
+  assert.match(text(f.tree()), english ? /\$1 = 1,000 credits/ : /\$1 = 1,000 积分/);
+  assert.match(text(f.tree()), english ? /1,000 credits \(\$1\)/ : /1,000 积分 \(\$1\)/);
+  await f.primary().props.onClick(); f.render();
+  assert.match(text(f.primary()), english ? /0\.001 credits \(\$0\.000001\)/ : /0\.001 积分 \(\$0\.000001\)/);
+  await f.primary().props.onClick(); f.render();
+  const sent = f.calls.find(call => call.url.startsWith("/api/selected/") && call.init?.method === "POST");
+  assert.equal(sent.init.headers["X-Tokvilo-Max-Reserve-Microusd"], "1");
+  assert.deepEqual(JSON.parse(sent.init.body), JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body);
+  const summary = find(f.tree(), node => node.type === billingSummary.PlaygroundBillingSummary);
+  assert.ok(summary); assert.equal(summary.props.locale, english ? "en" : "zh");
+  assert.match(text(summary.type(summary.props)), english ? /Actual charge0\.001 credits \(\$0\.000001\)/ : /实际费用0\.001 积分 \(\$0\.000001\)/);
+  assert.match(text(f.tree()), /"total_tokens": 911/);
+  assert.equal(JSON.stringify(receipt), original);
 });

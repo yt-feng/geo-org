@@ -17,6 +17,8 @@ const priceCopyModule = { exports: {} };
 vm.runInNewContext(ts.transpileModule(await readFile(new URL('../lib/price-copy.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, { module: priceCopyModule, exports: priceCopyModule.exports });
+const creditModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(await readFile(new URL("../lib/credits.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { module: creditModule, exports: creditModule.exports });
 const text = value => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(text).join("") : value?.props ? text(value.props.children) : "";
 function all(node, predicate) {
   if (Array.isArray(node)) return node.flatMap(item => all(item, predicate));
@@ -44,6 +46,8 @@ async function fixture(payload, locale = 'zh', props = {}) {
       if (name === "@/lib/model-catalog") return catalog;
       if (name === "./ProviderLogo") return {ProviderLogo:()=>null};
       // This suite exercises the parent table; the real comparison leaf has separate SSR tests.
+      if (name === "@/lib/credits") return creditModule.exports;
+      if (name === "./CreditBudgetPlanner") return { CreditBudgetPlanner: () => null };
       if (name === "./OfficialPriceComparison") return { OfficialPriceComparison: () => null };
       if (name === "./LocaleProvider") return {useSiteLocale:()=>({isEnglish:locale === 'en',t:(zh,en)=>locale === 'en' ? en : zh,href:p=>p})};
       if (name === "@/lib/price-copy") return priceCopyModule.exports;
@@ -68,8 +72,8 @@ test("loaded model prices render only retail amounts, with filters preserving th
       rates: [{ dimension: "image", unit: "image", upstreamMicrousd: 81_000_000, retailMicrousd: 25_000 }] },
   ] });
   assert.match(f.loading, /正在读取价格/);
-  assert.match(text(f.tree()), /输入百万 tokens\$7\.5/);
-  assert.match(text(f.tree()), /图像生成张\$0\.025/);
+  assert.match(text(f.tree()), /输入百万 tokens7,500 积分 \(\$7\.5\)/);
+  assert.match(text(f.tree()), /图像生成张25 积分 \(\$0\.025\)/);
   assert.doesNotMatch(text(f.tree()), /\$98|\$81|源价|源头|加价|20\s*%|×\s*1\.20/);
   assert.deepEqual(all(f.tree(), node => node.type === "th").map(text), ["计费项", "单位", "tokvilo 价格", "计费项", "单位", "tokvilo 价格"]);
   all(f.tree(), node => node.type === "select" && node.props['aria-label'] === '筛选价格服务')[0].props.onChange({ target: { value: "apimart" } });
@@ -96,10 +100,10 @@ test("tiered, video, audio and add-on prices keep their units and all adapters l
     ], notes: ["附加功能仅在使用时计费。"] },
   ] });
   const rendered = text(f.tree());
-  assert.match(rendered, /720p秒\$0\.012/);
-  assert.match(rendered, /生成次\$0\.072/);
-  assert.match(rendered, /搜索千次查询\$16\.8/);
-  assert.match(rendered, /缓存存储百万 token·小时\$1\.2/);
+  assert.match(rendered, /720p秒12 积分 \(\$0\.012\)/);
+  assert.match(rendered, /生成次72 积分 \(\$0\.072\)/);
+  assert.match(rendered, /搜索千次查询16,800 积分 \(\$16\.8\)/);
+  assert.match(rendered, /缓存存储百万 token·小时1,200 积分 \(\$1\.2\)/);
   assert.match(rendered, /输入 ≤ 100,000 tokens/); assert.match(rendered, /前 5 项免费/);
   assert.match(rendered, /价格已列示 · 接口暂未开放/);
   assert.match(rendered, /当前开放基础音乐生成；其他操作价格仅供查阅/);
@@ -157,14 +161,14 @@ test('English family comparisons preserve version order, billing units and indep
   ] }, 'en');
   const cards = all(f.tree(), node => node.props.className === 'price-model');
   assert.deepEqual(cards.map(node => node.key), ['apimart:gpt-5.2', 'selected:gpt-5.2', 'apimart:gpt-4.1']);
-  assert.match(text(f.tree()), /Input1M tokens\$2\.1/);
-  assert.match(text(f.tree()), /Input1M tokens\$0\.8/);
+  assert.match(text(f.tree()), /Input1M tokens2,100 credits \(\$2\.1\)/);
+  assert.match(text(f.tree()), /Input1M tokens800 credits \(\$0\.8\)/);
   assert.match(text(f.tree()), /Input ≤ 100,000 tokens/);
   assert.match(text(f.tree()), /Pricing listed · Activation pending/);
   const preview = all(cards[0], node => node.props.className === 'price-preview')[0];
   assert.match(text(preview), /Input.*Output/);
   assert.doesNotMatch(text(preview), /Cached/);
-  assert.match(text(cards[0]), /Cached input1M tokens\$0\.21/, 'complete rates must retain caching prices');
+  assert.match(text(cards[0]), /Cached input1M tokens210 credits \(\$0\.21\)/, 'complete rates must retain caching prices');
   assert.doesNotMatch(text(f.tree()), /[\u4e00-\u9fff]|tokenhub|apimart|rkapi/i);
   assert.equal(all(f.tree(), node => node.type === 'a').length, 3);
   assert.equal(all(f.tree(), node => node.type === 'details').every(node => node.props.open === false), true);
@@ -232,7 +236,7 @@ test('model-specific price details preserve the full service-filtered rates with
   assert.equal(all(f.tree(), node => node.type === 'aside' || node.type === 'nav').length, 0);
   assert.equal(all(f.tree(), node => node.type === 'details')[0].props.open, true);
   assert.equal(all(f.tree(), node => node.type === 'tbody')[0].props.children.length, 3);
-  assert.match(text(f.tree()), /1,000 queries\$16\.8/);
+  assert.match(text(f.tree()), /1,000 queries16,800 credits \(\$16\.8\)/);
   assert.match(text(f.tree()), /Input ≤ 100,000 tokens/);
   assert.doesNotMatch(text(f.tree()), /\$0|claude|tokvilo Select/);
 });

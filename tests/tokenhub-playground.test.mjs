@@ -5,6 +5,7 @@ import test from "node:test";
 import vm from "node:vm";
 import * as jsx from "react/jsx-runtime";
 import ts from "typescript";
+import { credits, billingSummary } from "./helpers/credit-display.mjs";
 import { brandDisplay } from "./helpers/brand-display.mjs";
 
 const filename = new URL("../components/TokenHubPlayground.tsx", import.meta.url).pathname;
@@ -28,8 +29,10 @@ async function fixture(options = {}) {
     module: compiled, exports: compiled.exports, crypto: webcrypto, URL, URLSearchParams, AbortController, TextEncoder,
     window: { location: { search: "" } }, setTimeout: () => 1, clearTimeout() {},
     require(name) {
+      if (name === "@/lib/credits") return credits;
+      if (name === "./PlaygroundBillingSummary") return billingSummary;
       if (name === "@/lib/brand-display") return brandDisplay;
-      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) };
+      if (name === "./LocaleProvider") return { useSiteLocale: () => ({ locale: options.english ? "en" : "zh", isEnglish: options.english === true, t: (zh, en) => options.english ? en : zh, href: path => options.english ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path }) };
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return jsx;
       if (name === "next/link") return { default: "a" };
@@ -65,7 +68,7 @@ test("TokenHub separates quoting from confirmation and sends the exact confirmed
   const f = await fixture();
   assert.equal(content(f.primary()), "查看预留金额");
   await f.primary().props.onClick(); f.render();
-  assert.equal(f.paid().length, 0); assert.match(content(f.tree()), /本次最多预留 \$2\.000000/);
+  assert.equal(f.paid().length, 0); assert.match(content(f.tree()), /本次最多预留 2,000 积分 \(\$2\)/);
   assert.doesNotMatch(content(f.tree()), /源价|源头|加价|上游价格|20\s*%|×\s*1\.20/);
   assert.equal(content(f.primary()), "确认并生成");
   await f.primary().props.onClick(); f.render();
@@ -184,4 +187,23 @@ test("an interrupted multimodal request can recover by GET after its balance was
   assert.equal(f.paid().length, 1);
   assert.equal(f.calls.filter(call => call.url.startsWith("/api/studio/v1/requests/")).length, 1);
   assert.match(content(f.tree()), /Recovered/);
+});
+
+for (const english of [false, true]) test(`multimodal credits do not change a tiny quote, request cap or actual tokens (${english ? "en" : "zh"})`, async () => {
+  const receipt = { choices: [{ message: { content: "Exact response" } }], usage: { prompt_tokens: 200, completion_tokens: 12, total_tokens: 212 }, tokvilo_billing: { currency: "USD", status: "settled", reservedMicrousd: 1, chargedMicrousd: 1 } };
+  const original = JSON.stringify(receipt);
+  const f = await fixture({ english, quote: () => Response.json({ reservedMicrousd: 1 }), generate: () => Response.json(receipt) });
+  f.mode("chat"); f.prompt("Keep the exact prompt");
+  assert.match(content(f.tree()), english ? /\$1 = 1,000 credits/ : /\$1 = 1,000 积分/);
+  assert.match(content(f.tree()), english ? /10,000 credits \(\$10\)/ : /10,000 积分 \(\$10\)/);
+  await f.primary().props.onClick(); f.render();
+  assert.match(content(f.tree()), english ? /0\.001 credits \(\$0\.000001\)/ : /0\.001 积分 \(\$0\.000001\)/);
+  await f.primary().props.onClick(); f.render();
+  assert.equal(f.paid()[0].init.headers["X-Tokvilo-Max-Reserve-Microusd"], "1");
+  assert.deepEqual(JSON.parse(f.paid()[0].init.body), JSON.parse(f.calls.find(call => call.url === "/api/pricing/quote").init.body).body);
+  const summary = find(f.tree(), node => node.type === billingSummary.PlaygroundBillingSummary);
+  assert.ok(summary); assert.equal(summary.props.locale, english ? "en" : "zh");
+  assert.match(content(summary.type(summary.props)), english ? /Actual charge0\.001 credits \(\$0\.000001\)/ : /实际费用0\.001 积分 \(\$0\.000001\)/);
+  assert.match(content(f.tree()), /"total_tokens": 212/);
+  assert.equal(JSON.stringify(receipt), original);
 });

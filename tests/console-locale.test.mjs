@@ -31,10 +31,38 @@ const user = { id: 'member-1', displayName: 'Member', email: 'member@example.inv
 test('English console navigation preserves language and hides admin links for members', async () => {
   const compiledModule = await load('components/DashboardShell.tsx', { react: hooks, './LocaleProvider': locale, './Brand': { Brand: 'brand' }, './Icon': { Icon: 'icon' }, './ThemeToggle': { ThemeToggle: 'theme-toggle' }, './LogoutButton': { LogoutButton: 'logout' } });
   const tree = compiledModule.DashboardShell({ user, active: 'keys', children: 'workspace-content' });
-  assert.match(text(tree), /Dashboard.*Balance & top up.*Orders.*API keys.*Request logs.*API documentation/);
+  assert.match(text(tree), /Dashboard.*API credits & billing.*Orders.*API keys.*Request logs.*API documentation/);
   const links = findAll(tree, node => node.type === 'a').map(node => node.props.href);
   for (const path of ['/dashboard?lang=en', '/dashboard/keys?lang=en', '/dashboard/docs?lang=en', '/selected?lang=en', '/en/models']) assert.ok(links.includes(path), path);
   assert.ok(!links.some(path => path.startsWith('/admin')));
+});
+
+test('both pricing pages explain the fixed credit unit and retain their localized wallet routes', async () => {
+  for (const lang of ['zh', 'en']) {
+    const pageModule = await load(`app/${lang === 'en' ? 'en/' : ''}pricing/page.tsx`, {
+      '@/components/PublicFooter': { PublicFooter: 'footer' }, '@/components/PublicNav': { PublicNav: 'nav' }, '@/components/PriceTable': { PriceTable: 'price-table' },
+    });
+    const tree = pageModule.default();
+    assert.match(text(tree), lang === 'en' ? /USD 1 = 1,000 API credits/ : /USD 1 = 1,000 API 积分/);
+    assert.match(text(tree), lang === 'en' ? /same service balance/ : /同一笔余额/);
+    assert.ok(findAll(tree, node => node.type === 'a').some(node => node.props.href === `/dashboard/wallet${lang === 'en' ? '?lang=en' : ''}`));
+  }
+});
+
+test('dashboard request quota remains a count in both languages, separate from API credits', async () => {
+  const summary = { dailyLimit: 100, callsToday: 2, successesToday: 1, errorsToday: 1, activeKeys: 1 };
+  const pageModule = await load('app/dashboard/page.tsx', {
+    '@/components/LocaleProvider': locale, '@/lib/site-locale': site, '@/components/DashboardShell': { DashboardShell: 'dashboard-shell' }, '@/components/Icon': { Icon: 'icon' },
+    '@/lib/auth': { requirePortalUser: async () => user }, '@/lib/config': { publicBaseUrl: () => 'https://tokvilo.com' },
+    '@/lib/console-data': { displayTimestamp: x => x, getUsageEvents: async () => [], getUsageTrend: async () => Array.from({ length: 30 }, (_, index) => ({ day: `2026-10-${String(index + 1).padStart(2, '0')}`, calls: 0 })) },
+    '@/lib/store': { getUserSummary: async () => summary },
+  });
+  for (const lang of ['zh', 'en']) {
+    const tree = await pageModule.default({ searchParams: Promise.resolve({ lang }) });
+    const quota = findAll(tree, node => node.props.className === 'console-balance-row')[0];
+    assert.match(text(quota), lang === 'en' ? /Requests remaining today98requests/ : /今日剩余请求次数98次/);
+    assert.doesNotMatch(text(quota), /积分|credits|\$/);
+  }
 });
 
 test('English key management renders human text without changing stored labels or status values', async () => {

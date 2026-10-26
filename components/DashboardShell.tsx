@@ -13,7 +13,7 @@ import { LogoutButton } from "./LogoutButton";
 type ConsoleSection = "overview" | "keys" | "usage" | "docs" | "admin" | "billing-admin" | "models" | "playground" | "tokenhub" | "selected" | "tokenhub-audit" | "wallet" | "orders";
 const navigation: Array<{ key: ConsoleSection; href: string; icon: string; label: string; labelEn: string }> = [
   { key: "overview", href: "/dashboard", icon: "grid", label: "控制台", labelEn: "Dashboard" },
-  { key: "wallet", href: "/dashboard/wallet", icon: "chart", label: "余额与充值", labelEn: "Balance & top up" },
+  { key: "wallet", href: "/dashboard/wallet", icon: "chart", label: "API 积分与充值", labelEn: "API credits & billing" },
   { key: "orders", href: "/dashboard/orders", icon: "store", label: "商品订单", labelEn: "Orders" },
   { key: "keys", href: "/dashboard/keys", icon: "key", label: "API 密钥", labelEn: "API keys" },
   { key: "usage", href: "/dashboard/usage", icon: "activity", label: "调用日志", labelEn: "Request logs" },
