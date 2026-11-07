@@ -3,6 +3,406 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.gov.cn/gongbao/content/2021/content_5647366.htm",
+      "title": "人力资源社会保障部  司法部关于深化公共法律服务专业人员职称制度改革的指导意见__2021年第30号国务院公报_中国政府网",
+      "publisher": "State Council of the People's Republic of China",
+      "publisher_domain": "gov.cn",
+      "published": "",
+      "retrieved_at": "2026-11-07T16:25:46+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "7b1dd98cd5f8198a0cdcc64757418661acc5fe18d601493fe5eb0d506702b45d",
+      "body_chars": 7346,
+      "excerpt_start": 0,
+      "excerpt_end": 7346,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+      "title": "CMA publishes review of progress in legal services sector",
+      "publisher": "UK Government",
+      "publisher_domain": "gov.uk",
+      "published": "2020-12-17",
+      "retrieved_at": "2026-11-07T16:25:44+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0",
+      "body_chars": 5527,
+      "excerpt_start": 0,
+      "excerpt_end": 5527,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
+      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
+      "publisher": "State Council of the People's Republic of China",
+      "publisher_domain": "gov.cn",
+      "published": "",
+      "retrieved_at": "2026-11-07T15:13:07+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
+      "body_chars": 5243,
+      "excerpt_start": 0,
+      "excerpt_end": 5243,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.nist.gov/system/files/documents/itl/cloud/SP_500_293_volumeII.pdf",
+      "title": "NIST US Government Cloud Computing Technology Roadmap",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-07T15:13:06+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "066aacfb895e9a36182f0e1af11b8f2a6c098443812ae811704b1408895becf5",
+      "body_chars": 223631,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+      "title": "Consumer IoT Cybersecurity",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2021-11-09",
+      "retrieved_at": "2026-11-07T15:12:54+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "smart_hardware"
+      ],
+      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
+      "body_chars": 3490,
+      "excerpt_start": 0,
+      "excerpt_end": 3490,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
+      "title": "Online Computer and Video Games (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-11-07T15:12:42+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2",
+      "body_chars": 180037,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/zh/web/economics/w/blogs/video-games-education",
+      "title": "不止娱乐：商标申请表明电子游戏制造商正在投资于福祉和教育",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-11-07T15:12:39+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "6b1169253c11fd940bb9f2212f0be5fa5b2c360a1ed4bb8198416a981c24681c",
+      "body_chars": 2077,
+      "excerpt_start": 0,
+      "excerpt_end": 2077,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
+      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-12-01",
+      "retrieved_at": "2026-11-07T15:12:38+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
+      "body_chars": 31831,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_6203fd463c704de1bd870597f24bbcb4.html",
+      "title": "商务部公告2026年第24号 公布《产业链供应链安全调查工作办法》",
+      "publisher": "Ministry of Commerce of China",
+      "publisher_domain": "mofcom.gov.cn",
+      "published": "",
+      "retrieved_at": "2026-11-07T15:12:28+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "0f1d4b4b28cfbb89a1a81070e09a9e92e7b89e7418aface1e9e07205f1bf7290",
+      "body_chars": 2458,
+      "excerpt_start": 0,
+      "excerpt_end": 2458,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2024/transformative-end-to-end-supply-chain-approach",
+      "title": "A Unified Approach to End-to-End Supply Chain Transformation",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2024-01-31",
+      "retrieved_at": "2026-11-07T15:12:26+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "b86cfadb5129fbdefdc2ccc47a2ceff1cf97d94ddae5f26edad045976d9bf725",
+      "body_chars": 16547,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/zh/web/wipo-magazine/articles/tencent-video-games-the-metaverse-and-diversity-an-insiders-view-42875",
+      "title": "腾讯、视频游戏、元宇宙和多样性：局内人的观点",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-11-06T16:20:34+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "a0a842c06b068dfa7b1efd806bda2b10542b411ade1ab32e7fdf6a70d8c80c75",
+      "body_chars": 3386,
+      "excerpt_start": 0,
+      "excerpt_end": 3386,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+      "title": "Promoting resilience and preparedness in supply chains (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-11-06T16:20:21+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24",
+      "body_chars": 172554,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/system/files/documents/2017/05/31/evaluation_of_cloud_computing_services_based_on_nist_800-145_20170427clean.pdf",
+      "title": "Evaluation of Cloud Computing Services Based on NIST 800-145_20170427clean",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-05T16:53:51+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ff5158da5fe51057860659cc5868b91ae552cded9d7cbbca019d690ea2001a9a",
+      "body_chars": 47883,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
+      "title": "Emphasize Resilience in Supply Chains",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2022-10-04",
+      "retrieved_at": "2026-11-05T16:53:08+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b",
+      "body_chars": 4963,
+      "excerpt_start": 0,
+      "excerpt_end": 4963,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
+      "title": "NIST SP 500-292",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-04T16:38:27+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
+      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
+      "body_chars": 75496,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/web-publications/world-intellectual-property-report-2024/en/5-leveraging-local-know-how-to-develop-video-game-hubs.html",
+      "title": "World Intellectual Property Report 2024 - 5 Leveraging local know-how to develop video game hubs",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-11-04T16:38:04+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "1df41095c7e717d49d74287b1b0972726fa8ec9ab398505c3ef635fb615ceb7d",
+      "body_chars": 60454,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/edocs/pubdocs/zh/wipo_pub_121_2021_02.pdf",
+      "title": "WIPO杂志, 第2期, 2021年6月",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-11-02T18:51:56+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "5f764924ae5f70e32ed6bd7a3b2126b85cd92f007d09d947f9d3e7cc74c513bd",
+      "body_chars": 40049,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2021/gaming-and-esports-sector-are-the-next-shift-in-media",
+      "title": "Gaming & Esports: Media’s Next Paradigm SHIFT",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2021-12-13",
+      "retrieved_at": "2026-11-01T15:29:25+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "961d7424946d8aea0ed5eca3c5df552f279afe83aff21b3a9f5224139a5fc227",
+      "body_chars": 35424,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/03/protecting-and-promoting-competition-in-response-to-disruptive-innovations-in-legal-services_6ee10319/ca47c852-en.pdf",
+      "title": "Protecting and Promoting Competition in Response to Disruptive Innovations in Legal Services (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-10-31T14:47:38+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "legal_services"
+      ],
+      "scope_notes": "OECD Secretariat discussion paper from 2016 about legal-service innovation and regulation. Historical, multi-jurisdiction analysis; use only the retrieved excerpt with its stated period and geography. It is not current Chinese legal-sector data, an endorsement, or measured GEO effectiveness.",
+      "text_sha256": "d1e973559e0d42cb754a585de6635cab3dafead111b79e6c3a1c5eb95970f9c1",
+      "body_chars": 114006,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/edocs/mdocs/enforcement/zh/wipo_ace_15/wipo_ace_15_4.pdf",
+      "title": "WIPO/ACE/15/4_EX (ZH)",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-10-22T14:08:19+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "7eeb2935a58ba4c94fb54f220c5418b1bc7b4ff4f32f1dedcf031e943c303031",
+      "body_chars": 4508,
+      "excerpt_start": 0,
+      "excerpt_end": 4508,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://www.bcg.com/publications/2025/will-ai-become-best-car-sales-advisor",
       "title": "Will AI Become the Best Car Sales Advisor?",
       "publisher": "BCG",
@@ -41,166 +441,6 @@
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
-      "title": "Consumer IoT Cybersecurity",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "2021-11-09",
-      "retrieved_at": "2026-10-21T14:10:19+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "smart_hardware"
-      ],
-      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
-      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
-      "body_chars": 3490,
-      "excerpt_start": 0,
-      "excerpt_end": 3490,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
-      "title": "Online Computer and Video Games (EN)",
-      "publisher": "OECD",
-      "publisher_domain": "oecd.org",
-      "published": "",
-      "retrieved_at": "2026-10-21T14:10:05+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2",
-      "body_chars": 180037,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.wipo.int/edocs/pubdocs/zh/wipo_pub_121_2021_02.pdf",
-      "title": "WIPO杂志, 第2期, 2021年6月",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-10-21T14:10:02+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "5f764924ae5f70e32ed6bd7a3b2126b85cd92f007d09d947f9d3e7cc74c513bd",
-      "body_chars": 40049,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
-      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2025-12-01",
-      "retrieved_at": "2026-10-21T14:09:59+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
-      "body_chars": 31831,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
-      "title": "Emphasize Resilience in Supply Chains",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2022-10-04",
-      "retrieved_at": "2026-10-21T14:09:48+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "supply_chain"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "20f3a212970a60b88ef87d6d9eaa8808b16e0667823d43c4dd231d72f0f1d47b",
-      "body_chars": 4963,
-      "excerpt_start": 0,
-      "excerpt_end": 4963,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
-      "title": "Promoting resilience and preparedness in supply chains (EN)",
-      "publisher": "OECD",
-      "publisher_domain": "oecd.org",
-      "published": "",
-      "retrieved_at": "2026-10-21T14:09:46+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "supply_chain"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24",
-      "body_chars": 172554,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.gov.cn/gongbao/content/2021/content_5647366.htm",
-      "title": "人力资源社会保障部  司法部关于深化公共法律服务专业人员职称制度改革的指导意见__2021年第30号国务院公报_中国政府网",
-      "publisher": "State Council of the People's Republic of China",
-      "publisher_domain": "gov.cn",
-      "published": "",
-      "retrieved_at": "2026-10-21T14:09:31+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "legal_services"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "7b1dd98cd5f8198a0cdcc64757418661acc5fe18d601493fe5eb0d506702b45d",
-      "body_chars": 7346,
-      "excerpt_start": 0,
-      "excerpt_end": 7346,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
-      "title": "CMA publishes review of progress in legal services sector",
-      "publisher": "UK Government",
-      "publisher_domain": "gov.uk",
-      "published": "2020-12-17",
-      "retrieved_at": "2026-10-21T14:09:30+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "legal_services"
-      ],
-      "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
-      "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0",
-      "body_chars": 5527,
-      "excerpt_start": 0,
-      "excerpt_end": 5527,
-      "excerpt_truncated": false
     },
     {
       "url": "https://www.bcg.com/press/24october2024-ai-adoption-in-2024-74-of-companies-struggle-to-achieve-and-scale-value",
@@ -258,26 +498,6 @@
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
       "text_sha256": "3b6ac40bebc0bcc39bd0bc9c55a164a16d15fac29841dbc05ba31948e1144701",
       "body_chars": 53622,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.wipo.int/export/sites/www/cooperation/en/docs/ip-video-games.pdf",
-      "title": "ip-video-games.pdf",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-10-20T13:53:27+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "7445600d3d995a8b58c0fb710e6746908b75a3109ba80595e5053d98b046b2ba",
-      "body_chars": 81577,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
@@ -401,26 +621,6 @@
       "excerpt_start": 0,
       "excerpt_end": 9890,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/03/protecting-and-promoting-competition-in-response-to-disruptive-innovations-in-legal-services_6ee10319/ca47c852-en.pdf",
-      "title": "Protecting and Promoting Competition in Response to Disruptive Innovations in Legal Services (EN)",
-      "publisher": "OECD",
-      "publisher_domain": "oecd.org",
-      "published": "",
-      "retrieved_at": "2026-10-18T12:49:35+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "legal_services"
-      ],
-      "scope_notes": "OECD Secretariat discussion paper from 2016 about legal-service innovation and regulation. Historical, multi-jurisdiction analysis; use only the retrieved excerpt with its stated period and geography. It is not current Chinese legal-sector data, an endorsement, or measured GEO effectiveness.",
-      "text_sha256": "d1e973559e0d42cb754a585de6635cab3dafead111b79e6c3a1c5eb95970f9c1",
-      "body_chars": 114006,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://www.nist.gov/programs-projects/ai-measurement-and-evaluation/nist-ai-measurement-and-evaluation-projects",
@@ -843,26 +1043,6 @@
       "excerpt_truncated": true
     },
     {
-      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
-      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
-      "publisher": "State Council of the People's Republic of China",
-      "publisher_domain": "gov.cn",
-      "published": "",
-      "retrieved_at": "2026-10-07T21:38:40+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
-      "body_chars": 5243,
-      "excerpt_start": 0,
-      "excerpt_end": 5243,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://support.google.com/adspolicy/answer/6245891?hl=zh-Hans",
       "title": "本地生活服务广告要求 - Google Ads 政策帮助",
       "publisher": "Google",
@@ -881,26 +1061,6 @@
       "excerpt_start": 0,
       "excerpt_end": 4406,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-292.pdf",
-      "title": "NIST SP 500-292",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-10-06T21:17:29+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. NIST SP 500-292 is the September 2011 US government cloud reference architecture. It is historical technical guidance, not a current market survey, vendor recommendation, Chinese procurement requirement or proof of GEO outcomes. Only the recorded 10000-character excerpt was used; unread pages are not evidence.",
-      "text_sha256": "7b6eb56f39d9885d451d47b0a5431c0159fb30d595a9c101fa341590c6fc071e",
-      "body_chars": 75496,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://support.google.com/google-ads/answer/7167635?hl=zh-Hans",
@@ -941,26 +1101,6 @@
       "excerpt_start": 0,
       "excerpt_end": 6436,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.nist.gov/system/files/documents/itl/cloud/SP_500_293_volumeII.pdf",
-      "title": "NIST US Government Cloud Computing Technology Roadmap",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-10-04T19:50:31+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "066aacfb895e9a36182f0e1af11b8f2a6c098443812ae811704b1408895becf5",
-      "body_chars": 223631,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://www.bcg.com/publications/2023/social-commerce-is-remaking-online-shopping",
@@ -1018,26 +1158,6 @@
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
       "text_sha256": "3c9ff80a65810d3a57140f8e68cb18e8c9dfe29d2aedf2b80daca5238b71b4e0",
       "body_chars": 206305,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.wipo.int/web-publications/world-intellectual-property-report-2024/en/5-leveraging-local-know-how-to-develop-video-game-hubs.html",
-      "title": "World Intellectual Property Report 2024 - 5 Leveraging local know-how to develop video game hubs",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-09-28T22:18:06+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "1df41095c7e717d49d74287b1b0972726fa8ec9ab398505c3ef635fb615ceb7d",
-      "body_chars": 60454,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true

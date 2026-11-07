@@ -1,5 +1,186 @@
 [
   {
+    "order": "729",
+    "row": "723",
+    "slug": "00723-ai-geo-6bd217bc",
+    "title": "Eco-GEO：中小企业主必看：为什么法律服务品牌要先做“可核验品牌事实”，再做GEO",
+    "excerpt": "面向新品发布期的法律服务品牌：品牌化GEO不是抢AI答案排名，而是先统一直说清执业资质、服务范围、收费口径与流程，再围绕中小企业主高频法律问题建立覆盖。文中给出白帽边界、播客提纲与两周一测的观察指标。",
+    "category": "法律服务",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, 法律服务, 品牌资产与AI引用, 新品发布期, 中小企业主, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-11-08",
+    "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00723-ai-geo-6bd217bc/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-11-07T16:25:42+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "From Public Posts to AI-Search Citations: Measuring the Fragility of AI Search",
+        "url": "https://arxiv.org/html/2610.11932v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-11-07T16:25:43+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 106460,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "ce45b95ec44070764e5d1fbb4c8055ee56a81c13d766a31e9092edf7fa3d8ee0"
+      },
+      {
+        "id": "S3",
+        "title": "CMA publishes review of progress in legal services sector",
+        "url": "https://www.gov.uk/government/news/cma-publishes-review-of-progress-in-legal-services-sector",
+        "publisher": "UK Government",
+        "published": "2020-12-17",
+        "retrieved_at": "2026-11-07T16:25:44+00:00",
+        "evidence_kind": "government_research",
+        "excerpt_start": 0,
+        "excerpt_end": 5527,
+        "body_chars": 5527,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "gov.uk",
+        "evidence_role": "industry_context",
+        "industries": [
+          "legal_services"
+        ],
+        "scope_notes": "CMA's own 2020 announcement reviewing legal services in England and Wales. Supports its scoped observations about price, service and quality transparency, not the complete report, current Chinese legal markets, or GEO conversion and revenue effects.",
+        "text_sha256": "babfeaac7f497f375956ca5b260b3da1bb535e9054e2174d28b91ebff3b1d4a0"
+      },
+      {
+        "id": "S4",
+        "title": "人力资源社会保障部  司法部关于深化公共法律服务专业人员职称制度改革的指导意见__2021年第30号国务院公报_中国政府网",
+        "url": "https://www.gov.cn/gongbao/content/2021/content_5647366.htm",
+        "publisher": "State Council of the People's Republic of China",
+        "published": "",
+        "retrieved_at": "2026-11-07T16:25:46+00:00",
+        "evidence_kind": "government_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 7346,
+        "body_chars": 7346,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "gov.cn",
+        "evidence_role": "industry_context",
+        "industries": [
+          "legal_services"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "7b1dd98cd5f8198a0cdcc64757418661acc5fe18d601493fe5eb0d506702b45d"
+      },
+      {
+        "id": "S5",
+        "title": "Introducing Copilot Search in Bing",
+        "url": "https://blogs.bing.com/search/2025/4/Introducing-Copilot-Search-in-Bing/",
+        "publisher": "Microsoft Bing",
+        "published": "",
+        "retrieved_at": "2026-11-07T16:25:47+00:00",
+        "evidence_kind": "platform_announcement",
+        "excerpt_start": 0,
+        "excerpt_end": 5856,
+        "body_chars": 5856,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bing.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "afca347dd139edad324366113cd39bc966708f302add99e4bb2bb8df051ad980"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "quality_profile": "seo-practical",
+        "h2_count": 5,
+        "table_count": 0,
+        "table_shapes": [],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 7,
+          "S2": 3,
+          "S3": 2,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 2583,
+        "zh_character_count": 2186,
+        "word_count": 267,
+        "minimum_zh_characters": 900,
+        "executive_summary_takeaways": 4,
+        "tables_meeting_structure": 0,
+        "valid_citation_count": 14,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "blogs.bing.com",
+          "developers.google.com",
+          "gov.cn",
+          "gov.uk"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 0,
+      "warnings": [
+        "executive-summary 第3条：摘要写“法律服务市场长期存在价格、服务、质量信息不透明的问题”，未注明这是英格兰与威尔士2020年监管评估的结论；正文虽已明确“不能直接外推到中国”，摘要层面仍是宽泛断言。建议改为“英格兰与威尔士的监管评估显示……”，补上地域与年份限定。",
+        "executive-summary 第1条 与“品牌资产先落地”段末：“结构化数据必须与页面可见文本一致”在S1中被列于“SEO最佳实践”清单，而非AI功能的技术准入条件；用“必须”会把它抬成硬性门槛。建议改为“Google建议让结构化数据与可见文本保持一致（属最佳实践，非额外技术门槛）”。",
+        "“先分清两件事”第1段、executive-summary 第1条：“AI搜索要先把页面抓取、索引并允许出摘要”源自S1对Google AI概览/AI模式的说明；文中以“AI搜索”统称，未限定平台。S2、S5并未陈述同样的准入条件。建议限定为“以Google AI概览/AI模式为例”或“在Google的说明中”。",
+        "“品牌资产先落地”第2段：S4文件规范的是“公共法律服务专业人员职称”（公证员、司法鉴定人），与“执业资质/执业许可”并非同一概念。文中用“资质类型”承接，虽已注明“不等于律所全部资质”，术语仍易混淆。建议区分“职称等级”与“执业许可/机构资质”，并说明律师事务所资质需另找依据。",
+        "“白帽边界”第1段：把S2的受控测量（虚构概念、偏好平台发布）引为风险方向，方向正确；但该研究是安全测量实验，样本为10个平台的一次性实验，不宜读作“内容越多越容易被引用”的普遍规律。文中已声明，建议再加一句“实验规模有限、非概率抽样”。",
+        "“新品发布期行动清单”第4步：“每两周在几个常用AI搜索入口各问一次”未说明如何记录基线（首次问法、账号/地区差异、是否同一提示词），复测可重复性略弱。建议固定提示词原文、平台清单与记录模板。"
+      ],
+      "review_type": "automated editorial review",
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 4,
+        "actionability": 5,
+        "originality": 3
+      }
+    }
+  },
+  {
     "order": "728",
     "row": "722",
     "slug": "00722-geo-ai-73c66030",
