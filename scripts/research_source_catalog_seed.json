@@ -3,6 +3,186 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.bcg.com/publications/2024/transformative-end-to-end-supply-chain-approach",
+      "title": "A Unified Approach to End-to-End Supply Chain Transformation",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2024-01-31",
+      "retrieved_at": "2026-11-08T16:40:23+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "b86cfadb5129fbdefdc2ccc47a2ceff1cf97d94ddae5f26edad045976d9bf725",
+      "body_chars": 16547,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+      "title": "Promoting resilience and preparedness in supply chains (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-11-08T16:40:21+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24",
+      "body_chars": 172554,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_6203fd463c704de1bd870597f24bbcb4.html",
+      "title": "商务部公告2026年第24号 公布《产业链供应链安全调查工作办法》",
+      "publisher": "Ministry of Commerce of China",
+      "publisher_domain": "mofcom.gov.cn",
+      "published": "",
+      "retrieved_at": "2026-11-08T16:40:18+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "supply_chain"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "0f1d4b4b28cfbb89a1a81070e09a9e92e7b89e7418aface1e9e07205f1bf7290",
+      "body_chars": 2458,
+      "excerpt_start": 0,
+      "excerpt_end": 2458,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
+      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
+      "publisher": "State Council of the People's Republic of China",
+      "publisher_domain": "gov.cn",
+      "published": "",
+      "retrieved_at": "2026-11-08T15:37:49+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
+      "body_chars": 5243,
+      "excerpt_start": 0,
+      "excerpt_end": 5243,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.nist.gov/system/files/documents/itl/cloud/SP_500_293_volumeII.pdf",
+      "title": "NIST US Government Cloud Computing Technology Roadmap",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-08T15:37:47+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "066aacfb895e9a36182f0e1af11b8f2a6c098443812ae811704b1408895becf5",
+      "body_chars": 223631,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+      "title": "Consumer IoT Cybersecurity",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2021-11-09",
+      "retrieved_at": "2026-11-08T15:37:38+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "smart_hardware"
+      ],
+      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
+      "body_chars": 3490,
+      "excerpt_start": 0,
+      "excerpt_end": 3490,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
+      "title": "Online Computer and Video Games (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-11-08T15:37:23+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2",
+      "body_chars": 180037,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/zh/web/economics/w/blogs/video-games-education",
+      "title": "不止娱乐：商标申请表明电子游戏制造商正在投资于福祉和教育",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-11-08T15:37:21+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "6b1169253c11fd940bb9f2212f0be5fa5b2c360a1ed4bb8198416a981c24681c",
+      "body_chars": 2077,
+      "excerpt_start": 0,
+      "excerpt_end": 2077,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
+      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-12-01",
+      "retrieved_at": "2026-11-08T15:37:20+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
+      "body_chars": 31831,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
       "url": "https://www.gov.cn/gongbao/content/2021/content_5647366.htm",
       "title": "人力资源社会保障部  司法部关于深化公共法律服务专业人员职称制度改革的指导意见__2021年第30号国务院公报_中国政府网",
       "publisher": "State Council of the People's Republic of China",
@@ -43,166 +223,6 @@
       "excerpt_truncated": false
     },
     {
-      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
-      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
-      "publisher": "State Council of the People's Republic of China",
-      "publisher_domain": "gov.cn",
-      "published": "",
-      "retrieved_at": "2026-11-07T15:13:07+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
-      "body_chars": 5243,
-      "excerpt_start": 0,
-      "excerpt_end": 5243,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.nist.gov/system/files/documents/itl/cloud/SP_500_293_volumeII.pdf",
-      "title": "NIST US Government Cloud Computing Technology Roadmap",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-11-07T15:13:06+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "066aacfb895e9a36182f0e1af11b8f2a6c098443812ae811704b1408895becf5",
-      "body_chars": 223631,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
-      "title": "Consumer IoT Cybersecurity",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "2021-11-09",
-      "retrieved_at": "2026-11-07T15:12:54+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "smart_hardware"
-      ],
-      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
-      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
-      "body_chars": 3490,
-      "excerpt_start": 0,
-      "excerpt_end": 3490,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
-      "title": "Online Computer and Video Games (EN)",
-      "publisher": "OECD",
-      "publisher_domain": "oecd.org",
-      "published": "",
-      "retrieved_at": "2026-11-07T15:12:42+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2",
-      "body_chars": 180037,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.wipo.int/zh/web/economics/w/blogs/video-games-education",
-      "title": "不止娱乐：商标申请表明电子游戏制造商正在投资于福祉和教育",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-11-07T15:12:39+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "6b1169253c11fd940bb9f2212f0be5fa5b2c360a1ed4bb8198416a981c24681c",
-      "body_chars": 2077,
-      "excerpt_start": 0,
-      "excerpt_end": 2077,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
-      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2025-12-01",
-      "retrieved_at": "2026-11-07T15:12:38+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
-      "body_chars": 31831,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_6203fd463c704de1bd870597f24bbcb4.html",
-      "title": "商务部公告2026年第24号 公布《产业链供应链安全调查工作办法》",
-      "publisher": "Ministry of Commerce of China",
-      "publisher_domain": "mofcom.gov.cn",
-      "published": "",
-      "retrieved_at": "2026-11-07T15:12:28+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "supply_chain"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "0f1d4b4b28cfbb89a1a81070e09a9e92e7b89e7418aface1e9e07205f1bf7290",
-      "body_chars": 2458,
-      "excerpt_start": 0,
-      "excerpt_end": 2458,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/publications/2024/transformative-end-to-end-supply-chain-approach",
-      "title": "A Unified Approach to End-to-End Supply Chain Transformation",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2024-01-31",
-      "retrieved_at": "2026-11-07T15:12:26+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "supply_chain"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "b86cfadb5129fbdefdc2ccc47a2ceff1cf97d94ddae5f26edad045976d9bf725",
-      "body_chars": 16547,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
       "url": "https://www.wipo.int/zh/web/wipo-magazine/articles/tencent-video-games-the-metaverse-and-diversity-an-insiders-view-42875",
       "title": "腾讯、视频游戏、元宇宙和多样性：局内人的观点",
       "publisher": "World Intellectual Property Organization",
@@ -221,26 +241,6 @@
       "excerpt_start": 0,
       "excerpt_end": 3386,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
-      "title": "Promoting resilience and preparedness in supply chains (EN)",
-      "publisher": "OECD",
-      "publisher_domain": "oecd.org",
-      "published": "",
-      "retrieved_at": "2026-11-06T16:20:21+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "supply_chain"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24",
-      "body_chars": 172554,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://www.nist.gov/system/files/documents/2017/05/31/evaluation_of_cloud_computing_services_based_on_nist_800-145_20170427clean.pdf",

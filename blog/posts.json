@@ -1,5 +1,189 @@
 [
   {
+    "order": "730",
+    "row": "724",
+    "slug": "00724-geo-53bac1b9",
+    "title": "Eco-GEO：不是堆关键词：供应链做品牌化GEO，真正要做的是让AI把你的能力讲对",
+    "excerpt": "增长期供应链企业的销售负责人开始遇到一个新问题：客户先把供应商比较交给AI助手。品牌化GEO的起点不是关键词排名，而是统一品牌实体事实，让AI能正确复述你的交付范围、资质与责任边界。本文给出白帽边界、事实清单做法和可自查的指标。",
+    "category": "供应链",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, 供应链, 品牌心智建设, 增长期, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-11-09",
+    "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00724-geo-53bac1b9/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-11-08T16:40:16+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "商务部公告2026年第24号 公布《产业链供应链安全调查工作办法》",
+        "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_6203fd463c704de1bd870597f24bbcb4.html",
+        "publisher": "Ministry of Commerce of China",
+        "published": "",
+        "retrieved_at": "2026-11-08T16:40:18+00:00",
+        "evidence_kind": "government_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 2458,
+        "body_chars": 2458,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "mofcom.gov.cn",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "0f1d4b4b28cfbb89a1a81070e09a9e92e7b89e7418aface1e9e07205f1bf7290"
+      },
+      {
+        "id": "S3",
+        "title": "From Public Posts to AI-Search Citations: Measuring the Fragility of AI Search",
+        "url": "https://arxiv.org/html/2610.11932v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-11-08T16:40:19+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 106460,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "ce45b95ec44070764e5d1fbb4c8055ee56a81c13d766a31e9092edf7fa3d8ee0"
+      },
+      {
+        "id": "S4",
+        "title": "Promoting resilience and preparedness in supply chains (EN)",
+        "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/11/promoting-resilience-and-preparedness-in-supply-chains_c0320739/be692d01-en.pdf",
+        "publisher": "OECD",
+        "published": "",
+        "retrieved_at": "2026-11-08T16:40:21+00:00",
+        "evidence_kind": "institutional_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 172554,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "oecd.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "e00c1700d2690c202d8ab6f14e9e2ed2fc767ee4b9010b768adf8ea9c8dd9f24"
+      },
+      {
+        "id": "S5",
+        "title": "A Unified Approach to End-to-End Supply Chain Transformation",
+        "url": "https://www.bcg.com/publications/2024/transformative-end-to-end-supply-chain-approach",
+        "publisher": "BCG",
+        "published": "2024-01-31",
+        "retrieved_at": "2026-11-08T16:40:23+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 16547,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "supply_chain"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "b86cfadb5129fbdefdc2ccc47a2ceff1cf97d94ddae5f26edad045976d9bf725"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "quality_profile": "seo-practical",
+        "h2_count": 5,
+        "table_count": 0,
+        "table_shapes": [],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 5,
+          "S2": 2,
+          "S3": 5,
+          "S4": 1,
+          "S5": 1
+        },
+        "visible_character_count": 3039,
+        "zh_character_count": 2602,
+        "word_count": 303,
+        "minimum_zh_characters": 900,
+        "executive_summary_takeaways": 4,
+        "tables_meeting_structure": 0,
+        "valid_citation_count": 14,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "developers.google.com",
+          "mofcom.gov.cn",
+          "oecd.org"
+        ],
+        "unique_cited_sources": 5,
+        "unique_cited_domains": 5,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 0,
+      "warnings": [
+        "[I1][minor][overstatement] 位置：机制段“平台文档也说明，AI概览与AI模式会做‘查询扇出’”。问题：S1 原文为“Both AI Overviews and AI Mode may use a 'query fan-out' technique”，属可能性表述；正文写成“会做”，把概率语气改成必然，消掉了条件性。建议：改为“可能使用‘查询扇出’”。来源：S1",
+        "[I2][minor][missing_qualifier] 位置：执行摘要第1条“引用来源的分布高度集中而非平均分散”、机制段“少数域名承担了大部分引用”。问题：S3 实测为前20个域名占各平台引用量的20.5%–70.8%，跨度很大，最低端不足半数，“大部分”在部分平台不成立。建议：补出区间或改为“占比显著高于平均”。来源：S3",
+        "[I3][minor][inference_labeling] 位置：执行摘要第1条“这意味着‘AI怎么讲你’主要由少数页面决定”。问题：S3 只支持“引用集中”，由集中度推出“由少数页面决定某品牌表述”是因果推断，来源未做该验证。建议：加“可推断”“可能”等限定。来源：S3",
+        "[I4][minor][inference_labeling] 位置：小标题“为什么复杂决策里，品牌信号会影响AI的推荐路径”。问题：正文已注明“这里必须标明是推论”，标题却用陈述句；标题与正文假设定位不一致。建议：标题改为“……可能影响AI的推荐路径（待验证假设）”。来源：无",
+        "[I5][minor][inference_labeling] 位置：机制段“单一页面很难覆盖一个复杂决策的全部子问题”。问题：该判断由 S1 的“查询扇出”机制外推而来，属推断，但未标“可推断”。建议：加“据此可推断”等标识。来源：S1",
+        "[I6][minor][scope_shift] 位置：术语统一段引用 S5 支撑“跨职能假设不一致是改进不达预期的重要原因”。问题：S5 的量化（不足30%的大型供应链转型按期按预算达标）限定在消费行业，且属咨询机构观点；正文虽声明性质，但未说明行业边界，用于通用“口径统一”逻辑属类比。建议：补一句“该观察来自消费行业转型，本文仅类比其协调逻辑”。来源：S5",
+        "[I7][info][wording] 位置：观察指标段“事实准确率，即主体、资质、覆盖范围、责任边界四项是否正确”。问题：四项为企业自建口径，无外部基准；正文已声明不承诺引用量或排名，可再点明无行业基准值。建议：加半句“行业无公开基准值，需企业自建基线”。来源：无"
+      ],
+      "review_type": "automated editorial review",
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 4,
+        "tradeoffs": 4,
+        "actionability": 4,
+        "originality": 3
+      }
+    }
+  },
+  {
     "order": "729",
     "row": "723",
     "slug": "00723-ai-geo-6bd217bc",
