@@ -3,6 +3,166 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
+      "title": "Online Computer and Video Games (EN)",
+      "publisher": "OECD",
+      "publisher_domain": "oecd.org",
+      "published": "",
+      "retrieved_at": "2026-11-09T20:42:49+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "institutional_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2",
+      "body_chars": 180037,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.wipo.int/zh/web/wipo-magazine/articles/tencent-video-games-the-metaverse-and-diversity-an-insiders-view-42875",
+      "title": "腾讯、视频游戏、元宇宙和多样性：局内人的观点",
+      "publisher": "World Intellectual Property Organization",
+      "publisher_domain": "wipo.int",
+      "published": "",
+      "retrieved_at": "2026-11-09T20:42:47+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "institutional_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "a0a842c06b068dfa7b1efd806bda2b10542b411ade1ab32e7fdf6a70d8c80c75",
+      "body_chars": 3386,
+      "excerpt_start": 0,
+      "excerpt_end": 3386,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
+      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-12-01",
+      "retrieved_at": "2026-11-09T20:42:45+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "gaming"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
+      "body_chars": 31831,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/programs-projects/manufacturing-industry-economics",
+      "title": "Manufacturing Industry Economics",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-09T19:14:00+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: only creation, modification or unspecified date metadata was found; these dates are not substituted for publication.",
+      "text_sha256": "aea72044190ba4c18e010353c69c3ac0c4c78d6755a991e20feb6c9a57a06620",
+      "body_chars": 7579,
+      "excerpt_start": 0,
+      "excerpt_end": 7579,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
+      "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-11-09T19:13:59+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11",
+      "body_chars": 26558,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
+      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
+      "publisher": "State Council of the People's Republic of China",
+      "publisher_domain": "gov.cn",
+      "published": "",
+      "retrieved_at": "2026-11-09T19:13:26+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
+      "body_chars": 5243,
+      "excerpt_start": 0,
+      "excerpt_end": 5243,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.nist.gov/system/files/documents/2017/05/31/evaluation_of_cloud_computing_services_based_on_nist_800-145_20170427clean.pdf",
+      "title": "Evaluation of Cloud Computing Services Based on NIST 800-145_20170427clean",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-09T19:13:23+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ff5158da5fe51057860659cc5868b91ae552cded9d7cbbca019d690ea2001a9a",
+      "body_chars": 47883,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
+      "title": "Consumer IoT Cybersecurity",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "2021-11-09",
+      "retrieved_at": "2026-11-09T19:13:12+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "smart_hardware"
+      ],
+      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
+      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
+      "body_chars": 3490,
+      "excerpt_start": 0,
+      "excerpt_end": 3490,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://www.bcg.com/publications/2024/transformative-end-to-end-supply-chain-approach",
       "title": "A Unified Approach to End-to-End Supply Chain Transformation",
       "publisher": "BCG",
@@ -63,26 +223,6 @@
       "excerpt_truncated": false
     },
     {
-      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
-      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
-      "publisher": "State Council of the People's Republic of China",
-      "publisher_domain": "gov.cn",
-      "published": "",
-      "retrieved_at": "2026-11-08T15:37:49+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
-      "body_chars": 5243,
-      "excerpt_start": 0,
-      "excerpt_end": 5243,
-      "excerpt_truncated": false
-    },
-    {
       "url": "https://www.nist.gov/system/files/documents/itl/cloud/SP_500_293_volumeII.pdf",
       "title": "NIST US Government Cloud Computing Technology Roadmap",
       "publisher": "National Institute of Standards and Technology",
@@ -98,46 +238,6 @@
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
       "text_sha256": "066aacfb895e9a36182f0e1af11b8f2a6c098443812ae811704b1408895becf5",
       "body_chars": 223631,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
-      "title": "Consumer IoT Cybersecurity",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "2021-11-09",
-      "retrieved_at": "2026-11-08T15:37:38+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "smart_hardware"
-      ],
-      "scope_notes": "NIST's US consumer IoT cybersecurity programme and its dated milestones, including consumer-grade routers. This programme overview is not the full referenced standards, a market-size survey or evidence of GEO effectiveness. Sector boundary: Specify consumer or industrial connected hardware; semiconductor and software totals are not smart-device market size.",
-      "text_sha256": "4fd8079f86d682412d733d3d26e9ac358e9aaf24f025ce27be165759bac59593",
-      "body_chars": 3490,
-      "excerpt_start": 0,
-      "excerpt_end": 3490,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
-      "title": "Online Computer and Video Games (EN)",
-      "publisher": "OECD",
-      "publisher_domain": "oecd.org",
-      "published": "",
-      "retrieved_at": "2026-11-08T15:37:23+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "institutional_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2",
-      "body_chars": 180037,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
@@ -161,26 +261,6 @@
       "excerpt_start": 0,
       "excerpt_end": 2077,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
-      "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "2025-12-01",
-      "retrieved_at": "2026-11-08T15:37:20+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
-      "body_chars": 31831,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://www.gov.cn/gongbao/content/2021/content_5647366.htm",
@@ -221,46 +301,6 @@
       "excerpt_start": 0,
       "excerpt_end": 5527,
       "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.wipo.int/zh/web/wipo-magazine/articles/tencent-video-games-the-metaverse-and-diversity-an-insiders-view-42875",
-      "title": "腾讯、视频游戏、元宇宙和多样性：局内人的观点",
-      "publisher": "World Intellectual Property Organization",
-      "publisher_domain": "wipo.int",
-      "published": "",
-      "retrieved_at": "2026-11-06T16:20:34+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "institutional_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "gaming"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "a0a842c06b068dfa7b1efd806bda2b10542b411ade1ab32e7fdf6a70d8c80c75",
-      "body_chars": 3386,
-      "excerpt_start": 0,
-      "excerpt_end": 3386,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.nist.gov/system/files/documents/2017/05/31/evaluation_of_cloud_computing_services_based_on_nist_800-145_20170427clean.pdf",
-      "title": "Evaluation of Cloud Computing Services Based on NIST 800-145_20170427clean",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-11-05T16:53:51+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "ff5158da5fe51057860659cc5868b91ae552cded9d7cbbca019d690ea2001a9a",
-      "body_chars": 47883,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
     },
     {
       "url": "https://www.bcg.com/capabilities/corporate-finance-strategy/expert-insights/dustin-burke",
@@ -638,26 +678,6 @@
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
       "text_sha256": "58719d39111e5d2f818d71816fd5433937358faa84550aa0ad0b9f1ca147a20a",
       "body_chars": 17357,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
-      "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "",
-      "retrieved_at": "2026-10-17T13:43:52+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "manufacturing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
-      "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11",
-      "body_chars": 26558,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true

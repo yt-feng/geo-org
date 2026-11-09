@@ -1,5 +1,184 @@
 [
   {
+    "order": "731",
+    "row": "725",
+    "slug": "00725-ai-geo-ai-5afec170",
+    "title": "Eco-GEO：游戏公司做品牌化GEO：让AI复述正确的那句话",
+    "excerpt": "面向融资/IPO准备期的增长负责人：品牌化GEO不是抢AI答案排名，而是把版本、地区、资费、分级与赛事规则统一成一套可核验的官方说法，用问答型内容沉淀为AI可引用的标准答案。",
+    "category": "游戏",
+    "tags": "GEO, 品牌化GEO, 白帽GEO, AI搜索, 游戏, 品牌实体一致性, 融资/IPO准备期, Eco-GEO, GEO服务, AI搜索优化",
+    "author": "Eco GEO Editorial Team",
+    "date": "2026-11-10",
+    "image": "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1600&q=80",
+    "url": "https://eco-geo.org/blog/articles/00725-ai-geo-ai-5afec170/",
+    "sources": [
+      {
+        "id": "S1",
+        "title": "AI Features and Your Website | Google Search Central  |  Documentation  |  Google for Developers",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features",
+        "publisher": "Google Search Central",
+        "published": "",
+        "retrieved_at": "2026-11-09T20:42:44+00:00",
+        "evidence_kind": "platform_documentation",
+        "excerpt_start": 0,
+        "excerpt_end": 5468,
+        "body_chars": 5468,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "google.com",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion.",
+        "text_sha256": "a57f7d8ba8ddb70ee5d6b6776edec63af046106f3779ebc3a938f82a1b8f2a58"
+      },
+      {
+        "id": "S2",
+        "title": "Video Gaming Report 2026: How Platforms Are Colliding and Why This Will Spark the Next Era of Growth",
+        "url": "https://www.bcg.com/publications/2025/video-gaming-report-2026-next-era-of-growth",
+        "publisher": "BCG",
+        "published": "2025-12-01",
+        "retrieved_at": "2026-11-09T20:42:45+00:00",
+        "evidence_kind": "consulting_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 31831,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "bcg.com",
+        "evidence_role": "industry_context",
+        "industries": [
+          "gaming"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c"
+      },
+      {
+        "id": "S3",
+        "title": "From Public Posts to AI-Search Citations: Measuring the Fragility of AI Search",
+        "url": "https://arxiv.org/html/2610.11932v1",
+        "publisher": "arXiv authors",
+        "published": "",
+        "retrieved_at": "2026-11-09T20:42:46+00:00",
+        "evidence_kind": "research_paper",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 106460,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "arxiv.org",
+        "evidence_role": "general_context",
+        "industries": [],
+        "scope_notes": "General platform, search or marketing context only. This source cannot establish the selected industry's buying cycle, competition, adoption rates, budget thresholds or GEO conversion. 可见度指标不等于事实准确性/行业效果/收入；实验设定须在已读取窗口核对；不得制造引用/引语/数据。 Only the exact read excerpt is evidence; do not attribute unread appendices, code, or repository details to this source. Controlled visibility results do not establish the selected industry's results or current production-platform behaviour.",
+        "text_sha256": "ce45b95ec44070764e5d1fbb4c8055ee56a81c13d766a31e9092edf7fa3d8ee0"
+      },
+      {
+        "id": "S4",
+        "title": "腾讯、视频游戏、元宇宙和多样性：局内人的观点",
+        "url": "https://www.wipo.int/zh/web/wipo-magazine/articles/tencent-video-games-the-metaverse-and-diversity-an-insiders-view-42875",
+        "publisher": "World Intellectual Property Organization",
+        "published": "",
+        "retrieved_at": "2026-11-09T20:42:47+00:00",
+        "evidence_kind": "institutional_research",
+        "excerpt_start": 0,
+        "excerpt_end": 3386,
+        "body_chars": 3386,
+        "excerpt_truncated": false,
+        "retrieval_method": "https_fetch",
+        "publisher_domain": "wipo.int",
+        "evidence_role": "industry_context",
+        "industries": [
+          "gaming"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "a0a842c06b068dfa7b1efd806bda2b10542b411ade1ab32e7fdf6a70d8c80c75"
+      },
+      {
+        "id": "S5",
+        "title": "Online Computer and Video Games (EN)",
+        "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2005/05/online-computer-and-video-games_g17a1be3/232164517856.pdf",
+        "publisher": "OECD",
+        "published": "",
+        "retrieved_at": "2026-11-09T20:42:49+00:00",
+        "evidence_kind": "institutional_analysis",
+        "excerpt_start": 0,
+        "excerpt_end": 10000,
+        "body_chars": 180037,
+        "excerpt_truncated": true,
+        "retrieval_method": "https_pdf_text",
+        "publisher_domain": "oecd.org",
+        "evidence_role": "industry_context",
+        "industries": [
+          "gaming"
+        ],
+        "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+        "text_sha256": "9b0d3fdc615f3edd49227fb59a3d2641580077c2cb61ad120968aa81205241b2"
+      }
+    ],
+    "reviewed_by": "Eco GEO Research Desk",
+    "quality": {
+      "version": "insights-v3",
+      "metrics": {
+        "language": "zh",
+        "gate_version": 1,
+        "semantic_review_required": true,
+        "quality_profile": "seo-practical",
+        "h2_count": 5,
+        "table_count": 0,
+        "table_shapes": [],
+        "role_counts": {
+          "assumptions": 1,
+          "executive-summary": 1
+        },
+        "citation_id_counts": {
+          "S1": 6,
+          "S2": 2,
+          "S3": 5,
+          "S4": 1
+        },
+        "visible_character_count": 2199,
+        "zh_character_count": 1834,
+        "word_count": 228,
+        "minimum_zh_characters": 900,
+        "executive_summary_takeaways": 3,
+        "tables_meeting_structure": 0,
+        "valid_citation_count": 14,
+        "cited_source_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ],
+        "cited_domains": [
+          "arxiv.org",
+          "bcg.com",
+          "developers.google.com",
+          "wipo.int"
+        ],
+        "unique_cited_sources": 4,
+        "unique_cited_domains": 4,
+        "duplicate_paragraph_count": 0,
+        "duplicate_paragraph_samples": []
+      },
+      "revisions": 0,
+      "warnings": [
+        "表述精度（medium）：二、核心判断第一段将S3的引用集中度概括为“引用高度集中于少数域名”，但S3的口径是各平台前20域名占20.5%–70.8%，平台间差异很大；建议改为“集中度因平台而异，最集中的平台上……”。",
+        "表述精度（medium）：二、核心判断第二段把“低门槛平台”“批量发布”与主实验“8/10平台七天内引用虚构概念”连写；S3主实验是常规发布，低门槛是另一测量维度，“批量”更接近14美元GEO案例的13条帖子，建议拆分表述。",
+        "出处限定词丢失（low）：一、第二段S2数据限定为“成年玩家”（adult gamers），其中10%对AI生成美术/动画持负面看法；原文写作“玩家”未保留成人限定，补上更严谨。",
+        "未标注性质的评价性断言（low）：五、一句话总结“AI时代降低选择成本的核心入口是品牌本身”是作者判断，已读来源不支持该比较级结论，应明示为“我们认为/推断”。",
+        "可选补充（low）：S5未被引用不构成错误；S1提到AI概览点击用户停留更久，文章未讨论，与“不预设流量目标”可形成张力，但非必需。"
+      ],
+      "review_type": "automated editorial review",
+      "scores": {
+        "thesis": 4,
+        "evidence": 4,
+        "mechanism": 3,
+        "tradeoffs": 3,
+        "actionability": 4,
+        "originality": 3
+      }
+    }
+  },
+  {
     "order": "730",
     "row": "724",
     "slug": "00724-geo-53bac1b9",
