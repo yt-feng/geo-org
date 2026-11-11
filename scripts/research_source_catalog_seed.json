@@ -3,6 +3,166 @@
   "metadata_only": true,
   "sources": [
     {
+      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
+      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
+      "publisher": "State Council of the People's Republic of China",
+      "publisher_domain": "gov.cn",
+      "published": "",
+      "retrieved_at": "2026-11-11T17:53:33+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_documentation",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
+      "body_chars": 5243,
+      "excerpt_start": 0,
+      "excerpt_end": 5243,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.nist.gov/system/files/documents/2017/05/31/evaluation_of_cloud_computing_services_based_on_nist_800-145_20170427clean.pdf",
+      "title": "Evaluation of Cloud Computing Services Based on NIST 800-145_20170427clean",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-11T17:53:31+00:00",
+      "retrieval_method": "https_pdf_text",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "cloud_computing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "ff5158da5fe51057860659cc5868b91ae552cded9d7cbbca019d690ea2001a9a",
+      "body_chars": 47883,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2025/how-gen-z-gen-alpha-rewiring-fashion-industry",
+      "title": "How Gen Z and Gen Alpha Are Rewiring the Fashion Industry",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2025-10-23",
+      "retrieved_at": "2026-11-11T16:39:47+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "apparel_footwear_accessories"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "e346d29dc33682ff7188dd8e180cd1bd9cc15335779cecd35cdb1efd2e48140d",
+      "body_chars": 3274,
+      "excerpt_start": 0,
+      "excerpt_end": 3274,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2023/driving-profitability-with-raw-materials-in-fashion",
+      "title": "Sustainable Raw Materials Will Drive Profitability for Fashion and Apparel Brands",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "2023-10-20",
+      "retrieved_at": "2026-11-11T16:39:40+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "apparel_footwear_accessories"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
+      "text_sha256": "a5083b9e47f9461220b9efdc6062c21ae79c2c4c7be8bddb02ddfb07529aaa28",
+      "body_chars": 7246,
+      "excerpt_start": 0,
+      "excerpt_end": 7246,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/publications/2017/sales-leadership-disconnect-divide-digital-marketing-talent",
+      "title": "A Disconnect and a Divide in Digital-Marketing Talent",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-11-11T16:39:32+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "advertising_marketing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2021-01-08; visible datePublished=2021-01-08; visible datePublished=2017-03-21). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "784c8ffaddb9323bc8bd9e45b6cf74391a23adf038c40c2353c197521993c4fa",
+      "body_chars": 16434,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.bcg.com/publications/2013/media-entertainment-efficiency-effectiveness-digital-advertising",
+      "title": "Efficiency and Effectiveness in Digital Advertising",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-11-11T16:39:31+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "advertising_marketing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2021-01-08; visible datePublished=2021-01-08; visible datePublished=2013-05-22). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "c6ce032d2e56bb87304743ef0d9de340fd66a13ec742e87f69a6576dc83aec6d",
+      "body_chars": 7666,
+      "excerpt_start": 0,
+      "excerpt_end": 7666,
+      "excerpt_truncated": false
+    },
+    {
+      "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
+      "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
+      "publisher": "BCG",
+      "publisher_domain": "bcg.com",
+      "published": "",
+      "retrieved_at": "2026-11-11T16:39:16+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "consulting_analysis",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
+      "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11",
+      "body_chars": 26558,
+      "excerpt_start": 0,
+      "excerpt_end": 10000,
+      "excerpt_truncated": true
+    },
+    {
+      "url": "https://www.nist.gov/programs-projects/manufacturing-industry-economics",
+      "title": "Manufacturing Industry Economics",
+      "publisher": "National Institute of Standards and Technology",
+      "publisher_domain": "nist.gov",
+      "published": "",
+      "retrieved_at": "2026-11-11T16:39:14+00:00",
+      "retrieval_method": "https_fetch",
+      "evidence_kind": "government_research",
+      "evidence_role": "industry_context",
+      "industries": [
+        "manufacturing"
+      ],
+      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: only creation, modification or unspecified date metadata was found; these dates are not substituted for publication.",
+      "text_sha256": "f4b2e317c4b47ba1d80412e3d721e4bcb571e9d4516a73ef48d3477e6de5345e",
+      "body_chars": 8430,
+      "excerpt_start": 0,
+      "excerpt_end": 8430,
+      "excerpt_truncated": false
+    },
+    {
       "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/consumer-iot-cybersecurity",
       "title": "Consumer IoT Cybersecurity",
       "publisher": "National Institute of Standards and Technology",
@@ -23,46 +183,6 @@
       "excerpt_truncated": false
     },
     {
-      "url": "https://www.bcg.com/publications/2017/sales-leadership-disconnect-divide-digital-marketing-talent",
-      "title": "A Disconnect and a Divide in Digital-Marketing Talent",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "",
-      "retrieved_at": "2026-11-10T16:38:29+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "advertising_marketing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2021-01-08; visible datePublished=2021-01-08; visible datePublished=2017-03-21). Neither date is assumed to be a creation timestamp.",
-      "text_sha256": "784c8ffaddb9323bc8bd9e45b6cf74391a23adf038c40c2353c197521993c4fa",
-      "body_chars": 16434,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.bcg.com/ja-jp/publications/2015/engineered_products_project_business_industry_4_future_productivity_growth_manufacturing_industries",
-      "title": "Industry 4.0: The Future of Productivity and Growth in Manufacturing Industries",
-      "publisher": "BCG",
-      "publisher_domain": "bcg.com",
-      "published": "",
-      "retrieved_at": "2026-11-10T16:38:16+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "consulting_analysis",
-      "evidence_role": "industry_context",
-      "industries": [
-        "manufacturing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: conflicting publication fields (article:published_time=2020-08-19; visible datePublished=2020-08-19; visible datePublished=2015-04-09). Neither date is assumed to be a creation timestamp.",
-      "text_sha256": "90df79bd4d7c1e752889d0f57d6d62c163c5bcf865bd1f6721a07f36ca330d11",
-      "body_chars": 26558,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
       "url": "https://www.nist.gov/news-events/news/evidence-suggests-increased-flow-time-suppressed-us-manufacturing-productivity",
       "title": "Evidence Suggests Increased Flow Time Suppressed US Manufacturing Productivity",
       "publisher": "National Institute of Standards and Technology",
@@ -80,26 +200,6 @@
       "body_chars": 3080,
       "excerpt_start": 0,
       "excerpt_end": 3080,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.gov.cn/zhengce/zhengceku/202510/P020251009771355098297.pdf",
-      "title": "[PDF] 云计算综合标准化体系建设指南（2025 版） - 中国政府网",
-      "publisher": "State Council of the People's Republic of China",
-      "publisher_domain": "gov.cn",
-      "published": "",
-      "retrieved_at": "2026-11-10T16:37:42+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_documentation",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "96fe998f79cad1f7b6cad8a83f53842ef8059ab73106eaf137b2dd67a528ac3e",
-      "body_chars": 5243,
-      "excerpt_start": 0,
-      "excerpt_end": 5243,
       "excerpt_truncated": false
     },
     {
@@ -178,46 +278,6 @@
       "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
       "text_sha256": "01c821c734bfb9fa1a27f485ac30270591a6ca9276e87098a28039125af0ea4c",
       "body_chars": 31831,
-      "excerpt_start": 0,
-      "excerpt_end": 10000,
-      "excerpt_truncated": true
-    },
-    {
-      "url": "https://www.nist.gov/programs-projects/manufacturing-industry-economics",
-      "title": "Manufacturing Industry Economics",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-11-09T19:14:00+00:00",
-      "retrieval_method": "https_fetch",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "manufacturing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness. Publication date unconfirmed: only creation, modification or unspecified date metadata was found; these dates are not substituted for publication.",
-      "text_sha256": "aea72044190ba4c18e010353c69c3ac0c4c78d6755a991e20feb6c9a57a06620",
-      "body_chars": 7579,
-      "excerpt_start": 0,
-      "excerpt_end": 7579,
-      "excerpt_truncated": false
-    },
-    {
-      "url": "https://www.nist.gov/system/files/documents/2017/05/31/evaluation_of_cloud_computing_services_based_on_nist_800-145_20170427clean.pdf",
-      "title": "Evaluation of Cloud Computing Services Based on NIST 800-145_20170427clean",
-      "publisher": "National Institute of Standards and Technology",
-      "publisher_domain": "nist.gov",
-      "published": "",
-      "retrieved_at": "2026-11-09T19:13:23+00:00",
-      "retrieval_method": "https_pdf_text",
-      "evidence_kind": "government_research",
-      "evidence_role": "industry_context",
-      "industries": [
-        "cloud_computing"
-      ],
-      "scope_notes": "Industry relevance was matched by title and confirmed in the read excerpt. Use only the geography, population, period and statements explicitly supported by the excerpt; do not infer GEO effectiveness.",
-      "text_sha256": "ff5158da5fe51057860659cc5868b91ae552cded9d7cbbca019d690ea2001a9a",
-      "body_chars": 47883,
       "excerpt_start": 0,
       "excerpt_end": 10000,
       "excerpt_truncated": true
